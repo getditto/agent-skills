@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating marketplace.json..."
+          python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
+
+          echo "Validating plugin.json files..."
+          for f in plugins/*/.claude-plugin/plugin.json; do
+            echo "  Checking $f"
+            python3 -m json.tool "$f" > /dev/null
+          done
+
+          echo "All JSON files valid"
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          echo "Validating SKILL.md files..."
+          for f in plugins/*/skills/*/SKILL.md; do
+            echo "  Checking $f"
+            # Check file starts with ---
+            if ! head -1 "$f" | grep -q "^---$"; then
+              echo "ERROR: $f missing YAML frontmatter"
+              exit 1
+            fi
+            # Check frontmatter has required fields
+            if ! grep -q "^name:" "$f"; then
+              echo "ERROR: $f missing 'name' in frontmatter"
+              exit 1
+            fi
+            if ! grep -q "^description:" "$f"; then
+              echo "ERROR: $f missing 'description' in frontmatter"
+              exit 1
+            fi
+          done
+
+          echo "All SKILL.md files valid"
+
+      - name: Check plugin references in marketplace
+        run: |
+          echo "Checking plugin sources exist..."
+          python3 << 'EOF'
+          import json
+          import os
+          import sys
+
+          with open('.claude-plugin/marketplace.json') as f:
+              marketplace = json.load(f)
+
+          errors = []
+          for plugin in marketplace.get('plugins', []):
+              source = plugin.get('source', '')
+              plugin_json = os.path.join(source, '.claude-plugin/plugin.json')
+              if not os.path.exists(plugin_json):
+                  errors.append(f"Plugin '{plugin['name']}' source not found: {plugin_json}")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}")
+              sys.exit(1)
+
+          print("All plugin references valid")
+          EOF
