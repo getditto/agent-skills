@@ -4,7 +4,7 @@
   "description": "DQL (Ditto Query Language) assistance for writing queries, subscriptions, and data operations",
   "author": {
     "name": "Ditto",
-    "email": "support@ditto.live"
+    "email": "support@ditto.com"
   },
   "license": "MIT",
   "keywords": ["ditto", "dql", "database", "query", "sync", "offline-first"]

@@ -18,7 +18,7 @@ This plugin provides a skill that helps you write DQL queries for the Ditto plat
 
 ```bash
 # Add the marketplace
-/plugin marketplace add your-org/claude-code-plugins
+/plugin marketplace add getditto/claude-code-plugins
 
 # Install the plugin
 /plugin install ditto-dql
@@ -42,5 +42,5 @@ Ask Claude Code things like:
 
 ## Links
 
-- [Ditto Documentation](https://docs.ditto.live)
-- [DQL Reference](https://docs.ditto.live/dql)
+- [Ditto Documentation](https://docs.ditto.com)
+- [DQL Reference](https://docs.ditto.com/dql)
