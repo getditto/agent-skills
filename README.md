@@ -1,6 +1,6 @@
 # Ditto Plugins for Claude Code
 
-A Claude Code plugin marketplace for [Ditto](https://ditto.live) - the peer-to-peer sync platform.
+A Claude Code plugin marketplace for [Ditto](https://ditto.com) - the peer-to-peer sync platform.
 
 ## Available Plugins
 
@@ -13,7 +13,7 @@ A Claude Code plugin marketplace for [Ditto](https://ditto.live) - the peer-to-p
 ### 1. Add the marketplace
 
 ```bash
-/plugin marketplace add your-org/claude-code-plugins
+/plugin marketplace add getditto/claude-code-plugins
 ```
 
 ### 2. Install a plugin
@@ -31,7 +31,7 @@ Ditto is a mobile database with built-in edge device connectivity and resiliency
 - **DQL** - a SQL-like query language
 - **Offline-first** architecture
 
-Learn more at [docs.ditto.live](https://docs.ditto.live).
+Learn more at [docs.ditto.com](https://docs.ditto.com).
 
 ## Contributing
 

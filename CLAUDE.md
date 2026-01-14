@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repository Is
 
-A Claude Code plugin marketplace for Ditto (ditto.live) - a peer-to-peer sync platform. Plugins help developers work with Ditto's offline-first database, CRDTs, mesh networking, and DQL query language.
+A Claude Code plugin marketplace for Ditto (ditto.com) - a peer-to-peer sync platform. Plugins help developers work with Ditto's offline-first database, CRDTs, mesh networking, and DQL query language.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ plugins/
   "name": "plugin-name",
   "version": "1.0.0",
   "description": "What it does",
-  "author": { "name": "Ditto", "email": "support@ditto.live" },
+  "author": { "name": "Ditto", "email": "support@ditto.com" },
   "license": "MIT",
   "keywords": ["ditto", ...]
 }
@@ -49,6 +49,6 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 
 ## Ditto Reference
 
-- Documentation: https://docs.ditto.live
-- DQL (query language): https://docs.ditto.live/dql
+- Documentation: https://docs.ditto.com
+- DQL (query language): https://docs.ditto.com/dql
 - Key concepts: CRDTs, peer-to-peer mesh sync, offline-first, subscriptions
