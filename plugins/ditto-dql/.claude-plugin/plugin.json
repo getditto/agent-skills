@@ -1,0 +1,11 @@
+{
+  "name": "ditto-dql",
+  "version": "1.0.0",
+  "description": "DQL (Ditto Query Language) assistance for writing queries, subscriptions, and data operations",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.live"
+  },
+  "license": "MIT",
+  "keywords": ["ditto", "dql", "database", "query", "sync", "offline-first"]
+}
