@@ -33,6 +33,15 @@ Ditto is a mobile database with built-in edge device connectivity and resiliency
 
 Learn more at [docs.ditto.com](https://docs.ditto.com).
 
+## MCP Servers
+
+Plugins include these MCP servers for enhanced Ditto assistance:
+
+| Server | Description |
+|--------|-------------|
+| `ditto-docs` | Access Ditto documentation directly |
+| `ditto-inkeep` | Ditto AI assistant for questions and troubleshooting |
+
 ## Contributing
 
 To add a new plugin:

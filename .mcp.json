@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ditto-docs": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://docs.ditto.com/mcp"]
+    },
+    "ditto-inkeep": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.inkeep.com/dittolive/mcp"]
+    }
+  }
+}

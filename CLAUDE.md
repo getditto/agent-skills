@@ -16,6 +16,7 @@ plugins/
 └── <plugin-name>/
     ├── .claude-plugin/
     │   └── plugin.json    # Plugin manifest (name, version, description, keywords)
+    ├── .mcp.json          # MCP server configuration
     ├── skills/            # SKILL.md files with YAML frontmatter
     ├── commands/          # Slash command definitions (.md files)
     ├── agents/            # Custom agent definitions (.md files)
@@ -46,6 +47,12 @@ description: When to use this skill (triggers activation)
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 ```
+
+## MCP Servers
+
+Plugins include these MCP servers (configured in `.mcp.json`):
+- `ditto-docs` - Ditto documentation server
+- `ditto-inkeep` - Ditto AI assistant
 
 ## Ditto Reference
 

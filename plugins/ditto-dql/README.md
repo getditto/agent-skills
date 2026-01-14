@@ -40,6 +40,13 @@ Ask Claude Code things like:
 - "What's the difference between DELETE and EVICT?"
 - "Help me create a subscription for user-specific data"
 
+## MCP Servers
+
+This plugin includes MCP servers for enhanced assistance:
+
+- **ditto-docs** - Access Ditto documentation directly
+- **ditto-inkeep** - Ditto AI assistant for questions and troubleshooting
+
 ## Links
 
 - [Ditto Documentation](https://docs.ditto.com)
