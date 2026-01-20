@@ -4,7 +4,7 @@ Claude Code plugin for Ditto Query Language (DQL) assistance.
 
 ## What it does
 
-This plugin provides a skill that helps you write DQL queries for the Ditto platform. It covers:
+This plugin provides a `write-dql` skill that helps you write DQL queries for the Ditto platform. It covers:
 
 - SELECT queries with filtering, sorting, and aggregations
 - INSERT statements with conflict handling
@@ -13,6 +13,8 @@ This plugin provides a skill that helps you write DQL queries for the Ditto plat
 - Subscription query patterns
 - Data types (REGISTER, MAP, ATTACHMENT)
 - Best practices for offline-first sync
+
+It also provides a `dql-expert` agent that will use the `write-dql` skill.
 
 ## Installation
 
@@ -29,7 +31,6 @@ This plugin provides a skill that helps you write DQL queries for the Ditto plat
 The skill activates automatically when you ask about:
 - Writing DQL queries
 - Ditto database operations
-- Subscription patterns
 - Query syntax help
 
 ## Examples
@@ -39,13 +40,6 @@ Ask Claude Code things like:
 - "How do I upsert a document in Ditto?"
 - "What's the difference between DELETE and EVICT?"
 - "Help me create a subscription for user-specific data"
-
-## MCP Servers
-
-This plugin includes MCP servers for enhanced assistance:
-
-- **ditto-docs** - Access Ditto documentation directly
-- **ditto-inkeep** - Ditto AI assistant for questions and troubleshooting
 
 ## Links
 
