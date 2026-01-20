@@ -18,7 +18,7 @@ DQL is NOT SQL. Critical differences that cause errors:
 - Use : for object properties (not =) → {_id: 'value'} not {_id = 'value'}
 - No JOINs, no subqueries, no GROUP BY
 - COUNTER type uses Integer in most SDKs, not Long
-- ON ID CONFLICT required for INSERT statements
+- ON ID CONFLICT required for INSERT (or get "Identifier conflict... FAIL conflict policy" error)
 </critical_dql_differences>
 
 **Token Budget:**
@@ -405,6 +405,23 @@ WHERE NOT deleted         -- ✅ CORRECT
 WHERE !deleted            -- ❌ SYNTAX ERROR
 ```
 
+### ⚠️ INSERT Without Conflict Clause
+**Missing `ON ID CONFLICT` causes failures when document ID exists**
+
+**Error message:**
+```
+Identifier conflict on document {"_id":"...","field":value}: using FAIL conflict policy
+```
+
+**Fix:** Add `ON ID CONFLICT DO UPDATE` or `DO UPDATE_LOCAL_DIFF`:
+```sql
+-- ❌ WRONG - Fails if document ID exists
+INSERT INTO orders DOCUMENTS (:doc)
+
+-- ✅ CORRECT - Upserts (insert or update)
+INSERT INTO orders DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE
+```
+
 ### ⚠️ String Literals
 **Use SINGLE quotes only (double quotes NOT supported)**
 ```sql
@@ -462,7 +479,7 @@ WHERE field = NULL       -- ❌ WRONG (returns NULL)
    SELECT * FROM tasks WHERE title = :search  -- ✅ SAFE
    ```
 
-2. **Always use ON ID CONFLICT** - For upserts
+2. **Always use ON ID CONFLICT** - Prevents "Identifier conflict... FAIL conflict policy" error
    ```sql
    INSERT INTO tasks DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE
    ```
