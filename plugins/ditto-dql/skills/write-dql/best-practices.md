@@ -761,7 +761,10 @@ INSERT INTO tasks DOCUMENTS ({
   '_id': :id,
   'title': :title
 })
+-- Error: "Identifier conflict on document {\"_id\":\"...\": using FAIL conflict policy"
 ```
+
+**Common Mistake:** Forgetting `ON ID CONFLICT` when doing upsert-style operations (e.g., updating an order by re-inserting with same ID). This causes the DQL default FAIL policy to reject the operation.
 
 **Conflict Resolution Options:**
 - `DO UPDATE` - Update all fields (ensures replication)
