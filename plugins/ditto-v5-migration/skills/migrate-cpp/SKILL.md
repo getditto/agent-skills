@@ -237,6 +237,8 @@ ditto->get_sync().start();
 
 ## 10. DQL Migration — Legacy Collection API → DQL
 
+For help with migrations to DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations - it's recommended to use the [DQL plugin](../ditto-dql).
+
 All `Collection`, `PendingCursorOperation`, `PendingIDSpecificOperation`, `Document`, `MutableDocument` classes are **removed**.
 
 ### Query
@@ -405,9 +407,6 @@ ditto->get_store().execute_transaction([](Transaction& tx) {
 ---
 
 ## 13. Migration Checklist
-
-### Build System
-- [ ] Update include paths for reduced header set (83→50 headers)
 
 ### Initialization
 - [ ] Replace `Ditto(identity, path)` constructor with `Ditto::open(DittoConfig)`
