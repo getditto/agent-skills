@@ -94,7 +94,7 @@ ditto->close();  // explicit close
     auto ditto = Ditto::open(config);  // returns shared_ptr<Ditto>
     ditto->get_sync().start();
     // ... use ditto ...
-}  // ditto destroyed when shared_ptr goes out of scope
+}  // ditto destroyed when shared_ptr goes out of scope or is reset()
 ```
 
 ---
