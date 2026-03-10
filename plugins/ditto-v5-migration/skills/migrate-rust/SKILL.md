@@ -232,6 +232,8 @@ ditto.sync().start()?;
 
 ## 10. DQL Migration — Legacy Query Builder → DQL
 
+For help with migrations to DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations - it's recommended to use the [DQL plugin](../ditto-dql).
+
 The entire `query_builder` module is removed. Use `store.execute()` and `store.register_observer()`.
 
 ### Query
