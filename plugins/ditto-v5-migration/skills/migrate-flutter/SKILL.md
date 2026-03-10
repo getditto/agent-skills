@@ -55,6 +55,14 @@ final ditto = await Ditto.open(config);
 // OR synchronous (new in v5)
 // final ditto = Ditto.openSync(config);
 
+//authenticate 
+ditto.auth?.expirationHandler = (authenticator, secondsRemaining) async {
+    await authenticator.login(
+        token: 'your-token',
+        provider: Authenticator.developmentProvider,
+    );
+};
+
 await ditto.sync.start();
 ```
 

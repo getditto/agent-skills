@@ -48,8 +48,17 @@ const config = new DittoConfig(
 );
 
 const ditto = await Ditto.open(config);
+
 // OR synchronous:
 // const ditto = Ditto.openSync(config);
+
+await ditto.auth.setExpirationHandler(async (dittoAuth, secondsRemaining) => {
+    try {
+        await dittoAuth.auth.login("your-token", Authenticator.DEVELOPMENT_PROVIDER);
+    } catch (error) {
+        console.error(`Ditto auth failed: ${error}, seconds remaining: ${secondsRemaining}`);
+    }
+});
 
 ditto.sync.start();
 ```

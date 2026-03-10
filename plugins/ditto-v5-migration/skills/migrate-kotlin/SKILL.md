@@ -65,6 +65,12 @@ val config = DittoAndroidConfig(
     connect = DittoConfigConnect.Server(url = URL("https://my-app-id.cloud.ditto.live"))
 )
 val ditto = Ditto.open(config)
+
+//authenticate
+ditto.auth?.expirationHandler = { ditto, _ ->
+    ditto.auth?.login(token = "your-token", provider = DittoAuthenticationProvider.development())
+}
+
 ditto.sync.start()
 ```
 
