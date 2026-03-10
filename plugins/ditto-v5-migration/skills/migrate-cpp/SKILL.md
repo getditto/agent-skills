@@ -41,6 +41,21 @@ auto config = DittoConfig::default_config()
     .set_connect(DittoConfig::Connect::server("https://my-app-id.cloud.ditto.live"));
 
 auto ditto = Ditto::open(config);
+
+ditto->auth().set_expiration_handler([](auto& ditto, int64_t seconds_remaining) {
+    ditto.auth().login(
+        "your-token",
+        Authenticator::get_development_provider(),
+        [](auto client_info, auto error) {
+            if (error) {
+                std::cout << "Authentication failed: " << error->message() << std::endl;
+            } else {
+                std::cout << "Authentication successful" << std::endl;
+            }
+        }
+    );
+});
+
 ditto->get_sync().start();
 ```
 
@@ -393,7 +408,6 @@ ditto->get_store().execute_transaction([](Transaction& tx) {
 
 ### Build System
 - [ ] Update include paths for reduced header set (83→50 headers)
-- [ ] Replace `#include "Log.h"` → `#include "Logger.h"` (or equivalent)
 
 ### Initialization
 - [ ] Replace `Ditto(identity, path)` constructor with `Ditto::open(DittoConfig)`

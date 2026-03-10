@@ -56,7 +56,13 @@ let ditto = Ditto::open(
     .with_persistence_directory("/path/to/data"),
 )?;
 
-ditto.set_license_from_env("DITTO_LICENSE")?;
+ditto.auth().set_expiration_handler(|dittoAuth, _seconds_remaining| {
+    dittoAuth.auth().login("your-token", "__playgroundProvider", |_client_info, error| {
+        if let Some(e) = error {
+            println!("Auth failed: {}", e);
+        }
+    });
+});
 
 DittoLogger::set_minimum_log_level(LogLevel::Debug);
 

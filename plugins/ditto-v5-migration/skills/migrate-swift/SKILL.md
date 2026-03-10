@@ -37,6 +37,16 @@ let config = DittoConfig(
     connect: .server(url: URL(string: "https://my-app-id.cloud.ditto.live")!)
 )
 let ditto = try await Ditto.open(config: config)
+
+//authenticate
+ditto.auth?.expirationHandler = { dittoAuth, secondsRemaining in
+    dittoAuth.auth?.login(token: "your-token", provider: .development) { clientInfo, error in
+        if let error = error {
+            print("Ditto auth failed: \(error), client info: \(String(describing: clientInfo)), seconds remaining: \(secondsRemaining)")
+        }
+    }
+}
+
 try ditto.sync.start()
 ```
 

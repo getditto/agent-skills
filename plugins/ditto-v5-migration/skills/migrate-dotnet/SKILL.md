@@ -37,6 +37,7 @@ var identity = new DittoOnlinePlayground(
     workingDir: "/path/to/data"
 );
 using var ditto = new Ditto(identity, "/path/to/data");
+
 ditto.StartSync();
 ```
 
@@ -55,6 +56,22 @@ using var ditto = Ditto.Open(config);
 
 // OR async
 using var ditto = await Ditto.OpenAsync(config);
+
+ditto.Auth.ExpirationHandler = async (dittoAuth, secondsRemaining) =>
+{
+    // Initial auth
+    try
+    {
+        await dittoAuth.Auth.LoginAsync(
+            "your-token",
+            DittoAuthenticationProvider.Development);
+           );
+    }
+    catch (Exception error)
+    {
+        Console.WriteLine($"Ditto auth failed: {error}, seconds remaining: {secondsRemaining}");
+    }
+};
 
 ditto.Sync.Start();
 ```
