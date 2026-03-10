@@ -7,6 +7,7 @@ A Claude Code plugin marketplace for [Ditto](https://ditto.com) - the peer-to-pe
 | Plugin | Description |
 |--------|-------------|
 | [ditto-dql](./plugins/ditto-dql) | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations |
+| [ditto-v5-migration](./plugins/ditto-v5-migration) | Per-platform skills for migrating Ditto SDK applications from v4.14 to v5.0 (Swift, Kotlin, C++, Rust, Flutter, JavaScript/TypeScript, .NET, Go) |
 
 ## Installation
 

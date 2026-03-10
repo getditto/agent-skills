@@ -54,8 +54,31 @@ Plugins include these MCP servers (configured in `.mcp.json`):
 - `ditto-docs` - Ditto documentation server
 - `ditto-inkeep` - Ditto AI assistant
 
+## Available Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| `ditto-dql` | DQL query writing, subscriptions, and data operations |
+| `ditto-v5-migration` | Per-platform migration skills from Ditto SDK v4.14 → v5.0 |
+
+### ditto-v5-migration Skills
+
+| Skill | Platform |
+|-------|----------|
+| `migrate-swift` | Swift / iOS / macOS |
+| `migrate-kotlin` | Kotlin / Android |
+| `migrate-cpp` | C++ |
+| `migrate-rust` | Rust |
+| `migrate-flutter` | Flutter / Dart |
+| `migrate-js` | JavaScript / TypeScript / Node.js / React Native |
+| `migrate-dotnet` | .NET / C# |
+| `migrate-go` | Go (new in v5) |
+
+Each skill covers: `DittoConfig` initialization, `sync.start()`, auth handler closure, DQL strict mode warning, DQL migration from legacy Query Builder, back-pressure observer pattern (`SignalNext`), APIs removed without replacement, and a migration checklist.
+
 ## Ditto Reference
 
 - Documentation: https://docs.ditto.com
 - DQL (query language): https://docs.ditto.com/dql
+- Migration guides: https://docs.ditto.live/sdk/latest/migration-guides
 - Key concepts: CRDTs, peer-to-peer mesh sync, offline-first, subscriptions
