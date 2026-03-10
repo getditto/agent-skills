@@ -18,6 +18,17 @@
       },
       "source": "./plugins/ditto-dql",
       "category": "development"
+    },
+    {
+      "name": "ditto-v5-migration",
+      "description": "Per-platform skills for migrating Ditto SDK applications from v4.14 to v5.0. Covers Swift, Kotlin, C++, Rust, Flutter, JavaScript/TypeScript, .NET, and Go.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-v5-migration",
+      "category": "development"
     }
   ]
 }

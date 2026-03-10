@@ -1,0 +1,11 @@
+{
+  "name": "ditto-v5-migration",
+  "version": "1.0.0",
+  "description": "Guides for migrating Ditto SDK applications from v4.14 to v5.0 across all supported platforms",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.live"
+  },
+  "license": "MIT",
+  "keywords": ["ditto", "migration", "v5", "sdk", "upgrade", "swift", "kotlin", "cpp", "rust", "flutter", "javascript", "dotnet", "go"]
+}
