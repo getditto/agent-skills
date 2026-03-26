@@ -430,9 +430,31 @@ The `signalNext` parameter is a plain `Action` (no named type).
 - **`DittoSDK.DiskUsage` namespace** — disk usage types moved here
 - **`DittoSDK.Exceptions` namespace** — exception types moved here
 
+### 13. Namespace changes 
+
+| Type | Old Namespace | New Namespace |
+|------|---------------|---------------|
+| `DittoLogLevel`, `DittoLogger` | `DittoSDK` | `DittoSDK.Logging` |
+| `DittoStoreObserver`, `DittoQueryResultsChange`, `DittoQueryResultItem` | `DittoSDK` | `DittoSDK.Store` |
+| `DittoSyncSubscription` | `DittoSDK` | `DittoSDK.Sync` |
+| `DittoPeer`, `DittoPresenceGraph`, `DittoPresence`, `DittoConnection`, `DittoConnectionType` | `DittoSDK` | `DittoSDK.Transport` |
+| `DittoAuthenticator`, `DittoAuthenticationProvider`, `DittoAuthenticationExpirationHandler` | `DittoSDK` | `DittoSDK.Auth` |
+| `DittoException` | `DittoSDK` | `DittoSDK.Exceptions` |
+| `DittoDiskUsageItem` | `DittoSDK` | `DittoSDK.DiskUsage` |
+
+#### 13.1 Property changes
+
+| Type | V4 Property | V5 Property |
+|------|-------------|-------------|
+| `DittoPeer` | `PeerKeyString` | `PeerKey` |
+| `DittoPeer` | `Os` (string) | `Os` (DittoPeerOS?) — type changed |
+| `DittoConnection` | `PeerKeyString1` | `PeerKey1` |
+| `DittoConnection` | `PeerKeyString2` | `PeerKey2` |
+| `DittoConnection` | `ApproximateDistanceInMeters` | **REMOVED — no replacement** |
+
 ---
 
-## 13. 10-Step Migration Checklist
+## 14. 10-Step Migration Checklist
 
 ### Step 1: Update NuGet Package
 - [ ] Update `DittoSDK` NuGet package to v5.x
