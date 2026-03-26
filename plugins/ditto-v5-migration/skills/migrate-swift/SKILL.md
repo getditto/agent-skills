@@ -412,6 +412,7 @@ try await ditto.store.execute(
 | `ditto.activated` | `ditto.isActivated` |
 | `Log` class | `Logger` class |
 | `Log.setLogFile()` | Removed — file logging not directly supported |
+| `DittoDiskUsage` property on `ditto` | `ditto.diskUsage: DittoDiskUsage`  |
 
 ---
 
@@ -448,7 +449,129 @@ These v4 APIs are gone in v5 with no equivalent:
 
 ---
 
-## 12. Migration Checklist
+## 12 Other changes
+
+### 12.1 `DittoConnection` Property Renames (CRITICAL)
+
+```markdown
+## DittoConnection Property Renames (v5)
+
+| v4.14 | v5.0 |
+|-------|------|
+| `connection.peerKeyString1` | `connection.peer1` |
+| `connection.peerKeyString2` | `connection.peer2` |
+| `connection.approximateDistanceInMeters` | **REMOVED — no replacement** |
+```
+
+The `approximateDistanceInMeters` removal is especially important because:
+- Apps using it must store `nil` now or remove the property from their own models
+- UI displaying "distance to peer" must be gracefully hidden
+- It was the only way to display physical proximity between devices
+
+### 12.2 `DittoPeer.osV2` → `DittoPeer.os` 
+
+```markdown
+## DittoPeer Property Renames (v5)
+
+| v4.14 | v5.0 |
+|-------|------|
+| `peer.peerKeyString` | `peer.peerKey` |
+| `peer.osV2: DittoPeerOS?` | `peer.os: DittoPeerOS?` |
+| `peer.isConnectedToDittoCloud` | `peer.isConnectedToDittoServer` |
+```
+
+### 12.3 `DittoConnection` New Protocol Conformances and Swift 6 `filter` Ambiguity
+
+```markdown
+## Breaking: DittoConnection Conformances Cause Swift 6 `filter` Ambiguity
+
+In v5, `DittoConnection` gains `Identifiable`, `Equatable`, `Hashable`, and `Sendable` conformances.
+In Swift 6, `Foundation.filter(_:Predicate)` takes precedence over `Sequence.filter(_:)` when the
+element type conforms to these protocols, causing an unexpected compile error.
+
+**Error:** `trailing closure passed to parameter of type 'Predicate<DittoConnection>'`
+
+**Fix:** Annotate the closure parameter type explicitly:
+```swift
+// BROKEN in Swift 6
+connections.filter { $0.peer1 == localKey }
+
+// FIXED
+connections.filter { (conn: DittoConnection) in conn.peer1 == localKey }
+```
+```
+
+### 12.4 Auth Handler — Swift 6 Actor Isolation
+
+```markdown
+## Auth Handler: Swift 6 Actor Isolation Requirement
+
+If your `DittoManager` (or whatever class holds the `Ditto` instance) is an `actor`,
+the `expirationHandler` closure is `@Sendable` and executes off the actor. Any access
+to actor-isolated state inside a `Task { }` block requires `await`:
+
+```swift
+// BROKEN — Swift 6 strict concurrency error
+ditto.auth?.expirationHandler = { dittoAuth, secondsRemaining in
+    if let error = someError {
+        Task {
+            self.myActorIsolatedProperty = error  // ← error: actor-isolated
+        }
+    }
+}
+
+// FIXED
+ditto.auth?.expirationHandler = { dittoAuth, secondsRemaining in
+    if let error = someError {
+        Task {
+            await self.myActorIsolatedProperty = error  // ← correct
+        }
+    }
+}
+```
+```
+
+### 12.5 Callback `registerObserver` — Clarify It Is Deprecated, Not Removed
+
+```markdown
+## Observer Migration: Callback Form Still Compiles in v5
+
+The callback-based `registerObserver` overload is **deprecated but NOT removed** in v5.  Code using the callback pattern will still compile. The `for try await` AsyncSequence pattern is the preferred v5 API and should be adopted for new code, but existing callback-based observers do not need to be migrated immediately.
+
+The types also change: `DittoStoreObserver` still exists but `Task<Void, any Error>` is the idiomatic holder for AsyncSequence-based observer lifecycles.
+```
+
+### 12.6 `DittoDiskUsageItem` Property Stability
+
+```markdown
+## DittoDiskUsageItem Property Names (v5, Unchanged)
+
+Despite the type rename from `DiskUsageItem` to `DittoDiskUsageItem`, the property names
+are **unchanged** in v5:
+
+- `.path: String` — unchanged
+- `.sizeInBytes: Int` — unchanged
+- `.childItems: [DittoDiskUsageItem]` — unchanged (type renamed, property name same)
+```
+
+### 12.7 `Log` → `Logger` Clarification
+
+```markdown
+## `Log` → `Logger` Rename: Clarification
+
+The `DittoSwift.Log` SDK class is renamed to `DittoSwift.Logger` in v5.
+
+**Important:** This only affects code that directly imports and uses the Ditto SDK's `Log` type.
+Apps that define their own `Log` wrapper (e.g., a CocoaLumberjack facade) are unaffected.
+Apps that use `DittoLogger` for SDK log configuration are also unaffected — `DittoLogger`
+is a separate type that does not change name.
+
+To check if you're affected, search for `import DittoSwift` files that also reference `Log.`
+(not `DittoLogger.`).
+```
+
+
+## 13. Migration Checklist
 
 ### Initialization
 - [ ] Replace `Ditto(identity:)` with `try await Ditto.open(config:)`
