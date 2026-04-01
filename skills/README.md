@@ -1,29 +1,33 @@
-# Ditto v5 Migration Skills for AI Assistants
+# Skills for Other AI Assistants
 
-This directory contains skills and system prompts for AI assistants other than Claude Code, enabling them to help developers migrate Ditto SDK applications from v4.14 to v5.0.
+This directory contains skills and system prompts for AI assistants **other than Claude Code**. If you use Claude Code, install the plugins from the [plugins/](../plugins/) directory instead.
 
-## Available Platforms
+These skills package the same domain knowledge as the Claude Code plugins but in formats compatible with other AI tools.
 
-| Directory | Platform | Format |
-|-----------|----------|--------|
-| [chatgpt/](./chatgpt/) | ChatGPT | Custom GPT instructions |
-| [gemini/](./gemini/) | Google Gemini | Gemini Gem instructions |
+## Available Skills
 
-## What These Skills Cover
+| Directory | AI Assistant | Content |
+|-----------|-------------|---------|
+| [chatgpt/](./chatgpt/) | ChatGPT (Custom GPT) | Ditto v5 migration assistant |
+| [gemini/](./gemini/) | Google Gemini (Gem) | Ditto v5 migration assistant |
 
-Each platform's skill provides the AI with knowledge to:
+## How to Use
 
-1. **Universal v4→v5 changes** across all platforms
-2. **Per-platform specifics**: Swift, Kotlin, C++, Rust, Flutter, JavaScript, .NET, Go
-3. **DQL migration**: Translating legacy Query Builder patterns to DQL
-4. **Critical warnings**: DQL_STRICT_MODE default change, WebSocket sync default, persistence directory change
-5. **Migration checklists** per platform
+Each subdirectory contains:
 
-## For Claude Code Users
+- **`system-prompt.md`** — The complete instructions to paste into your AI assistant's configuration
+- **`instructions.md`** — Step-by-step setup guide for that platform
+- **`README.md`** — Quick-start overview
 
-If you use Claude Code, see the [ditto-v5-migration plugin](../plugins/ditto-v5-migration/) instead — it provides per-platform skills with more context and code examples.
+Follow the README in each subdirectory for platform-specific setup steps.
 
-Install with:
-```bash
-/plugin install ditto-v5-migration
-```
+## Adding Skills for Other Platforms
+
+To contribute skills for an additional AI assistant (e.g., Copilot, Cursor, Windsurf):
+
+1. Create a new subdirectory under `skills/` named after the platform
+2. Include a `system-prompt.md` with the full instructions
+3. Include an `instructions.md` with setup steps
+4. Include a `README.md` with a quick-start guide
+5. Update this README's table above
+6. Submit a pull request
