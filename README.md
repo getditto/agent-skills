@@ -67,7 +67,7 @@ Learn more at [docs.ditto.com](https://docs.ditto.com).
 
 ## Contributing
 
-We welcome contributions! Here's how to add a new plugin or improve existing ones.
+Ditto employees looking to add a new skill - here's how to add a new plugin or improve existing ones.
 
 ### Adding a New Plugin
 
