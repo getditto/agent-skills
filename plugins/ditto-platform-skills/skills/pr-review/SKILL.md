@@ -78,7 +78,52 @@ If yes, invoke the `security-review` skill and incorporate its findings into the
 
 Then save the updated report.
 
-## Step 6: Inline Nit Comments (optional)
+## Step 6: Inline Blocking Comments (optional)
+
+After writing the report, collect every item from the **Does it do what it says?** and **Code smells or errors?** sections that represents a required change — broken behaviour, bugs, missing logic, or anything that should block merging.
+
+Walk the user through each item one at a time, asking whether to include it as a review comment:
+
+```
+I found N blocking items. I'll go through each — reply yes/no to include it.
+
+[1/N] `src/auth/token.go:88` — tokens are never invalidated on logout; any logged-out token remains valid until expiry.
+Include this comment? (yes/no)
+
+[2/N] `pkg/handler/upload.go:34` — file size is not validated before writing to disk; could exhaust disk space.
+Include this comment? (yes/no)
+...
+```
+
+Collect all the confirmed items. Once the user has gone through all of them:
+
+1. Get the PR head commit SHA:
+   ```bash
+   gh pr view <number> --json headRefOid -q .headRefOid
+   ```
+
+2. Get `{owner}/{repo}`:
+   ```bash
+   gh repo view --json nameWithOwner -q .nameWithOwner
+   ```
+
+3. Post all confirmed items as a single batched PR review requesting changes:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/<number>/reviews \
+     -f event="REQUEST_CHANGES" \
+     -f body="Blocking issues identified during review — see inline comments." \
+     -f "comments[][path]=<file>" \
+     -F "comments[][line]=<line>" \
+     -f "comments[][body]=<comment>" \
+     -f "comments[][side]=RIGHT"
+   ```
+   Repeat the `comments[]` fields for each confirmed item in the same API call.
+
+4. Confirm with the user once posted — this will mark the PR as "Changes requested" on GitHub.
+
+**Note:** If the user confirms zero items, skip posting entirely.
+
+## Step 7: Inline Nit Comments (optional)
 
 After writing the report, collect every item from the **Code smells or errors?** section that has a specific `file:line` reference and is a nit, suggestion, or minor style issue (not a blocking bug).
 
@@ -118,7 +163,7 @@ If the user says yes:
 
 **Note:** Only include nits in this step. Blocking issues should remain in the report and be discussed separately.
 
-## Step 7: Post Full Report as PR Comment (optional)
+## Step 8: Post Full Report as PR Comment (optional)
 
 Ask the user: "Do you want to post the full review report as a PR comment?"
 
