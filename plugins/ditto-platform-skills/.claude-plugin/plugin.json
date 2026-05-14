@@ -1,0 +1,14 @@
+{
+  "name": "ditto-platform-skills",
+  "version": "1.0.0",
+  "description": "SRE and platform engineering skills for Ditto infrastructure workflows",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": ["ditto", "sre", "platform", "kubernetes", "linear", "oncall", "observability"],
+  "skills": [
+    "./skills/clusterhealth"
+  ]
+}
