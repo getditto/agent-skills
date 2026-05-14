@@ -19,7 +19,7 @@ If the context contains `mgmt-` or `ops.k8s.ditto.live`, proceed to Step 2 using
 If not, list all available contexts and filter to mgmt/ops candidates:
 
 ```bash
-kubectl config get-contexts --no-headers -o name | grep -E "(mgmt-|ops\.k8s\.ditto\.live)"
+kubectl config get-contexts --no-headers -o name | grep -E "(mgmt-|ops-k8s-ditto-live)"
 ```
 
 If matching contexts are found, display them as a numbered list and ask:
