@@ -78,9 +78,49 @@ If yes, invoke the `security-review` skill and incorporate its findings into the
 
 Then save the updated report.
 
-## Step 6: Post as PR Comment (optional)
+## Step 6: Inline Nit Comments (optional)
 
-Ask the user: "Do you want to post this review as a PR comment?"
+After writing the report, collect every item from the **Code smells or errors?** section that has a specific `file:line` reference and is a nit, suggestion, or minor style issue (not a blocking bug).
+
+Present them to the user as a numbered list:
+```
+I found N nit items with file/line references. Post these as inline PR comments?
+
+1. `src/foo.go:42` — nit: unused import
+2. `pkg/bar/baz.go:17` — suggestion: prefer errors.Is over == comparison
+...
+```
+
+If the user says yes:
+
+1. Get the PR head commit SHA:
+   ```bash
+   gh pr view <number> --json headRefOid -q .headRefOid
+   ```
+
+2. Post all nit comments as a single batched PR review using the GitHub API:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/<number>/reviews \
+     -f event="COMMENT" \
+     -f "comments[][path]=<file>" \
+     -F "comments[][line]=<line>" \
+     -f "comments[][body]=<comment>" \
+     -f "comments[][side]=RIGHT"
+   ```
+   Repeat the `comments[]` fields for each nit item in the same API call.
+
+   Get `{owner}/{repo}` from:
+   ```bash
+   gh repo view --json nameWithOwner -q .nameWithOwner
+   ```
+
+3. Confirm with the user once posted — these are publicly visible on the PR.
+
+**Note:** Only include nits in this step. Blocking issues should remain in the report and be discussed separately.
+
+## Step 7: Post Full Report as PR Comment (optional)
+
+Ask the user: "Do you want to post the full review report as a PR comment?"
 
 If yes, confirm first — this is publicly visible — then run:
 ```bash
