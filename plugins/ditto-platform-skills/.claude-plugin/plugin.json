@@ -11,6 +11,7 @@
   "skills": [
     "./skills/clusterhealth",
     "./skills/pr-review",
-    "./skills/create-subtask"
+    "./skills/create-subtask",
+    "./skills/metrics-flow"
   ]
 }
