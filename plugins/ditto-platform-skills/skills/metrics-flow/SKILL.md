@@ -1,12 +1,12 @@
 ---
 name: metrics-flow
 description: Report current Prometheus metrics flow — ingestion rate, remote write rate, queue status, lag, and flow balance. Use when user asks about metrics flow, Prometheus performance, remote write health, or Vector pipeline status.
-allowed-tools: Bash
+allowed-tools: Bash, Task, TaskCreate, TaskOutput, TaskGet
 ---
 
 # Metrics Flow Analysis
 
-Reports the current state of the Prometheus remote write pipeline for a workload cluster.
+Reports the current state of the Prometheus remote write pipeline for a workload cluster. Runs in the background so the conversation stays responsive.
 
 ## Step 1: Resolve kubectl Context
 
@@ -24,94 +24,67 @@ kubectl config get-contexts --no-headers -o name | grep -v "mgmt-"
 
 Wait for the user's selection before proceeding.
 
-## Step 2: Discover the Prometheus Pod
+## Step 2: Spawn Background Analysis
+
+Tell the user:
+> "Running metrics flow analysis for `<CONTEXT>` in the background — I'll report back when it's done."
+
+Use the **Task tool** with `run_in_background: true`, passing the prompt below (substituting the resolved context for `<CONTEXT>`):
+
+---
+
+```
+Run a Prometheus metrics flow analysis using kubectl context <CONTEXT>.
+Use --context <CONTEXT> on every kubectl command below.
+
+## Discover the Prometheus Pod
 
 Locate the Prometheus pod in `monitoring-system` first (the ArgoCD-managed stack):
-```bash
-kubectl get pod -n monitoring-system --context <CONTEXT> \
-  -l "app.kubernetes.io/name=prometheus" --no-headers \
-  -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
-```
+  kubectl get pod -n monitoring-system --context <CONTEXT> -l "app.kubernetes.io/name=prometheus" --no-headers -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
 
 If not found, try a broader search across all namespaces:
-```bash
-kubectl get pod -A --context <CONTEXT> \
-  -l "app.kubernetes.io/name=prometheus" --no-headers \
-  -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
-```
+  kubectl get pod -A --context <CONTEXT> -l "app.kubernetes.io/name=prometheus" --no-headers -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
 
 If still not found:
-```bash
-kubectl get pod -A --context <CONTEXT> \
-  -l "app=prometheus" --no-headers \
-  -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
-```
+  kubectl get pod -A --context <CONTEXT> -l "app=prometheus" --no-headers -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
 
-Extract `NAMESPACE` and `POD_NAME`. All subsequent `kubectl exec` commands use:
-```
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT>
-```
+Extract NAMESPACE and POD_NAME. Use `kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT>` for all subsequent exec commands.
 
-If no pod is found, respond:
-> "Could not find a running Prometheus pod in context `<CONTEXT>`. Check your kubectl context and try again."
+If no pod is found, return: "Could not find a running Prometheus pod in context <CONTEXT>." and stop.
 
-## Step 3: Discover Remote Write Targets
+## Discover Remote Write Targets
 
-Query Prometheus for all configured remote write targets rather than assuming a name:
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_total'
-```
+Query Prometheus for all configured remote write targets:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_total'
 
-Parse the `remote_name` label values from the result. If no results are returned, the remote write pipeline may not be active yet (e.g. Prometheus just restarted) — note this in the report.
+Parse the `remote_name` label values. If no results are returned, note that remote write may not be active yet (e.g. Prometheus just restarted).
 
-## Step 4: Run the Metrics Flow Analysis
+## Run Queries
 
-Run the following queries. For each query that filters by `remote_name`, repeat it for every discovered target.
+Run all of the following. Repeat per-target queries for every discovered remote_name.
 
-**Incoming rate** (samples scraped from targets):
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q "http://localhost:9090/api/v1/query?query=rate(prometheus_tsdb_head_samples_appended_total[1m])"
-```
+Incoming rate:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q "http://localhost:9090/api/v1/query?query=rate(prometheus_tsdb_head_samples_appended_total[1m])"
 
-**Outgoing rate** per remote write target:
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])'
-```
+Outgoing rate per target:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])'
 
-**Pending queue size** per target:
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}'
-```
+Pending queue per target:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}'
 
-**Queue trend** per target (positive = growing, negative = draining):
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=deriv(prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}[2m])'
-```
+Queue trend per target:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=deriv(prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}[2m])'
 
-**Lag** per target (seconds behind current time):
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=time()-prometheus_remote_storage_queue_highest_sent_timestamp_seconds{remote_name="<TARGET>"}'
-```
+Lag per target:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=time()-prometheus_remote_storage_queue_highest_sent_timestamp_seconds{remote_name="<TARGET>"}'
 
-**Active series count**:
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q "http://localhost:9090/api/v1/query?query=prometheus_tsdb_head_series"
-```
+Active series:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q "http://localhost:9090/api/v1/query?query=prometheus_tsdb_head_series"
 
-**Remote write success rate** per target:
-```bash
-kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=(rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])-rate(prometheus_remote_storage_samples_failed_total{remote_name="<TARGET>"}[1m]))/rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])*100'
-```
+Success rate per target:
+  kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- wget -O- -q 'http://localhost:9090/api/v1/query?query=(rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])-rate(prometheus_remote_storage_samples_failed_total{remote_name="<TARGET>"}[1m]))/rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])*100'
 
-## Step 5: Present the Report
+## Present the Report
 
 Format the results as (repeat the per-target section for each remote write target):
 
@@ -139,12 +112,19 @@ SCALE:
   Per day:       <N>
 ```
 
-**Lag thresholds:**
+Lag thresholds:
 - < 30s → Healthy
 - 30–120s → Degraded — monitor closely
 - > 120s → Critical — remote write is significantly behind
 
-**Flow balance:**
+Flow balance:
 - IN ≈ OUT → Balanced
 - IN > OUT → Warning — queue will grow
 - OUT > IN → Queue draining — catching up after backlog
+```
+
+---
+
+## Step 3: Return the Report
+
+When the background task completes (you will receive a notification), retrieve the output with **TaskOutput** and present the full metrics report to the user.
