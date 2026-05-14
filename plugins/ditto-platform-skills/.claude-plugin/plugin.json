@@ -10,6 +10,7 @@
   "keywords": ["ditto", "sre", "platform", "kubernetes", "linear", "oncall", "observability"],
   "skills": [
     "./skills/clusterhealth",
-    "./skills/pr-review"
+    "./skills/pr-review",
+    "./skills/create-subtask"
   ]
 }
