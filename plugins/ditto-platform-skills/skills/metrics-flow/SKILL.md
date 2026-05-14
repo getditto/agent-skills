@@ -6,108 +6,145 @@ allowed-tools: Bash
 
 # Metrics Flow Analysis
 
-Reports the current state of the Prometheus → Vector remote write pipeline.
+Reports the current state of the Prometheus remote write pipeline for a workload cluster.
 
-## Step 1: Discover the Prometheus Pod
+## Step 1: Resolve kubectl Context
 
-Dynamically locate the Prometheus pod and its namespace rather than relying on a hardcoded name:
-
+Get the current context:
 ```bash
-kubectl get pod -A -l "app.kubernetes.io/name=prometheus" --no-headers \
+kubectl config current-context
+```
+
+Set `CONTEXT` to the current context and use `--context <CONTEXT>` on every kubectl command below.
+
+If the current context is a management context (contains `mgmt-`), it won't have a workload Prometheus. List available non-mgmt contexts and ask the user to pick one:
+```bash
+kubectl config get-contexts --no-headers -o name | grep -v "mgmt-"
+```
+
+Wait for the user's selection before proceeding.
+
+## Step 2: Discover the Prometheus Pod
+
+Locate the Prometheus pod in `monitoring-system` first (the ArgoCD-managed stack):
+```bash
+kubectl get pod -n monitoring-system --context <CONTEXT> \
+  -l "app.kubernetes.io/name=prometheus" --no-headers \
   -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
 ```
 
-If no pod is found, try the broader label:
+If not found, try a broader search across all namespaces:
 ```bash
-kubectl get pod -A -l "app=prometheus" --no-headers \
+kubectl get pod -A --context <CONTEXT> \
+  -l "app.kubernetes.io/name=prometheus" --no-headers \
   -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
 ```
 
-Extract the namespace and pod name. All subsequent `kubectl exec` commands use these values as `-n <namespace> <pod-name> -c prometheus`.
+If still not found:
+```bash
+kubectl get pod -A --context <CONTEXT> \
+  -l "app=prometheus" --no-headers \
+  -o custom-columns="NS:.metadata.namespace,NAME:.metadata.name" | head -1
+```
 
-If no Prometheus pod can be found, respond:
-> "Could not find a running Prometheus pod. Check your kubectl context and try again."
+Extract `NAMESPACE` and `POD_NAME`. All subsequent `kubectl exec` commands use:
+```
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT>
+```
 
-## Step 2: Run the Metrics Flow Analysis
+If no pod is found, respond:
+> "Could not find a running Prometheus pod in context `<CONTEXT>`. Check your kubectl context and try again."
 
-Execute all queries against the discovered pod. Run them and collect the results:
+## Step 3: Discover Remote Write Targets
+
+Query Prometheus for all configured remote write targets rather than assuming a name:
+```bash
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_total'
+```
+
+Parse the `remote_name` label values from the result. If no results are returned, the remote write pipeline may not be active yet (e.g. Prometheus just restarted) — note this in the report.
+
+## Step 4: Run the Metrics Flow Analysis
+
+Run the following queries. For each query that filters by `remote_name`, repeat it for every discovered target.
 
 **Incoming rate** (samples scraped from targets):
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
   wget -O- -q "http://localhost:9090/api/v1/query?query=rate(prometheus_tsdb_head_samples_appended_total[1m])"
 ```
 
-**Outgoing rate** (samples sent via remote write to Vector):
+**Outgoing rate** per remote write target:
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=rate(prometheus_remote_storage_samples_total{remote_name="vector-agg"}[1m])'
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])'
 ```
 
-**Pending queue size**:
+**Pending queue size** per target:
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_pending{remote_name="vector-agg"}'
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}'
 ```
 
-**Queue trend** (positive = growing, negative = draining):
+**Queue trend** per target (positive = growing, negative = draining):
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=deriv(prometheus_remote_storage_samples_pending{remote_name="vector-agg"}[2m])'
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=deriv(prometheus_remote_storage_samples_pending{remote_name="<TARGET>"}[2m])'
 ```
 
-**Lag** (seconds behind current time):
+**Lag** per target (seconds behind current time):
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=time()-prometheus_remote_storage_queue_highest_sent_timestamp_seconds{remote_name="vector-agg"}'
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=time()-prometheus_remote_storage_queue_highest_sent_timestamp_seconds{remote_name="<TARGET>"}'
 ```
 
 **Active series count**:
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
   wget -O- -q "http://localhost:9090/api/v1/query?query=prometheus_tsdb_head_series"
 ```
 
-**Remote write success rate**:
+**Remote write success rate** per target:
 ```bash
-kubectl exec -n <namespace> <pod-name> -c prometheus -- \
-  wget -O- -q 'http://localhost:9090/api/v1/query?query=(rate(prometheus_remote_storage_samples_total{remote_name="vector-agg"}[1m])-rate(prometheus_remote_storage_samples_failed_total{remote_name="vector-agg"}[1m]))/rate(prometheus_remote_storage_samples_total{remote_name="vector-agg"}[1m])*100'
+kubectl exec -n <NAMESPACE> <POD_NAME> -c prometheus --context <CONTEXT> -- \
+  wget -O- -q 'http://localhost:9090/api/v1/query?query=(rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])-rate(prometheus_remote_storage_samples_failed_total{remote_name="<TARGET>"}[1m]))/rate(prometheus_remote_storage_samples_total{remote_name="<TARGET>"}[1m])*100'
 ```
 
-## Step 3: Present the Report
+## Step 5: Present the Report
 
-Format the results as:
+Format the results as (repeat the per-target section for each remote write target):
 
 ```
-METRICS FLOW ANALYSIS
-=====================
+METRICS FLOW ANALYSIS — <cluster-name>
+========================================
+Pod: <NAMESPACE>/<POD_NAME>
 
-INCOMING (Scraped):    <N> samples/sec
+INCOMING (Scraped):  <N> samples/sec
 
-OUTGOING (Remote Write): <N> samples/sec
+── Remote Write: <TARGET NAME> ──────────
+OUTGOING:   <N> samples/sec
+PENDING:    <N> samples
+TREND:      Growing / Draining / Stable at <N> samples/sec
+LAG:        <N> seconds  [Healthy / Degraded / Critical]
+SUCCESS:    <N>%
+FLOW:       Balanced / ⚠️ Incoming exceeds outgoing / Queue draining
 
-QUEUE STATUS:
-  Pending: <N> samples
-  Trend:   Growing / Draining / Stable at <N> samples/sec
-  Lag:     <N> seconds
+(repeat for each additional target)
 
 SCALE:
   Active series: <N>
-  Per minute:    <N> million
-  Per hour:      <N> million
-  Per day:       <N> billion
-
-SUCCESS RATE: <N>%
-
-FLOW: Balanced / Incoming exceeds outgoing by <N> samples/sec / Queue draining
+  Per minute:    <N>
+  Per hour:      <N>
+  Per day:       <N>
 ```
 
-**Flow balance interpretation:**
-- IN ≈ OUT → Balanced — system is keeping up
-- IN > OUT → Warning — queue will grow; remote write may be falling behind
-- OUT > IN → Queue draining — catching up after a backlog
-
-**Lag interpretation:**
+**Lag thresholds:**
 - < 30s → Healthy
 - 30–120s → Degraded — monitor closely
-- \> 120s → Critical — remote write is significantly behind
+- > 120s → Critical — remote write is significantly behind
+
+**Flow balance:**
+- IN ≈ OUT → Balanced
+- IN > OUT → Warning — queue will grow
+- OUT > IN → Queue draining — catching up after backlog
