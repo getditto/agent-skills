@@ -9,6 +9,7 @@
   "license": "MIT",
   "keywords": ["ditto", "sre", "platform", "kubernetes", "linear", "oncall", "observability"],
   "skills": [
-    "./skills/clusterhealth"
+    "./skills/clusterhealth",
+    "./skills/pr-review"
   ]
 }
