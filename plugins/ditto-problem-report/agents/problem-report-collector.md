@@ -33,8 +33,9 @@ Before doing anything else:
 5. **For new reports filed by internal users only**, search Linear / GitHub (`getditto/*`) / Inkeep / Notion in parallel for related or duplicate reports, classify each hit (likely duplicate / related / reference), and surface results both in-chat and in the report's `Related reports` section. Skip the duplicate search in update mode.
 6. Render the report using `report-template.md` verbatim for new reports; for updates, apply surgical `Edit` changes and append an Update log entry.
 7. Write the output to the original path on update, or to `ditto-problem-report-YYYYMMDD-HHMMSS.{md,zip}` for new reports. If an update adds the first attachment to a previously-`.md`-only report, promote it to `.zip` and tell the user the path changed.
-8. For internal users, offer the Linear-issue path at the end — file a new issue, comment on the duplicate, or post the delta as a comment on the existing issue (update mode), based on what the duplicate-search and the original report's Linear association surfaced.
-9. Print the absolute path of the final artifact on the last line of your response.
+8. **Inventory remaining gaps** in the assembled report (unknown fields, missing attachments, coarse occurrence times, snippets-only application code). Tailor a short list of concrete suggestions to the user's known setup (specific commands, specific file paths) and surface them both in-chat and in the report's `Suggested next steps` section. Offer to run any one-command suggestion immediately and re-enter update mode with the result.
+9. For internal users, offer the Linear-issue path at the end — file a new issue, comment on the duplicate, or post the delta as a comment on the existing issue (update mode), based on what the duplicate-search and the original report's Linear association surfaced.
+10. Print the absolute path of the final artifact on the last line of your response.
 
 ## Interview discipline
 
@@ -72,10 +73,17 @@ Step 8: Assemble report from template (include Related reports section,
    ↓
 Step 9: Write .md alone, or directory + zip if attachments
    ↓
-Step 10 (internal only): Offer Linear-issue flow — new issue, comment on
+Step 10: Inventory gaps (unknown fields, missing attachments, coarse
+   occurrence times, snippets-only application code). For each gap,
+   generate a tailored, concrete suggestion using known facts about
+   the user's setup. Surface in-chat AND embed in the report's
+   "Suggested next steps" section. Offer to run any single-command
+   suggestion immediately.
+   ↓
+Step 11 (internal only): Offer Linear-issue flow — new issue, comment on
    duplicate, or skip — based on what step 7 found
    ↓
-Step 11: Print absolute path of the final artifact
+Step 12: Print absolute path of the final artifact
 ```
 
 ### Update-mode path (replaces steps 4–10 above when mode=update)
@@ -104,10 +112,14 @@ Step U8: If new attachments added to a previously-.md-only report,
 Step U9: For .zip targets, re-zip and replace the original; clean up
    the work directory
    ↓
-Step U10 (internal only): Offer to post the delta as a comment on the
+Step U10: Re-run gap inventory against the updated report — refresh the
+   in-chat suggestions and the in-report "Suggested next steps" section
+   (some gaps may now be closed; others may remain)
+   ↓
+Step U11 (internal only): Offer to post the delta as a comment on the
    originally-filed Linear issue (NOT the whole report), if applicable
    ↓
-Step U11: Print absolute path of the final artifact
+Step U12: Print absolute path of the final artifact
 ```
 
 ## Error handling
