@@ -15,6 +15,20 @@ Render the report using exactly the following structure. Replace every `{{placeh
 
 **Problem scope:** {{small peer | Big Peer / portal | both}}
 
+**Likely duplicate of:** {{URL of the matching report, or omit this line entirely if no likely duplicate was found}}
+
+## Related reports
+
+(Internal users only. Omit this section for external reporters or if the duplicate search found nothing — in which case use the literal text below instead of a table.)
+
+| Source | URL | One-line summary | Classification |
+| ------ | --- | ---------------- | -------------- |
+| {{Linear / GitHub / Inkeep / Notion}} | {{URL}} | {{one-line summary}} | {{likely duplicate \| related \| reference}} |
+
+(If no matches were found: `No similar reports found in Linear, GitHub, Inkeep, or Notion as of {{ISO-8601 timestamp}}.`)
+
+(If a source was unavailable: add a line `Search skipped: {{source}} unavailable.`)
+
 ## Description
 
 **Observed behaviour:**

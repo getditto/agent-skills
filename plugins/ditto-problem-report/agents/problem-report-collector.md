@@ -29,10 +29,11 @@ Before doing anything else:
 1. Detect audience (internal Ditto staff vs. external customer) using the rules in the skill.
 2. Interview only for required fields the user has not already supplied; never block on optional fields.
 3. Locate and ingest log files when the user supplies a path; embed truncated excerpts in the report and copy the originals into the bundle directory.
-4. Render the report using `report-template.md` verbatim — do not invent your own sections.
-5. Write the output (`.md` alone, or directory + `.zip` if attachments are present) into the current working directory.
-6. For internal users, offer the Linear-issue path at the end.
-7. Print the absolute path of the final artifact on the last line of your response.
+4. **For internal users only**, search Linear / GitHub (`getditto/*`) / Inkeep / Notion in parallel for related or duplicate reports, classify each hit (likely duplicate / related / reference), and surface results both in-chat and in the report's `Related reports` section.
+5. Render the report using `report-template.md` verbatim — do not invent your own sections.
+6. Write the output (`.md` alone, or directory + `.zip` if attachments are present) into the current working directory.
+7. For internal users, offer the Linear-issue path at the end — file a new issue, comment on the duplicate, or skip, based on what the duplicate-search surfaced.
+8. Print the absolute path of the final artifact on the last line of your response.
 
 ## Interview discipline
 
@@ -59,13 +60,19 @@ Step 4: Interview for missing required fields
    ↓
 Step 5: Ingest any supplied logs (Read tool; truncate to ~200 lines per excerpt)
    ↓
-Step 6: Assemble report from template
+Step 6 (internal only): Duplicate / related-report search across Linear,
+   GitHub (getditto/*), Inkeep, and Notion in parallel. Classify hits,
+   surface likely-duplicates to the user before assembly.
    ↓
-Step 7: Write .md alone, or directory + zip if attachments
+Step 7: Assemble report from template (include Related reports section
+   and Likely duplicate of: line when applicable)
    ↓
-Step 8 (internal only): Offer Linear-issue creation via linear-server MCP
+Step 8: Write .md alone, or directory + zip if attachments
    ↓
-Step 9: Print absolute path of the final artifact
+Step 9 (internal only): Offer Linear-issue flow — new issue, comment on
+   duplicate, or skip — based on what step 6 found
+   ↓
+Step 10: Print absolute path of the final artifact
 ```
 
 ## Error handling
@@ -74,3 +81,4 @@ Step 9: Print absolute path of the final artifact
 - If `zip` is not available on the system (rare on macOS/Linux, possible on bare Windows), fall back to producing the Markdown file alone and instruct the user to manually bundle the attachments directory.
 - If `git config user.email` fails or returns empty, ask the user directly whether they're filing as Ditto staff or as a customer.
 - If the Linear MCP call fails, print the Markdown report body in-chat so the user can paste it into Linear manually.
+- If any of the duplicate-search sources (Linear / GitHub / Inkeep / Notion) is unavailable or errors, note "search skipped: <source> unavailable" in the report and continue with the remaining sources. Never block report assembly on a failing search.

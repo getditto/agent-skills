@@ -109,6 +109,39 @@ When the user supplies logs (file path, pasted content, or directory of files):
 
 Redaction: do **not** automatically redact tokens, app IDs, or device names — Ditto support needs them. But if the user explicitly asks for redaction, replace the value with `<REDACTED>` consistently in both the embedded excerpt and the bundled file.
 
+## Search for related / duplicate reports (internal users only)
+
+**Skip this section entirely for external users** — they don't have access to Linear / Notion / internal docs, and we shouldn't fabricate links they can't follow.
+
+For internal Ditto staff, run a duplicate-search after the required fields are gathered and before output assembly. Build 2–5 short search queries from the report's known fields: the one-sentence summary, the most distinctive error string or panic message from supplied logs, the affected SDK + version, and any explicit feature name (e.g. "attachment fetch", "BLE permission", "Big Peer HTTP 503").
+
+Hit each of the following sources in **parallel** (single message, multiple tool calls). Cap results to ~5 per source; don't grind through pagination.
+
+- **Linear** — `mcp__linear-server__list_issues` with `query` set to each search phrase. Prefer recent open issues, but include closed ones from the last 90 days too (they're often the resolved-duplicate the user is looking for). Look across the SDKs team for SDK problems, Big Peer / Networking / Core Library teams for infra problems.
+- **GitHub** (`getditto/*`) — `gh search issues --owner getditto "<query>" --json url,title,state,repository,updatedAt` for each phrase. SDK bugs are sometimes tracked in `getditto/ditto` issues rather than Linear.
+- **Inkeep** — `mcp__ditto-inkeep__ask-question-about-ditto` with a one-sentence framing of the problem (e.g. "Are there known issues with attachment fetch failing on iOS 17 with Swift SDK 4.14.x?"). Inkeep surfaces docs and previously-answered customer questions and is good at catching known issues with documented workarounds.
+- **Notion** — `mcp__claude_ai_Notion__notion-search` for each phrase. Surfaces post-mortems, customer-issue tracking pages, and SDK-team root-cause docs.
+
+Skip any source that errors (auth expired, MCP unavailable) — note "search skipped: <source> unavailable" in the report and move on; don't block on it.
+
+### Classify each hit
+
+For each candidate result, assign one of:
+
+- **Likely duplicate** — same SDK + version, same observable behaviour, same error string or stack frame. Very high confidence the user is hitting the same bug.
+- **Related** — overlapping symptom or component but different SDK version, different root cause, or different fix. Worth linking but not a duplicate.
+- **Reference** — a doc, runbook, or post-mortem that explains the area but isn't itself a bug report.
+
+Discard everything else; don't pad the section with weak matches.
+
+### Surface the findings
+
+1. **In-chat to the user, before writing the report**, summarise the top hits and ask: *"This looks like a possible duplicate of [Linear PROJ-123 — same panic on iOS 17 attachment fetch]. Want to (a) file a new report linked to that issue, (b) comment on PROJ-123 instead, or (c) ignore the match and proceed?"*. Default to (a) if the user doesn't answer.
+2. **In the report's `Related reports` section** (see template), list each retained hit with: source, URL, one-line summary, and classification. If there's a likely-duplicate, put a `**Likely duplicate of:** <URL>` line right under the report's Summary so it's the first thing a triager sees.
+3. **When asking about Linear-issue creation later**, if the user picked option (b), skip the new-issue flow and instead use `mcp__linear-server__save_comment` to add the report body as a comment on the existing issue.
+
+If all four sources return nothing useful (or all are unavailable), write `No similar reports found in Linear, GitHub, Inkeep, or Notion as of <timestamp>.` in the `Related reports` section and move on — that absence is itself useful information for the recipient.
+
 ## Output assembly
 
 Use the template in `report-template.md` (same skill directory) verbatim. Fill in placeholders; for fields the user marked unknown, write `unknown` rather than leaving the placeholder.
@@ -135,16 +168,19 @@ After writing, print the absolute path of the final artifact.
 
 ## Linear issue option (internal users only)
 
-If the audience is internal Ditto staff and the report is written, ask: "Would you like to file this as a Linear issue? (yes / no)". If yes:
+If the audience is internal Ditto staff and the report is written, choose between three flows based on what the duplicate-search found:
 
-1. Use `mcp__linear-server__list_teams` to confirm the team (default to the SDKs team unless the report is clearly about Big Peer infrastructure, in which case ask).
-2. Use `mcp__linear-server__save_issue` with:
-   - `title`: the one-sentence summary.
-   - `description`: the full Markdown report body.
-   - `team`: the chosen team.
-   - Leave priority/labels for the user to set in Linear UI unless they specify.
-3. Print the Linear issue URL.
-4. Note in the chat that attachments must be uploaded manually in Linear's UI (MCP cannot upload binary files from a local path in this flow).
+- **No duplicate**, or the user picked "file new" — ask: "Would you like to file this as a new Linear issue? (yes / no)". If yes:
+  1. Use `mcp__linear-server__list_teams` to confirm the team (default to the SDKs team unless the report is clearly about Big Peer infrastructure, in which case ask).
+  2. Use `mcp__linear-server__save_issue` with:
+     - `title`: the one-sentence summary.
+     - `description`: the full Markdown report body.
+     - `team`: the chosen team.
+     - Leave priority/labels for the user to set in Linear UI unless they specify.
+  3. Print the Linear issue URL.
+  4. Note in the chat that attachments must be uploaded manually in Linear's UI (MCP cannot upload binary files from a local path in this flow).
+- **User picked "comment on existing"** during the duplicate-search step — use `mcp__linear-server__save_comment` to add the full report body as a comment on the duplicate issue. Print the existing-issue URL.
+- **Likely duplicate found but user not yet asked** — ask: "This looks like a duplicate of <existing URL>. File a new issue, comment on the existing one, or skip Linear entirely?" then route to the corresponding flow.
 
 If external, instead print: "Email this report (and attach the `.zip` if one was created) to support@ditto.com, or paste it into your existing support thread."
 
