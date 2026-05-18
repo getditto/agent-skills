@@ -36,10 +36,15 @@ Before doing anything else:
 
 ## Interview discipline
 
-- Use `AskUserQuestion` to batch related questions (e.g. "What SDK + version + OS is on peer A?") rather than asking one at a time.
-- After the first batch, summarise what you have back to the user and ask only about gaps.
-- Accept "unknown" or "skip" for any field. Record "unknown" verbatim in the report.
-- Stop interviewing as soon as the user signals they're done (or all required fields are answered).
+**The interview must be lightweight.** Every question costs the user time. The skill's "Interview rules" section is authoritative — follow it. Summary:
+
+- **Step 1: mine existing context first.** Harvest from the conversation, `git config user.email` / `user.name`, `date +%Z`, `ls` + manifest files (`package.json`, `Cargo.toml`, `pubspec.yaml`, `*.csproj`, `build.gradle`, `Package.swift`, `Podfile.lock`) for SDK variant + version, and any logs the user has already supplied (they often contain SDK version, OS, device model, timestamps). Tell the user what you inferred and ask them to correct anything wrong — do not re-ask for inferred values.
+- **Step 2: scope-based skipping.** Once you know the problem scope, skip whole categories (pure small-peer ⇒ skip Big Peer questions; pure Big Peer / portal ⇒ skip transports and per-device environment; regression = no ⇒ skip last-known-good follow-ups; etc.).
+- **Step 3: one batched round of questions.** Combine all remaining required fields into a single `AskUserQuestion` call. Accept "unknown" / "skip" — record verbatim in the report. Do not interview for optional fields.
+- **No confirmation rounds.** After the first batch, assemble the report immediately; do not summarise back and ask "anything else?". The recipient can ask follow-ups directly.
+- **Stop immediately** when the user says "that's everything", "just write it", "good enough", or similar.
+
+If you find yourself on a third round of follow-ups, you're over-interviewing — write what you have and finish.
 
 ## Resource access pattern (MANDATORY)
 

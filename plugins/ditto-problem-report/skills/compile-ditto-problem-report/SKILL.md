@@ -48,11 +48,44 @@ Optional but useful:
 
 ## Interview rules
 
-- Open by reading whatever context the user has already given. **Do not re-ask for fields they have already supplied.**
-- Batch related questions in a single `AskUserQuestion` call where possible (e.g. SDK + version + OS in one batch per device).
-- For each required field, accept "unknown" or "skip" — never block the report on a missing field. Record "unknown" verbatim in the report so the recipient knows it was asked.
-- After the first round of questions, summarise back what you have and ask only about remaining gaps.
-- When the user says "that's everything" or similar, stop interviewing and proceed to assembly.
+**The interview must be lightweight.** Every question costs the user time. Mine existing context first, infer where you can, and ask only for what's genuinely missing and genuinely useful for the recipient.
+
+### Step 1 — extract what's already known (no questions)
+
+Before asking anything, harvest from:
+
+- **The current conversation** — the user's initial problem statement, file paths they've mentioned, code they've shown you, commands they've run, prior tool output. Anything they've already said is "supplied".
+- **`git config user.email`** — for the Reporter email; and to decide internal vs. external audience (`@ditto.com` ⇒ internal).
+- **`git config user.name`** — for the Reporter name.
+- **`date +%Y-%m-%dT%H:%M:%S%z` and `date +%Z`** — for the report's Date field and the reporter's timezone (e.g. for the Occurrence times section's `Reporter timezone:`).
+- **Current working directory contents** — `ls`, `cat` of obvious manifest files (`package.json`, `Cargo.toml`, `pubspec.yaml`, `*.csproj`, `build.gradle`, `Package.swift`, `Podfile.lock`) to infer the Ditto SDK variant and version without asking.
+- **Any log files the user has already supplied or referenced** — they often contain the SDK version, OS, device model, and timestamps verbatim. Extract those instead of asking.
+
+Tell the user briefly what you found ("I see you're on macOS 14.5 with the Swift SDK 4.14.2 from Package.swift — let me know if that's wrong") and ask them to correct anything inferred wrongly. **Do not re-ask for inferred values.**
+
+### Step 2 — apply scope-based skipping
+
+Once you have the problem scope (small peer / Big Peer / both), skip whole categories:
+
+- **Pure small-peer scope** → skip Big Peer / portal questions, skip portal URL / browser version.
+- **Pure Big Peer / portal scope** → skip Transports, skip per-device Environment rows (except the browser for portal-UI issues), skip Application code unless the user is using the HTTP API from app code.
+- **Pure portal-UI scope** → also skip SDK version (portal UI is server-rendered).
+- **Regression = no** → skip "last-known-good version" and "first broken version" follow-ups.
+- **No attachments offered** → skip log-excerpt prompts.
+- **Reproduction rate = "always"** → skip the "when did it happen" precision push; the user can reproduce on demand, so a generic timestamp suffices.
+
+### Step 3 — ask only for what's left
+
+- **Batch heavily**: combine all remaining required fields into one or two `AskUserQuestion` rounds, not field-by-field. A single batch covering "What SDKs/OS/devices are involved, and what's the one-sentence summary?" is fine.
+- **For each remaining required field**, accept "unknown" or "skip" — never block the report on a missing field. Record `unknown` verbatim in the report so the recipient knows it was asked.
+- **Optional fields are not interviewed.** Mention once that the report supports them ("you can add DQL snippets or network conditions later if useful") and move on.
+- **Don't push for precision the user obviously doesn't have.** If they say "sometime last week", accept "around 2026-05-12, exact time unknown" and move on — don't demand minute-level.
+- **No confirmation rounds.** After the first batch, do not summarise back and ask "anything else?". Assemble the report immediately with whatever you have, mark missing fields `unknown`, and tell the user where the file is.
+- **When the user says "that's everything" / "just write what we have" / "good enough" — stop immediately** and proceed to assembly.
+
+### What "lightweight" means in practice
+
+A typical session should be: read context → one batched question round (often zero questions if context is rich) → write report. If you find yourself asking three or more rounds of follow-ups, you're over-interviewing — write what you have and let the recipient ask follow-ups directly.
 
 ## Audience detection
 
