@@ -1,0 +1,11 @@
+{
+  "name": "ditto-problem-report",
+  "version": "1.0.0",
+  "description": "Compile a structured bug report for a Ditto SDK or Big Peer issue, including SDK/OS versions, regression status, reproduction steps, and logs",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": ["ditto", "bug-report", "support", "diagnostics", "sdk", "big-peer", "troubleshooting"]
+}
