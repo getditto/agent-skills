@@ -1,17 +1,18 @@
 ---
 name: compile-ditto-problem-report
-description: Use when the user wants to file a Ditto bug report, report a problem with a Ditto SDK or Big Peer, prepare a support ticket for Ditto, or compile diagnostic information about a Ditto SDK / mesh / Big Peer issue. Conducts a structured interview, then produces a Markdown report (or a .zip bundle when logs/attachments are supplied) and optionally files a Linear issue for internal Ditto staff.
+description: Use when the user wants to file a Ditto bug report, report a problem with a Ditto SDK or Big Peer, prepare a support ticket for Ditto, compile diagnostic information about a Ditto SDK / mesh / Big Peer issue, OR add to / update an existing Ditto problem report (new logs, more affected devices, corrected OS version, etc.). Conducts a structured interview, then produces a Markdown report (or a .zip bundle when logs/attachments are supplied) and optionally files a Linear issue for internal Ditto staff.
 ---
 
 # Compile a Ditto problem report
 
-This skill produces a structured bug report for a Ditto SDK or Big Peer issue. The user may be an external Ditto customer or a Ditto staff engineer. The same interview drives both; the only difference is what is offered at the end (external: instructions to send to support; internal: option to file a Linear issue).
+This skill produces a structured bug report for a Ditto SDK or Big Peer issue. The user may be an external Ditto customer or a Ditto staff engineer. The same interview drives both; the only difference is what is offered at the end (external: instructions to send to support; internal: option to file a Linear issue). The skill supports two modes — **new report** and **update an existing report** — and auto-detects which based on context (see "Mode detection" below).
 
 ## What this skill produces
 
-- **Default output:** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS.md` in the current working directory.
-- **If any logs or attachments are supplied:** a directory `ditto-problem-report-YYYYMMDD-HHMMSS/` containing `report.md` plus all attachments, zipped to `ditto-problem-report-YYYYMMDD-HHMMSS.zip` in the current working directory.
-- **Internal users only (optional):** after the file/zip is written, offer to file a Linear issue with the report body via the `linear-server` MCP.
+- **Default output (new report):** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS.md` in the current working directory.
+- **If any logs or attachments are supplied (new report):** a directory `ditto-problem-report-YYYYMMDD-HHMMSS/` containing `report.md` plus all attachments, zipped to `ditto-problem-report-YYYYMMDD-HHMMSS.zip` in the current working directory.
+- **Update mode:** modifies the existing report in place — same filename and path as the original. If the original was a `.md` and the update adds attachments, the report is promoted to a `.zip` bundle with the original report's timestamp preserved; the bare `.md` is removed.
+- **Internal users only (optional):** after the file/zip is written, offer to file a Linear issue with the report body via the `linear-server` MCP. For updates that targeted an existing Linear issue, offer to add the new content as a comment instead.
 
 Always print the final path of what was written (Markdown file or zip) on the last line of your response.
 
@@ -46,6 +47,26 @@ The report must include the following before being considered complete. Drive th
 Optional but useful:
 - DQL query text or subscription queries involved (if not already captured under Application code).
 - Network conditions (Wi-Fi SSID, NAT type, VPN, firewall).
+
+## Mode detection (new report vs. update)
+
+Decide at the very start whether the user is creating a new report or updating an existing one. Update mode is signalled by any of:
+
+- An explicit phrase from the user: "update", "add to", "amend", "append", "I have new logs", "I forgot to mention", "edit the report".
+- A path to an existing report file in the user's message (e.g. `ditto-problem-report-20260518-143000.md` or `…zip`).
+- A glob match in the current directory of one or more existing reports when the user's phrasing is ambiguous.
+
+**Detection procedure:**
+
+1. If the user gave an explicit path, use it. Verify the file exists (`ls` via Bash); if not, ask.
+2. Otherwise, glob the current directory: `ls ditto-problem-report-*.md ditto-problem-report-*.zip 2>/dev/null`.
+   - **Zero matches** → new-report mode. Proceed with the normal flow.
+   - **One match** AND the user's phrasing suggests an update → update mode, target that file.
+   - **Multiple matches** AND the user's phrasing suggests an update → ask the user which one (show them the list with timestamps and one-line summaries — read the first `## Summary` block of each to populate the choices).
+   - **One or more matches** but the user's phrasing suggests a new report (e.g. "file a new issue", "different problem") → new-report mode; do not assume update.
+3. If still ambiguous after the above, ask once: *"Are you starting a new report or adding to an existing one?"*
+
+Once mode is decided, follow the corresponding flow: new reports use the normal Interview rules → Output assembly path; updates use "Update mode (modifying an existing report)" below.
 
 ## Interview rules
 
@@ -166,6 +187,86 @@ echo "ditto-problem-report-$ts.zip"
 ```
 
 After writing, print the absolute path of the final artifact.
+
+## Update mode (modifying an existing report)
+
+When mode detection picked "update", do **not** run a full interview, do **not** re-run the duplicate search, and do **not** assemble from a fresh template. The goal is a surgical edit that preserves everything the user wrote previously.
+
+### Step 1 — open the existing report
+
+- If the target is a `.md` file: read it directly with the `Read` tool.
+- If the target is a `.zip` bundle: extract to a sibling working directory, then read its `report.md`:
+  ```bash
+  unzip -o "ditto-problem-report-<ts>.zip" -d ".problem-report-work-<ts>"
+  ```
+  Work inside `.problem-report-work-<ts>/ditto-problem-report-<ts>/` for all edits. Re-zip and replace the original at the end (see Step 5).
+
+### Step 2 — find out what's being added or changed
+
+Ask the user **only** about the delta. Use one batched `AskUserQuestion` call (or skip entirely if the delta is already obvious from context, e.g. "here are the iOS logs I just captured" with a file path). Typical deltas:
+
+- **New attachments** (logs, screenshots, packet captures) — file path(s) and a brief description of each.
+- **New affected devices / OS versions / SDK variants** — add row(s) to the Environment table.
+- **New occurrence window(s)** — add row(s) to the Occurrence times table.
+- **Corrections** to existing fields (wrong OS version, wrong SDK version, sharper one-line summary, etc.) — what to replace and what to replace it with.
+- **More reproduction steps** or refinements to existing ones.
+- **More workarounds tried** since the report was written.
+- **Updated impact / scope** (more users affected, severity escalated).
+- **Updated Big Peer details** or transport info.
+
+### Step 3 — apply the edits
+
+Use the `Edit` tool with focused changes — do not re-render the whole report.
+
+- **Appending rows to tables** (Environment, Occurrence times, Related reports, Attachments) — `Edit` with the last existing row's line as `old_string` context to place the new row directly after it.
+- **Appending to lists** (Reproduction steps, Workarounds tried) — same approach; preserve existing numbering.
+- **Replacing a field value** (correcting OS version, etc.) — `Edit` with the unique surrounding context so the wrong occurrence isn't replaced. If a value appears in multiple places (e.g. SDK version mentioned in Summary and in Environment table), update **every** occurrence.
+- **Adding new attachments to a previously-`.md`-only report** — promote to `.zip`:
+  ```bash
+  ts=<original timestamp from the filename>
+  mkdir -p "ditto-problem-report-$ts"
+  mv "ditto-problem-report-$ts.md" "ditto-problem-report-$ts/report.md"
+  cp <new attachments> "ditto-problem-report-$ts/"
+  zip -r "ditto-problem-report-$ts.zip" "ditto-problem-report-$ts"
+  ```
+  Then add new rows to the **Attachments** table and embed truncated log excerpts under **Log excerpts** following the same rules as in "Log handling".
+- **Adding new attachments to an existing `.zip`** — copy the files into the extracted directory alongside `report.md`, update the Attachments table and Log excerpts sections, re-zip at the end (Step 5).
+
+### Step 4 — append an Update log entry
+
+Every update appends one row to the report's **Update log** section at the bottom of the report. If the section does not yet exist (older reports written before this section was added to the template), create it. Each entry includes the timestamp, what changed, and who made the change.
+
+```markdown
+## Update log
+
+| Timestamp                         | Updated by                | Changes                                     |
+| --------------------------------- | ------------------------- | ------------------------------------------- |
+| {{report creation ISO timestamp}} | {{reporter name}}         | initial report                              |
+| {{ISO timestamp of this update}}  | {{updater name + email}}  | {{one-line summary, e.g. "added Android logcat from peer B; corrected iOS version to 17.4.1"}} |
+```
+
+Record updater identity from `git config user.name` / `user.email`, same as for new reports.
+
+### Step 5 — write back to the original path
+
+- **`.md`-only report, no new attachments** → overwrite the original `.md` file in place with the edited content.
+- **`.md`-only report, new attachments added** → the file is now a `.zip`; the bare `.md` no longer exists (it was moved into the bundle directory in Step 3). The on-disk artifact path has changed from `…<ts>.md` to `…<ts>.zip` — note this clearly in your reply to the user.
+- **`.zip` bundle** → re-zip the working directory and replace the original:
+  ```bash
+  rm -f "ditto-problem-report-<ts>.zip"
+  zip -r "ditto-problem-report-<ts>.zip" "ditto-problem-report-<ts>"
+  rm -rf ".problem-report-work-<ts>"
+  ```
+
+Print the absolute path of the (possibly newly-typed) final artifact on the last line of your response.
+
+### Step 6 — for internal users only, offer the Linear handoff
+
+After an update, the Linear flow differs from the new-report flow:
+
+- If the original report was filed as a Linear issue earlier (the user remembers the issue URL, or you can ask), offer to post the **delta** as a comment on that issue using `mcp__linear-server__save_comment` — not the whole report. The comment body should be the Update log entry from Step 4 plus any new log excerpts.
+- If the report was never filed in Linear, offer the normal "file as new issue" flow (see Linear issue option section).
+- If the user previously chose "comment on duplicate <URL>" in the new-report flow, update that same existing issue with the delta.
 
 ## Linear issue option (internal users only)
 

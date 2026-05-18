@@ -21,6 +21,20 @@ This plugin helps you (or your customer) produce a complete, well-structured bug
 - **With attachments:** a `.zip` archive `ditto-problem-report-YYYYMMDD-HHMMSS.zip` containing `report.md` plus all attachments.
 - **Internal Ditto users only:** an option at the end to file the report as a Linear issue.
 
+### Updating a report
+
+When new information arrives later (logs you couldn't capture initially, another affected device, a sharper reproduction recipe), update the existing report in place — the original filename and timestamp are preserved. Each update appends a row to an **Update log** section at the bottom of the report so the recipient can see what changed and when.
+
+```
+/ditto-problem-report update ditto-problem-report-20260518-143000.md
+```
+
+Or just describe what to add and the skill will find the file:
+
+> "Add the iOS logcat I just captured to my problem report"
+
+If the original was a bare `.md` and the update adds the first attachment, the report is automatically promoted to a `.zip` bundle with the same timestamp. For reports that were already filed as Linear issues, internal users are offered the option to post the delta as a comment on the existing issue rather than refiling.
+
 ## What this plugin provides
 
 - **Slash command `/ditto-problem-report`** — entry point users invoke explicitly. Accepts an optional initial problem statement as its argument.
