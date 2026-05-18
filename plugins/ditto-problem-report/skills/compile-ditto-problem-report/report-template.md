@@ -61,6 +61,16 @@ Add one row per device, server, or container involved.
 
 **Reproduction rate:** {{always | often | sometimes | once}}
 
+## Occurrence times
+
+(Use ISO-8601 with explicit timezone offset. Add one row per incident window. For ongoing problems, write the start time and `ongoing` in the end column.)
+
+| Start                          | End                            | Notes                          |
+| ------------------------------ | ------------------------------ | ------------------------------ |
+| {{2026-05-18T14:30:00-04:00}}  | {{2026-05-18T14:45:00-04:00}}  | {{e.g. peer A app foregrounded; first noticed}} |
+
+**Reporter timezone:** {{e.g. America/New_York (UTC-04:00)}}
+
 ## Impact
 
 - **Severity:** {{data loss | sync stalled | degraded performance | annoyance | unknown}}

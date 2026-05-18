@@ -30,15 +30,16 @@ The report must include the following before being considered complete. Drive th
 9. **Regression status** — was this working in a previous SDK version (or, for portal issues, a previous portal release)? If yes, the last-known-good version and the version where it broke. If they don't know, mark "unknown".
 10. **Reproduction steps** — numbered list. If not reliably reproducible, capture what *is* known (timing, frequency, conditions).
 11. **Reproduction rate** — always / often / sometimes / once.
-12. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
-13. **Workarounds tried** and their outcomes.
-14. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
+12. **When did it happen** — one or more concrete date/time windows when the problem was observed, in **ISO-8601 with an explicit timezone offset** (e.g. `2026-05-18T14:30:00-04:00` to `2026-05-18T14:45:00-04:00`). If multiple incidents, list each as its own window. Also record the **timezone the user is in** so a recipient reading raw UTC logs knows how to convert. This is the single most useful field for narrowing Datadog dashboards and SDK / Big Peer log searches, so push for the most precise answer the user can give — minute-level if possible, otherwise hour-level, otherwise "around <date> in the afternoon, EST". If the problem is ongoing / continuous rather than a discrete event, say so and capture the start time (and "ongoing" as the end). If the user doesn't know, mark "unknown" but try once to refresh their memory ("when did you first notice it?", "when did you last see it?").
+13. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
+14. **Workarounds tried** and their outcomes.
+15. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
     1. **Full application source** (best) — a path to the project root or a `.zip`/`.tar.gz` of it. Copy it into the bundle directory as `app/` (or the archive verbatim). If the project is large, ask the user to exclude `node_modules/`, `build/`, `target/`, `Pods/`, `.gradle/`, etc. before zipping.
     2. **A minimal reproducer repo URL** — record the URL, branch, and commit SHA. No file copy needed.
     3. **Code snippets** (fallback when neither is possible) — the user pastes representative excerpts. Ask specifically for: SDK initialization (identity / auth / app ID / sync URL / persistence directory), sync subscription setup (`registerSubscription` or `sync.registerSubscription`, including the DQL), observer / store-observer / live-query setup, the DQL statements the app issues (SELECT/INSERT/UPDATE/DELETE/EVICT), any transaction/batch usage, attachment usage, and any custom transport / device-name / role configuration. Embed each snippet in the report as a fenced code block with the source language tag (e.g. ` ```swift `, ` ```kotlin `, ` ```ts `).
     
     Always note whether what was provided is "full source", "reproducer repo", or "snippets only" so the recipient knows what level of fidelity to expect.
-15. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
+16. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
 
 Optional but useful:
 - DQL query text or subscription queries involved (if not already captured under Application code).
