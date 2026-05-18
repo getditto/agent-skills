@@ -9,42 +9,54 @@ This skill produces a structured bug report for a Ditto SDK or Big Peer issue. T
 
 ## What this skill produces
 
-- **Default output (new report):** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS.md` in the current working directory.
-- **If any logs or attachments are supplied (new report):** a directory `ditto-problem-report-YYYYMMDD-HHMMSS/` containing `report.md` plus all attachments, zipped to `ditto-problem-report-YYYYMMDD-HHMMSS.zip` in the current working directory.
-- **Update mode:** modifies the existing report in place — same filename and path as the original. If the original was a `.md` and the update adds attachments, the report is promoted to a `.zip` bundle with the original report's timestamp preserved; the bare `.md` is removed.
-- **Internal users only (optional):** after the file/zip is written, offer to file a Linear issue with the report body via the `linear-server` MCP. For updates that targeted an existing Linear issue, offer to add the new content as a comment instead.
+- **Default output (new report):** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.md` in the current working directory, where `<slug>` is a short kebab-case rendering of the one-sentence summary (lowercase, alphanumeric+hyphen, max ~40 chars; e.g. `sync-stops-after-backgrounding-ios`).
+- **If any logs or attachments are supplied (new report):** a directory `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>/` containing `report.md` plus all attachments, zipped to `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.zip` in the current working directory.
+- **Update mode:** modifies the existing report in place — same filename and path as the original. If the original was a `.md` and the update adds attachments, the report is promoted to a `.zip` bundle with the original report's timestamp and slug preserved; the bare `.md` is removed.
+- **Internal users only (optional):** after the file/zip is written, offer to file a Linear issue with the report body via the `linear-server` MCP. When an issue is created, write its URL back into the report's `**Filed as Linear:**` header line so subsequent updates can target it without re-asking. For updates that targeted an existing Linear issue, offer to add the new content as a comment instead.
 
 Always print the final path of what was written (Markdown file or zip) on the last line of your response.
 
 ## Required fields
 
-The report must include the following before being considered complete. Drive the interview to fill in any that the user has not already supplied. Mark optional items clearly.
+Fields fall into two tiers. **Every field — including Tier 1 — can be left blank, `unknown`, or `not applicable` (`n/a`).** The user is never forced to provide a value; the report is always written with whatever they have. Use `unknown` when the user doesn't know the answer (e.g. they don't know the SDK version), and `n/a` when the field genuinely doesn't apply to their situation (e.g. a portal-only bug has no device model). Record either verbatim in the report so the recipient sees what was asked.
 
-1. **Customer name** — the organisation or company name of the customer experiencing the problem (e.g. "Acme Logistics", "ContosoHealth"). For an external reporter filing about their own deployment, this is their company. For an internal Ditto staff member filing on behalf of a customer, this is the customer's name (not Ditto's). If the reporter is internal and the problem is hitting a Ditto-internal test / staging environment with no customer impact, write `Ditto (internal)`. The duplicate-search step uses this as a filter.
-2. **Ditto Database ID (App ID)** — the database ID(s) used by the affected deployment, in their canonical form (UUIDs like `12345678-1234-1234-1234-123456789012`, or the human-readable database slug if that's all the user has). List **every** database ID involved if multiple. Required regardless of problem scope (small peers, Big Peer, and portal all reference the database ID). For Online Playground databases, mark the entry as `(online playground)`. Accept `unknown` only if the user genuinely cannot find it — the recipient needs at least one database ID to look anything up. **Naming note:** this field was previously called "App ID" and many existing logs, SDK init APIs (e.g. `appID:` parameter), portal pages, and Linear issues still use that term — they refer to the same value. Always label this field as **`Ditto Database ID (App ID)`** in the rendered report during the transition so readers familiar with either name recognise it.
-3. **One-sentence summary** of the problem.
-4. **Problem scope** — is this a **small-peer** problem (Ditto SDK on a device / app / edge server), a **Big Peer / portal** problem (Ditto cloud, HTTP API, or portal UI), or **both** (a mesh issue involving sync between small peers and Big Peer, or a behaviour that only manifests when both are in the loop)? Ask this early — the answer routes the rest of the interview (e.g. skip Big Peer environment questions for a pure small-peer problem; skip transport questions for a pure portal problem).
-5. **Detailed description** — observed behaviour vs. expected behaviour.
-6. **Ditto SDK(s) in use** — for each, the language/platform variant (Swift, Kotlin/Java, JS/TS, React Native, C++, Rust, Go, .NET / MAUI, Flutter) **and** the exact version (e.g. `4.14.2`, `5.0.0-alpha.3`). If the deployment involves multiple SDKs syncing in a mesh, list every variant + version present. (Skip if scope is pure Big Peer / portal and no SDK is involved.)
-7. **Big Peer details** (required if scope is "Big Peer / portal" or "both") — environment (production / staging / on-prem) and region/cluster if known. (The Ditto Database ID is captured at the top of the report — don't ask for it again here.) For portal-UI issues, also capture the portal page URL and browser + version.
-8. **Operating system(s) + versions** — for every device, server, or container involved (e.g. `iOS 17.4`, `Android 14 (Pixel 7)`, `macOS 14.5 (M2)`, `Ubuntu 22.04 x86_64`, `Windows 11 23H2`).
-9. **Device models** where relevant (`Pixel 7`, `iPhone 15 Pro`, `Galaxy S20 FE`, `Raspberry Pi 4 64-bit`, etc.).
-10. **Transports** in use, if known (BLE, LAN, AWDL/MultipeerConnectivity, WebSocket to Big Peer). The user may not know — that's fine. (Skip if scope is pure Big Peer / portal.)
-11. **Regression status** — was this working in a previous SDK version (or, for portal issues, a previous portal release)? If yes, the last-known-good version and the version where it broke. If they don't know, mark "unknown".
-12. **Reproduction steps** — numbered list. If not reliably reproducible, capture what *is* known (timing, frequency, conditions).
-13. **Reproduction rate** — always / often / sometimes / once.
-14. **When did it happen** — one or more concrete date/time windows when the problem was observed, in **ISO-8601 with an explicit timezone offset** (e.g. `2026-05-18T14:30:00-04:00` to `2026-05-18T14:45:00-04:00`). If multiple incidents, list each as its own window. Also record the **timezone the user is in** so a recipient reading raw UTC logs knows how to convert. This is the single most useful field for narrowing Datadog dashboards and SDK / Big Peer log searches, so push for the most precise answer the user can give — minute-level if possible, otherwise hour-level, otherwise "around <date> in the afternoon, EST". If the problem is ongoing / continuous rather than a discrete event, say so and capture the start time (and "ongoing" as the end). If the user doesn't know, mark "unknown" but try once to refresh their memory ("when did you first notice it?", "when did you last see it?").
-15. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
-16. **Workarounds tried** and their outcomes.
-17. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
-    1. **Full application source** (best) — a path to the project root or a `.zip`/`.tar.gz` of it. Copy it into the bundle directory as `app/` (or the archive verbatim). If the project is large, ask the user to exclude `node_modules/`, `build/`, `target/`, `Pods/`, `.gradle/`, etc. before zipping.
+The tiering only affects the *interview*, not the report:
+
+- **Tier 1** — the minimum needed to triage. Ask about each one explicitly (in the batched round) if not already inferable from context. If the user answers `unknown`, `n/a`, or skips, accept it and move on.
+- **Tier 2** — valuable but secondary. Collect what's already inferable from context, ask once in the batched round, and accept `unknown` / `n/a` / `skip` without follow-up.
+- **Optional** — not interviewed at all (mention once, move on).
+
+### Tier 1 — ask explicitly; record `unknown` or `n/a` if the user can't answer
+
+1. **One-sentence summary** of the problem.
+2. **Problem scope** — is this a **small-peer** problem (Ditto SDK on a device / app / edge server), a **Big Peer / portal** problem (Ditto cloud, HTTP API, or portal UI), or **both** (a mesh issue involving sync between small peers and Big Peer, or a behaviour that only manifests when both are in the loop)? Ask this early — the answer routes the rest of the interview (e.g. skip Big Peer environment questions for a pure small-peer problem; skip transport questions for a pure portal problem).
+3. **Detailed description** — observed behaviour vs. expected behaviour.
+4. **Ditto SDK(s) in use** — for each, the language/platform variant (Swift, Kotlin/Java, JS/TS, React Native, C++, Rust, Go, .NET / MAUI, Flutter) **and** the exact version (e.g. `4.14.2`, `5.0.0-alpha.3`). If the deployment involves multiple SDKs syncing in a mesh, list every variant + version present. (Skip entirely if scope is pure Big Peer / portal and no SDK is involved.)
+5. **Operating system + version** for at least the primary affected device (e.g. `iOS 17.4`, `Android 14 (Pixel 7)`, `macOS 14.5 (M2)`, `Ubuntu 22.04 x86_64`, `Windows 11 23H2`). Add a row per device under Tier 2 if multiple peers are involved.
+6. **Reproduction steps + rate** — numbered list and one of always / often / sometimes / once. If not reliably reproducible, capture what *is* known (timing, frequency, conditions).
+
+### Tier 2 — collect if known, never block
+
+Ask in the batched round, accept `unknown` and move on. The numbered order matches the rendered report layout.
+
+7. **Customer name** — the organisation or company name of the customer experiencing the problem (e.g. "Acme Logistics", "ContosoHealth"). For an external reporter filing about their own deployment, this is their company; a solo dev / personal project is fine to write as `self` / `personal project` without elaboration. For an internal Ditto staff member filing on behalf of a customer, this is the customer's name (not Ditto's). If the reporter is internal and the problem is hitting a Ditto-internal test / staging environment with no customer impact, write `Ditto (internal)`. The duplicate-search step uses this as a filter.
+8. **Ditto Database ID (App ID)** — the database ID(s) used by the affected deployment, in their canonical form (UUIDs like `12345678-1234-1234-1234-123456789012`, or the human-readable database slug if that's all the user has). List **every** database ID involved if multiple. Strongly preferred regardless of problem scope (small peers, Big Peer, and portal all reference the database ID). For Online Playground databases, mark the entry as `(online playground)`. Accept `unknown` if the user cannot find it, but note that the recipient will likely have to ask again. **Naming note:** this field was previously called "App ID" and many existing logs, SDK init APIs (e.g. `appID:` parameter), portal pages, and Linear issues still use that term — they refer to the same value. Always label this field as **`Ditto Database ID (App ID)`** in the rendered report during the transition so readers familiar with either name recognise it.
+9. **Big Peer details** (only when scope is "Big Peer / portal" or "both") — environment (production / staging / on-prem) and region/cluster if known. For portal-UI issues, also capture the portal page URL and browser + version. For HTTP API failures, capture the request URL, HTTP method, response status code, `x-request-id` header value (if present), and a short snippet of the response body — these are critical for Big Peer log lookups. (The Ditto Database ID is captured in the header — don't repeat it here.)
+10. **Device models** where relevant (`Pixel 7`, `iPhone 15 Pro`, `Galaxy S20 FE`, `Raspberry Pi 4 64-bit`, etc.).
+11. **Transports** in use, if known (BLE, LAN, AWDL/MultipeerConnectivity, WebSocket to Big Peer). The user may not know — that's fine. (Skip if scope is pure Big Peer / portal.)
+12. **Regression status** — was this working in a previous SDK version (or, for portal issues, a previous portal release)? If yes, the last-known-good version and the version where it broke. If they don't know, mark "unknown".
+13. **When did it happen** — one or more concrete date/time windows when the problem was observed, in **ISO-8601 with an explicit timezone offset** (e.g. `2026-05-18T14:30:00-04:00` to `2026-05-18T14:45:00-04:00`). If multiple incidents, list each as its own window. Also record the **timezone the user is in** so a recipient reading raw UTC logs knows how to convert. This is the single most useful field for narrowing Datadog dashboards and SDK / Big Peer log searches, so push for the most precise answer the user can give — minute-level if possible, otherwise hour-level, otherwise "around <date> in the afternoon, EST". If the problem is ongoing / continuous rather than a discrete event, say so and capture the start time (and "ongoing" as the end). If the user doesn't know, mark "unknown" but try once to refresh their memory ("when did you first notice it?", "when did you last see it?").
+14. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
+15. **Workarounds tried** and their outcomes.
+16. **Application code** — **best-effort.** Only push for this if the user volunteers it or if log triage clearly requires it (e.g. sync-not-working bugs almost always need to see the subscription DQL and SDK init). For most bug reports, snippets the user can paste are sufficient; full source or a reproducer repo is a bonus, not a requirement. Collect in this preference order:
+    1. **Full application source** — a path to the project root or a `.zip`/`.tar.gz` of it. Copy it into the bundle directory as `app/` (or the archive verbatim). Ask the user to exclude `node_modules/`, `build/`, `target/`, `Pods/`, `.gradle/`, `DerivedData/`, etc. before zipping. **Soft size cap: ~50 MB.** If the cleaned source is still larger than that, fall back to a reproducer repo URL or snippets — large bundles slow uploads to Linear and don't usually add diagnostic value past the first 50 MB.
     2. **A minimal reproducer repo URL** — record the URL, branch, and commit SHA. No file copy needed.
     3. **Code snippets** (fallback when neither is possible) — the user pastes representative excerpts. Ask specifically for: SDK initialization (identity / auth / app ID / sync URL / persistence directory), sync subscription setup (`registerSubscription` or `sync.registerSubscription`, including the DQL), observer / store-observer / live-query setup, the DQL statements the app issues (SELECT/INSERT/UPDATE/DELETE/EVICT), any transaction/batch usage, attachment usage, and any custom transport / device-name / role configuration. Embed each snippet in the report as a fenced code block with the source language tag (e.g. ` ```swift `, ` ```kotlin `, ` ```ts `).
-    
-    Always note whether what was provided is "full source", "reproducer repo", or "snippets only" so the recipient knows what level of fidelity to expect.
-18. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
 
-Optional but useful:
+    Always note whether what was provided is "full source", "reproducer repo", or "snippets only" so the recipient knows what level of fidelity to expect. Default the template's per-snippet sub-sections out when fidelity is "snippets only" and the user did not provide that specific snippet — empty placeholders are worse than no section.
+17. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory. **Soft size cap: ~50 MB per attachment**, ~200 MB total in the bundle. For larger captures (sysdiagnose, Android bugreport zips), keep them but warn the user that Linear / email attachment limits may force them to share via a separate link.
+
+Optional (not interviewed; mention once and move on):
 - DQL query text or subscription queries involved (if not already captured under Application code).
 - Network conditions (Wi-Fi SSID, NAT type, VPN, firewall).
 
@@ -59,10 +71,10 @@ Decide at the very start whether the user is creating a new report or updating a
 **Detection procedure:**
 
 1. If the user gave an explicit path, use it. Verify the file exists (`ls` via Bash); if not, ask.
-2. Otherwise, glob the current directory: `ls ditto-problem-report-*.md ditto-problem-report-*.zip 2>/dev/null`.
+2. Otherwise, glob the current directory: `ls ditto-problem-report-*.md ditto-problem-report-*.zip 2>/dev/null`. The glob picks up both the older `ditto-problem-report-<ts>.md` form and the newer `ditto-problem-report-<ts>-<slug>.md` form.
    - **Zero matches** → new-report mode. Proceed with the normal flow.
    - **One match** AND the user's phrasing suggests an update → update mode, target that file.
-   - **Multiple matches** AND the user's phrasing suggests an update → ask the user which one (show them the list with timestamps and one-line summaries — read the first `## Summary` block of each to populate the choices).
+   - **Multiple matches** AND the user's phrasing suggests an update → ask the user which one (show them the list with timestamps and one-line summaries — the slug in the filename is usually enough, but read the first `## Summary` block to confirm).
    - **One or more matches** but the user's phrasing suggests a new report (e.g. "file a new issue", "different problem") → new-report mode; do not assume update.
 3. If still ambiguous after the above, ask once: *"Are you starting a new report or adding to an existing one?"*
 
@@ -80,7 +92,14 @@ Before asking anything, harvest from:
 - **`git config user.email`** — for the Reporter email; and to decide internal vs. external audience (`@ditto.com` ⇒ internal).
 - **`git config user.name`** — for the Reporter name.
 - **`date +%Y-%m-%dT%H:%M:%S%z` and `date +%Z`** — for the report's Date field and the reporter's timezone (e.g. for the Occurrence times section's `Reporter timezone:`).
-- **Current working directory contents** — `ls`, `cat` of obvious manifest files (`package.json`, `Cargo.toml`, `pubspec.yaml`, `*.csproj`, `build.gradle`, `Package.swift`, `Podfile.lock`) to infer the Ditto SDK variant and version without asking.
+- **Current working directory contents** — `ls`, `cat` of manifest **and lock** files to infer the Ditto SDK variant and version without asking. Lock files have the resolved version; manifests often just have a range. Check both, but trust the lock file when they disagree:
+  - JS / TS: `package.json` + `package-lock.json` / `yarn.lock` / `pnpm-lock.yaml`
+  - Rust: `Cargo.toml` + `Cargo.lock`
+  - Flutter / Dart: `pubspec.yaml` + `pubspec.lock`
+  - Swift / iOS / macOS: `Package.swift` + `Package.resolved`; CocoaPods uses `Podfile` + `Podfile.lock`
+  - Android / Gradle: `build.gradle` / `build.gradle.kts` + `gradle.lockfile` (if dependency-locking is enabled)
+  - .NET: `*.csproj` + `packages.lock.json` (if `RestorePackagesWithLockFile` is on)
+  - Go: `go.mod` + `go.sum`
 - **Any log files the user has already supplied or referenced** — they often contain the SDK version, OS, device model, and timestamps verbatim. Extract those instead of asking.
 
 Tell the user briefly what you found ("I see you're on macOS 14.5 with the Swift SDK 4.14.2 from Package.swift — let me know if that's wrong") and ask them to correct anything inferred wrongly. **Do not re-ask for inferred values.**
@@ -98,12 +117,14 @@ Once you have the problem scope (small peer / Big Peer / both), skip whole categ
 
 ### Step 3 — ask only for what's left
 
-- **Batch heavily**: combine all remaining required fields into one or two `AskUserQuestion` rounds, not field-by-field. A single batch covering "What SDKs/OS/devices are involved, and what's the one-sentence summary?" is fine.
-- **For each remaining required field**, accept "unknown" or "skip" — never block the report on a missing field. Record `unknown` verbatim in the report so the recipient knows it was asked.
+- **Use the right tool for each field type.** `AskUserQuestion` is a multi-choice picker — use it for enumerable fields with a small fixed set of answers: problem scope (small-peer / Big Peer / both), reproduction rate (always / often / sometimes / once), regression (yes / no / unknown), audience fallback (internal / external). For free-text fields (summary, description, SDK + version, OS, device model, repro steps, occurrence times), ask via prose in chat and let the user reply in prose — don't try to encode free-text answers as `AskUserQuestion` options.
+- **Batch heavily.** Combine all remaining free-text fields into a single prose message ("What's the one-sentence summary, the SDK + version, the OS + device, and your repro steps?"). Combine all remaining enumerable fields into one `AskUserQuestion` call (≤4 questions). Aim for one prose request + one `AskUserQuestion` call, total.
+- **End the prose request with one open invitation** for free-form content: "Anything else worth mentioning that doesn't fit the fields above?" — this feeds the report's `## Additional information` section. Don't follow up if the user doesn't answer or says "no"; this is not a confirmation round, just a single open slot. Whatever they say (or don't) flows directly into the Additional information section; omit that section entirely if they have nothing to add.
+- **For each remaining field**, accept `unknown`, `n/a` / `not applicable`, or `skip` — never block the report on a missing field, including Tier 1. Record the user's answer verbatim in the report so the recipient knows it was asked (`unknown` = doesn't know; `n/a` = doesn't apply).
 - **Optional fields are not interviewed.** Mention once that the report supports them ("you can add DQL snippets or network conditions later if useful") and move on.
 - **Don't push for precision the user obviously doesn't have.** If they say "sometime last week", accept "around 2026-05-12, exact time unknown" and move on — don't demand minute-level.
 - **No confirmation rounds.** After the first batch, do not summarise back and ask "anything else?". Assemble the report immediately with whatever you have, mark missing fields `unknown`, and tell the user where the file is.
-- **When the user says "that's everything" / "just write what we have" / "good enough" — stop immediately** and proceed to assembly.
+- **Stop immediately on any stop signal.** The user can end the interview at any point — both completion signals (`that's everything`, `just write what we have`, `good enough`, `ship it`, `done`) and abort signals (`nevermind`, `cancel`, `stop`, `forget it`, `skip the rest`). On any of these, proceed straight to assembly with what you have; fill remaining fields with `unknown`.
 
 ### What "lightweight" means in practice
 
@@ -170,39 +191,51 @@ Use the template in `report-template.md` (same skill directory) verbatim. Fill i
 
 Generate the timestamp as `YYYYMMDD-HHMMSS` local time via `date +%Y%m%d-%H%M%S` in Bash.
 
+**Derive a filename slug from the one-sentence summary** so multiple reports in the same directory are visually distinguishable:
+
+- Lowercase the summary.
+- Replace any non-alphanumeric character with `-`.
+- Collapse repeated `-` to a single `-`, then trim leading/trailing `-`.
+- Take at most the first ~40 characters; cut at a word boundary if possible.
+- If the summary is `unknown` (the user skipped it), use the slug `unknown`.
+
+Example: `Sync stops after backgrounding on iOS 17` → `sync-stops-after-backgrounding-on-ios-17`.
+
 **No attachments path:**
 ```bash
-date +%Y%m%d-%H%M%S
-# then write ditto-problem-report-<ts>.md via the Write tool
+ts=$(date +%Y%m%d-%H%M%S)
+slug="<computed-slug>"
+# then write ditto-problem-report-$ts-$slug.md via the Write tool
 ```
 
 **With attachments path:**
 ```bash
 ts=$(date +%Y%m%d-%H%M%S)
-mkdir -p "ditto-problem-report-$ts"
+slug="<computed-slug>"
+mkdir -p "ditto-problem-report-$ts-$slug"
 # Write report.md inside the dir via Write tool
 # Copy each attachment into the dir via cp
-zip -r "ditto-problem-report-$ts.zip" "ditto-problem-report-$ts"
-echo "ditto-problem-report-$ts.zip"
+zip -r "ditto-problem-report-$ts-$slug.zip" "ditto-problem-report-$ts-$slug"
+echo "ditto-problem-report-$ts-$slug.zip"
 ```
 
-After writing, print the absolute path of the final artifact — but **before** the final-path line, run the **Suggest next steps for missing information** section below if the report contains any `unknown` / blank required fields or has no attachments.
+After writing, print the absolute path of the final artifact — but **before** the final-path line, run the **Reporter follow-up — gaps to close** section below if the report contains any `unknown` / blank required fields or has no attachments.
 
-## Suggest next steps for missing information
+## Reporter follow-up — gaps to close
 
-Run this step whenever the assembled (new or updated) report still has fields marked `unknown`, omitted required sections, or no attachments. The goal is to hand the user a short, concrete to-do list so they can fill the gaps without a back-and-forth.
+Run this step whenever the assembled (new or updated) report still has fields marked `unknown`, omitted required sections, or no attachments. The goal is to hand the **reporter** (not the recipient) a short, concrete to-do list so they can fill the gaps without a back-and-forth. The report section the recipient sees is also titled "Reporter follow-up" so it's unambiguous whose action items these are.
 
 ### Step 1 — inventory the gaps
 
 Scan the report for:
 
-- Any line containing the literal string `unknown` in a required field.
+- Any line containing the literal string `unknown` in a required field. **Skip lines marked `n/a` or `not applicable`** — the user has explicitly said this doesn't apply, so don't suggest filling it.
 - Empty required sections (e.g. **Reproduction steps** with no numbered items, **Workarounds tried** = "none tried" when impact is high).
 - No attachments at all, or only one of several relevant log types (e.g. app logs without Ditto SDK logs).
 - Coarse-grained **Occurrence times** (e.g. only "around last Tuesday afternoon" when the user is internal and has Datadog access — they can do better).
 - **Application code** = "snippets only" when full source or a reproducer repo is feasible.
 
-Skip this whole step if every required field is filled and at least one relevant log type is attached.
+Skip this whole step if every required field is filled (or marked `n/a`) and at least one relevant log type is attached.
 
 ### Step 2 — tailor each suggestion to what's already known
 
@@ -214,7 +247,7 @@ Use the fields that **are** filled in to make suggestions concrete. Do not give 
 | Missing Ditto SDK logs       | OS = iOS / macOS              | `DittoLogger.minimumLogLevel = .debug`, reproduce, then `log show --predicate 'subsystem CONTAINS "ditto"' --info --debug --last 1h > ditto-apple.log`. |
 | Missing Ditto SDK logs       | OS = Linux                    | Set SDK log level via the platform's API; rerun with `2>&1 \| tee ditto.log`.                                    |
 | Unknown OS version           | OS family known               | macOS: `sw_vers -productVersion`. Android: `adb -s <serial> shell getprop ro.build.version.release`. iOS: Settings → General → About. |
-| Unknown SDK version          | Project layout visible        | Point at the specific manifest line (e.g. "look at `Package.resolved` for `dittoswift`'s version", "check `package.json` → `@dittolive/ditto`"). |
+| Unknown SDK version          | Project layout visible        | Point at the specific **lock-file** line (it has the resolved version, not a range): `Package.resolved` for `dittoswift`, `package-lock.json` / `yarn.lock` for `@dittolive/ditto`, `Cargo.lock` for `dittolive-ditto`, `pubspec.lock` for `ditto_live`, `Podfile.lock` for `DittoSwift`, `gradle.lockfile` for `live.ditto:ditto`, `packages.lock.json` for the .NET package. |
 | Unknown device model         | OS = Android                  | `adb -s <serial> shell getprop ro.product.model`.                                                                |
 | Unknown Database ID (App ID) | Anywhere                      | "Find it in the Ditto portal at <https://portal.ditto.live/> under your app, or grep the SDK init call in the application code for the `appID:` parameter." |
 | Unknown last-known-good ver. | Project has git history       | `git log -- <SDK manifest path>` to find when the SDK version last changed; the prior pin is your candidate.     |
@@ -230,13 +263,13 @@ This table is illustrative — when the exact gap isn't listed, derive a suggest
 ### Step 3 — surface the suggestions in two places
 
 1. **In-chat, after the final-path line**, output a short numbered list of suggestions the user can act on immediately. Cap at 5 items; pick the highest-value gaps first (logs > regression info > occurrence precision > everything else).
-2. **In the report's `Suggested next steps` section** (see template), embed the same list so the recipient also sees what's outstanding and what was suggested to the reporter. The recipient can then ask follow-ups already knowing what the user was told.
+2. **In the report's `Reporter follow-up` section** (see template), embed the same list so the recipient also sees what's outstanding and what was suggested to the reporter. The recipient can then ask follow-ups already knowing what the user was told.
 
 ### Step 4 — offer to apply suggestions immediately
 
 For any suggestion that resolves to a single Bash command and the user is willing, run it in this session (e.g. `sw_vers -productVersion`) and immediately re-enter update mode to add the result. Don't insist — just offer once.
 
-If the report has zero gaps, skip Steps 2–4 entirely. Do not output a "Suggested next steps" section with content like "no further action needed" — silence is fine.
+If the report has zero gaps, skip Steps 2–4 entirely. Do not output a "Reporter follow-up" section with content like "no further action needed" — silence is fine.
 
 ## Update mode (modifying an existing report)
 
@@ -245,15 +278,15 @@ When mode detection picked "update", do **not** run a full interview, do **not**
 ### Step 1 — open the existing report
 
 - If the target is a `.md` file: read it directly with the `Read` tool.
-- If the target is a `.zip` bundle: extract to a sibling working directory, then read its `report.md`:
+- If the target is a `.zip` bundle: extract to a sibling working directory, then read its `report.md`. Let `<basename>` be the zip's filename without the `.zip` extension (e.g. `ditto-problem-report-20260518-143000-sync-stops-ios`):
   ```bash
-  unzip -o "ditto-problem-report-<ts>.zip" -d ".problem-report-work-<ts>"
+  unzip -o "<basename>.zip" -d ".problem-report-work-<basename>"
   ```
-  Work inside `.problem-report-work-<ts>/ditto-problem-report-<ts>/` for all edits. Re-zip and replace the original at the end (see Step 5).
+  Work inside `.problem-report-work-<basename>/<basename>/` for all edits. Re-zip and replace the original at the end (see Step 5).
 
 ### Step 2 — find out what's being added or changed
 
-Ask the user **only** about the delta. Use one batched `AskUserQuestion` call (or skip entirely if the delta is already obvious from context, e.g. "here are the iOS logs I just captured" with a file path). Typical deltas:
+Ask the user **only** about the delta. The delta is usually free-text (file paths, corrections, new repro steps), so ask in a single prose message — not via `AskUserQuestion`, which is for enumerable choices. Skip the question entirely if the delta is already obvious from context (e.g. "here are the iOS logs I just captured" with a file path). Typical deltas:
 
 - **New attachments** (logs, screenshots, packet captures) — file path(s) and a brief description of each.
 - **New affected devices / OS versions / SDK variants** — add row(s) to the Environment table.
@@ -271,13 +304,13 @@ Use the `Edit` tool with focused changes — do not re-render the whole report.
 - **Appending rows to tables** (Environment, Occurrence times, Related reports, Attachments) — `Edit` with the last existing row's line as `old_string` context to place the new row directly after it.
 - **Appending to lists** (Reproduction steps, Workarounds tried) — same approach; preserve existing numbering.
 - **Replacing a field value** (correcting OS version, etc.) — `Edit` with the unique surrounding context so the wrong occurrence isn't replaced. If a value appears in multiple places (e.g. SDK version mentioned in Summary and in Environment table), update **every** occurrence.
-- **Adding new attachments to a previously-`.md`-only report** — promote to `.zip`:
+- **Adding new attachments to a previously-`.md`-only report** — promote to `.zip`. Preserve the original filename's timestamp and slug (or lack of slug, for older reports):
   ```bash
-  ts=<original timestamp from the filename>
-  mkdir -p "ditto-problem-report-$ts"
-  mv "ditto-problem-report-$ts.md" "ditto-problem-report-$ts/report.md"
-  cp <new attachments> "ditto-problem-report-$ts/"
-  zip -r "ditto-problem-report-$ts.zip" "ditto-problem-report-$ts"
+  basename=<original filename without .md extension>   # e.g. ditto-problem-report-20260518-143000-sync-stops-ios
+  mkdir -p "$basename"
+  mv "$basename.md" "$basename/report.md"
+  cp <new attachments> "$basename/"
+  zip -r "$basename.zip" "$basename"
   ```
   Then add new rows to the **Attachments** table and embed truncated log excerpts under **Log excerpts** following the same rules as in "Log handling".
 - **Adding new attachments to an existing `.zip`** — copy the files into the extracted directory alongside `report.md`, update the Attachments table and Log excerpts sections, re-zip at the end (Step 5).
@@ -303,22 +336,22 @@ Record updater identity from `git config user.name` / `user.email`, same as for 
 - **`.md`-only report, new attachments added** → the file is now a `.zip`; the bare `.md` no longer exists (it was moved into the bundle directory in Step 3). The on-disk artifact path has changed from `…<ts>.md` to `…<ts>.zip` — note this clearly in your reply to the user.
 - **`.zip` bundle** → re-zip the working directory and replace the original:
   ```bash
-  rm -f "ditto-problem-report-<ts>.zip"
-  zip -r "ditto-problem-report-<ts>.zip" "ditto-problem-report-<ts>"
-  rm -rf ".problem-report-work-<ts>"
+  rm -f "$basename.zip"
+  zip -r "$basename.zip" "$basename"
+  rm -rf ".problem-report-work-$basename"
   ```
 
-Before printing the final path, **re-run the "Suggest next steps for missing information" section** against the updated report. The update may have closed some gaps and opened others — refresh the in-chat suggestion list and the in-report `Suggested next steps` section accordingly.
+Before printing the final path, **re-run the "Reporter follow-up — gaps to close" section** against the updated report. The update may have closed some gaps and opened others — refresh the in-chat suggestion list and the in-report `Reporter follow-up` section accordingly.
 
 Print the absolute path of the (possibly newly-typed) final artifact on the last line of your response.
 
 ### Step 6 — for internal users only, offer the Linear handoff
 
-After an update, the Linear flow differs from the new-report flow:
+After an update, the Linear flow differs from the new-report flow. First, read the report's `**Filed as Linear:**` header line to determine state:
 
-- If the original report was filed as a Linear issue earlier (the user remembers the issue URL, or you can ask), offer to post the **delta** as a comment on that issue using `mcp__linear-server__save_comment` — not the whole report. The comment body should be the Update log entry from Step 4 plus any new log excerpts.
-- If the report was never filed in Linear, offer the normal "file as new issue" flow (see Linear issue option section).
-- If the user previously chose "comment on duplicate <URL>" in the new-report flow, update that same existing issue with the delta.
+- **`_(not yet filed)_`** → offer the normal "file as new issue" flow (see Linear issue option section). On success, write the new URL into the same header line.
+- **`<URL>`** (a real Linear issue URL, possibly suffixed `(comment)`) → offer to post the **delta** as a comment on that issue using `mcp__linear-server__save_comment`. The comment body should be the Update log entry from Step 4 plus any new log excerpts — not the whole report.
+- **Line missing entirely** (older report pre-dating this header) → ask the user once: "Was this report previously filed as a Linear issue? If so, paste the URL; otherwise I'll offer to file it now." Write whatever they say back into the header.
 
 ## Linear issue option (internal users only)
 
@@ -332,8 +365,9 @@ If the audience is internal Ditto staff and the report is written, choose betwee
      - `team`: the chosen team.
      - Leave priority/labels for the user to set in Linear UI unless they specify.
   3. Print the Linear issue URL.
-  4. Note in the chat that attachments must be uploaded manually in Linear's UI (MCP cannot upload binary files from a local path in this flow).
-- **User picked "comment on existing"** during the duplicate-search step — use `mcp__linear-server__save_comment` to add the full report body as a comment on the duplicate issue. Print the existing-issue URL.
+  4. **Write the Linear URL back into the report** so future update-mode runs can find it without asking the user. Use `Edit` to replace the report's `**Filed as Linear:** _(not yet filed)_` line with `**Filed as Linear:** <URL>`. If the report is now in a `.zip`, edit the extracted `report.md` and re-zip; for a plain `.md`, edit in place.
+  5. Note in the chat that attachments must be uploaded manually in Linear's UI (MCP cannot upload binary files from a local path in this flow).
+- **User picked "comment on existing"** during the duplicate-search step — use `mcp__linear-server__save_comment` to add the full report body as a comment on the duplicate issue. Print the existing-issue URL. Write `**Filed as Linear:** <duplicate-URL> (comment)` back into the report the same way as above.
 - **Likely duplicate found but user not yet asked** — ask: "This looks like a duplicate of <existing URL>. File a new issue, comment on the existing one, or skip Linear entirely?" then route to the corresponding flow.
 
 If external, instead print: "Email this report (and attach the `.zip` if one was created) to support@ditto.com, or paste it into your existing support thread."

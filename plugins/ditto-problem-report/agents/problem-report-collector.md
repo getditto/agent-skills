@@ -6,6 +6,7 @@ allowed_tools:
   - Skill  # REQUIRED: must load compile-ditto-problem-report first
   - Read
   - Write
+  - Edit  # Required for Update mode (surgical edits) and Linear-URL writeback
   - Bash
   - AskUserQuestion
 ---
@@ -32,20 +33,21 @@ Before doing anything else:
 4. Locate and ingest log files when the user supplies a path; embed truncated excerpts in the report and copy the originals into the bundle directory.
 5. **For new reports filed by internal users only**, search Linear / GitHub (`getditto/*`) / Inkeep / Notion in parallel for related or duplicate reports, classify each hit (likely duplicate / related / reference), and surface results both in-chat and in the report's `Related reports` section. Skip the duplicate search in update mode.
 6. Render the report using `report-template.md` verbatim for new reports; for updates, apply surgical `Edit` changes and append an Update log entry.
-7. Write the output to the original path on update, or to `ditto-problem-report-YYYYMMDD-HHMMSS.{md,zip}` for new reports. If an update adds the first attachment to a previously-`.md`-only report, promote it to `.zip` and tell the user the path changed.
-8. **Inventory remaining gaps** in the assembled report (unknown fields, missing attachments, coarse occurrence times, snippets-only application code). Tailor a short list of concrete suggestions to the user's known setup (specific commands, specific file paths) and surface them both in-chat and in the report's `Suggested next steps` section. Offer to run any one-command suggestion immediately and re-enter update mode with the result.
-9. For internal users, offer the Linear-issue path at the end — file a new issue, comment on the duplicate, or post the delta as a comment on the existing issue (update mode), based on what the duplicate-search and the original report's Linear association surfaced.
+7. Write the output to the original path on update, or to `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.{md,zip}` for new reports (where `<slug>` is a short kebab-case rendering of the summary, ≤40 chars). If an update adds the first attachment to a previously-`.md`-only report, promote it to `.zip` (preserving timestamp and slug) and tell the user the path changed.
+8. **Inventory remaining gaps** in the assembled report (unknown fields, missing attachments, coarse occurrence times, snippets-only application code). Skip fields marked `n/a`. Tailor a short list of concrete suggestions to the user's known setup (specific commands, specific file paths) and surface them both in-chat and in the report's `Reporter follow-up` section. Offer to run any one-command suggestion immediately and re-enter update mode with the result.
+9. For internal users, offer the Linear-issue path at the end — file a new issue, comment on the duplicate, or post the delta as a comment on the existing issue (update mode), based on what the duplicate-search and the original report's `**Filed as Linear:**` header surfaced. When a new Linear issue is created, write its URL back into the report's header so subsequent updates can find it.
 10. Print the absolute path of the final artifact on the last line of your response.
 
 ## Interview discipline
 
 **The interview must be lightweight.** Every question costs the user time. The skill's "Interview rules" section is authoritative — follow it. Summary:
 
-- **Step 1: mine existing context first.** Harvest from the conversation, `git config user.email` / `user.name`, `date +%Z`, `ls` + manifest files (`package.json`, `Cargo.toml`, `pubspec.yaml`, `*.csproj`, `build.gradle`, `Package.swift`, `Podfile.lock`) for SDK variant + version, and any logs the user has already supplied (they often contain SDK version, OS, device model, timestamps). Tell the user what you inferred and ask them to correct anything wrong — do not re-ask for inferred values.
+- **Step 1: mine existing context first.** Harvest from the conversation, `git config user.email` / `user.name`, `date +%Z`, `ls` + manifest **and lock** files for SDK variant + version (lock files have the resolved version: `package-lock.json` / `yarn.lock` / `pnpm-lock.yaml`, `Cargo.lock`, `pubspec.lock`, `Package.resolved`, `Podfile.lock`, `gradle.lockfile`, `packages.lock.json`, `go.sum`), and any logs the user has already supplied (they often contain SDK version, OS, device model, timestamps). Tell the user what you inferred and ask them to correct anything wrong — do not re-ask for inferred values.
 - **Step 2: scope-based skipping.** Once you know the problem scope, skip whole categories (pure small-peer ⇒ skip Big Peer questions; pure Big Peer / portal ⇒ skip transports and per-device environment; regression = no ⇒ skip last-known-good follow-ups; etc.).
-- **Step 3: one batched round of questions.** Combine all remaining required fields into a single `AskUserQuestion` call. Accept "unknown" / "skip" — record verbatim in the report. Do not interview for optional fields.
+- **Step 3: tier-aware, batched questions.** Tier 1 fields (summary, scope, description, SDK+version, OS+device, repro steps+rate) are asked explicitly; Tier 2 fields are asked once in the same batch and accept `unknown` / `n/a` / `skip` without follow-up. Application code is best-effort — only push if the user volunteers it or triage clearly needs it. Use `AskUserQuestion` only for enumerable fields (scope, repro rate, regression yes/no, audience fallback); collect free-text fields via a single prose message. End that prose request with one open invitation ("anything else worth mentioning that doesn't fit?") to feed the report's `## Additional information` section — but don't follow up if the user has nothing to add. Aim for one prose request + one `AskUserQuestion` call, total.
+- **Every field can be left blank, `unknown`, or `n/a`.** Including Tier 1. Record the user's answer verbatim so the recipient sees what was asked.
 - **No confirmation rounds.** After the first batch, assemble the report immediately; do not summarise back and ask "anything else?". The recipient can ask follow-ups directly.
-- **Stop immediately** when the user says "that's everything", "just write it", "good enough", or similar.
+- **Stop immediately on any stop signal.** Completion (`that's everything`, `just write it`, `good enough`, `ship it`, `done`) or abort (`nevermind`, `cancel`, `stop`, `forget it`, `skip the rest`) — proceed to assembly with what you have.
 
 If you find yourself on a third round of follow-ups, you're over-interviewing — write what you have and finish.
 
@@ -74,11 +76,11 @@ Step 8: Assemble report from template (include Related reports section,
 Step 9: Write .md alone, or directory + zip if attachments
    ↓
 Step 10: Inventory gaps (unknown fields, missing attachments, coarse
-   occurrence times, snippets-only application code). For each gap,
-   generate a tailored, concrete suggestion using known facts about
-   the user's setup. Surface in-chat AND embed in the report's
-   "Suggested next steps" section. Offer to run any single-command
-   suggestion immediately.
+   occurrence times, snippets-only application code). Skip fields
+   marked "n/a". For each gap, generate a tailored, concrete
+   suggestion using known facts about the user's setup. Surface
+   in-chat AND embed in the report's "Reporter follow-up" section.
+   Offer to run any single-command suggestion immediately.
    ↓
 Step 11 (internal only): Offer Linear-issue flow — new issue, comment on
    duplicate, or skip — based on what step 7 found
@@ -95,8 +97,9 @@ Step U2: For .zip targets, extract to .problem-report-work-<ts>/
    ↓
 Step U3: Read existing report.md to understand current state
    ↓
-Step U4: Ask only about the delta in one batched AskUserQuestion call
-   (or skip if delta is obvious from context)
+Step U4: Ask only about the delta in one prose message (the delta is
+   usually free-text, so don't use AskUserQuestion); skip the
+   question if delta is obvious from context
    ↓
 Step U5: Ingest any new logs (Read + copy into bundle dir)
    ↓
@@ -113,7 +116,7 @@ Step U9: For .zip targets, re-zip and replace the original; clean up
    the work directory
    ↓
 Step U10: Re-run gap inventory against the updated report — refresh the
-   in-chat suggestions and the in-report "Suggested next steps" section
+   in-chat suggestions and the in-report "Reporter follow-up" section
    (some gaps may now be closed; others may remain)
    ↓
 Step U11 (internal only): Offer to post the delta as a comment on the
