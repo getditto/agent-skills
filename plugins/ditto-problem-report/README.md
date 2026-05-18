@@ -17,23 +17,23 @@ This plugin helps you (or your customer) produce a complete, well-structured bug
 
 ## Output
 
-- **No attachments:** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS.md` in the current directory.
-- **With attachments:** a `.zip` archive `ditto-problem-report-YYYYMMDD-HHMMSS.zip` containing `report.md` plus all attachments.
-- **Internal Ditto users only:** an option at the end to file the report as a Linear issue.
+- **No attachments:** a single Markdown file `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.md` in the current directory, where `<slug>` is a short kebab-case rendering of the problem summary (e.g. `sync-stops-after-backgrounding-ios`).
+- **With attachments:** a `.zip` archive `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.zip` containing `report.md` plus all attachments.
+- **Internal Ditto users only:** an option at the end to file the report as a Linear issue. The Linear URL is written back into the report's header so subsequent updates can target it without re-asking.
 
 ### Updating a report
 
-When new information arrives later (logs you couldn't capture initially, another affected device, a sharper reproduction recipe), update the existing report in place — the original filename and timestamp are preserved. Each update appends a row to an **Update log** section at the bottom of the report so the recipient can see what changed and when.
+When new information arrives later (logs you couldn't capture initially, another affected device, a sharper reproduction recipe), update the existing report in place — the original filename, timestamp, and slug are preserved. Each update appends a row to an **Update log** section at the bottom of the report so the recipient can see what changed and when.
 
 ```
-/ditto-problem-report update ditto-problem-report-20260518-143000.md
+/ditto-problem-report update ditto-problem-report-20260518-143000-sync-stops-ios.md
 ```
 
 Or just describe what to add and the skill will find the file:
 
 > "Add the iOS logcat I just captured to my problem report"
 
-If the original was a bare `.md` and the update adds the first attachment, the report is automatically promoted to a `.zip` bundle with the same timestamp. For reports that were already filed as Linear issues, internal users are offered the option to post the delta as a comment on the existing issue rather than refiling.
+If the original was a bare `.md` and the update adds the first attachment, the report is automatically promoted to a `.zip` bundle with the same timestamp and slug. For reports that were already filed as Linear issues (the URL is recorded in the report's `**Filed as Linear:**` header), internal users are offered the option to post the delta as a comment on the existing issue rather than refiling.
 
 ## What this plugin provides
 
