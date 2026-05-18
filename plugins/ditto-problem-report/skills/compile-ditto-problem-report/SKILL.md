@@ -19,32 +19,33 @@ Always print the final path of what was written (Markdown file or zip) on the la
 
 The report must include the following before being considered complete. Drive the interview to fill in any that the user has not already supplied. Mark optional items clearly.
 
-1. **One-sentence summary** of the problem.
-2. **Problem scope** — is this a **small-peer** problem (Ditto SDK on a device / app / edge server), a **Big Peer / portal** problem (Ditto cloud, HTTP API, or portal UI), or **both** (a mesh issue involving sync between small peers and Big Peer, or a behaviour that only manifests when both are in the loop)? Ask this early — the answer routes the rest of the interview (e.g. skip Big Peer environment questions for a pure small-peer problem; skip transport questions for a pure portal problem).
-3. **Detailed description** — observed behaviour vs. expected behaviour.
-4. **Ditto SDK(s) in use** — for each, the language/platform variant (Swift, Kotlin/Java, JS/TS, React Native, C++, Rust, Go, .NET / MAUI, Flutter) **and** the exact version (e.g. `4.14.2`, `5.0.0-alpha.3`). If the deployment involves multiple SDKs syncing in a mesh, list every variant + version present. (Skip if scope is pure Big Peer / portal and no SDK is involved.)
-5. **Big Peer details** (required if scope is "Big Peer / portal" or "both") — environment (production / staging / on-prem), app ID, and region/cluster if known. For portal-UI issues, also capture the portal page URL and browser + version.
-6. **Operating system(s) + versions** — for every device, server, or container involved (e.g. `iOS 17.4`, `Android 14 (Pixel 7)`, `macOS 14.5 (M2)`, `Ubuntu 22.04 x86_64`, `Windows 11 23H2`).
-7. **Device models** where relevant (`Pixel 7`, `iPhone 15 Pro`, `Galaxy S20 FE`, `Raspberry Pi 4 64-bit`, etc.).
-8. **Transports** in use, if known (BLE, LAN, AWDL/MultipeerConnectivity, WebSocket to Big Peer). The user may not know — that's fine. (Skip if scope is pure Big Peer / portal.)
-9. **Regression status** — was this working in a previous SDK version (or, for portal issues, a previous portal release)? If yes, the last-known-good version and the version where it broke. If they don't know, mark "unknown".
-10. **Reproduction steps** — numbered list. If not reliably reproducible, capture what *is* known (timing, frequency, conditions).
-11. **Reproduction rate** — always / often / sometimes / once.
-12. **When did it happen** — one or more concrete date/time windows when the problem was observed, in **ISO-8601 with an explicit timezone offset** (e.g. `2026-05-18T14:30:00-04:00` to `2026-05-18T14:45:00-04:00`). If multiple incidents, list each as its own window. Also record the **timezone the user is in** so a recipient reading raw UTC logs knows how to convert. This is the single most useful field for narrowing Datadog dashboards and SDK / Big Peer log searches, so push for the most precise answer the user can give — minute-level if possible, otherwise hour-level, otherwise "around <date> in the afternoon, EST". If the problem is ongoing / continuous rather than a discrete event, say so and capture the start time (and "ongoing" as the end). If the user doesn't know, mark "unknown" but try once to refresh their memory ("when did you first notice it?", "when did you last see it?").
-13. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
-14. **Workarounds tried** and their outcomes.
-15. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
+1. **Customer name** — the organisation or company name of the customer experiencing the problem (e.g. "Acme Logistics", "ContosoHealth"). For an external reporter filing about their own deployment, this is their company. For an internal Ditto staff member filing on behalf of a customer, this is the customer's name (not Ditto's). If the reporter is internal and the problem is hitting a Ditto-internal test / staging environment with no customer impact, write `Ditto (internal)`. The duplicate-search step uses this as a filter.
+2. **Ditto Application ID(s)** — the app ID(s) used by the affected deployment, in their canonical form (UUIDs like `12345678-1234-1234-1234-123456789012`, or the human-readable app slug if that's all the user has). List **every** app ID involved if multiple. Required regardless of problem scope (small peers, Big Peer, and portal all reference the app ID). For Online Playground apps, mark the entry as `(online playground)`. Accept `unknown` only if the user genuinely cannot find it — the recipient needs at least one app ID to look anything up.
+3. **One-sentence summary** of the problem.
+4. **Problem scope** — is this a **small-peer** problem (Ditto SDK on a device / app / edge server), a **Big Peer / portal** problem (Ditto cloud, HTTP API, or portal UI), or **both** (a mesh issue involving sync between small peers and Big Peer, or a behaviour that only manifests when both are in the loop)? Ask this early — the answer routes the rest of the interview (e.g. skip Big Peer environment questions for a pure small-peer problem; skip transport questions for a pure portal problem).
+5. **Detailed description** — observed behaviour vs. expected behaviour.
+6. **Ditto SDK(s) in use** — for each, the language/platform variant (Swift, Kotlin/Java, JS/TS, React Native, C++, Rust, Go, .NET / MAUI, Flutter) **and** the exact version (e.g. `4.14.2`, `5.0.0-alpha.3`). If the deployment involves multiple SDKs syncing in a mesh, list every variant + version present. (Skip if scope is pure Big Peer / portal and no SDK is involved.)
+7. **Big Peer details** (required if scope is "Big Peer / portal" or "both") — environment (production / staging / on-prem) and region/cluster if known. (The app ID is captured at the top of the report — don't ask for it again here.) For portal-UI issues, also capture the portal page URL and browser + version.
+8. **Operating system(s) + versions** — for every device, server, or container involved (e.g. `iOS 17.4`, `Android 14 (Pixel 7)`, `macOS 14.5 (M2)`, `Ubuntu 22.04 x86_64`, `Windows 11 23H2`).
+9. **Device models** where relevant (`Pixel 7`, `iPhone 15 Pro`, `Galaxy S20 FE`, `Raspberry Pi 4 64-bit`, etc.).
+10. **Transports** in use, if known (BLE, LAN, AWDL/MultipeerConnectivity, WebSocket to Big Peer). The user may not know — that's fine. (Skip if scope is pure Big Peer / portal.)
+11. **Regression status** — was this working in a previous SDK version (or, for portal issues, a previous portal release)? If yes, the last-known-good version and the version where it broke. If they don't know, mark "unknown".
+12. **Reproduction steps** — numbered list. If not reliably reproducible, capture what *is* known (timing, frequency, conditions).
+13. **Reproduction rate** — always / often / sometimes / once.
+14. **When did it happen** — one or more concrete date/time windows when the problem was observed, in **ISO-8601 with an explicit timezone offset** (e.g. `2026-05-18T14:30:00-04:00` to `2026-05-18T14:45:00-04:00`). If multiple incidents, list each as its own window. Also record the **timezone the user is in** so a recipient reading raw UTC logs knows how to convert. This is the single most useful field for narrowing Datadog dashboards and SDK / Big Peer log searches, so push for the most precise answer the user can give — minute-level if possible, otherwise hour-level, otherwise "around <date> in the afternoon, EST". If the problem is ongoing / continuous rather than a discrete event, say so and capture the start time (and "ongoing" as the end). If the user doesn't know, mark "unknown" but try once to refresh their memory ("when did you first notice it?", "when did you last see it?").
+15. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
+16. **Workarounds tried** and their outcomes.
+17. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
     1. **Full application source** (best) — a path to the project root or a `.zip`/`.tar.gz` of it. Copy it into the bundle directory as `app/` (or the archive verbatim). If the project is large, ask the user to exclude `node_modules/`, `build/`, `target/`, `Pods/`, `.gradle/`, etc. before zipping.
     2. **A minimal reproducer repo URL** — record the URL, branch, and commit SHA. No file copy needed.
     3. **Code snippets** (fallback when neither is possible) — the user pastes representative excerpts. Ask specifically for: SDK initialization (identity / auth / app ID / sync URL / persistence directory), sync subscription setup (`registerSubscription` or `sync.registerSubscription`, including the DQL), observer / store-observer / live-query setup, the DQL statements the app issues (SELECT/INSERT/UPDATE/DELETE/EVICT), any transaction/batch usage, attachment usage, and any custom transport / device-name / role configuration. Embed each snippet in the report as a fenced code block with the source language tag (e.g. ` ```swift `, ` ```kotlin `, ` ```ts `).
     
     Always note whether what was provided is "full source", "reproducer repo", or "snippets only" so the recipient knows what level of fidelity to expect.
-16. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
+18. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
 
 Optional but useful:
 - DQL query text or subscription queries involved (if not already captured under Application code).
 - Network conditions (Wi-Fi SSID, NAT type, VPN, firewall).
-- App ID / online playground ID (redacted as appropriate).
 
 ## Interview rules
 
@@ -113,7 +114,7 @@ Redaction: do **not** automatically redact tokens, app IDs, or device names — 
 
 **Skip this section entirely for external users** — they don't have access to Linear / Notion / internal docs, and we shouldn't fabricate links they can't follow.
 
-For internal Ditto staff, run a duplicate-search after the required fields are gathered and before output assembly. Build 2–5 short search queries from the report's known fields: the one-sentence summary, the most distinctive error string or panic message from supplied logs, the affected SDK + version, and any explicit feature name (e.g. "attachment fetch", "BLE permission", "Big Peer HTTP 503").
+For internal Ditto staff, run a duplicate-search after the required fields are gathered and before output assembly. Build 2–5 short search queries from the report's known fields: the **customer name** (often the strongest filter — most Linear issues and Notion docs that touch a customer mention them by name), the **Ditto app ID(s)** (great for finding Datadog/Big Peer issues filed against the same app), the one-sentence summary, the most distinctive error string or panic message from supplied logs, the affected SDK + version, and any explicit feature name (e.g. "attachment fetch", "BLE permission", "Big Peer HTTP 503"). At minimum include one customer-name query and one error-string / feature-name query.
 
 Hit each of the following sources in **parallel** (single message, multiple tool calls). Cap results to ~5 per source; don't grind through pagination.
 

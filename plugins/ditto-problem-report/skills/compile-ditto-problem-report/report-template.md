@@ -8,6 +8,8 @@ Render the report using exactly the following structure. Replace every `{{placeh
 **Date:** {{ISO-8601 date and time, e.g. 2026-05-18 14:30 -0400}}
 **Reporter:** {{name}} ({{email or handle}})
 **Reporter type:** {{internal Ditto staff | external customer}}
+**Customer:** {{customer / organisation name; or "Ditto (internal)" if no customer is impacted}}
+**Ditto Application ID(s):** {{one or more app IDs, comma-separated; mark online-playground apps as "<id> (online playground)"; "unknown" only if genuinely unrecoverable}}
 
 ## Summary
 
@@ -51,10 +53,11 @@ Add one row per device, server, or container involved.
 (Required if problem scope is "Big Peer / portal" or "both". Omit if pure small-peer.)
 
 - **Environment:** {{production | staging | on-prem | unknown}}
-- **App ID:** {{app id, or "redacted"}}
 - **Region / cluster:** {{region, or "unknown"}}
 - **Portal URL** (for portal-UI issues): {{e.g. https://portal.ditto.live/apps/.../sync}}
 - **Browser + version** (for portal-UI issues): {{e.g. Chrome 124.0.6367.61}}
+
+(App ID(s) are recorded at the top of the report — not repeated here.)
 
 ## Transports in use
 
