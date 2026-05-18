@@ -168,4 +168,12 @@ Add one row per device, server, or container involved.
 ## Additional notes
 
 {{anything else the user wants to add — DQL query text, screenshots referenced inline, network conditions, etc. Omit if nothing.}}
+
+## Update log
+
+(One row per revision. New reports start with a single "initial report" entry. Each later update appends a row.)
+
+| Timestamp                         | Updated by                | Changes                                     |
+| --------------------------------- | ------------------------- | ------------------------------------------- |
+| {{report creation ISO timestamp}} | {{reporter name + email}} | initial report                              |
 ```
