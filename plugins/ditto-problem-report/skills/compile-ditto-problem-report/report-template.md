@@ -169,6 +169,16 @@ Add one row per device, server, or container involved.
 
 {{anything else the user wants to add — DQL query text, screenshots referenced inline, network conditions, etc. Omit if nothing.}}
 
+## Suggested next steps
+
+(Omit this entire section if the report has zero gaps. Otherwise list the most-valuable suggestions the user can take to fill `unknown` fields or missing attachments. Tailor each suggestion to what's already known — give concrete commands or paths, not generic advice.)
+
+1. {{suggestion 1 — e.g. "Capture Ditto SDK debug logs on the affected Android device: `DittoLogger.setMinimumLogLevel(LogLevel.DEBUG)`, reproduce, then `adb -s <serial> logcat -d -v threadtime > ditto-android.log`. Re-run with `update` to attach."}}
+2. {{suggestion 2}}
+3. {{suggestion 3}}
+
+(Cap at 5. Prioritise: logs > regression info > occurrence-time precision > device/OS specifics > impact-data refinement.)
+
 ## Update log
 
 (One row per revision. New reports start with a single "initial report" entry. Each later update appends a row.)

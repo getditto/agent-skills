@@ -186,7 +186,57 @@ zip -r "ditto-problem-report-$ts.zip" "ditto-problem-report-$ts"
 echo "ditto-problem-report-$ts.zip"
 ```
 
-After writing, print the absolute path of the final artifact.
+After writing, print the absolute path of the final artifact — but **before** the final-path line, run the **Suggest next steps for missing information** section below if the report contains any `unknown` / blank required fields or has no attachments.
+
+## Suggest next steps for missing information
+
+Run this step whenever the assembled (new or updated) report still has fields marked `unknown`, omitted required sections, or no attachments. The goal is to hand the user a short, concrete to-do list so they can fill the gaps without a back-and-forth.
+
+### Step 1 — inventory the gaps
+
+Scan the report for:
+
+- Any line containing the literal string `unknown` in a required field.
+- Empty required sections (e.g. **Reproduction steps** with no numbered items, **Workarounds tried** = "none tried" when impact is high).
+- No attachments at all, or only one of several relevant log types (e.g. app logs without Ditto SDK logs).
+- Coarse-grained **Occurrence times** (e.g. only "around last Tuesday afternoon" when the user is internal and has Datadog access — they can do better).
+- **Application code** = "snippets only" when full source or a reproducer repo is feasible.
+
+Skip this whole step if every required field is filled and at least one relevant log type is attached.
+
+### Step 2 — tailor each suggestion to what's already known
+
+Use the fields that **are** filled in to make suggestions concrete. Do not give generic advice when specific commands are possible.
+
+| Gap                          | Tailoring signal              | Concrete suggestion                                                                                              |
+| ---------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Missing Ditto SDK logs       | OS = Android                  | `DittoLogger.setMinimumLogLevel(LogLevel.DEBUG)`, reproduce, then `adb -s <serial> logcat -d -v threadtime > ditto-android.log`. Cite `platform-logs.md` for filter syntax. |
+| Missing Ditto SDK logs       | OS = iOS / macOS              | `DittoLogger.minimumLogLevel = .debug`, reproduce, then `log show --predicate 'subsystem CONTAINS "ditto"' --info --debug --last 1h > ditto-apple.log`. |
+| Missing Ditto SDK logs       | OS = Linux                    | Set SDK log level via the platform's API; rerun with `2>&1 \| tee ditto.log`.                                    |
+| Unknown OS version           | OS family known               | macOS: `sw_vers -productVersion`. Android: `adb -s <serial> shell getprop ro.build.version.release`. iOS: Settings → General → About. |
+| Unknown SDK version          | Project layout visible        | Point at the specific manifest line (e.g. "look at `Package.resolved` for `dittoswift`'s version", "check `package.json` → `@dittolive/ditto`"). |
+| Unknown device model         | OS = Android                  | `adb -s <serial> shell getprop ro.product.model`.                                                                |
+| Unknown Database ID (App ID) | Anywhere                      | "Find it in the Ditto portal at <https://portal.ditto.live/> under your app, or grep the SDK init call in the application code for the `appID:` parameter." |
+| Unknown last-known-good ver. | Project has git history       | `git log -- <SDK manifest path>` to find when the SDK version last changed; the prior pin is your candidate.     |
+| Coarse occurrence times      | Audience = internal           | "Check Datadog for the affected database ID over the suspected window; narrow to ±15 minutes."                   |
+| Coarse occurrence times      | Audience = external           | "Check the device's local clock against the user-reported timing; app crash logs or analytics dashboards usually have precise timestamps." |
+| No reproduction steps        | Reproduction rate = sometimes | Suggest enabling DEBUG logs and running the flow until the user observes the failure again; capture logs starting from app launch. |
+| Application code = snippets  | Project root is local         | "If the project is small or you can share it, zip the source tree (excluding `node_modules`, `build`, `target`, `Pods`, `.gradle`) and re-run with `update`." |
+| Missing Big Peer info        | Scope includes Big Peer       | "Capture an HTTP API request/response from the affected window (curl with `-v`) and the portal Sync/Vitals tab screenshot for the same window." |
+| Missing impact data          | Audience = external           | "Check support tickets / app-store reviews / customer-success notes for the number of users hitting this in the same window." |
+
+This table is illustrative — when the exact gap isn't listed, derive a suggestion from the same principle: name the precise command or location, tied to a known fact about the user's setup.
+
+### Step 3 — surface the suggestions in two places
+
+1. **In-chat, after the final-path line**, output a short numbered list of suggestions the user can act on immediately. Cap at 5 items; pick the highest-value gaps first (logs > regression info > occurrence precision > everything else).
+2. **In the report's `Suggested next steps` section** (see template), embed the same list so the recipient also sees what's outstanding and what was suggested to the reporter. The recipient can then ask follow-ups already knowing what the user was told.
+
+### Step 4 — offer to apply suggestions immediately
+
+For any suggestion that resolves to a single Bash command and the user is willing, run it in this session (e.g. `sw_vers -productVersion`) and immediately re-enter update mode to add the result. Don't insist — just offer once.
+
+If the report has zero gaps, skip Steps 2–4 entirely. Do not output a "Suggested next steps" section with content like "no further action needed" — silence is fine.
 
 ## Update mode (modifying an existing report)
 
@@ -257,6 +307,8 @@ Record updater identity from `git config user.name` / `user.email`, same as for 
   zip -r "ditto-problem-report-<ts>.zip" "ditto-problem-report-<ts>"
   rm -rf ".problem-report-work-<ts>"
   ```
+
+Before printing the final path, **re-run the "Suggest next steps for missing information" section** against the updated report. The update may have closed some gaps and opened others — refresh the in-chat suggestion list and the in-report `Suggested next steps` section accordingly.
 
 Print the absolute path of the (possibly newly-typed) final artifact on the last line of your response.
 
