@@ -32,13 +32,18 @@ The report must include the following before being considered complete. Drive th
 11. **Reproduction rate** — always / often / sometimes / once.
 12. **Impact / scope** — number of users or devices affected, severity (data loss vs. degraded sync vs. annoyance), production vs. development.
 13. **Workarounds tried** and their outcomes.
-14. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
+14. **Application code** — how the application uses the Ditto SDK. Collect in this preference order:
+    1. **Full application source** (best) — a path to the project root or a `.zip`/`.tar.gz` of it. Copy it into the bundle directory as `app/` (or the archive verbatim). If the project is large, ask the user to exclude `node_modules/`, `build/`, `target/`, `Pods/`, `.gradle/`, etc. before zipping.
+    2. **A minimal reproducer repo URL** — record the URL, branch, and commit SHA. No file copy needed.
+    3. **Code snippets** (fallback when neither is possible) — the user pastes representative excerpts. Ask specifically for: SDK initialization (identity / auth / app ID / sync URL / persistence directory), sync subscription setup (`registerSubscription` or `sync.registerSubscription`, including the DQL), observer / store-observer / live-query setup, the DQL statements the app issues (SELECT/INSERT/UPDATE/DELETE/EVICT), any transaction/batch usage, attachment usage, and any custom transport / device-name / role configuration. Embed each snippet in the report as a fenced code block with the source language tag (e.g. ` ```swift `, ` ```kotlin `, ` ```ts `).
+    
+    Always note whether what was provided is "full source", "reproducer repo", or "snippets only" so the recipient knows what level of fidelity to expect.
+15. **Attachments** — Ditto SDK logs, app logs, OS/system logs, screenshots, sample queries or documents, packet captures, Big Peer HTTP API request/response captures, portal screenshots. List filenames + brief description; copy the files into the bundle directory.
 
 Optional but useful:
-- DQL query text or subscription queries involved.
+- DQL query text or subscription queries involved (if not already captured under Application code).
 - Network conditions (Wi-Fi SSID, NAT type, VPN, firewall).
 - App ID / online playground ID (redacted as appropriate).
-- A minimal reproducer repo URL if one exists.
 
 ## Interview rules
 

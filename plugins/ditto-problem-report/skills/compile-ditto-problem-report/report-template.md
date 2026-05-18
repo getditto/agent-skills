@@ -73,6 +73,53 @@ Add one row per device, server, or container involved.
 
 (Write "none tried" if applicable.)
 
+## Application code
+
+**Fidelity provided:** {{full source | reproducer repo | snippets only}}
+
+(If full source or a reproducer repo was provided, record the location below. Then omit the snippets sub-sections.)
+
+- **Bundled source:** {{path inside the zip, e.g. `app/`, or "n/a"}}
+- **Reproducer repo:** {{URL, branch, commit SHA, or "n/a"}}
+
+(If only snippets were provided, fill in the relevant sub-sections below. Omit any sub-section the user didn't provide.)
+
+### SDK initialization
+
+\`\`\`{{language}}
+{{init code — identity, auth, app ID, sync URL, persistence directory, log level}}
+\`\`\`
+
+### Sync subscriptions
+
+\`\`\`{{language}}
+{{registerSubscription / sync.registerSubscription calls and the DQL strings}}
+\`\`\`
+
+### Observers / live queries
+
+\`\`\`{{language}}
+{{store observer or live-query registration}}
+\`\`\`
+
+### DQL statements issued by the app
+
+\`\`\`sql
+{{SELECT / INSERT / UPDATE / DELETE / EVICT statements; include parameter binding patterns}}
+\`\`\`
+
+### Transactions / batch operations
+
+\`\`\`{{language}}
+{{transaction usage, if any}}
+\`\`\`
+
+### Attachments / custom transports / other config
+
+\`\`\`{{language}}
+{{attachment fetch/put, transport overrides, device name, role config — whichever is relevant}}
+\`\`\`
+
 ## Attachments
 
 | File | Description |
