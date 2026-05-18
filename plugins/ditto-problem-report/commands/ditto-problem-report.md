@@ -6,7 +6,7 @@ Load the `compile-ditto-problem-report` skill and run its workflow.
 
 **Mode detection — do this first:**
 
-- If $ARGUMENTS contains the literal word `update`, `add`, `amend`, or a path matching `ditto-problem-report-*.md` or `ditto-problem-report-*.zip`, treat this as **update mode**: locate the target report (use the explicit path if given, otherwise glob the current directory) and run the skill's "Update mode (modifying an existing report)" flow.
+- If $ARGUMENTS contains the literal word `update`, `amend`, `append`, the phrase `add to`, or a path matching `ditto-problem-report-*.md` or `ditto-problem-report-*.zip`, treat this as **update mode**: locate the target report (use the explicit path if given, otherwise glob the current directory) and run the skill's "Update mode (modifying an existing report)" flow. The bare word `add` on its own is **not** an update signal (it commonly appears in new-report phrasings like "add more details about…") — require one of the more specific phrases above.
 - Otherwise, treat $ARGUMENTS as the user's initial problem statement for a new report and run the normal interview flow.
 - If $ARGUMENTS is empty, follow the skill's Mode detection rules (glob the current directory and ask if ambiguous).
 

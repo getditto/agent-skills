@@ -7,6 +7,7 @@ A Claude Code plugin marketplace for [Ditto](https://ditto.com) - the peer-to-pe
 | Plugin | Description |
 |--------|-------------|
 | [ditto-dql](./plugins/ditto-dql) | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations |
+| [ditto-platform-skills](./plugins/ditto-platform-skills) | SRE and platform engineering skills for Ditto infrastructure workflows |
 | [ditto-problem-report](./plugins/ditto-problem-report) | Compile a structured bug report for a Ditto SDK or Big Peer issue, with interview-driven field collection and log bundling |
 
 ## Installation

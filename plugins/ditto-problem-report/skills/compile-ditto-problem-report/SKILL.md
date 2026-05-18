@@ -262,7 +262,7 @@ This table is illustrative — when the exact gap isn't listed, derive a suggest
 
 ### Step 3 — surface the suggestions in two places
 
-1. **In-chat, after the final-path line**, output a short numbered list of suggestions the user can act on immediately. Cap at 5 items; pick the highest-value gaps first (logs > regression info > occurrence precision > everything else).
+1. **In-chat, immediately before the final-path line** (so the path stays on the last line of the response, per the rule at the top of this skill), output a short numbered list of suggestions the user can act on immediately. Cap at 5 items; pick the highest-value gaps first (logs > regression info > occurrence precision > everything else).
 2. **In the report's `Reporter follow-up` section** (see template), embed the same list so the recipient also sees what's outstanding and what was suggested to the reporter. The recipient can then ask follow-ups already knowing what the user was told.
 
 ### Step 4 — offer to apply suggestions immediately

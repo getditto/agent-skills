@@ -9,7 +9,7 @@ This plugin helps you (or your customer) produce a complete, well-structured bug
 - The Ditto SDK(s) in use and their exact versions
 - Operating systems and device models for every peer involved
 - Whether the problem is a regression and the last-known-good SDK version
-- Big Peer environment, app ID, and region (when applicable)
+- Ditto Database ID (App ID), Big Peer environment, and region (when applicable)
 - Transports in use (BLE, LAN, AWDL, WebSocket)
 - Reproduction steps and reproduction rate
 - Impact and scope
@@ -31,7 +31,7 @@ When new information arrives later (logs you couldn't capture initially, another
 
 Or just describe what to add and the skill will find the file:
 
-> "Add the iOS logcat I just captured to my problem report"
+> "Add the iOS unified-log export I just captured to my problem report"
 
 If the original was a bare `.md` and the update adds the first attachment, the report is automatically promoted to a `.zip` bundle with the same timestamp and slug. For reports that were already filed as Linear issues (the URL is recorded in the report's `**Filed as Linear:**` header), internal users are offered the option to post the delta as a comment on the existing issue rather than refiling.
 

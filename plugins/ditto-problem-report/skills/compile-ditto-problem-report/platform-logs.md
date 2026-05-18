@@ -123,7 +123,7 @@ Set `DEBUG=ditto:*` (if the app uses the `debug` library) for additional diagnos
 
 For Big Peer (cloud) issues, in addition to client logs, include:
 
-- **App ID** (from the Ditto portal).
+- **Ditto Database ID (App ID)** (from the Ditto portal) — this field is captured in the report header; do not duplicate it here, but ensure it is set there before filing.
 - **Region / cluster** if multi-region.
 - **Approximate UTC time window** of the failure (start / end).
 - **Portal diagnostics** — screenshots of the dashboard's Sync, Logs, or Vitals tabs around the failure window.
