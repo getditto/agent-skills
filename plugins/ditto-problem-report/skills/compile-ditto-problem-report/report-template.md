@@ -1,6 +1,6 @@
 # Report template
 
-Render the report using exactly the following structure. Replace every `{{placeholder}}`. For fields the user marked unknown, write the literal word `unknown` (not the placeholder). Omit entire optional sections only if the user explicitly indicates they do not apply (e.g. omit the **Big Peer** section if Big Peer is not involved).
+Render the report using exactly the following structure. Replace every `{{placeholder}}`. For fields the user marked unknown, write the literal word `unknown` (not the placeholder). Omit entire optional sections only if the user explicitly indicates they do not apply (e.g. omit the **Big Peer** section if the problem scope is pure small-peer; omit the **Environment** and **Transports** sections if the problem scope is pure Big Peer / portal).
 
 ```markdown
 # Ditto problem report — {{one-line summary}}
@@ -12,6 +12,8 @@ Render the report using exactly the following structure. Replace every `{{placeh
 ## Summary
 
 {{one-sentence summary of the problem}}
+
+**Problem scope:** {{small peer | Big Peer / portal | both}}
 
 ## Description
 
@@ -30,13 +32,15 @@ Render the report using exactly the following structure. Replace every `{{placeh
 
 Add one row per device, server, or container involved.
 
-## Big Peer
+## Big Peer / portal
 
-(Omit this section if Big Peer is not involved.)
+(Required if problem scope is "Big Peer / portal" or "both". Omit if pure small-peer.)
 
 - **Environment:** {{production | staging | on-prem | unknown}}
 - **App ID:** {{app id, or "redacted"}}
 - **Region / cluster:** {{region, or "unknown"}}
+- **Portal URL** (for portal-UI issues): {{e.g. https://portal.ditto.live/apps/.../sync}}
+- **Browser + version** (for portal-UI issues): {{e.g. Chrome 124.0.6367.61}}
 
 ## Transports in use
 
