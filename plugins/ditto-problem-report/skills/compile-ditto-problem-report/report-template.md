@@ -2,6 +2,8 @@
 
 Render the report using exactly the following structure. Replace every `{{placeholder}}`. For fields the user marked unknown, write `unknown`; for fields the user marked as not applicable, write `n/a`. Omit entire optional sections only if the user explicitly indicates they do not apply (e.g. omit the **Big Peer** section if the problem scope is pure small-peer; omit the **Environment** and **Transports** sections if the problem scope is pure Big Peer / portal). The filename uses the form `ditto-problem-report-YYYYMMDD-HHMMSS-<slug>.{md,zip}` where `<slug>` is a short kebab-case rendering of the summary; see the skill's "Output assembly" section for the slug rules.
 
+**How to use this template:** the template content is wrapped in an outer ` ```markdown … ``` ` fence below so it renders as a single code block in documentation viewers. When you write the report file, **drop the outer fence** (the ` ```markdown ` line and its closing ` ``` `) and **unescape the inner fences** — every `\`\`\`` in the template becomes a literal ` ``` ` in the final report. The output file must be plain Markdown with real triple-backtick fences around code blocks, not escaped ones.
+
 ```markdown
 # Ditto problem report — {{one-line summary}}
 
