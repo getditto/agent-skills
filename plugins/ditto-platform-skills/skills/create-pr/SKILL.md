@@ -48,10 +48,11 @@ If no restriction exists, proceed directly to Step 1.
 cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner
 git -C <repo-path> rev-parse --abbrev-ref HEAD
 git -C <repo-path> status --short
-git -C <repo-path> rev-list --count main..HEAD
+git -C <repo-path> fetch --quiet origin
+git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-This gives us: the GitHub repo name, the current branch, uncommitted changes, and commit count ahead of `main` — all before asking the user anything.
+This gives us: the GitHub repo name, the current branch, uncommitted changes, and commit count ahead of the **remote** `main` (fetched fresh) — all before asking the user anything. Using `origin/main` rather than local `main` ensures we catch commits that exist on the branch but haven't been compared against the latest remote state.
 
 **1c. With branch name now known, immediately check for an existing PR:**
 
@@ -79,7 +80,7 @@ Using the branch discovered in Step 1 — no additional commands needed.
 
 **If on `main` or `master`:**
 
-A feature branch is required. Tell the user:
+Ask the user:
 
 > "You're on `main`. A branch is required before creating a PR. What should the new branch be named?"
 
@@ -88,7 +89,14 @@ Wait for the user to provide a name. Run the checkout directly — unless a glob
 git -C <repo-path> checkout -b <branch-name>
 ```
 
-Do not proceed until the branch has been created and switched to. Re-run the parallel discovery from Step 1b to refresh all state for the new branch.
+After switching, re-run the parallel discovery from Step 1b to refresh state.
+
+- If there are **uncommitted changes on the new branch**: continue to Step 3 as normal.
+- If there are **no uncommitted changes and zero commits ahead of `main`** (the branch was freshly cut from a clean `main`): the branch is ready but there is nothing to PR yet. Tell the user:
+
+  > "Branch `<branch-name>` created. Make your changes, then re-run `/ditto-platform-skills:create-pr` and I'll pick up from here."
+
+  Exit the skill cleanly.
 
 **If already on a feature branch:**
 
@@ -166,9 +174,9 @@ Once committed (or skipped), continue to Step 5.
 
 Run in parallel:
 ```bash
-git -C <repo-path> log main..HEAD --oneline
-git -C <repo-path> diff main...HEAD --stat
-git -C <repo-path> diff main...HEAD
+git -C <repo-path> log origin/main..HEAD --oneline
+git -C <repo-path> diff origin/main...HEAD --stat
+git -C <repo-path> diff origin/main...HEAD
 ```
 
 Use this to understand:
