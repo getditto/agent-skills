@@ -48,10 +48,11 @@ If no restriction exists, proceed directly to Step 1.
 cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner
 git -C <repo-path> rev-parse --abbrev-ref HEAD
 git -C <repo-path> status --short
-git -C <repo-path> rev-list --count main..HEAD
+git -C <repo-path> fetch --quiet origin
+git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-This gives us: the GitHub repo name, the current branch, uncommitted changes, and commit count ahead of `main` — all before asking the user anything.
+This gives us: the GitHub repo name, the current branch, uncommitted changes, and commit count ahead of the **remote** `main` (fetched fresh) — all before asking the user anything. Using `origin/main` rather than local `main` ensures we catch commits that exist on the branch but haven't been compared against the latest remote state.
 
 **1c. With branch name now known, immediately check for an existing PR:**
 
@@ -79,7 +80,7 @@ Using the branch discovered in Step 1 — no additional commands needed.
 
 **If on `main` or `master`:**
 
-A feature branch is required. Tell the user:
+Ask the user:
 
 > "You're on `main`. A branch is required before creating a PR. What should the new branch be named?"
 
@@ -88,7 +89,14 @@ Wait for the user to provide a name. Run the checkout directly — unless a glob
 git -C <repo-path> checkout -b <branch-name>
 ```
 
-Do not proceed until the branch has been created and switched to. Re-run the parallel discovery from Step 1b to refresh all state for the new branch.
+After switching, re-run the parallel discovery from Step 1b to refresh state.
+
+- If there are **uncommitted changes on the new branch**: continue to Step 3 as normal.
+- If there are **no uncommitted changes and zero commits ahead of `main`** (the branch was freshly cut from a clean `main`): the branch is ready but there is nothing to PR yet. Tell the user:
+
+  > "Branch `<branch-name>` created. Make your changes, then re-run `/ditto-platform-skills:create-pr` and I'll pick up from here."
+
+  Exit the skill cleanly.
 
 **If already on a feature branch:**
 
@@ -166,9 +174,9 @@ Once committed (or skipped), continue to Step 5.
 
 Run in parallel:
 ```bash
-git -C <repo-path> log main..HEAD --oneline
-git -C <repo-path> diff main...HEAD --stat
-git -C <repo-path> diff main...HEAD
+git -C <repo-path> log origin/main..HEAD --oneline
+git -C <repo-path> diff origin/main...HEAD --stat
+git -C <repo-path> diff origin/main...HEAD
 ```
 
 Use this to understand:
@@ -178,7 +186,37 @@ Use this to understand:
 
 ## Step 6: Draft the PR Message
 
-Based on the diff, produce a draft PR message:
+**6a. Check for thin diffs (version bumps)**
+
+Before drafting, inspect the diff for patterns that indicate the change is only a version number update — e.g.:
+- A single line change like `version = "1.2.3"` → `version = "1.3.0"` in a Terraform module, `Chart.yaml`, `package.json`, `go.mod`, or similar
+- The diff contains no logic changes, only a version string update
+
+If a version bump is detected, ask the user before drafting:
+
+> "This looks like a version bump (e.g. `<module-or-package>` from `<old>` to `<new>`). Can you share the upstream PR or changelog that describes what changed in this version? This will be included in the PR description."
+
+Wait for the user's response. They may provide:
+- A PR URL (e.g. `https://github.com/org/repo/pull/123`)
+- A changelog entry or release notes
+- A Linear ticket
+- A brief description of what the version update includes
+
+If the user has no reference, note that in the PR body and proceed.
+
+**6b. Minimum requirements check**
+
+Before drafting, verify the diff provides enough context to fill in each section meaningfully:
+
+- **Summary**: At least one concrete statement of what changed. If the diff is a version bump with no upstream reference, flag this as thin.
+- **Why**: Must explain motivation. If the diff gives no clues and the user provided no context, ask: *"What's the reason for this change? (e.g. bug fix, security patch, new feature in the module)"*
+- **Test plan**: At least one checkable item. If the change is infrastructure-only with no observable behaviour, note how to verify the deployment succeeded.
+
+Do not draft until the Why can be filled in with real information.
+
+**6c. Draft**
+
+Based on the diff and any upstream references provided, produce the PR message:
 
 ```
 ## Summary
@@ -188,7 +226,11 @@ Based on the diff, produce a draft PR message:
 
 ## Why
 
-<Explain the motivation — what problem this solves or what it enables. Reference any upstream issues, external PRs, or Linear tickets if present in commit messages or code comments.>
+<Explain the motivation. For version bumps, summarise what changed in the upstream module/package and link to the upstream PR or changelog.>
+
+## References
+
+- <upstream PR / changelog / Linear ticket if applicable>
 
 ## Test plan
 
@@ -198,8 +240,9 @@ Based on the diff, produce a draft PR message:
 
 Rules:
 - Title: short and imperative (under 70 chars), describes the change
-- Surface any external references found in commit messages or code comments (e.g. upstream PRs, issue links)
-- Keep the Why grounded in the diff — don't invent motivation
+- For version bumps: title should name the module and new version (e.g. `bump terraform-modules/eks to v1.3.0`)
+- Surface any external references found in commit messages, code comments, or user-provided context
+- Keep the Why grounded in real information — don't invent motivation
 
 Display the full draft (title + body) to the user.
 
