@@ -193,6 +193,7 @@ Summarise the changes and suggest a short commit message in conventional commit 
   ```bash
   cd <repo-path> && git add -A && git commit -m "<commit message>"
   ```
+  Only append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` to the commit message if Claude actually wrote or modified the file content being committed. If Claude only drafted the commit message and the user made all the file changes, do **not** add the co-author trailer.
 - **N (No)**: Skip the commit and continue to Step 5.
 - **E (Edit)**: Let the user provide or refine the message, re-display for confirmation, then commit once approved.
 
