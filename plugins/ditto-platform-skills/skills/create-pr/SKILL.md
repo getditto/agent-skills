@@ -42,28 +42,40 @@ If no restriction exists, proceed directly to Step 1.
   ```
   Present the list and ask: **"Which repo should I create a PR for?"** Wait for the answer before continuing.
 
-**1b. Once the repo path is known, run all discovery in parallel:**
+**1b. As soon as the repo path is known, immediately kick off `git fetch` in the background** — it's a network call and is the slowest part of discovery. Don't wait for it before running the other commands:
+
+```bash
+git -C <repo-path> fetch --quiet origin
+```
+
+**1c. In parallel with the fetch, run the remaining fast discovery commands:**
 
 ```bash
 cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner
 git -C <repo-path> rev-parse --abbrev-ref HEAD
 git -C <repo-path> status --short
-git -C <repo-path> fetch --quiet origin
-git -C <repo-path> rev-list --count origin/main..HEAD
+gh api user --jq .login
 ```
 
-This gives us: the GitHub repo name, the current branch, uncommitted changes, and commit count ahead of the **remote** `main` (fetched fresh) — all before asking the user anything. Using `origin/main` rather than local `main` ensures we catch commits that exist on the branch but haven't been compared against the latest remote state.
+The GitHub username is fetched here so it's available immediately if a branch needs to be created in Step 2.
 
-**1c. With branch name now known, immediately check for an existing PR:**
+**1d. As soon as `git rev-parse` returns the branch name**, immediately fire the PR check in parallel with waiting for the fetch to complete:
 
 ```bash
 gh pr list --repo <org>/<repo> --head <branch-name> --json number,title,url --limit 1
 ```
 
-**1d. Present the full picture to the user in one summary:**
+**1e. Once the fetch completes**, get the commit count:
+
+```bash
+git -C <repo-path> rev-list --count origin/main..HEAD
+```
+
+**1f. Present the full picture to the user in one summary:**
 
 > Repo: `<org>/<repo>`
 > Branch: `<branch-name>`
+> GitHub user: `<username>`
 > Uncommitted changes: Yes / No
 > Commits ahead of main: `<N>`
 > Existing PR: #<number> — <title> (<url>) / None
@@ -80,11 +92,28 @@ Using the branch discovered in Step 1 — no additional commands needed.
 
 **If on `main` or `master`:**
 
-Ask the user:
+A branch is required. Generate suggestions in parallel:
 
-> "You're on `main`. A branch is required before creating a PR. What should the new branch be named?"
+- If there are **uncommitted changes** (known from Step 1): run `git diff HEAD --stat` to get a sense of what changed and derive a short description slug (e.g. `add-gpg-key`, `fix-ingress-timeout`, `update-eks-version`).
+- The GitHub username is already known from Step 1c.
 
-Wait for the user to provide a name. Run the checkout directly — unless a global restriction is in effect and no override has been granted, in which case display it and wait for confirmation:
+Both of these can run simultaneously — don't wait for one before starting the other.
+
+Produce up to three branch name suggestions based on the description slug and username, then present them to the user:
+
+> "A branch is required. Here are some suggestions based on your changes:
+>
+> 1. `<username>/<ticket>-<description>` — includes a ticket number (you'll be asked for it)
+> 2. `<username>/<description>` — no ticket number
+> 3. Freeform — type your own
+>
+> Which format would you like? (1 / 2 / 3)"
+
+- **Option 1 selected**: ask "What's the ticket number?" and insert it to produce `<username>/<ticket>-<description>`. Confirm the full name with the user before proceeding.
+- **Option 2 selected**: confirm `<username>/<description>` with the user. They may adjust the description before confirming.
+- **Option 3 selected**: ask "What should the branch be named?" and use whatever they provide.
+
+Run the checkout directly — unless a global restriction is in effect and no override has been granted, in which case display it and wait for confirmation:
 ```bash
 git -C <repo-path> checkout -b <branch-name>
 ```
@@ -92,7 +121,7 @@ git -C <repo-path> checkout -b <branch-name>
 After switching, re-run the parallel discovery from Step 1b to refresh state.
 
 - If there are **uncommitted changes on the new branch**: continue to Step 3 as normal.
-- If there are **no uncommitted changes and zero commits ahead of `main`** (the branch was freshly cut from a clean `main`): the branch is ready but there is nothing to PR yet. Tell the user:
+- If there are **no uncommitted changes and zero commits ahead of `origin/main`** (branch freshly cut from clean `main`): tell the user:
 
   > "Branch `<branch-name>` created. Make your changes, then re-run `/ditto-platform-skills:create-pr` and I'll pick up from here."
 
@@ -167,12 +196,13 @@ Summarise the changes and suggest a short commit message in conventional commit 
 - **N (No)**: Skip the commit and continue to Step 5.
 - **E (Edit)**: Let the user provide or refine the message, re-display for confirmation, then commit once approved.
 
+> **Parallelism tip:** While waiting for the user's Y/N/E response, kick off the Step 5 diff commands in the background so results are ready immediately after the user responds. If the user chooses Y or E (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
+
 Once committed (or skipped), continue to Step 5.
 
 ## Step 5: Inspect the Diff
 
-
-Run in parallel:
+Run in parallel (or use pre-fetched results from Step 4 if the user chose N):
 ```bash
 git -C <repo-path> log origin/main..HEAD --oneline
 git -C <repo-path> diff origin/main...HEAD --stat
