@@ -12,6 +12,8 @@
     "./skills/clusterhealth",
     "./skills/pr-review",
     "./skills/create-subtask",
-    "./skills/metrics-flow"
+    "./skills/metrics-flow",
+    "./skills/create-pr",
+    "./skills/teleport-agent-debug"
   ]
 }

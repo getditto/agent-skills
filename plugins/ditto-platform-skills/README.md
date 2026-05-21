@@ -10,3 +10,5 @@ SRE and platform engineering skills for Ditto infrastructure workflows.
 | `pr-review` | Review a pull request with a structured 3-section report (does it work / test coverage / code smells). Saves report to disk, with optional security review and PR comment posting. |
 | `create-subtask` | Create a Linear sub-ticket linked to a parent issue, auto-assigned to the current user and set to In Progress. Checks Linear auth before proceeding. |
 | `metrics-flow` | Report Prometheus ingestion rate, remote write rate, queue status, lag, and flow balance for the Vector pipeline. Discovers the Prometheus pod dynamically. |
+| `create-pr` | Guided PR creation: confirms repo, handles branch creation from main, drafts message from diff, iterates with user, then runs `gh pr create` |
+| `teleport-agent-debug` | Diagnoses Teleport Kubernetes agent health (OOM kills, CPU/memory pressure, error logs) |
