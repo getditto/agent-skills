@@ -252,29 +252,18 @@ git -C <repo-path> status --short
 
 If there are **no uncommitted changes**, skip to Step 5.
 
-If uncommitted changes are present, immediately kick off both diff commands **in parallel** — results will be ready by the time the user responds:
+If uncommitted changes are present, immediately kick off all three commands **in parallel** — the diffs will be ready by the time you've drafted the commit message, and the Step 5 diffs will be ready as soon as the user answers:
 ```bash
-git -C <repo-path> diff HEAD          # run in parallel
-git -C <repo-path> diff --stat HEAD   # run in parallel
+git -C <repo-path> diff HEAD          # parallel — used to summarise changes and draft commit message
+git -C <repo-path> diff --stat HEAD   # parallel — used to summarise changes
+git -C <repo-path> log origin/main..HEAD --oneline   # parallel — Step 5 pre-fetch
+git -C <repo-path> diff origin/main...HEAD --stat     # parallel — Step 5 pre-fetch
+git -C <repo-path> diff origin/main...HEAD            # parallel — Step 5 pre-fetch
 ```
 
-Then ask the user using `AskUserQuestion`:
+Using the diff results, summarise the changes and draft a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`).
 
-> "There are uncommitted changes. Would you like to commit them before creating the PR?"
->
-> - **Yes, commit them**
-> - **No, skip — include as-is**
-
-- If **No**: proceed to Step 5 without committing.
-- If **Yes**: continue below using the pre-fetched diff results.
-
-Summarise the changes using the pre-fetched diff results and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`).
-
-While waiting for the user's response, kick off the Step 5 diff commands **in the background** so results are ready immediately after they answer. If the user chooses **Commit** or **Edit** (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
-
-Output **Changes:** `<summary of diff>` as a text line before the question.
-
-Then ask using `AskUserQuestion`, embedding the commit message directly in the question text so it is always visible:
+Output **Changes:** `<summary of diff>` as a text line, then immediately ask using `AskUserQuestion` with the commit message embedded directly in the question text:
 
 > "Commit with this message?
 > `<commit message>`"
@@ -295,7 +284,7 @@ Once committed (or skipped), continue to Step 5.
 
 ## Step 5: Inspect the Diff
 
-Use pre-fetched results from Step 4 if available. Otherwise run all three commands **in parallel**:
+Use the pre-fetched results from Step 4. If Step 4 was skipped (no uncommitted changes), run all three commands **in parallel** now:
 ```bash
 git -C <repo-path> log origin/main..HEAD --oneline   # parallel
 git -C <repo-path> diff origin/main...HEAD --stat     # parallel
