@@ -9,6 +9,7 @@
   "license": "MIT",
   "keywords": ["ditto", "sre", "platform", "kubernetes", "linear", "oncall", "observability"],
   "skills": [
+    "./skills/check-permissions",
     "./skills/clusterhealth",
     "./skills/pr-review",
     "./skills/create-subtask",

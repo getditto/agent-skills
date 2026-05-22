@@ -1,7 +1,7 @@
 ---
 name: create-pr
 description: Create a GitHub pull request. Use when user asks to create a PR, open a pull request, or submit changes for review. Confirms the repo, handles branch creation if on main, drafts a PR message from the diff, and creates the PR via gh.
-allowed-tools: Bash
+allowed-tools: Bash, AskUserQuestion
 ---
 
 # Create Pull Request
@@ -41,46 +41,16 @@ In quiet mode, suppress all intermediate narration. Run commands silently and on
 
 ## Pre-flight: Permission Check
 
-This skill needs to run the following state-modifying commands. Present these as a markdown table:
+Invoke the `check-permissions` skill with this identifier and command list. Run this in parallel as appropriate:
+- If **no repo was specified**: kick off Step 1a repo listing in parallel with this check
+- If **repo was specified**: kick off `git fetch` (Step 1b) in the background immediately
 
-| Command | Purpose |
-|---------|---------|
-| `git checkout -b <branch>` | Create a feature branch |
-| `git add` / `git commit` | Stage and commit changes |
-| `git push -u origin <branch>` | Push the branch to remote |
-| `gh pr create` / `gh pr edit` | Create or update the pull request |
-
-Before running any of them:
-
-**1. Check for a saved session permission** using the Claude session temp directory as the key. Run the following in parallel as appropriate:
-- If **no repo was specified**: kick off the Step 1a repo listing commands in parallel with this check
-- If **repo was specified**: kick off `git fetch` (Step 1b) in the background immediately — don't wait for permission check to complete first
-
-```bash
-SESSION_DIR=$(ls -td /tmp/claude-1000/-home-tcolbert-Projects/*/ 2>/dev/null | head -1)
-[ -f "${SESSION_DIR}create-pr-permission" ] && cat "${SESSION_DIR}create-pr-permission"
 ```
-If the file exists and contains `allowed`, skip the question entirely and proceed to Step 1.
+/check-permissions create-pr --permissions "git checkout -b,git add,git commit,git push,gh pr create,gh pr edit"
+```
 
-**2. Otherwise**, check whether a global rule (e.g. in `~/.claude/CLAUDE.md`) restricts these specific commands.
-
-If they are restricted, ask the user **once** using `AskUserQuestion`:
-
-> "This skill needs to run: `git checkout -b`, `git commit`, `git push`, and `gh pr create/edit`. Are these okay?"
->
-> - **Yes, this time** — allow for this skill run only; ask again next invocation
-> - **Yes, this session** — allow until you close Claude Code; don't ask again this session
-> - **Yes, always** — permanently add these commands to your allowed list (updates settings.json)
-> - **No** — display all state-modifying commands for manual execution throughout
-
-Store the user's choice and apply it consistently for the rest of the skill. Do **not** ask again per-command.
-
-- **Yes, this time**: proceed; ask again on the next invocation.
-- **Yes, this session**: write `allowed` to `${SESSION_DIR}create-pr-permission` so subsequent invocations in this session skip the question, then proceed.
-- **Yes, always**: invoke the `update-config` skill to add `git checkout -b`, `git commit`, `git push`, `gh pr create`, and `gh pr edit` to the global allowed commands list, then proceed.
-- **No**: display every state-modifying command as a shell snippet for the user to run manually.
-
-If the commands are not restricted, proceed directly to Step 1.
+- If the result is `allowed`: proceed directly to Step 1.
+- If the result is `denied`: display every state-modifying command as a shell snippet for the user to run manually, then exit.
 
 > **Note:** Read-only commands (`git status`, `git diff`, `git log`, `gh pr list`, `gh repo view`, etc.) are never restricted and can always be run directly.
 
@@ -143,7 +113,7 @@ gh pr list --repo <org>/<repo> --head <branch-name> --json number,title,url --li
 git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-**1f. Output the following summary table to the user first, then immediately follow with the `AskUserQuestion`. Do not call `AskUserQuestion` before the table is displayed.**
+**1f. Output the following summary table to the user:**
 
 | | |
 |---|---|
@@ -154,14 +124,15 @@ git -C <repo-path> rev-list --count origin/main..HEAD
 | **Commits ahead of main** | `<N>` |
 | **Existing PR** | #<number> — <title> (<url>) / None |
 
-Then ask for confirmation using `AskUserQuestion`:
+- **If on `main` or `master`**: skip the confirmation question and proceed directly to Step 2 — a branch is always required, so asking "proceed?" is meaningless.
+- **If on a feature branch**: ask for confirmation using `AskUserQuestion`:
 
-> "Proceed with this repo and branch?"
->
-> - **Yes** — proceed
-> - **No, wrong repo or branch** — ask the user to clarify before continuing
+  > "Proceed with this repo and branch?"
+  >
+  > - **Yes** — proceed
+  > - **No, wrong repo or branch** — ask the user to clarify before continuing
 
-Wait for confirmation before continuing.
+  Wait for confirmation before continuing.
 
 ## Step 2: Handle Branch State
 
