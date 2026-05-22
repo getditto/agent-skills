@@ -10,24 +10,43 @@ Guides the user through creating a GitHub PR: confirm the repo, ensure a feature
 
 ## Pre-flight: Permission Check
 
-Before running any commands, check whether a global rule (e.g. in `~/.claude/CLAUDE.md`) restricts running state-modifying commands like `git push`, `git commit`, `git checkout -b`, or `gh pr create`/`gh pr edit`.
+This skill needs to run the following state-modifying commands. Present these as a markdown table:
 
-If such a restriction exists, ask the user **once** at the start:
+| Command | Purpose |
+|---------|---------|
+| `git checkout -b <branch>` | Create a feature branch |
+| `git add` / `git commit` | Stage and commit changes |
+| `git push -u origin <branch>` | Push the branch to remote |
+| `gh pr create` / `gh pr edit` | Create or update the pull request |
 
-> "A global rule restricts me from running state-modifying commands. How would you like to proceed for this session?"
+Before running any of them:
+
+**1. Check for a saved session permission** using the Claude session temp directory as the key:
+```bash
+SESSION_DIR=$(ls -td /tmp/claude-1000/-home-tcolbert-Projects/*/ 2>/dev/null | head -1)
+[ -f "${SESSION_DIR}create-pr-permission" ] && cat "${SESSION_DIR}create-pr-permission"
+```
+If the file exists and contains `allowed`, skip the question entirely and proceed to Step 1.
+
+**2. Otherwise**, check whether a global rule (e.g. in `~/.claude/CLAUDE.md`) restricts these specific commands.
+
+If they are restricted, ask the user **once** using `AskUserQuestion`:
+
+> "This skill needs to run: `git checkout -b`, `git commit`, `git push`, and `gh pr create/edit`. Are these okay?"
 >
-> 1. **Yes, Permanent** — Override the restriction permanently (update global settings via `update-config`)
-> 2. **Yes, Session** — Override for this session only; don't ask again until next session
-> 3. **Yes, This time** — Run commands this once; ask again next time the skill runs
-> 4. **No, Provide the commands** — Display all state-modifying commands for manual execution throughout
+> - **Yes, this time** — allow for this skill run only; ask again next invocation
+> - **Yes, this session** — allow until you close Claude Code; don't ask again this session
+> - **Yes, always** — permanently add these commands to your allowed list (updates settings.json)
+> - **No** — display all state-modifying commands for manual execution throughout
 
-Store the user's choice and apply it consistently for every state-modifying command throughout the rest of the skill. Do **not** ask again per-command.
+Store the user's choice and apply it consistently for the rest of the skill. Do **not** ask again per-command.
 
-- **Yes, Permanent**: invoke the `update-config` skill to add the relevant commands to global allowed settings, then proceed.
-- **Yes, Session**: note the override in memory for this session and proceed.
-- **Yes, This time** / **No**: apply the choice silently for the rest of this skill run.
+- **Yes, this time**: proceed; ask again on the next invocation.
+- **Yes, this session**: write `allowed` to `${SESSION_DIR}create-pr-permission` so subsequent invocations in this session skip the question, then proceed.
+- **Yes, always**: invoke the `update-config` skill to add `git checkout -b`, `git commit`, `git push`, `gh pr create`, and `gh pr edit` to the global allowed commands list, then proceed.
+- **No**: display every state-modifying command as a shell snippet for the user to run manually.
 
-If no restriction exists, proceed directly to Step 1.
+If the commands are not restricted, proceed directly to Step 1.
 
 > **Note:** Read-only commands (`git status`, `git diff`, `git log`, `gh pr list`, `gh repo view`, etc.) are never restricted and can always be run directly.
 
@@ -36,11 +55,30 @@ If no restriction exists, proceed directly to Step 1.
 **1a. Identify the repo path**
 
 - If the user specified a repo (e.g. "create a PR for cloud-infra-apps"), resolve `<repo-path>` from that name and skip the directory listing.
-- If **no repo was specified**, run:
+- If **no repo was specified**, run two commands in parallel:
+
+  1. Get all repos sorted alphabetically for display:
   ```bash
-  ls -1d */
+  ls -1d /home/tcolbert/Projects/*/ | xargs -I{} basename {}
   ```
-  Present the list and ask: **"Which repo should I create a PR for?"** Wait for the answer before continuing.
+
+  2. Find the 3 most recently active repos — prioritising repos with uncommitted changes first, then by most recent commit timestamp:
+  ```bash
+  for d in /home/tcolbert/Projects/*/; do
+    name=$(basename "$d")
+    dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l)
+    ts=$(git -C "$d" log -1 --format=%ct 2>/dev/null || echo 0)
+    [ "$ts" != "0" ] && printf "%d %d %s\n" "$dirty" "$ts" "$name"
+  done | sort -k1,1rn -k2,2rn | head -3 | awk '{print $3}'
+  ```
+
+  Display the full alphabetical list as a numbered markdown list so the user can see all options.
+
+  Then ask using `AskUserQuestion` with 4 options:
+  - Options 1–3: the **repo names** of the 3 most recently active repos (e.g. `cloud-infra-apps`, `claude-code-plugins`, `sre-tooling`) — use the actual name as the option label
+  - Option 4: **"Enter a number from the list above"** — when selected, prompt the user to type the number corresponding to their repo in the displayed list
+
+  Wait for the answer before continuing.
 
 **1b. As soon as the repo path is known, immediately kick off `git fetch` in the background** — it's a network call and is the slowest part of discovery. Don't wait for it before running the other commands:
 
@@ -71,18 +109,23 @@ gh pr list --repo <org>/<repo> --head <branch-name> --json number,title,url --li
 git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-**1f. Present the full picture to the user in one summary:**
+**1f. Present the full picture to the user in one summary as a markdown table:**
 
-> Repo: `<org>/<repo>`
-> Branch: `<branch-name>`
-> GitHub user: `<username>`
-> Uncommitted changes: Yes / No
-> Commits ahead of main: `<N>`
-> Existing PR: #<number> — <title> (<url>) / None
+| | |
+|---|---|
+| **Repo** | `<org>/<repo>` |
+| **Branch** | `<branch-name>` |
+| **GitHub user** | `<username>` |
+| **Uncommitted changes** | Yes / No |
+| **Commits ahead of main** | `<N>` |
+| **Existing PR** | #<number> — <title> (<url>) / None |
 
-Then ask for confirmation:
+Then ask for confirmation using `AskUserQuestion`:
 
 > "Proceed with this repo and branch?"
+>
+> - **Yes** — proceed
+> - **No, wrong repo or branch** — ask the user to clarify before continuing
 
 Wait for confirmation before continuing.
 
@@ -99,15 +142,13 @@ A branch is required. Generate suggestions in parallel:
 
 Both of these can run simultaneously — don't wait for one before starting the other.
 
-Produce up to three branch name suggestions based on the description slug and username, then present them to the user:
+Produce up to three branch name suggestions based on the description slug and username, then present them to the user using `AskUserQuestion`:
 
-> "A branch is required. Here are some suggestions based on your changes:
+> "A branch is required. Which format would you like for the branch name?"
 >
-> 1. `<username>/<ticket>-<description>` — includes a ticket number (you'll be asked for it)
-> 2. `<username>/<description>` — no ticket number
-> 3. Freeform — type your own
->
-> Which format would you like? (1 / 2 / 3)"
+> - **With ticket** — `<username>/<ticket>-<description>` (you'll be asked for the ticket number)
+> - **Without ticket** — `<username>/<description>`
+> - **Freeform** — type your own
 
 - **Option 1 selected**: ask "What's the ticket number?" and insert it to produce `<username>/<ticket>-<description>`. Confirm the full name with the user before proceeding.
 - **Option 2 selected**: confirm `<username>/<description>` with the user. They may adjust the description before confirming.
@@ -143,10 +184,11 @@ Using the PR check result from Step 1 — no additional commands needed.
 - If **no existing PR**: continue to Step 4.
 - If a PR **already exists**:
 
-  > "A PR already exists for this branch: **#<number> — <title>**
-  > <url>
+  Use `AskUserQuestion`:
+  > "A PR already exists for this branch: **#<number> — <title>** (<url>). Would you like to edit it?"
   >
-  > Would you like to edit the existing PR instead of creating a new one?"
+  > - **Yes, edit the existing PR**
+  > - **No, create a new one** (note: `gh pr create` will fail; warn the user)
 
   - **Yes**:
     - If there are **uncommitted changes or commits ahead of `main`** (already known from Step 1): continue to Step 4 as normal. Load the existing PR body as the starting point for the draft in Step 6, and use `gh pr edit` in Step 8.
@@ -166,9 +208,12 @@ git -C <repo-path> status --short
 
 If there are **no uncommitted changes**, skip to Step 5.
 
-If uncommitted changes are present, ask the user:
+If uncommitted changes are present, ask the user using `AskUserQuestion`:
 
-> "There are uncommitted changes in this repo. Would you like to commit them before creating the PR?"
+> "There are uncommitted changes. Would you like to commit them before creating the PR?"
+>
+> - **Yes, commit them**
+> - **No, skip — include as-is**
 
 - If **No**: proceed to Step 5 without committing.
 - If **Yes**: continue below.
@@ -179,23 +224,26 @@ git -C <repo-path> diff HEAD
 git -C <repo-path> diff --stat HEAD
 ```
 
-Summarise the changes and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`). Present it to the user:
+Summarise the changes and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`). Display the summary and proposed message as a markdown block **before** the question:
 
-> "Here's what changed:
-> `<summary of diff>`
->
-> Suggested commit message:
-> `<commit message>`
->
-> **Y / N / E** — Commit with this message / Skip / Edit the message"
+> **Changes:** `<summary of diff>`
+> **Suggested commit message:** `<commit message>`
 
-- **Y (Yes)**: Stage all changes and commit with the message:
+Then ask using `AskUserQuestion`:
+
+> "How would you like to proceed with this commit message?"
+>
+> - **Commit** — use the suggested message
+> - **Edit** — provide a different message
+> - **Skip** — don't commit, proceed to Step 5
+
+- **Commit**: Stage all changes and commit with the message:
   ```bash
   cd <repo-path> && git add -A && git commit -m "<commit message>"
   ```
   Only append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` to the commit message if Claude actually wrote or modified the file content being committed. If Claude only drafted the commit message and the user made all the file changes, do **not** add the co-author trailer.
-- **N (No)**: Skip the commit and continue to Step 5.
-- **E (Edit)**: Let the user provide or refine the message, re-display for confirmation, then commit once approved.
+- **Skip**: proceed to Step 5 without committing.
+- **Edit**: ask the user for the message, re-display for confirmation, then commit once approved.
 
 > **Parallelism tip:** While waiting for the user's Y/N/E response, kick off the Step 5 diff commands in the background so results are ready immediately after the user responds. If the user chooses Y or E (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
 
@@ -247,9 +295,11 @@ Do not draft until the Why can be filled in with real information.
 
 **6c. Draft**
 
-Based on the diff and any upstream references provided, produce the PR message:
+Based on the diff and any upstream references provided, produce the PR message and display it as rendered markdown (not inside a code fence). Format:
 
-```
+---
+**Title:** `<title>`
+
 ## Summary
 
 - <bullet: what changed>
@@ -267,7 +317,7 @@ Based on the diff and any upstream references provided, produce the PR message:
 
 - [ ] <how to verify this works>
 - [ ] <edge cases to check>
-```
+---
 
 Rules:
 - Title: short and imperative (under 70 chars), describes the change
@@ -275,13 +325,16 @@ Rules:
 - Surface any external references found in commit messages, code comments, or user-provided context
 - Keep the Why grounded in real information — don't invent motivation
 
-Display the full draft (title + body) to the user.
-
 ## Step 7: Iterate on the Message
 
-Ask: **"Does this look good, or would you like to adjust anything?"**
+Ask using `AskUserQuestion`:
 
-Incorporate any feedback and re-display until the user confirms.
+> "Does this PR message look good?"
+>
+> - **Looks good, create the PR**
+> - **Adjust — I'll describe the changes**
+
+If the user wants adjustments, incorporate their feedback, re-display the full draft, and ask again with the same `AskUserQuestion` until confirmed.
 
 ## Step 8: Create the PR
 
