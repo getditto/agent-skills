@@ -8,6 +8,37 @@ allowed-tools: Bash
 
 Guides the user through creating a GitHub PR: confirm the repo, ensure a feature branch exists, draft a message from the diff, iterate with the user, then create the PR.
 
+## Arguments
+
+- `<repo>` (optional) — repo name to skip the repo picker (e.g. `cloud-infra-apps`)
+- `--verbose` (optional flag) — show all intermediate output including commands, background task status, and step narration
+
+Parse these from the skill arguments. Examples:
+- `/create-pr` — no repo, quiet mode
+- `/create-pr cloud-infra-apps` — repo specified, quiet mode
+- `/create-pr --verbose` — no repo, verbose mode
+- `/create-pr cloud-infra-apps --verbose` — repo specified, verbose mode
+- `/create-pr --verbose cloud-infra-apps` — flag before repo also valid
+
+## Output Verbosity
+
+**Default (quiet) mode** — only show the user things that require their attention or are final results:
+- The permissions table and `AskUserQuestion` (if needed)
+- The repo list and `AskUserQuestion` (if needed)
+- The discovery summary table and `AskUserQuestion`
+- All branch, commit, and PR `AskUserQuestion` prompts
+- Changes summary and suggested commit message
+- The PR draft
+- The PR URL
+
+**Verbose mode** — additionally show:
+- Session permission check results
+- Background task status ("Fetch started", "Fetch complete", etc.)
+- Step narration ("Kicking off discovery...", "Pre-fetching diffs...", etc.)
+- Raw command output where relevant
+
+In quiet mode, suppress all intermediate narration. Run commands silently and only surface results when they require user input or are the final output.
+
 ## Pre-flight: Permission Check
 
 This skill needs to run the following state-modifying commands. Present these as a markdown table:
@@ -21,7 +52,7 @@ This skill needs to run the following state-modifying commands. Present these as
 
 Before running any of them:
 
-**1. Check for a saved session permission** using the Claude session temp directory as the key:
+**1. Check for a saved session permission** using the Claude session temp directory as the key. If no repo was specified by the user, kick off the Step 1a repo listing commands **in parallel** with this check — don't wait for the result before starting discovery:
 ```bash
 SESSION_DIR=$(ls -td /tmp/claude-1000/-home-tcolbert-Projects/*/ 2>/dev/null | head -1)
 [ -f "${SESSION_DIR}create-pr-permission" ] && cat "${SESSION_DIR}create-pr-permission"
@@ -109,7 +140,7 @@ gh pr list --repo <org>/<repo> --head <branch-name> --json number,title,url --li
 git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-**1f. Present the full picture to the user in one summary as a markdown table:**
+**1f. Output the following summary table to the user first, then immediately follow with the `AskUserQuestion`. Do not call `AskUserQuestion` before the table is displayed.**
 
 | | |
 |---|---|
@@ -208,7 +239,13 @@ git -C <repo-path> status --short
 
 If there are **no uncommitted changes**, skip to Step 5.
 
-If uncommitted changes are present, ask the user using `AskUserQuestion`:
+If uncommitted changes are present, immediately kick off both diff commands **in parallel** — results will be ready by the time the user responds:
+```bash
+git -C <repo-path> diff HEAD          # run in parallel
+git -C <repo-path> diff --stat HEAD   # run in parallel
+```
+
+Then ask the user using `AskUserQuestion`:
 
 > "There are uncommitted changes. Would you like to commit them before creating the PR?"
 >
@@ -216,22 +253,18 @@ If uncommitted changes are present, ask the user using `AskUserQuestion`:
 > - **No, skip — include as-is**
 
 - If **No**: proceed to Step 5 without committing.
-- If **Yes**: continue below.
+- If **Yes**: continue below using the pre-fetched diff results.
 
-Inspect what changed against the current HEAD:
-```bash
-git -C <repo-path> diff HEAD
-git -C <repo-path> diff --stat HEAD
-```
+Summarise the changes using the pre-fetched diff results and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`).
 
-Summarise the changes and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`). Display the summary and proposed message as a markdown block **before** the question:
+While waiting for the user's response, kick off the Step 5 diff commands **in the background** so results are ready immediately after they answer. If the user chooses **Commit** or **Edit** (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
 
-> **Changes:** `<summary of diff>`
-> **Suggested commit message:** `<commit message>`
+Output **Changes:** `<summary of diff>` as a text line before the question.
 
-Then ask using `AskUserQuestion`:
+Then ask using `AskUserQuestion`, embedding the commit message directly in the question text so it is always visible:
 
-> "How would you like to proceed with this commit message?"
+> "Commit with this message?
+> `<commit message>`"
 >
 > - **Commit** — use the suggested message
 > - **Edit** — provide a different message
@@ -242,20 +275,18 @@ Then ask using `AskUserQuestion`:
   cd <repo-path> && git add -A && git commit -m "<commit message>"
   ```
   Only append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` to the commit message if Claude actually wrote or modified the file content being committed. If Claude only drafted the commit message and the user made all the file changes, do **not** add the co-author trailer.
-- **Skip**: proceed to Step 5 without committing.
+- **Skip**: proceed to Step 5 using the pre-fetched diff results.
 - **Edit**: ask the user for the message, re-display for confirmation, then commit once approved.
-
-> **Parallelism tip:** While waiting for the user's Y/N/E response, kick off the Step 5 diff commands in the background so results are ready immediately after the user responds. If the user chooses Y or E (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
 
 Once committed (or skipped), continue to Step 5.
 
 ## Step 5: Inspect the Diff
 
-Run in parallel (or use pre-fetched results from Step 4 if the user chose N):
+Use pre-fetched results from Step 4 if available. Otherwise run all three commands **in parallel**:
 ```bash
-git -C <repo-path> log origin/main..HEAD --oneline
-git -C <repo-path> diff origin/main...HEAD --stat
-git -C <repo-path> diff origin/main...HEAD
+git -C <repo-path> log origin/main..HEAD --oneline   # parallel
+git -C <repo-path> diff origin/main...HEAD --stat     # parallel
+git -C <repo-path> diff origin/main...HEAD            # parallel
 ```
 
 Use this to understand:
