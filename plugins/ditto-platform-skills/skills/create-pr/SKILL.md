@@ -52,7 +52,10 @@ This skill needs to run the following state-modifying commands. Present these as
 
 Before running any of them:
 
-**1. Check for a saved session permission** using the Claude session temp directory as the key. If no repo was specified by the user, kick off the Step 1a repo listing commands **in parallel** with this check — don't wait for the result before starting discovery:
+**1. Check for a saved session permission** using the Claude session temp directory as the key. Run the following in parallel as appropriate:
+- If **no repo was specified**: kick off the Step 1a repo listing commands in parallel with this check
+- If **repo was specified**: kick off `git fetch` (Step 1b) in the background immediately — don't wait for permission check to complete first
+
 ```bash
 SESSION_DIR=$(ls -td /tmp/claude-1000/-home-tcolbert-Projects/*/ 2>/dev/null | head -1)
 [ -f "${SESSION_DIR}create-pr-permission" ] && cat "${SESSION_DIR}create-pr-permission"
@@ -117,13 +120,13 @@ If the commands are not restricted, proceed directly to Step 1.
 git -C <repo-path> fetch --quiet origin
 ```
 
-**1c. In parallel with the fetch, run the remaining fast discovery commands:**
+**1c. In parallel with the fetch, run all four fast discovery commands simultaneously:**
 
 ```bash
-cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner
-git -C <repo-path> rev-parse --abbrev-ref HEAD
-git -C <repo-path> status --short
-gh api user --jq .login
+cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner   # parallel
+git -C <repo-path> rev-parse --abbrev-ref HEAD                           # parallel
+git -C <repo-path> status --short                                        # parallel
+gh api user --jq .login                                                  # parallel
 ```
 
 The GitHub username is fetched here so it's available immediately if a branch needs to be created in Step 2.
@@ -181,8 +184,14 @@ Produce up to three branch name suggestions based on the description slug and us
 > - **Without ticket** — `<username>/<description>`
 > - **Freeform** — type your own
 
-- **Option 1 selected**: ask "What's the ticket number?" and insert it to produce `<username>/<ticket>-<description>`. Confirm the full name with the user before proceeding.
-- **Option 2 selected**: confirm `<username>/<description>` with the user. They may adjust the description before confirming.
+- **Option 1 selected**: ask "What's the ticket number?" then confirm the full branch name using `AskUserQuestion`:
+  > "Create branch `<username>/<ticket>-<description>`?"
+  > - **Yes, create it**
+  > - **Edit the name** — type a different name
+- **Option 2 selected**: confirm using `AskUserQuestion`:
+  > "Create branch `<username>/<description>`?"
+  > - **Yes, create it**
+  > - **Edit the name** — type a different name
 - **Option 3 selected**: ask "What should the branch be named?" and use whatever they provide.
 
 Run the checkout directly — unless a global restriction is in effect and no override has been granted, in which case display it and wait for confirmation:
@@ -222,7 +231,11 @@ Using the PR check result from Step 1 — no additional commands needed.
   > - **No, create a new one** (note: `gh pr create` will fail; warn the user)
 
   - **Yes**:
-    - If there are **uncommitted changes or commits ahead of `main`** (already known from Step 1): continue to Step 4 as normal. Load the existing PR body as the starting point for the draft in Step 6, and use `gh pr edit` in Step 8.
+    - If there are **uncommitted changes or commits ahead of `main`** (already known from Step 1): immediately kick off `gh pr view` **in parallel** with the Step 4 diff pre-fetch commands so the existing PR body is ready by the time drafting begins:
+      ```bash
+      gh pr view <pr-number> --repo <org>/<repo> --json title,body   # parallel with Step 4 diffs
+      ```
+      Continue to Step 4 as normal. Use the fetched PR body as the starting point for the draft in Step 6, and use `gh pr edit` in Step 8.
     - If there is **nothing new** (clean + zero commits ahead): skip directly to Step 6. Load the existing PR title and body:
       ```bash
       gh pr view <pr-number> --repo <org>/<repo> --json title,body
@@ -302,24 +315,26 @@ Before drafting, inspect the diff for patterns that indicate the change is only 
 - A single line change like `version = "1.2.3"` → `version = "1.3.0"` in a Terraform module, `Chart.yaml`, `package.json`, `go.mod`, or similar
 - The diff contains no logic changes, only a version string update
 
-If a version bump is detected, ask the user before drafting:
+If a version bump is detected, ask the user before drafting using `AskUserQuestion`:
 
-> "This looks like a version bump (e.g. `<module-or-package>` from `<old>` to `<new>`). Can you share the upstream PR or changelog that describes what changed in this version? This will be included in the PR description."
+> "This looks like a version bump (`<module-or-package>` from `<old>` to `<new>`). Do you have an upstream reference to include in the PR description?"
+>
+> - **Yes — I'll paste it** — ask the user to provide the URL, changelog, ticket, or description
+> - **No reference available** — note the absence in the PR body and proceed
 
-Wait for the user's response. They may provide:
-- A PR URL (e.g. `https://github.com/org/repo/pull/123`)
-- A changelog entry or release notes
-- A Linear ticket
-- A brief description of what the version update includes
-
-If the user has no reference, note that in the PR body and proceed.
+If the user provides a reference, incorporate it into the Why section and References of the PR draft.
 
 **6b. Minimum requirements check**
 
 Before drafting, verify the diff provides enough context to fill in each section meaningfully:
 
 - **Summary**: At least one concrete statement of what changed. If the diff is a version bump with no upstream reference, flag this as thin.
-- **Why**: Must explain motivation. If the diff gives no clues and the user provided no context, ask: *"What's the reason for this change? (e.g. bug fix, security patch, new feature in the module)"*
+- **Why**: Must explain motivation. If the diff gives no clues and the user provided no context, ask using `AskUserQuestion`:
+  > "What's the reason for this change?"
+  > - **Bug fix**
+  > - **Security patch**
+  > - **New feature**
+  > - **Other** — type a description
 - **Test plan**: At least one checkable item. If the change is infrastructure-only with no observable behaviour, note how to verify the deployment succeeded.
 
 Do not draft until the Why can be filled in with real information.
@@ -374,15 +389,14 @@ Apply the permission decision from the Pre-flight check — run commands directl
 All commands must be run from within the repo directory (`<repo-path>`). Use `cd <repo-path> &&` as a prefix for `gh` commands since they have no `-C` equivalent.
 
 **Check whether a push is needed:**
+
+Use the commits-ahead count already known from Step 1e (or re-fetched after any commit in Step 4). If the count is greater than 0, a push is required — run it:
+
 ```bash
-git -C <repo-path> status -sb
+cd <repo-path> && git push -u origin <branch-name>
 ```
 
-- If the output shows `ahead` commits, a push is required — run it:
-  ```bash
-  cd <repo-path> && git push -u origin <branch-name>
-  ```
-- If the branch is already up to date with the remote (no `ahead` indicator), skip the push entirely.
+If the count is 0 (branch already up to date with remote), skip the push entirely.
 
 **Create or update the PR:**
 
