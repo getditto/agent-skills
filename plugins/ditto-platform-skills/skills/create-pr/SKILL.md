@@ -8,26 +8,79 @@ allowed-tools: Bash
 
 Guides the user through creating a GitHub PR: confirm the repo, ensure a feature branch exists, draft a message from the diff, iterate with the user, then create the PR.
 
+## Arguments
+
+- `<repo>` (optional) — repo name to skip the repo picker (e.g. `cloud-infra-apps`)
+- `--verbose` (optional flag) — show all intermediate output including commands, background task status, and step narration
+
+Parse these from the skill arguments. Examples:
+- `/create-pr` — no repo, quiet mode
+- `/create-pr cloud-infra-apps` — repo specified, quiet mode
+- `/create-pr --verbose` — no repo, verbose mode
+- `/create-pr cloud-infra-apps --verbose` — repo specified, verbose mode
+- `/create-pr --verbose cloud-infra-apps` — flag before repo also valid
+
+## Output Verbosity
+
+**Default (quiet) mode** — only show the user things that require their attention or are final results:
+- The permissions table and `AskUserQuestion` (if needed)
+- The repo list and `AskUserQuestion` (if needed)
+- The discovery summary table and `AskUserQuestion`
+- All branch, commit, and PR `AskUserQuestion` prompts
+- Changes summary and suggested commit message
+- The PR draft
+- The PR URL
+
+**Verbose mode** — additionally show:
+- Session permission check results
+- Background task status ("Fetch started", "Fetch complete", etc.)
+- Step narration ("Kicking off discovery...", "Pre-fetching diffs...", etc.)
+- Raw command output where relevant
+
+In quiet mode, suppress all intermediate narration. Run commands silently and only surface results when they require user input or are the final output.
+
 ## Pre-flight: Permission Check
 
-Before running any commands, check whether a global rule (e.g. in `~/.claude/CLAUDE.md`) restricts running state-modifying commands like `git push`, `git commit`, `git checkout -b`, or `gh pr create`/`gh pr edit`.
+This skill needs to run the following state-modifying commands. Present these as a markdown table:
 
-If such a restriction exists, ask the user **once** at the start:
+| Command | Purpose |
+|---------|---------|
+| `git checkout -b <branch>` | Create a feature branch |
+| `git add` / `git commit` | Stage and commit changes |
+| `git push -u origin <branch>` | Push the branch to remote |
+| `gh pr create` / `gh pr edit` | Create or update the pull request |
 
-> "A global rule restricts me from running state-modifying commands. How would you like to proceed for this session?"
+Before running any of them:
+
+**1. Check for a saved session permission** using the Claude session temp directory as the key. Run the following in parallel as appropriate:
+- If **no repo was specified**: kick off the Step 1a repo listing commands in parallel with this check
+- If **repo was specified**: kick off `git fetch` (Step 1b) in the background immediately — don't wait for permission check to complete first
+
+```bash
+SESSION_DIR=$(ls -td /tmp/claude-1000/-home-tcolbert-Projects/*/ 2>/dev/null | head -1)
+[ -f "${SESSION_DIR}create-pr-permission" ] && cat "${SESSION_DIR}create-pr-permission"
+```
+If the file exists and contains `allowed`, skip the question entirely and proceed to Step 1.
+
+**2. Otherwise**, check whether a global rule (e.g. in `~/.claude/CLAUDE.md`) restricts these specific commands.
+
+If they are restricted, ask the user **once** using `AskUserQuestion`:
+
+> "This skill needs to run: `git checkout -b`, `git commit`, `git push`, and `gh pr create/edit`. Are these okay?"
 >
-> 1. **Yes, Permanent** — Override the restriction permanently (update global settings via `update-config`)
-> 2. **Yes, Session** — Override for this session only; don't ask again until next session
-> 3. **Yes, This time** — Run commands this once; ask again next time the skill runs
-> 4. **No, Provide the commands** — Display all state-modifying commands for manual execution throughout
+> - **Yes, this time** — allow for this skill run only; ask again next invocation
+> - **Yes, this session** — allow until you close Claude Code; don't ask again this session
+> - **Yes, always** — permanently add these commands to your allowed list (updates settings.json)
+> - **No** — display all state-modifying commands for manual execution throughout
 
-Store the user's choice and apply it consistently for every state-modifying command throughout the rest of the skill. Do **not** ask again per-command.
+Store the user's choice and apply it consistently for the rest of the skill. Do **not** ask again per-command.
 
-- **Yes, Permanent**: invoke the `update-config` skill to add the relevant commands to global allowed settings, then proceed.
-- **Yes, Session**: note the override in memory for this session and proceed.
-- **Yes, This time** / **No**: apply the choice silently for the rest of this skill run.
+- **Yes, this time**: proceed; ask again on the next invocation.
+- **Yes, this session**: write `allowed` to `${SESSION_DIR}create-pr-permission` so subsequent invocations in this session skip the question, then proceed.
+- **Yes, always**: invoke the `update-config` skill to add `git checkout -b`, `git commit`, `git push`, `gh pr create`, and `gh pr edit` to the global allowed commands list, then proceed.
+- **No**: display every state-modifying command as a shell snippet for the user to run manually.
 
-If no restriction exists, proceed directly to Step 1.
+If the commands are not restricted, proceed directly to Step 1.
 
 > **Note:** Read-only commands (`git status`, `git diff`, `git log`, `gh pr list`, `gh repo view`, etc.) are never restricted and can always be run directly.
 
@@ -36,11 +89,30 @@ If no restriction exists, proceed directly to Step 1.
 **1a. Identify the repo path**
 
 - If the user specified a repo (e.g. "create a PR for cloud-infra-apps"), resolve `<repo-path>` from that name and skip the directory listing.
-- If **no repo was specified**, run:
+- If **no repo was specified**, run two commands in parallel:
+
+  1. Get all repos sorted alphabetically for display:
   ```bash
-  ls -1d */
+  ls -1d /home/tcolbert/Projects/*/ | xargs -I{} basename {}
   ```
-  Present the list and ask: **"Which repo should I create a PR for?"** Wait for the answer before continuing.
+
+  2. Find the 3 most recently active repos — prioritising repos with uncommitted changes first, then by most recent commit timestamp:
+  ```bash
+  for d in /home/tcolbert/Projects/*/; do
+    name=$(basename "$d")
+    dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l)
+    ts=$(git -C "$d" log -1 --format=%ct 2>/dev/null || echo 0)
+    [ "$ts" != "0" ] && printf "%d %d %s\n" "$dirty" "$ts" "$name"
+  done | sort -k1,1rn -k2,2rn | head -3 | awk '{print $3}'
+  ```
+
+  Display the full alphabetical list as a numbered markdown list so the user can see all options.
+
+  Then ask using `AskUserQuestion` with 4 options:
+  - Options 1–3: the **repo names** of the 3 most recently active repos (e.g. `cloud-infra-apps`, `claude-code-plugins`, `sre-tooling`) — use the actual name as the option label
+  - Option 4: **"Enter a number from the list above"** — when selected, prompt the user to type the number corresponding to their repo in the displayed list
+
+  Wait for the answer before continuing.
 
 **1b. As soon as the repo path is known, immediately kick off `git fetch` in the background** — it's a network call and is the slowest part of discovery. Don't wait for it before running the other commands:
 
@@ -48,13 +120,13 @@ If no restriction exists, proceed directly to Step 1.
 git -C <repo-path> fetch --quiet origin
 ```
 
-**1c. In parallel with the fetch, run the remaining fast discovery commands:**
+**1c. In parallel with the fetch, run all four fast discovery commands simultaneously:**
 
 ```bash
-cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner
-git -C <repo-path> rev-parse --abbrev-ref HEAD
-git -C <repo-path> status --short
-gh api user --jq .login
+cd <repo-path> && gh repo view --json nameWithOwner -q .nameWithOwner   # parallel
+git -C <repo-path> rev-parse --abbrev-ref HEAD                           # parallel
+git -C <repo-path> status --short                                        # parallel
+gh api user --jq .login                                                  # parallel
 ```
 
 The GitHub username is fetched here so it's available immediately if a branch needs to be created in Step 2.
@@ -71,18 +143,23 @@ gh pr list --repo <org>/<repo> --head <branch-name> --json number,title,url --li
 git -C <repo-path> rev-list --count origin/main..HEAD
 ```
 
-**1f. Present the full picture to the user in one summary:**
+**1f. Output the following summary table to the user first, then immediately follow with the `AskUserQuestion`. Do not call `AskUserQuestion` before the table is displayed.**
 
-> Repo: `<org>/<repo>`
-> Branch: `<branch-name>`
-> GitHub user: `<username>`
-> Uncommitted changes: Yes / No
-> Commits ahead of main: `<N>`
-> Existing PR: #<number> — <title> (<url>) / None
+| | |
+|---|---|
+| **Repo** | `<org>/<repo>` |
+| **Branch** | `<branch-name>` |
+| **GitHub user** | `<username>` |
+| **Uncommitted changes** | Yes / No |
+| **Commits ahead of main** | `<N>` |
+| **Existing PR** | #<number> — <title> (<url>) / None |
 
-Then ask for confirmation:
+Then ask for confirmation using `AskUserQuestion`:
 
 > "Proceed with this repo and branch?"
+>
+> - **Yes** — proceed
+> - **No, wrong repo or branch** — ask the user to clarify before continuing
 
 Wait for confirmation before continuing.
 
@@ -99,18 +176,22 @@ A branch is required. Generate suggestions in parallel:
 
 Both of these can run simultaneously — don't wait for one before starting the other.
 
-Produce up to three branch name suggestions based on the description slug and username, then present them to the user:
+Produce up to three branch name suggestions based on the description slug and username, then present them to the user using `AskUserQuestion`:
 
-> "A branch is required. Here are some suggestions based on your changes:
+> "A branch is required. Which format would you like for the branch name?"
 >
-> 1. `<username>/<ticket>-<description>` — includes a ticket number (you'll be asked for it)
-> 2. `<username>/<description>` — no ticket number
-> 3. Freeform — type your own
->
-> Which format would you like? (1 / 2 / 3)"
+> - **With ticket** — `<username>/<ticket>-<description>` (you'll be asked for the ticket number)
+> - **Without ticket** — `<username>/<description>`
+> - **Freeform** — type your own
 
-- **Option 1 selected**: ask "What's the ticket number?" and insert it to produce `<username>/<ticket>-<description>`. Confirm the full name with the user before proceeding.
-- **Option 2 selected**: confirm `<username>/<description>` with the user. They may adjust the description before confirming.
+- **Option 1 selected**: ask "What's the ticket number?" then confirm the full branch name using `AskUserQuestion`:
+  > "Create branch `<username>/<ticket>-<description>`?"
+  > - **Yes, create it**
+  > - **Edit the name** — type a different name
+- **Option 2 selected**: confirm using `AskUserQuestion`:
+  > "Create branch `<username>/<description>`?"
+  > - **Yes, create it**
+  > - **Edit the name** — type a different name
 - **Option 3 selected**: ask "What should the branch be named?" and use whatever they provide.
 
 Run the checkout directly — unless a global restriction is in effect and no override has been granted, in which case display it and wait for confirmation:
@@ -143,13 +224,18 @@ Using the PR check result from Step 1 — no additional commands needed.
 - If **no existing PR**: continue to Step 4.
 - If a PR **already exists**:
 
-  > "A PR already exists for this branch: **#<number> — <title>**
-  > <url>
+  Use `AskUserQuestion`:
+  > "A PR already exists for this branch: **#<number> — <title>** (<url>). Would you like to edit it?"
   >
-  > Would you like to edit the existing PR instead of creating a new one?"
+  > - **Yes, edit the existing PR**
+  > - **No, create a new one** (note: `gh pr create` will fail; warn the user)
 
   - **Yes**:
-    - If there are **uncommitted changes or commits ahead of `main`** (already known from Step 1): continue to Step 4 as normal. Load the existing PR body as the starting point for the draft in Step 6, and use `gh pr edit` in Step 8.
+    - If there are **uncommitted changes or commits ahead of `main`** (already known from Step 1): immediately kick off `gh pr view` **in parallel** with the Step 4 diff pre-fetch commands so the existing PR body is ready by the time drafting begins:
+      ```bash
+      gh pr view <pr-number> --repo <org>/<repo> --json title,body   # parallel with Step 4 diffs
+      ```
+      Continue to Step 4 as normal. Use the fetched PR body as the starting point for the draft in Step 6, and use `gh pr edit` in Step 8.
     - If there is **nothing new** (clean + zero commits ahead): skip directly to Step 6. Load the existing PR title and body:
       ```bash
       gh pr view <pr-number> --repo <org>/<repo> --json title,body
@@ -166,48 +252,43 @@ git -C <repo-path> status --short
 
 If there are **no uncommitted changes**, skip to Step 5.
 
-If uncommitted changes are present, ask the user:
-
-> "There are uncommitted changes in this repo. Would you like to commit them before creating the PR?"
-
-- If **No**: proceed to Step 5 without committing.
-- If **Yes**: continue below.
-
-Inspect what changed against the current HEAD:
+If uncommitted changes are present, immediately kick off all three commands **in parallel** — the diffs will be ready by the time you've drafted the commit message, and the Step 5 diffs will be ready as soon as the user answers:
 ```bash
-git -C <repo-path> diff HEAD
-git -C <repo-path> diff --stat HEAD
+git -C <repo-path> diff HEAD          # parallel — used to summarise changes and draft commit message
+git -C <repo-path> diff --stat HEAD   # parallel — used to summarise changes
+git -C <repo-path> log origin/main..HEAD --oneline   # parallel — Step 5 pre-fetch
+git -C <repo-path> diff origin/main...HEAD --stat     # parallel — Step 5 pre-fetch
+git -C <repo-path> diff origin/main...HEAD            # parallel — Step 5 pre-fetch
 ```
 
-Summarise the changes and suggest a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`). Present it to the user:
+Using the diff results, summarise the changes and draft a short commit message in conventional commit format (e.g. `fix: correct skill step ordering`).
 
-> "Here's what changed:
-> `<summary of diff>`
->
-> Suggested commit message:
-> `<commit message>`
->
-> **Y / N / E** — Commit with this message / Skip / Edit the message"
+Output **Changes:** `<summary of diff>` as a text line, then immediately ask using `AskUserQuestion` with the commit message embedded directly in the question text:
 
-- **Y (Yes)**: Stage all changes and commit with the message:
+> "Commit with this message?
+> `<commit message>`"
+>
+> - **Commit** — use the suggested message
+> - **Edit** — provide a different message
+> - **Skip** — don't commit, proceed to Step 5
+
+- **Commit**: Stage all changes and commit with the message:
   ```bash
   cd <repo-path> && git add -A && git commit -m "<commit message>"
   ```
   Only append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` to the commit message if Claude actually wrote or modified the file content being committed. If Claude only drafted the commit message and the user made all the file changes, do **not** add the co-author trailer.
-- **N (No)**: Skip the commit and continue to Step 5.
-- **E (Edit)**: Let the user provide or refine the message, re-display for confirmation, then commit once approved.
-
-> **Parallelism tip:** While waiting for the user's Y/N/E response, kick off the Step 5 diff commands in the background so results are ready immediately after the user responds. If the user chooses Y or E (a new commit will be made), discard the pre-fetched results and re-run the diff after the commit completes.
+- **Skip**: proceed to Step 5 using the pre-fetched diff results.
+- **Edit**: ask the user for the message, re-display for confirmation, then commit once approved.
 
 Once committed (or skipped), continue to Step 5.
 
 ## Step 5: Inspect the Diff
 
-Run in parallel (or use pre-fetched results from Step 4 if the user chose N):
+Use the pre-fetched results from Step 4. If Step 4 was skipped (no uncommitted changes), run all three commands **in parallel** now:
 ```bash
-git -C <repo-path> log origin/main..HEAD --oneline
-git -C <repo-path> diff origin/main...HEAD --stat
-git -C <repo-path> diff origin/main...HEAD
+git -C <repo-path> log origin/main..HEAD --oneline   # parallel
+git -C <repo-path> diff origin/main...HEAD --stat     # parallel
+git -C <repo-path> diff origin/main...HEAD            # parallel
 ```
 
 Use this to understand:
@@ -223,33 +304,37 @@ Before drafting, inspect the diff for patterns that indicate the change is only 
 - A single line change like `version = "1.2.3"` → `version = "1.3.0"` in a Terraform module, `Chart.yaml`, `package.json`, `go.mod`, or similar
 - The diff contains no logic changes, only a version string update
 
-If a version bump is detected, ask the user before drafting:
+If a version bump is detected, ask the user before drafting using `AskUserQuestion`:
 
-> "This looks like a version bump (e.g. `<module-or-package>` from `<old>` to `<new>`). Can you share the upstream PR or changelog that describes what changed in this version? This will be included in the PR description."
+> "This looks like a version bump (`<module-or-package>` from `<old>` to `<new>`). Do you have an upstream reference to include in the PR description?"
+>
+> - **Yes — I'll paste it** — ask the user to provide the URL, changelog, ticket, or description
+> - **No reference available** — note the absence in the PR body and proceed
 
-Wait for the user's response. They may provide:
-- A PR URL (e.g. `https://github.com/org/repo/pull/123`)
-- A changelog entry or release notes
-- A Linear ticket
-- A brief description of what the version update includes
-
-If the user has no reference, note that in the PR body and proceed.
+If the user provides a reference, incorporate it into the Why section and References of the PR draft.
 
 **6b. Minimum requirements check**
 
 Before drafting, verify the diff provides enough context to fill in each section meaningfully:
 
 - **Summary**: At least one concrete statement of what changed. If the diff is a version bump with no upstream reference, flag this as thin.
-- **Why**: Must explain motivation. If the diff gives no clues and the user provided no context, ask: *"What's the reason for this change? (e.g. bug fix, security patch, new feature in the module)"*
+- **Why**: Must explain motivation. If the diff gives no clues and the user provided no context, ask using `AskUserQuestion`:
+  > "What's the reason for this change?"
+  > - **Bug fix**
+  > - **Security patch**
+  > - **New feature**
+  > - **Other** — type a description
 - **Test plan**: At least one checkable item. If the change is infrastructure-only with no observable behaviour, note how to verify the deployment succeeded.
 
 Do not draft until the Why can be filled in with real information.
 
 **6c. Draft**
 
-Based on the diff and any upstream references provided, produce the PR message:
+Based on the diff and any upstream references provided, produce the PR message and display it as rendered markdown (not inside a code fence). Format:
 
-```
+---
+**Title:** `<title>`
+
 ## Summary
 
 - <bullet: what changed>
@@ -267,7 +352,7 @@ Based on the diff and any upstream references provided, produce the PR message:
 
 - [ ] <how to verify this works>
 - [ ] <edge cases to check>
-```
+---
 
 Rules:
 - Title: short and imperative (under 70 chars), describes the change
@@ -275,13 +360,16 @@ Rules:
 - Surface any external references found in commit messages, code comments, or user-provided context
 - Keep the Why grounded in real information — don't invent motivation
 
-Display the full draft (title + body) to the user.
-
 ## Step 7: Iterate on the Message
 
-Ask: **"Does this look good, or would you like to adjust anything?"**
+Ask using `AskUserQuestion`:
 
-Incorporate any feedback and re-display until the user confirms.
+> "Does this PR message look good?"
+>
+> - **Looks good, create the PR**
+> - **Adjust — I'll describe the changes**
+
+If the user wants adjustments, incorporate their feedback, re-display the full draft, and ask again with the same `AskUserQuestion` until confirmed.
 
 ## Step 8: Create the PR
 
@@ -290,15 +378,14 @@ Apply the permission decision from the Pre-flight check — run commands directl
 All commands must be run from within the repo directory (`<repo-path>`). Use `cd <repo-path> &&` as a prefix for `gh` commands since they have no `-C` equivalent.
 
 **Check whether a push is needed:**
+
+Use the commits-ahead count already known from Step 1e (or re-fetched after any commit in Step 4). If the count is greater than 0, a push is required — run it:
+
 ```bash
-git -C <repo-path> status -sb
+cd <repo-path> && git push -u origin <branch-name>
 ```
 
-- If the output shows `ahead` commits, a push is required — run it:
-  ```bash
-  cd <repo-path> && git push -u origin <branch-name>
-  ```
-- If the branch is already up to date with the remote (no `ahead` indicator), skip the push entirely.
+If the count is 0 (branch already up to date with remote), skip the push entirely.
 
 **Create or update the PR:**
 
