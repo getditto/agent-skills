@@ -98,9 +98,15 @@ if (typeof ditto.setOfflineOnlyLicenseToken === "function") {
 // v4 only: disable legacy v3 sync protocol. Required before any DQL mutations.
 // Without this, INSERT/UPDATE/DELETE/EVICT throw
 // "Mutating DQL statements require ... disable sync with V3".
+//
+// IMPORTANT: disableSyncWithV3() returns Promise<void> in v4. Must await,
+// otherwise the first INSERT races the propagation and fails with the
+// V3-sync error even though the call succeeded. Locally this is masked by
+// cached activation state in the persistence dir; CI hits a cold start
+// every run and the race is exposed.
 if (typeof ditto.disableSyncWithV3 === "function") {
   try {
-    ditto.disableSyncWithV3();
+    await ditto.disableSyncWithV3();
   } catch (e) {
     console.warn("disableSyncWithV3 failed:", e.message);
   }
