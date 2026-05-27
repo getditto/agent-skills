@@ -35,7 +35,7 @@ Located in [`skills/dql/references/`](skills/dql/references/):
 | [`functions.md`](skills/dql/references/functions.md) | Built-in scalar and aggregate functions |
 | [`expressions.md`](skills/dql/references/expressions.md) | Path expressions, literals, type coercion |
 | [`statements.md`](skills/dql/references/statements.md) | INSERT, UPDATE, DELETE, EVICT statement forms |
-| [`select.md`](skills/dql/references/select.md) | SELECT, projections, joins, ORDER BY, subscriptions |
+| [`select.md`](skills/dql/references/select.md) | SELECT, projections, ORDER BY, subscriptions |
 | [`types-mutators.md`](skills/dql/references/types-mutators.md) | DQL type system and CRDT mutators |
 | [`indexing.md`](skills/dql/references/indexing.md) | CREATE INDEX, query planning, performance |
 | [`versions.md`](skills/dql/references/versions.md) | Per-feature SDK compatibility matrix |
