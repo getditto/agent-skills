@@ -7,5 +7,14 @@
     "email": "support@ditto.com"
   },
   "license": "MIT",
-  "keywords": ["ditto", "dql", "database", "query", "sync", "offline-first", "multi-version"]
+  "keywords": [
+    "database",
+    "ditto",
+    "dql",
+    "multi-version",
+    "offline-first",
+    "query",
+    "sync",
+    "testing"
+  ]
 }
