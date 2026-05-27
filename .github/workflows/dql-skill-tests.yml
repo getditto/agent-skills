@@ -11,10 +11,15 @@ on:
       - 'plugins/ditto-dql/**'
       - '.github/workflows/dql-skill-tests.yml'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test against Ditto SDK ${{ matrix.sdk }}
     runs-on: macos-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -24,11 +29,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: Install SDK ${{ matrix.sdk }}
-        working-directory: plugins/ditto-dql/tests/sdks/v${{ matrix.sdk }}
-        run: npm install
+      - name: Install SDK
+        env:
+          SDK_VERSION: ${{ matrix.sdk }}
+        working-directory: plugins/ditto-dql/tests
+        run: |
+          cd "sdks/v${SDK_VERSION}"
+          npm install
 
       - name: Verify transformed fixture exists
         working-directory: plugins/ditto-dql/tests
@@ -39,13 +48,14 @@ jobs:
           fi
           wc -l fixtures/movies-pedagogical.ndjson
 
-      - name: Run tests against Ditto SDK ${{ matrix.sdk }}
+      - name: Run tests
         working-directory: plugins/ditto-dql/tests
         env:
+          SDK_VERSION: ${{ matrix.sdk }}
           DITTO_SDK_VERSION: ${{ matrix.sdk }}
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
         run: |
-          if [ "${{ matrix.sdk }}" = "4.14.4" ]; then
+          if [ "$SDK_VERSION" = "4.14.4" ]; then
             npm run test:v4
           else
             npm run test:v5
@@ -63,11 +73,13 @@ jobs:
     needs: test
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - uses: actions/download-artifact@v4
         with:
           path: plugins/ditto-dql/tests/results-merged
