@@ -1,6 +1,6 @@
 ---
 title: DQL movies cookbook
-description: 18 end-to-end DQL tasks against a sample movies dataset. Every statement here is verified to work on the Ditto v5.0.0 SDK.
+description: 18 end-to-end DQL tasks against a sample movies dataset. Every statement here is verified to work on Ditto SDK 4.14.x and 5.0.x (with v4 fallbacks shown where features differ).
 ---
 
 # DQL Movies Cookbook
@@ -180,7 +180,7 @@ WHERE array_contains(genres, 'Drama')
    OR array_contains(genres, 'Crime');
 ```
 
-**Notes:** The `OR`/`array_contains` form is portable across both SDK lines and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §7 (array functions) and [`expressions.md`](../references/expressions.md) §7.
+**Notes:** The `OR`/`array_contains` form is portable across both SDK lines and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §5 (array functions) and [`expressions.md`](../references/expressions.md) §7.
 
 ### Task 7 — Flat view with computed fields
 

@@ -50,7 +50,7 @@ Case-sensitive. Two forms:
 - **Regular identifier** — `[A-Za-z_][A-Za-z0-9_]*`. Examples: `title`, `_id`, `release_year`. `1abc` is not a regular identifier.
 - **Delimited identifier** — backtick-wrapped. Any characters allowed; escape an inner backtick with two backticks. Examples: `` `1abc` ``, `` `release year` ``, `` `ratings.imdb` `` (a field literally named `ratings.imdb`, not a path), `` `some ``person`` foo` ``.
 
-Double quotes (and double-quoted identifiers) delimit **strings**, not identifiers — that is the JSON convention, and DQL adopted it. If you want an identifier with special characters, use backticks.
+Single quotes and double quotes both delimit **string literals** in DQL — `'foo'` and `"foo"` are equivalent. Only backticks delimit identifiers. If you want an identifier with special characters, use backticks.
 
 You must delimit an identifier when it:
 
@@ -58,7 +58,7 @@ You must delimit an identifier when it:
 2. Contains `.`, spaces, or other non-`[A-Za-z0-9_]` characters.
 3. Collides with a contextual SQL keyword. The most common offenders in this codebase:
    - `` `cast` `` — when used as a field name. The `cast` field on `movies` (the array of actors) shadows the `cast()` function and the `CAST(... AS ...)` keyword. See the `array_length(`cast`)` example in [`functions.md`](functions.md).
-   - `` `trim` `` — when calling the function as a regular call. `TRIM(...)` is a reserved keyword form, so `trim('  hello  ')` parses but `` `trim`('  hello  ') `` is the unambiguous form. See [`functions.md`](functions.md) §6.
+   - `` `trim` `` — when calling the function as a regular call. `TRIM(...)` is a reserved keyword form, so `trim('  hello  ')` parses but `` `trim`('  hello  ') `` is the unambiguous form. See [`functions.md`](functions.md) §4.
    - `` `year` ``, `` `month` ``, `` `day` `` — clash with `EXTRACT(YEAR FROM ...)` only inside the `EXTRACT` clause; safe as plain field names elsewhere, but backtick if a query gets parser-confused.
 
 The parser only treats a word as a keyword when grammar position allows it: `SELECT * FROM where` works because `WHERE` cannot appear right after `FROM`; `SELECT * FROM collection` fails because `COLLECTION` is allowed there.
@@ -231,7 +231,7 @@ SELECT title FROM movies
 WHERE ANY k:v IN ratings SATISFIES v > 9.0 END
 ```
 
-For simple "does this array literally contain X" tests, `array_contains(genres, 'Drama')` is more compact than `ANY g IN genres SATISFIES g = 'Drama' END` and works on 4.14.x too. See [`functions.md`](functions.md) §7.
+For simple "does this array literally contain X" tests, `array_contains(genres, 'Drama')` is more compact than `ANY g IN genres SATISFIES g = 'Drama' END` and works on 4.14.x too. See [`functions.md`](functions.md) §5.
 
 ---
 

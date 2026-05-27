@@ -312,17 +312,18 @@ WHERE genres = ['Drama'] OR year < 1970
 
 `&&` and `!` are not DQL tokens. `||` **is** a DQL token, but it means **string concatenation**, never logical OR. Mixing it up silently changes types and your query may return strings instead of booleans.
 
-### 10.2 String literals use single quotes only
+### 10.2 String literals: single or double quotes; backticks are identifiers
 
 ```sql
--- WRONG — double-quoted identifiers, not string literals
+-- Both work — single and double quotes are equivalent string delimiters in DQL
+WHERE title = 'The Godfather'
 WHERE title = "The Godfather"
 
--- CORRECT
-WHERE title = 'The Godfather'
+-- Backticks are NOT a string delimiter — this looks for a column named "The Godfather"
+WHERE title = `The Godfather`   -- WRONG
 ```
 
-Double quotes (and backticks) delimit identifiers, not strings.
+Single and double quotes both delimit string literals; only backticks delimit identifiers. Prefer single quotes for consistency with JSON-style examples.
 
 ### 10.3 `NULL` cannot be compared with `=`
 

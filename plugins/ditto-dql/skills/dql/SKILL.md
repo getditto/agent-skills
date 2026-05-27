@@ -40,7 +40,7 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 ## Five things that bite people
 
 1. **Use `AND` / `OR` / `NOT` keywords**, not `&&` / `||` / `!`.
-2. **Single quotes for strings**, double quotes are not strings.
+2. **Single and double quotes both delimit strings**; backticks delimit identifiers. `WHERE title = "x"` and `WHERE title = 'x'` are equivalent. Prefer single quotes for consistency with JSON-style examples.
 3. **`= NULL` is always NULL**, not TRUE. Use `IS NULL` / `IS NOT NULL` / `IS MISSING`.
 4. **`INSERT` requires an explicit `ON ID CONFLICT`** for upserts. Default is FAIL.
 5. **`EVICT` is local-only and reversible** (other peers will re-sync). **`TOMBSTONE` is mesh-wide and permanent** (subject to TTL). Don't mix them up.
