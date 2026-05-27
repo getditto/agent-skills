@@ -2,4 +2,3 @@ node_modules/
 sdks/*/node_modules/
 results/
 .ditto/
-fixtures/movies-pedagogical.ndjson
