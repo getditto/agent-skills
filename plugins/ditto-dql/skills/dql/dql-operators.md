@@ -523,24 +523,31 @@ Aggregate functions process ALL documents before returning results (non-streamin
 
 ## Special Considerations
 
-### CASE Expressions
-DQL does not have CASE WHEN syntax. Use `decode()` function instead:
+### CASE expressions
+
+DQL supports both simple and searched CASE.
 
 ```sql
--- ❌ NOT SUPPORTED
-SELECT CASE
-  WHEN status = 'active' THEN 'Active'
-  WHEN status = 'inactive' THEN 'Inactive'
-  ELSE 'Unknown'
-END FROM users
+-- Searched form (recommended)
+SELECT title,
+  CASE
+    WHEN year < 1970 THEN 'Classic'
+    WHEN year < 2000 THEN 'Modern'
+    ELSE 'Contemporary'
+  END AS era
+FROM movies
 
--- ✅ USE decode() INSTEAD
-SELECT decode(status,
-  'active', 'Active',
-  'inactive', 'Inactive',
-  'Unknown'
-) AS status_label FROM users
+-- Simple form
+SELECT _id,
+  CASE genres[0]
+    WHEN 'Drama' THEN 'Heavy'
+    WHEN 'Comedy' THEN 'Light'
+    ELSE 'Other'
+  END AS mood
+FROM movies
 ```
+
+`decode()` is still available and is preferable for short equality switches inside expressions. See `references/expressions.md` for the full pattern reference.
 
 ### ORDER BY Type Hierarchy
 

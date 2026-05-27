@@ -16,7 +16,7 @@ DQL is NOT SQL. Critical differences that cause errors:
 - Single quotes ONLY for strings (no double quotes)
 - Boolean operators: `AND`, `OR`, `NOT` (not `&&`, `||`, `!`)
 - Use : for object properties (not =) → {_id: 'value'} not {_id = 'value'}
-- No JOINs, no subqueries, no GROUP BY
+- No JOINs, no subqueries
 - COUNTER type uses Integer in most SDKs, not Long
 - ON ID CONFLICT required for INSERT (or get "Identifier conflict... FAIL conflict policy" error)
 </critical_dql_differences>
