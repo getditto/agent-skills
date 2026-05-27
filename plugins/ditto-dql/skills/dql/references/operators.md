@@ -151,7 +151,7 @@ See [`functions.md`](functions.md) for the full signatures of `array_contains` a
 SELECT title FROM movies WHERE year NOT IN (2020, 2021, 2022)
 ```
 
-`IN UNNEST(array_expr)` and `IN (SELECT …)` subquery forms are also accepted; see [`select.md`](select.md) for subquery usage.
+`IN UNNEST(array_expr)` is also accepted to unwrap an array expression at parse time. **Subqueries are not supported inside `IN`** in either SDK 4.14.x or 5.0.x — the AST reserves an `InSubquery` node but the parser produces no path to it. Aggregate first and pass the values explicitly instead.
 
 ---
 
