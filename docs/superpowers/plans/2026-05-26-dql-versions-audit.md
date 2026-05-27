@@ -24,6 +24,33 @@ All `file:line` references below have been grep-verified against the trees above
 
 ---
 
+## Quick-reference: version floors
+
+| Feature                              | Min SDK    | Notes                          |
+|--------------------------------------|------------|--------------------------------|
+| XOR operator                         | 4.x only   | Removed in v5.0; returns v5.1+ |
+| DO MERGE conflict policy             | 4.x only   | Was alias for DO UPDATE; removed v5.0; returns v5.1+ |
+| `#profile` directive                 | 5.0+       | Not present in v4              |
+| ANY/EVERY ... SATISFIES              | 5.0+       | Quantifier expressions absent in v4 |
+| ARRAY/OBJECT ... FOR ... END         | 5.0+       | Comprehensions absent in v4    |
+| TOMBSTONE                            | 4.x        | Both versions                  |
+| EVICT                                | 4.x        | Both versions                  |
+| SYNC CONTEXT                         | 4.x        | Both versions                  |
+| CREATE INDEX / DROP INDEX            | 4.x        | Both versions                  |
+| RETURNING (UPDATE/DELETE)            | 4.x        | Both versions                  |
+| USE IDS (on SELECT only)             | 4.x        | TODO comments in both parsers for mutations |
+| CASE expression (simple + searched)  | 4.x        | Both versions                  |
+| MID / MEDIAN aggregates              | 4.x        | Both versions                  |
+| COUNTER (state-based)                | 4.13+      |                                |
+| PN_COUNTER                           | 4.11+      |                                |
+| DO UPDATE_LOCAL_DIFF                 | 4.12+      | Keyword `UPDATE_LOCAL_DIFF`; AST `DoUpdateDifferent` |
+| ATTACHMENT type                      | 4.x        | Both versions (v4 `ast/crdt.rs:18`) |
+| ALTER SYSTEM / SHOW                  | 4.x        | Both versions                  |
+| EXPLAIN                              | 4.x        | Both versions                  |
+| Strict-mode default                  | flips v5.0 | v4 default = strict; v5.0 default = lenient |
+
+---
+
 ## 1. Top-level statements
 
 Driven from `parse_single_statement` in each parser.
@@ -57,8 +84,8 @@ Both versions define the same four variants in `ast/mod.rs`:
 | `FAIL` (default)     | YES     | YES     | v4 `ast/mod.rs:1167`; default behavior |
 | `DO NOTHING`         | YES     | YES     | v4 `ast/mod.rs:1164` |
 | `DO UPDATE`          | YES     | YES     | v4 `ast/mod.rs:1165` |
-| `DO UPDATE_LOCAL_DIFF` | YES   | YES     | v4 `ast/mod.rs:1166`; SDK 4.12+ minimum per existing plugin note |
-| `DO MERGE` (alias for `DO UPDATE`) | YES | TBD (see plan lock) | v4 `parser.rs:3717` accepts `[Keyword::UPDATE, Keyword::MERGE]` and both map to `DoUpdate`. Plan lock lists "DO MERGE — v5.1.0-only and excluded". v4 evidence here contradicts that lock — flag for review when writing the statements reference. |
+| `DO UPDATE_LOCAL_DIFF` | YES   | YES     | v4 `ast/mod.rs:1166`; SDK 4.12+ minimum per existing plugin note. Keyword: `UPDATE_LOCAL_DIFF`; AST variant: `DoUpdateDifferent`. |
+| `DO MERGE` (alias for `DO UPDATE`) | YES | NO (removed in v5.0; was alias for `DO UPDATE` in v4 — see §11) | v4 `parser.rs:3717` accepts `[Keyword::UPDATE, Keyword::MERGE]` and both map to `DoUpdate`. Removed in v5.0; reintroduced as first-class action in v5.1. |
 
 ---
 
@@ -95,7 +122,7 @@ Both versions define the same four variants in `ast/mod.rs`:
 | `ANY/EVERY/ANY AND EVERY var IN/WITHIN expr SATISFIES cond END` (`ArraySearch`) | **NO** | YES | grep for `SATISFIES` returns 0 in v4 (`ast/`, `parser.rs`); v5 `parser.rs:3268`, `ast/mod.rs:552`. Feature is v5.0+. |
 | `ARRAY expr FOR [i:]var IN src [WHEN cond] END` (`ArrayObjectTransform`) | **NO** | YES | grep for `ArrayObjectTransform`/`Quantified` returns 0 in v4; v5 `ast/mod.rs:567-583`. v5.0+. |
 | `OBJECT k:v FOR [i:]var IN src [WHEN cond] END` | **NO** | YES | Same `ArrayObjectTransform` variant as above; v5.0+. |
-| `XOR` as binary operator (`BinaryOperator::Xor`) | YES | **NO operator variant** (keyword tokenized, precedence assigned, but no AST op) | v4 `ast/operator.rs:80,116-118,155`; v4 keywords list includes `XOR`. v5 `keywords.rs:197` defines the keyword and `parser.rs:1391` assigns `XOR_PREC`, but `ditto-dql-shared/src/ast/operator.rs:77-97` has no `Xor` variant. **In practice XOR is unusable as an operator in v5.0.0**; plan lock saying "XOR — v5.1.0-only" is therefore accurate semantically. **In v4 it IS usable.** Annotate as `v4 only` until v5.1. |
+| `XOR` as binary operator (`BinaryOperator::Xor`) | YES | **NO operator variant** (keyword tokenized, precedence assigned, but no AST op) | v4 `ast/operator.rs:82,116-118,155`; v4 keywords list includes `XOR`. v5 `keywords.rs:197` defines the keyword and `parser.rs:1391` assigns `XOR_PREC`, but `ditto-dql-shared/src/ast/operator.rs:77-97` has no `Xor` variant. **In practice XOR is unusable as an operator in v5.0.0**; plan lock saying "XOR — v5.1.0-only" is therefore accurate semantically. **In v4 it IS usable.** Annotate as `v4 only` until v5.1. |
 | Bitwise `&` / `|` / `^` as `BinaryOperator` | YES (`And`/`Or` variants) | **NO** | v4 `ast/operator.rs:83-84` defines `BitwiseOr`/`BitwiseAnd`; v5 has no bitwise variants. Excluded from cross-version reference docs. |
 | `RETURNING` on UPDATE / DELETE / EVICT / TOMBSTONE | YES | YES | v4 `ast/modification.rs:55-56,75-76`; `ast/remove.rs:51-52,82-83` |
 | `USE IDS (…)` on `SELECT`                | YES | YES | v4 `parser.rs:3087,3316` |
@@ -104,8 +131,6 @@ Both versions define the same four variants in `ast/mod.rs`:
 | Planner directives (`SELECT ... USE …` with JSON / context directives) | YES | YES | v4 `parser.rs:223,250,2052,2073-2121` (`Whitespace::Directive(_, json)`, `parse_directives`, `parse_collection_directives`) |
 | `#profile` context-keyword directive     | **NO** | YES | grep for `PROFILE`/`profile` in v4 parser returns 0; v5 plan lock confirms `#profile` at v5 `parser.rs:378`. Annotate `v5.0+`. |
 | `EXPLAIN <stmt>`                         | YES | YES | v4 `parser.rs:379-381` |
-| Strict mode flag `DQL_STRICT_MODE`       | YES | YES | v4 `core/query/src/engine/mod.rs:406`; v5 `crates/hydra-subscription/src/remote_query/http.rs:90`, `crates/hydra-subscription/src/rpc/execute/mod.rs:145` |
-| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` flag   | YES | YES | v4 `engine/mod.rs:371-372`; v5 `crates/hydra-common/src/query.rs:996` |
 | `ARRAY_AGG` / `LISTAGG` aggregates       | YES (AST present) | YES (AST present) | v4 `ast/mod.rs:543-545`; both present in AST but treat as advanced — verify in functions task |
 | `GROUPING SETS` / `CUBE` / `ROLLUP`      | YES (AST) | YES (AST) | v4 `ast/mod.rs:547-551` |
 | `MATCH … AGAINST` (full-text)            | YES (AST) | YES (AST) | v4 `ast/mod.rs:589-595` |
@@ -243,7 +268,7 @@ All seven aggregates present in both versions at the same line numbers — file 
 | `UPDATE … APPLY <counter mutator>` | YES (`parser.rs:3756-3760`) | YES | counter increment mutators |
 | `INSERT … INITIAL DOCUMENTS (…)` | YES (`parser.rs:3700`) | YES | INITIAL flag in `parse_insert` |
 | `INSERT … INTO … DOCUMENTS (…)`  | YES | YES | standard form |
-| `ON ID CONFLICT DO {NOTHING|UPDATE|UPDATE_LOCAL_DIFF|MERGE} / FAIL` | YES (`parser.rs:3705-3722`) | YES (lock; minus MERGE per plan note — see §2) | |
+| `ON ID CONFLICT DO {NOTHING|UPDATE|UPDATE_LOCAL_DIFF|MERGE} / FAIL` | YES (`parser.rs:3705-3722`) | YES (FAIL/DO NOTHING/DO UPDATE/DO UPDATE_LOCAL_DIFF only; `DO MERGE` removed — was a v4 alias for DO UPDATE) | |
 | `EVICT FROM` / `DELETE FROM` / `TOMBSTONE FROM` | YES | YES | see §1 |
 | `RETURNING <projection>` (on UPDATE/DELETE/EVICT/TOMBSTONE) | YES | YES | see §3 |
 
@@ -264,22 +289,26 @@ All seven aggregates present in both versions at the same line numbers — file 
 
 | Flag                                | v4.14.x | v5.0.0 | Notes |
 | ----------------------------------- | ------- | ------ | ----- |
-| `DQL_STRICT_MODE`                   | YES     | YES    | v4 `core/query/src/engine/mod.rs:406` |
-| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX`   | YES     | YES    | v4 `engine/mod.rs:371-372` |
+| `DQL_STRICT_MODE`                   | YES     | YES    | v4 `core/query/src/engine/mod.rs:406`; v5 `crates/hydra-subscription/src/remote_query/http.rs:90`, `crates/hydra-subscription/src/rpc/execute/mod.rs:145`. Default flips in v5.0 (v4 default = strict; v5.0 default = lenient). |
+| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX`   | YES     | YES    | v4 `engine/mod.rs:371-372`; v5 `crates/hydra-common/src/query.rs:996` |
 
 ---
 
-## 10. Excluded — v5.1.0 only
+## 10. Features excluded from this skill
 
-Per plan lock and grep evidence, the following are **not in v5.0.0 (and not in v4.14.x)** and must not be annotated in the v2.0.0 plugin update:
+### 10a. Truly v5.1.0-only (never existed before)
 
-- `ADVISE` statement (no keyword in either v4 or v5.0 grep)
-- `XOR` as a usable binary operator (v5.0 tokenizes the keyword and assigns precedence but does not emit a `BinaryOperator::Xor` AST node, so it cannot actually compile to an operation; v4 DOES support it as `BinaryOperator::Xor`, but documenting that as cross-version is misleading — annotate as **v4 only / removed in v5.0** OR omit entirely; see §3 caveat)
-- `DO MERGE` as a documented `ON ID CONFLICT` action (parser-wise, v4 accepts `Keyword::MERGE` and folds it into `DoUpdate`, so the syntax actually parses in v4; document as "v4-only alias for `DO UPDATE`, removed in v5.0" if it needs to be mentioned, otherwise treat as v5.1.0-only canonical syntax per plan lock)
-- `serialize_json` function
-- `object_size` function
-- `SHOW INDEXES` statement
-- `#profile` directive on UPDATE / DELETE / EVICT (v5.0 accepts `#profile` on SELECT only — plan lock at v5 `parser.rs:378`)
+- ADVISE / ADVISE AND PROVISION
+- serialize_json()
+- object_size()
+- SHOW INDEXES (verify)
+- #profile directive support on non-SELECT statements
+- USE IDS on UPDATE/DELETE/EVICT/TOMBSTONE (parser TODO in both v4 and v5)
+
+### 10b. Removed in v5.0, returning in v5.1
+
+- XOR operator (v4 had it as BinaryOperator; v5.0 dropped the AST variant; v5.1 reintroduces)
+- DO MERGE conflict policy (v4 accepted it as alias for DO UPDATE; v5.0 removed; v5.1 makes it first-class)
 
 ---
 
