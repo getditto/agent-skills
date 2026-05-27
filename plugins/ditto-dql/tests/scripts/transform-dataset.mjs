@@ -11,7 +11,20 @@ const src = cfg.from.replace(/^~/, os.homedir());
 const dst = path.resolve(import.meta.dirname, "..", "fixtures", "movies-pedagogical.ndjson");
 fs.mkdirSync(path.dirname(dst), { recursive: true });
 
-const lines = fs.readFileSync(src, "utf8").split("\n").filter(Boolean).slice(0, cfg.limit);
+const allLines = fs.readFileSync(src, "utf8").split("\n").filter(Boolean);
+const stride = Math.max(1, Math.floor(allLines.length / cfg.limit));
+const lines = [];
+for (let i = 0; i < allLines.length && lines.length < cfg.limit; i += stride) {
+  const raw = allLines[i];
+  // Skip docs with empty released — would break ORDER BY released
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed.released || !parsed.released.length) continue;
+  } catch {
+    continue;
+  }
+  lines.push(raw);
+}
 const out = lines.map(raw => {
   const r = JSON.parse(raw);
   const year = parseInt(r._id?.year || r.year, 10);
