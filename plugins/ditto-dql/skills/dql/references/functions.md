@@ -215,6 +215,26 @@ SELECT title, upper(substr(title, 0, 3)) AS prefix FROM movies;
 SELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies;
 ```
 
+```sql
+-- repeat: build a star-rating indicator from the IMDb score
+SELECT title, repeat('★', cast(round(ratings.imdb), 'integer')) AS stars FROM movies;
+```
+
+```sql
+-- lpad: zero-pad the year for fixed-width display
+SELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies;
+```
+
+```sql
+-- rpad: right-pad the title to a fixed width with dots
+SELECT rpad(title, 30, '.') AS title_padded FROM movies;
+```
+
+```sql
+-- split: tokenise a comment on whitespace
+SELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1;
+```
+
 ---
 
 ## 5. Array
@@ -232,7 +252,8 @@ SELECT title FROM movies WHERE array_contains(genres, 'Drama');
 
 ```sql
 -- Movies whose cast list is the largest
-SELECT title, array_length(cast) AS cast_size FROM movies
+-- `cast` is a SQL keyword (and a function name) — backtick the field identifier
+SELECT title, array_length(`cast`) AS cast_size FROM movies
 ORDER BY cast_size DESC LIMIT 5;
 ```
 
@@ -326,7 +347,7 @@ Dates are either **epoch milliseconds (UTC, integer)** or **ISO-style strings**.
 | `date_format(date, format[, tz])`                         | `string`                                                         | Date → formatted string                                              |
 | `date_add(date, part, count[, format[, tz]])`             | `integer` or `string` (matches input, or `format` if given)      | Add `count` of `part`; negative subtracts                            |
 | `date_sub(date, part, count[, format[, tz]])`             | same as above                                                    | Sign-flipped `date_add`                                              |
-| `date_diff(d1, d2, part)`                                 | `integer`                                                        | Number of `part`s between                                            |
+| `date_diff(d1, d2, part)`                                 | `integer`                                                        | Number of `part`s between. Result is `d2 - d1` (positive when `d2` is later than `d1`) |
 | `date_range(start, end, part, count[, format[, tz]])`     | `array<date>`                                                    | Half-open `[start, end)` stepping by `count`-`part`s                 |
 | `date_part(date, part)`                                   | `integer` or `string`                                            | Extract one part                                                     |
 | `date_trunc(date, part)`                                  | `integer` (epoch input) or `string` (ISO output for string input)| Zero subsequent fields                                               |
@@ -431,7 +452,7 @@ Aggregates take a single expression evaluated per document in a group; they retu
 | `sum([DISTINCT] expr)`     | `num`            | Non-numeric values silently ignored                                                                                    |
 | `min(expr)` / `max(expr)`  | (input type)     | `MISSING` silently ignored; cross-type ordering rules in [`operators.md`](operators.md#3-comparison-operators) §3      |
 | `avg([DISTINCT] expr)`     | `num`            | Non-numeric values silently ignored                                                                                    |
-| `mid([DISTINCT] expr)`     | `num`            | Midpoint between `min(expr)` and `max(expr)`                                                                           |
+| `mid([DISTINCT] expr)`     | `num`            | `(min(expr) + max(expr)) / 2` — arithmetic midpoint of the extremes, **NOT** the statistical median. Use `median` for the middle value of a sorted set. |
 | `median([DISTINCT] expr)`  | `num`            | Statistical median                                                                                                      |
 
 ### 10.1 `count` — three useful forms
