@@ -12,10 +12,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM users WHERE _id IN ('user-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM users WHERE _id IN ('user-1')"
+    ]
   },
   {
     "id": "sk_best_practices_cd852ff9",
@@ -24,34 +26,19 @@
       "line": 68,
       "heading": "#### When to Use Flat Models"
     },
-    "query": "-- ✅ GOOD: Separate collections with foreign keys\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})\n\nINSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})\n\n-- Query separately\nSELECT * FROM people WHERE _id = 'person-1'\nSELECT * FROM cars WHERE owner_id = 'person-1'",
+    "query": "-- ✅ GOOD: Separate collections with foreign keys\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_best_practices_95357f96",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/best-practices.md",
-      "line": 99,
-      "heading": "### Additional Guidelines"
-    },
-    "query": "-- For files > 250 KB\nINSERT INTO files DOCUMENTS ({\n  '_id': 'file-1',\n  'filename': 'photo.jpg',\n  'file_data': :attachment_object  -- ATTACHMENT type\n})",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
+    "preQueries": [
+      "EVICT FROM people WHERE _id IN ('person-1')"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "postQueries": [
+      "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})\n\n-- Query separately",
+      "EVICT FROM people WHERE _id IN ('person-1')"
+    ]
   },
   {
     "id": "sk_best_practices_49a9a073",
@@ -66,10 +53,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM orders WHERE _id IN ('order-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM orders WHERE _id IN ('order-1')"
+    ]
   },
   {
     "id": "sk_best_practices_9ec741d2",
@@ -78,16 +67,18 @@
       "line": 145,
       "heading": "### Core Principle"
     },
-    "query": "INSERT INTO collection DOCUMENTS ({\n  '_id': :id,\n  'schema_version': 1,  -- Increment on schema changes\n  'field1': :value1,\n  'field2': :value2\n}) ON ID CONFLICT DO UPDATE",
+    "query": "INSERT INTO collection DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 1,  -- Increment on schema changes\n  'field1': 'value1',\n  'field2': 'value2'\n}) ON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM DOCUMENTS WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "EVICT FROM DOCUMENTS WHERE _id IN ('test_seed_id')"
+    ]
   },
   {
     "id": "sk_best_practices_2cd8cb94",
@@ -96,16 +87,18 @@
       "line": 161,
       "heading": "#### 1. Backward-Compatibility"
     },
-    "query": "-- Bump version on schema changes\nINSERT INTO cars DOCUMENTS ({\n  '_id': :id,\n  'schema_version': 2,  -- Incremented from 1\n  'make': :make,\n  'model': :model,\n  'year': :year,\n  'color': :color  -- New field added in v2\n}) ON ID CONFLICT DO UPDATE\n\n-- Old v1 documents still readable:\n-- {_id: 'car-1', schema_version: 1, make: 'Honda', model: 'Civic', year: 2020}\n-- New v2 documents include color:\n-- {_id: 'car-2', schema_version: 2, make: 'Tesla', model: 'Model 3', year: 2024, color: 'blue'}",
+    "query": "-- Bump version on schema changes\nINSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,  -- Incremented from 1\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue'  -- New field added in v2\n}) ON ID CONFLICT DO UPDATE\n\n-- Old v1 documents still readable:\n-- {_id: 'car-1', schema_version: 1, make: 'Honda', model: 'Civic', year: 2020}\n-- New v2 documents include color:\n-- {_id: 'car-2', schema_version: 2, make: 'Tesla', model: 'Model 3', year: 2024, color: 'blue'}",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM cars WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "EVICT FROM cars WHERE _id IN ('test_seed_id')"
+    ]
   },
   {
     "id": "sk_best_practices_5cd86715",
@@ -114,16 +107,12 @@
       "line": 188,
       "heading": "#### 2. Same-Version Compatibility"
     },
-    "query": "-- Query specific version only\nSELECT * FROM cars WHERE schema_version = 1\n\n-- Or current version\nSELECT * FROM cars WHERE schema_version = :currentVersion\n\n-- Ignore unknown versions\nSELECT * FROM cars WHERE schema_version <= :currentVersion",
+    "query": "-- Query specific version only\nSELECT * FROM cars WHERE schema_version = 1\n\n-- Or current version",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_e812539c",
@@ -132,16 +121,12 @@
       "line": 210,
       "heading": "#### 3. Force Upgrade"
     },
-    "query": "-- Detect documents with newer schema\nSELECT * FROM cars WHERE schema_version > :currentVersion\n\n-- If found, show user:\n-- \"Please update to the latest version to view this content\"",
+    "query": "-- Detect documents with newer schema\nSELECT * FROM cars WHERE schema_version > 1\n\n-- If found, show user:\n-- \"Please update to the latest version to view this content\"",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_5041c104",
@@ -150,16 +135,20 @@
       "line": 241,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- ✅ SAFE: Add new optional fields\nUPDATE cars SET color = 'blue' WHERE _id = :id\n\n-- ✅ SAFE: Add nested fields (with strict mode off or MAP type)\nUPDATE cars SET features.sunroof = true WHERE _id = :id\n\n-- ✅ SAFE: Add new collections\nINSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
+    "query": "-- ✅ SAFE: Add new optional fields\nUPDATE cars SET color = 'blue' WHERE _id = 'test_seed_id'\n\n-- ✅ SAFE: Add nested fields (with strict mode off or MAP type)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO cars DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'\n\n-- ✅ SAFE: Add new collections",
+      "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
+      "EVICT FROM cars WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_best_practices_cb06bec6",
@@ -168,16 +157,18 @@
       "line": 257,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- ❌ UNSAFE: Change field type\n-- v1: 'year': 2024 (INTEGER)\n-- v2: 'year': '2024' (STRING)\n-- Result: Old versions crash trying to read string as integer\n\n-- ❌ UNSAFE: Remove existing field\nUPDATE cars UNSET make WHERE _id = :id\n-- Result: Old versions expect 'make' field, may crash\n\n-- ❌ UNSAFE: Rename field\n-- v1: 'color'\n-- v2: 'paint_color'\n-- Result: Old versions can't find 'color', may crash or show blank",
+    "query": "-- ❌ UNSAFE: Change field type\n-- v1: 'year': 2024 (INTEGER)\n-- v2: 'year': '2024' (STRING)\n-- Result: Old versions crash trying to read string as integer\n\n-- ❌ UNSAFE: Remove existing field\nUPDATE cars UNSET make WHERE _id = 'test_seed_id'\n-- Result: Old versions expect 'make' field, may crash\n\n-- ❌ UNSAFE: Rename field\n-- v1: 'color'\n-- v2: 'paint_color'\n-- Result: Old versions can't find 'color', may crash or show blank",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "INSERT INTO cars DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM cars WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_best_practices_ce76b803",
@@ -186,16 +177,15 @@
       "line": 274,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- Instead of changing type, add new field\n-- Keep old field for compatibility\n\n-- v1: year (INTEGER)\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  -- INTEGER\n})\n\n-- v2: Add year_string, keep year\nUPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1\n\n-- Old versions still read 'year' (INTEGER)\n-- New versions prefer 'year_string' (STRING) but fall back to 'year'",
+    "query": "-- Instead of changing type, add new field\n-- Keep old field for compatibility\n\n-- v1: year (INTEGER)\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  -- INTEGER\n})\n\n-- v2: Add year_string, keep year",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1\n\n-- Old versions still read 'year' (INTEGER)\n-- New versions prefer 'year_string' (STRING) but fall back to 'year'"
+    ]
   },
   {
     "id": "sk_best_practices_c70f84e8",
@@ -204,16 +194,12 @@
       "line": 348,
       "heading": "### Implementation Pattern"
     },
-    "query": "-- Migrate v1 documents to v2\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  -- Add missing field with default\nWHERE schema_version = 1 AND color IS MISSING\n\n-- Verify migration\nSELECT schema_version, COUNT(*) AS count\nFROM cars\nGROUP BY schema_version\nORDER BY schema_version",
+    "query": "-- Migrate v1 documents to v2\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  -- Add missing field with default\nWHERE schema_version = 1 AND color IS MISSING\n\n-- Verify migration",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_415f7002",
@@ -222,16 +208,12 @@
       "line": 364,
       "heading": "### Implementation Pattern"
     },
-    "query": "-- Read only current version\nSELECT * FROM cars WHERE schema_version = 2\n\n-- Read compatible versions (current and previous)\nSELECT * FROM cars WHERE schema_version IN (1, 2)\n\n-- Read current or older (backward-compatible)\nSELECT * FROM cars WHERE schema_version <= 2\n\n-- Detect incompatible future versions\nSELECT COUNT(*) AS incompatible_count\nFROM cars\nWHERE schema_version > 2",
+    "query": "-- Read only current version\nSELECT * FROM cars WHERE schema_version = 2\n\n-- Read compatible versions (current and previous)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_b6aa9e9f",
@@ -240,16 +222,15 @@
       "line": 382,
       "heading": "### Multi-Version Support Example"
     },
-    "query": "-- Application supports v1 and v2\n-- v1: Basic car info (make, model, year)\n-- v2: Adds 'features' nested object and 'color'\n\n-- Read query handles both versions\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  -- v2 field with fallback\n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)\n\n-- Write always uses latest version\nINSERT INTO cars DOCUMENTS ({\n  '_id': :id,\n  'schema_version': 2,\n  'make': :make,\n  'model': :model,\n  'year': :year,\n  'color': :color,\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE",
+    "query": "-- Application supports v1 and v2\n-- v1: Basic car info (make, model, year)\n-- v2: Adds 'features' nested object and 'color'\n\n-- Read query handles both versions\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  -- v2 field with fallback\n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)\n\n-- Write always uses latest version",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "INSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue',\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE"
+    ]
   },
   {
     "id": "sk_best_practices_d27b377c",
@@ -263,11 +244,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_9554f475",
@@ -276,16 +253,12 @@
       "line": 475,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Fields that benefit from indexes:\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee);\nCREATE INDEX IF NOT EXISTS idx_status     ON tasks (status);\nCREATE INDEX IF NOT EXISTS idx_created_at ON tasks (created_at DESC);\n\nWHERE assignee = 'alice'        -- Uses idx_assignee\nWHERE status = 'active'         -- Uses idx_status\nORDER BY created_at DESC        -- Uses idx_created_at",
+    "query": "-- Fields that benefit from indexes:\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee);",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_4b099eaf",
@@ -294,16 +267,12 @@
       "line": 490,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Before optimization\nEXPLAIN SELECT * FROM tasks WHERE priority > 5\n-- Plan rooted at CollectionScan  -- ❌ Full scan\n\n-- After CREATE INDEX ON tasks (priority)\nEXPLAIN SELECT * FROM tasks WHERE priority > 5\n-- Plan rooted at IndexScan referencing idx_priority  -- ✅ Using index",
+    "query": "-- Before optimization\nEXPLAIN SELECT * FROM tasks WHERE priority > 5\n-- Plan rooted at CollectionScan  -- ❌ Full scan\n\n-- After CREATE INDEX ON tasks (priority)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_8d0cf3ae",
@@ -317,11 +286,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_4ef87616",
@@ -330,16 +295,12 @@
       "line": 515,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- ❌ BAD: Full collection scan\nSELECT * FROM large_collection\n\n-- ✅ BETTER: Use WHERE to filter\nSELECT * FROM large_collection WHERE category = 'active'\n\n-- ✅ BETTER: Use LIMIT to reduce results\nSELECT * FROM large_collection LIMIT 100\n\n-- ✅ BEST: Use indexed field with LIMIT\nSELECT * FROM large_collection\nWHERE status = 'active'\nORDER BY created_at DESC\nLIMIT 100",
+    "query": "-- ❌ BAD: Full collection scan\nSELECT * FROM large_collection\n\n-- ✅ BETTER: Use WHERE to filter",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_cf8ea35a",
@@ -348,16 +309,12 @@
       "line": 543,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Query performance statistics\nSELECT * FROM system:vitals\n\n-- Fields include:\n-- - execution_time (total time)\n-- - parse_time (parsing time)\n-- - plan_time (planning time)\n-- - request_count (number of executions)\n\n-- Active query execution\nSELECT * FROM system:active_requests\n\n-- Collection catalog\nSELECT * FROM system:collections\n\n-- Mesh presence\nSELECT * FROM __presence",
+    "query": "-- Query performance statistics\nSELECT * FROM system:vitals\n\n-- Fields include:\n-- - execution_time (total time)\n-- - parse_time (parsing time)\n-- - plan_time (planning time)\n-- - request_count (number of executions)\n\n-- Active query execution",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_e19c6a48",
@@ -366,16 +323,12 @@
       "line": 568,
       "heading": "### Performance Tips"
     },
-    "query": "-- ⚠️ Processes ALL documents before returning\nSELECT COUNT(*) FROM large_collection\nSELECT SUM(price) FROM orders\nSELECT AVG(rating) FROM reviews\n\n-- ✅ Non-aggregate queries stream results incrementally\nSELECT * FROM large_collection",
+    "query": "-- ⚠️ Processes ALL documents before returning\nSELECT COUNT(*) FROM large_collection",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_ebe3165a",
@@ -384,16 +337,12 @@
       "line": 579,
       "heading": "### Performance Tips"
     },
-    "query": "-- ⚠️ Buffers ALL results in memory\nSELECT DISTINCT category FROM products\n\n-- ✅ Better: Use GROUP BY (more efficient)\nSELECT category FROM products GROUP BY category",
+    "query": "-- ⚠️ Buffers ALL results in memory\nSELECT DISTINCT category FROM products\n\n-- ✅ Better: Use GROUP BY (more efficient)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_abd40b97",
@@ -402,16 +351,12 @@
       "line": 588,
       "heading": "### Performance Tips"
     },
-    "query": "-- ✅ Return results incrementally\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20\n\n-- ❌ Returns ALL, then discards most\nSELECT * FROM tasks ORDER BY created_at DESC  -- No LIMIT",
+    "query": "-- ✅ Return results incrementally\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20\n\n-- ❌ Returns ALL, then discards most",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_bc8b8ad7",
@@ -420,16 +365,12 @@
       "line": 599,
       "heading": "### Performance Tips"
     },
-    "query": "-- ✅ GOOD: Filter before aggregation\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category\n\n-- ❌ BAD: Aggregate all, then filter\nSELECT category, COUNT(*) FROM products\nGROUP BY category\nHAVING category != 'deleted'",
+    "query": "-- ✅ GOOD: Filter before aggregation\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category\n\n-- ❌ BAD: Aggregate all, then filter",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_227b77cb",
@@ -443,11 +384,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_8579d6ad",
@@ -461,11 +398,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_8fa5b773",
@@ -479,11 +412,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_21a96712",
@@ -492,16 +421,19 @@
       "line": 659,
       "heading": "### Example: Object Merge Behavior"
     },
-    "query": "-- Device A writes:\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'\n\n-- Device B writes (offline):\nUPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'\n\n-- Result: Last-write-wins (one completely replaces the other)\n-- Either: {bio: 'Designer', location: 'NYC'}\n-- Or:     {bio: 'Engineer', city: 'SF'}\n-- One wins entirely, the other is lost",
+    "query": "-- Device A writes:\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'\n\n-- Device B writes (offline):",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'\n\n-- Result: Last-write-wins (one completely replaces the other)\n-- Either: {bio: 'Designer', location: 'NYC'}\n-- Or:     {bio: 'Engineer', city: 'SF'}\n-- One wins entirely, the other is lost",
+      "EVICT FROM users WHERE _id = 'user-1'"
+    ]
   },
   {
     "id": "sk_best_practices_1f5c258a",
@@ -510,16 +442,19 @@
       "line": 673,
       "heading": "### Example: Object Merge Behavior"
     },
-    "query": "-- Device A writes:\nUPDATE users SET profile.bio = 'Designer', profile.location = 'NYC' WHERE _id = 'user-1'\n\n-- Device B writes (offline):\nUPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user-1'\n\n-- Result: Per-field merge (both updates preserved)\n-- {bio: 'Engineer', location: 'NYC', city: 'SF'}\n-- Last write wins per field, not per object",
+    "query": "-- Device A writes:\nUPDATE users SET profile.bio = 'Designer', profile.location = 'NYC' WHERE _id = 'user-1'\n\n-- Device B writes (offline):",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user-1'\n\n-- Result: Per-field merge (both updates preserved)\n-- {bio: 'Engineer', location: 'NYC', city: 'SF'}\n-- Last write wins per field, not per object",
+      "EVICT FROM users WHERE _id = 'user-1'"
+    ]
   },
   {
     "id": "sk_best_practices_8e5f8405",
@@ -528,16 +463,12 @@
       "line": 736,
       "heading": "### Parameterized Queries (Prevent Injection)"
     },
-    "query": "-- ✅ SAFE: Parameterized\nSELECT * FROM tasks WHERE title = :search\n-- Pass arguments: {search: userInput}\n\n-- ❌ UNSAFE: String concatenation (SQL injection risk)\nconst query = \"SELECT * FROM tasks WHERE title = '\" + userInput + \"'\";",
+    "query": "-- ✅ SAFE: Parameterized\nSELECT * FROM tasks WHERE title = 'inception'\n-- Pass arguments: {search: userInput}\n\n-- ❌ UNSAFE: String concatenation (SQL injection risk)\nconst query = \"SELECT * FROM tasks WHERE title = '\" + userInput + \"'\";",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_929a1f9e",
@@ -546,16 +477,12 @@
       "line": 746,
       "heading": "### Parameterized Queries (Prevent Injection)"
     },
-    "query": "SELECT * FROM tasks\nWHERE assignee = :user AND status = :status AND priority >= :min_priority\n-- Pass: {user: 'alice', status: 'active', min_priority: 3}",
+    "query": "SELECT * FROM tasks\nWHERE assignee = 'u-42' AND status = 'active' AND priority >= 3\n-- Pass: {user: 'alice', status: 'active', min_priority: 3}",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": true,
-    "_hints": {
-      "isWrong": true,
-      "hasOnlyParams": true
-    }
+    "expectError": true
   },
   {
     "id": "sk_best_practices_67027bba",
@@ -564,16 +491,19 @@
       "line": 756,
       "heading": "### Always Use ON ID CONFLICT"
     },
-    "query": "-- ✅ CORRECT: Handles duplicate IDs gracefully\nINSERT INTO tasks DOCUMENTS ({\n  '_id': :id,\n  'title': :title\n}) ON ID CONFLICT DO UPDATE\n\n-- ❌ WRONG: Fails if ID exists\nINSERT INTO tasks DOCUMENTS ({\n  '_id': :id,\n  'title': :title\n})\n-- Error: \"Identifier conflict on document {\\\"_id\\\":\\\"...\\\": using FAIL conflict policy\"",
+    "query": "-- ✅ CORRECT: Handles duplicate IDs gracefully\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE\n\n-- ❌ WRONG: Fails if ID exists",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})\n-- Error: \"Identifier conflict on document {\\\"_id\\\":\\\"...\\\": using FAIL conflict policy\"",
+      "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
+    ]
   },
   {
     "id": "sk_best_practices_9a77052f",
@@ -582,70 +512,19 @@
       "line": 792,
       "heading": "### Soft Delete Pattern"
     },
-    "query": "-- Soft delete: mark as deleted, retain document\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = :id\n\n-- Reads filter out deleted documents\nSELECT * FROM tasks WHERE NOT coalesce(deleted, false)\n\n-- Periodic cleanup: hard-delete once safely past the TTL window\nDELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
+    "query": "-- Soft delete: mark as deleted, retain document\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'\n\n-- Reads filter out deleted documents",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
-  },
-  {
-    "id": "sk_best_practices_c431c678",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/best-practices.md",
-      "line": 813,
-      "heading": "### ISO-8601 Format"
-    },
-    "query": "-- Date format: YYYY-MM-DD\nWHERE created_at >= '2024-01-01'\nWHERE expires_at <= '2024-12-31'\n\n-- DateTime format: YYYY-MM-DDTHH:mm:ssZ\nWHERE updated_at >= '2024-12-22T15:30:00Z'\nWHERE event_time = '2024-12-22T15:30:00.000Z'\n\n-- Insert with timestamp\nINSERT INTO events DOCUMENTS ({\n  '_id': :id,\n  'timestamp': '2024-12-22T15:30:00.000Z',\n  'event': 'login',\n  'user_id': :user_id\n})",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
+    "preQueries": [
+      "INSERT INTO tasks DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_best_practices_42509e49",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/best-practices.md",
-      "line": 840,
-      "heading": "### Clock Accuracy in Distributed Systems"
-    },
-    "query": "-- ⚠️ Two devices may assign different timestamps to same event\n-- Device A (10:00:00.000): INSERT ... timestamp = '2024-12-22T10:00:00.000Z'\n-- Device B (09:59:58.500): INSERT ... timestamp = '2024-12-22T09:59:58.500Z'\n-- Both created simultaneously, but timestamps differ by 1.5 seconds",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_best_practices_708c372c",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/best-practices.md",
-      "line": 866,
-      "heading": "### Network Time Protocol (NTP)"
-    },
-    "query": "-- Instead of exact timestamp comparisons:\n-- ❌ Fragile\nWHERE created_at = '2024-12-22T10:00:00.000Z'\n\n-- ✅ Use time ranges (tolerates skew)\nWHERE created_at >= '2024-12-22T09:59:00.000Z'\n  AND created_at <= '2024-12-22T10:01:00.000Z'",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
+      "EVICT FROM tasks WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_best_practices_45cd3617",
@@ -659,11 +538,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_92f13f2a",
@@ -672,16 +547,18 @@
       "line": 889,
       "heading": "### Common Timestamp Patterns"
     },
-    "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': :id,\n  'message': :text,\n  'sent_at': clock(),  -- Current time\n  'sender_id': :sender_id\n})",
+    "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  -- Current time\n  'sender_id': 'u-42'\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM messages WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "EVICT FROM messages WHERE _id IN ('test_seed_id')"
+    ]
   },
   {
     "id": "sk_best_practices_6d2a4da4",
@@ -695,11 +572,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_cbe14ec8",
@@ -713,11 +586,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_best_practices_20456517",
@@ -731,11 +600,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_410d153f",
@@ -750,10 +615,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
+    ]
   },
   {
     "id": "sk_movies_cookbook_f8e304a7",
@@ -767,11 +634,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_7b18c331",
@@ -780,16 +643,12 @@
       "line": 110,
       "heading": "### Task 3 — Top-rated movies in a decade with pagination"
     },
-    "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN :decade_start AND :decade_end\n  AND ratings.imdb >= :min_imdb\nORDER BY imdb DESC, title ASC\nLIMIT :page_size OFFSET :offset;",
+    "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN 1990 AND 1999\n  AND ratings.imdb >= 7.0\nORDER BY imdb DESC, title ASC\nLIMIT 25 OFFSET 0;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_005e74b4",
@@ -798,16 +657,12 @@
       "line": 127,
       "heading": "### Task 4 — Single-document lookup (fastest path)"
     },
-    "query": "SELECT * FROM movies USE IDS (:id);",
+    "query": "SELECT * FROM movies USE IDS ('573a1390f29313caabcd4135');",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_db7ec837",
@@ -816,15 +671,11 @@
       "line": 141,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
-    "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN cast SATISFIES actor.name = :actor_name END\nORDER BY year ASC;",
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN cast SATISFIES actor.name = 'Morgan Freeman' END\nORDER BY year ASC;",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_19aa59a7",
@@ -833,15 +684,11 @@
       "line": 150,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
-    "query": "-- v4-portable: maintain a parallel actor_names array\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, :actor_name)\nORDER BY year ASC;",
+    "query": "-- v4-portable: maintain a parallel actor_names array\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC;",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_833c7347",
@@ -854,11 +701,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_014a6f44",
@@ -871,11 +714,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_ca2daa04",
@@ -888,11 +727,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_2a467094",
@@ -905,11 +740,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_e0922eae",
@@ -922,11 +753,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_bc8e6f83",
@@ -939,11 +766,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_16638978",
@@ -952,15 +775,11 @@
       "line": 270,
       "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
     },
-    "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN (:top_ids);",
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN (('573a1390f29313caabcd4135'));",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_2385f942",
@@ -969,16 +788,18 @@
       "line": 298,
       "heading": "### Task 11 — Increment the watch counter"
     },
-    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = :id;",
+    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'test_seed_id';",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_movies_cookbook_bd3bef8c",
@@ -987,16 +808,18 @@
       "line": 306,
       "heading": "### Task 11 — Increment the watch counter"
     },
-    "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = :id;",
+    "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'test_seed_id';",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_movies_cookbook_055f72e5",
@@ -1005,16 +828,18 @@
       "line": 320,
       "heading": "### Task 12 — Update a nested MAP field without clobbering siblings"
     },
-    "query": "UPDATE COLLECTION movies (ratings MAP)\nSET ratings.rotten_tomatoes = 95\nWHERE _id = :id;",
+    "query": "UPDATE COLLECTION movies (ratings MAP)\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id';",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_movies_cookbook_0c9fd7e1",
@@ -1028,11 +853,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_f294edb5",
@@ -1046,11 +867,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_521db81d",
@@ -1059,16 +876,18 @@
       "line": 365,
       "heading": "### Task 15 — Reset the watch counter on a re-release (RESTART)"
     },
-    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE _id = :id;",
+    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE _id = 'test_seed_id';",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_movies_cookbook_3111093b",
@@ -1082,11 +901,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_b87b3463",
@@ -1095,16 +910,18 @@
       "line": 392,
       "heading": "### Task 17 — Mesh-wide retraction of a withdrawn film (TOMBSTONE)"
     },
-    "query": "TOMBSTONE FROM movies\nWHERE _id = :withdrawn_id\nRETURNING _id, title;",
+    "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
   },
   {
     "id": "sk_movies_cookbook_924bb325",
@@ -1118,11 +935,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_256dea5e",
@@ -1131,16 +944,12 @@
       "line": 34,
       "heading": "## 1. Literals"
     },
-    "query": "SELECT * FROM movies WHERE year = 1994\nSELECT * FROM movies WHERE genres = ['Drama', 'Crime']\nSELECT * FROM movies WHERE director = { 'name': 'Christopher Nolan', 'born': 1970 }",
+    "query": "SELECT * FROM movies WHERE year = 1994",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_5438b528",
@@ -1154,11 +963,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_44ff7d0c",
@@ -1167,16 +972,12 @@
       "line": 87,
       "heading": "## 3. Parameters"
     },
-    "query": "-- Bind { year: 1994 } from the SDK call\nSELECT title, ratings.imdb FROM movies\nWHERE year = :year\nORDER BY ratings.imdb DESC\nLIMIT :limit",
+    "query": "-- Bind { year: 1994 } from the SDK call\nSELECT title, ratings.imdb FROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC\nLIMIT 25",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_32796337",
@@ -1185,16 +986,12 @@
       "line": 129,
       "heading": "### Examples against `movies`"
     },
-    "query": "-- nested path\nSELECT title, director.name AS director FROM movies\n\n-- array index + nested field\nSELECT title, cast[0].name AS lead_actor FROM movies\n\n-- backticked path part — field literally named \"ratings.imdb\"\n-- (only useful if your data has such a field; unusual)\nSELECT _id, `ratings.imdb` FROM movies",
+    "query": "-- nested path\nSELECT title, director.name AS director FROM movies\n\n-- array index + nested field",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_8a13e3e7",
@@ -1208,11 +1005,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_c94386e0",
@@ -1226,11 +1019,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_8e3d2e9d",
@@ -1239,15 +1028,11 @@
       "line": 224,
       "heading": "## 7. `ANY ... IN ... SATISFIES ... END`"
     },
-    "query": "-- Movies featuring Morgan Freeman\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\n\n-- Movies whose ratings object contains at least one score above 9.0\nSELECT title FROM movies\nWHERE ANY k:v IN ratings SATISFIES v > 9.0 END",
+    "query": "-- Movies featuring Morgan Freeman\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\n\n-- Movies whose ratings object contains at least one score above 9.0",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_0cc1d79f",
@@ -1256,15 +1041,11 @@
       "line": 244,
       "heading": "## 8. `EVERY ... IN ... SATISFIES ... END`"
     },
-    "query": "-- Movies where every cast entry has a non-empty role string\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END\n\n-- Movies whose every rating in the ratings object is at least 7.0\nSELECT title FROM movies\nWHERE EVERY k:v IN ratings SATISFIES v >= 7.0 END",
+    "query": "-- Movies where every cast entry has a non-empty role string\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END\n\n-- Movies whose every rating in the ratings object is at least 7.0",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_52615efc",
@@ -1277,11 +1058,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_5e3653e9",
@@ -1290,32 +1067,11 @@
       "line": 282,
       "heading": "## 10. `IN` vs `WITHIN` inside quantifiers and comprehensions"
     },
-    "query": "-- IN: any score directly in the ratings object is null\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END\n\n-- WITHIN: any value anywhere in ratings (incl. inside nested objects) is null\nSELECT title FROM movies\nWHERE ANY v WITHIN ratings SATISFIES v IS NULL END",
+    "query": "-- IN: any score directly in the ratings object is null\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END\n\n-- WITHIN: any value anywhere in ratings (incl. inside nested objects) is null",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
-  },
-  {
-    "id": "sk_expressions_63a39ce5",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/references/expressions.md",
-      "line": 296,
-      "heading": "### `WITHIN` + `IS MISSING` — the gotcha"
-    },
-    "query": "-- Looks like \"any nested object lacks key a\", but it's also TRUE because\n-- WITHIN binds the scalar 1 next, and 1.a IS MISSING is TRUE (scalars\n-- have no fields).\nANY x WITHIN [{'a': 1}] SATISFIES x.a IS MISSING END\n-- => TRUE (probably not what was intended)",
-    "availableIn": [
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_db954cef",
@@ -1324,15 +1080,11 @@
       "line": 318,
       "heading": "## 11. `ARRAY expr FOR ... IN ... [WHEN ...] END`"
     },
-    "query": "-- Pull just the cast names out of the cast array of objects\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies\n\n-- Pull names of cast members whose role string starts with \"Lead\"\nSELECT\n  _id,\n  ARRAY actor.name FOR actor IN `cast` WHEN actor.role LIKE 'Lead%' END AS leads\nFROM movies\n\n-- Build an array of rating-keys whose score is at least 8\nSELECT\n  _id,\n  title,\n  ARRAY k FOR k:v IN ratings WHEN v >= 8 END AS strong_ratings\nFROM movies",
+    "query": "-- Pull just the cast names out of the cast array of objects\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies\n\n-- Pull names of cast members whose role string starts with \"Lead\"",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_e88ee2b5",
@@ -1341,15 +1093,11 @@
       "line": 354,
       "heading": "## 12. `OBJECT NameExpr : ValueExpr FOR ... IN ... [WHEN ...] END`"
     },
-    "query": "-- Build an actor->role map from the cast array\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies\n\n-- Normalize ratings: uppercase the keys, keep the values\nSELECT\n  _id,\n  title,\n  OBJECT upper(k) : v FOR k:v IN ratings END AS RATINGS\nFROM movies\n\n-- Build \"field_0\", \"field_1\", … from a positional array\nSELECT\n  _id,\n  OBJECT 'genre_' || cast(i, 'string') : g FOR i:g IN genres END AS genre_slots\nFROM movies",
+    "query": "-- Build an actor->role map from the cast array\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies\n\n-- Normalize ratings: uppercase the keys, keep the values",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_15f6c5c4",
@@ -1363,11 +1111,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_f89921ec",
@@ -1381,11 +1125,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_2628fd1a",
@@ -1399,11 +1139,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_7bb4ad77",
@@ -1417,11 +1153,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_476cf06c",
@@ -1435,11 +1167,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_65d62d57",
@@ -1448,16 +1176,12 @@
       "line": 98,
       "heading": "## 3. Type / conversion"
     },
-    "query": "-- Function form\nSELECT title, cast(year, 'string') AS year_str FROM movies;\n\n-- SQL keyword form (same result)\nSELECT title, CAST(year AS string) AS year_str FROM movies;",
+    "query": "-- Function form\nSELECT title, cast(year, 'string') AS year_str FROM movies;\n\n-- SQL keyword form (same result)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_98259d31",
@@ -1471,11 +1195,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_38bacb19",
@@ -1489,11 +1209,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_f47abc33",
@@ -1502,16 +1218,12 @@
       "line": 148,
       "heading": "### 4.1 SQL keyword forms"
     },
-    "query": "-- POSITION(substr IN str) is alternative syntax for pos(str, substr)\nSELECT title, POSITION('The' IN title) AS where_the FROM movies;\nSELECT title, pos(title, 'The')        AS where_the FROM movies;",
+    "query": "-- POSITION(substr IN str) is alternative syntax for pos(str, substr)\nSELECT title, POSITION('The' IN title) AS where_the FROM movies;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_0ebc39a4",
@@ -1520,16 +1232,12 @@
       "line": 154,
       "heading": "### 4.1 SQL keyword forms"
     },
-    "query": "-- TRIM([LEADING | TRAILING | BOTH] [chars FROM] expr) covers ltrim/rtrim/trim\nSELECT TRIM(LEADING  '0' FROM '00042')  AS no_leading;     -- '42'\nSELECT TRIM(TRAILING ' ' FROM 'hi   ')   AS no_trailing;    -- 'hi'\nSELECT TRIM(BOTH     '*' FROM '**core**') AS no_stars;      -- 'core'\nSELECT TRIM('  hello  ')                 AS trimmed;        -- 'hello' (BOTH ' ' is default)",
+    "query": "-- TRIM([LEADING | TRAILING | BOTH] [chars FROM] expr) covers ltrim/rtrim/trim\nSELECT TRIM(LEADING  '0' FROM '00042')  AS no_leading;     -- '42'",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_4d657e83",
@@ -1543,11 +1251,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_0f0fa28a",
@@ -1561,11 +1265,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_f978c542",
@@ -1579,11 +1279,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_a36b591e",
@@ -1592,16 +1288,12 @@
       "line": 194,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Build a display label two ways (functionally equivalent)\nSELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies;\nSELECT       title || ' (' || cast(year, 'string') || ')' AS label FROM movies;",
+    "query": "-- Build a display label two ways (functionally equivalent)\nSELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_a8079253",
@@ -1615,11 +1307,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_28494e11",
@@ -1633,11 +1321,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_510c0d1f",
@@ -1651,11 +1335,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_4be50f4e",
@@ -1669,11 +1349,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_da535c5b",
@@ -1687,11 +1363,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_4ab8f45f",
@@ -1705,11 +1377,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_6666940a",
@@ -1723,11 +1391,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_cc780ad9",
@@ -1741,11 +1405,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_da0abfe8",
@@ -1759,11 +1419,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_b0cb0d53",
@@ -1777,11 +1433,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_355ac157",
@@ -1795,11 +1447,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_b44390d0",
@@ -1813,11 +1461,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_6e025e25",
@@ -1831,11 +1475,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_f49cc388",
@@ -1849,11 +1489,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_7ad39b85",
@@ -1867,11 +1503,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_13201543",
@@ -1885,11 +1517,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_d60bc2c0",
@@ -1903,11 +1531,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_41066075",
@@ -1921,11 +1545,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_4b9368ef",
@@ -1939,11 +1559,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_7589b8d8",
@@ -1957,11 +1573,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_7cdc180b",
@@ -1975,11 +1587,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_5a1e5d60",
@@ -1993,11 +1601,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_270c247c",
@@ -2011,11 +1615,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_a90fd532",
@@ -2029,11 +1629,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_ba942d25",
@@ -2047,11 +1643,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_16704628",
@@ -2065,11 +1657,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_ff930cf5",
@@ -2083,11 +1671,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_09bcefac",
@@ -2096,16 +1680,12 @@
       "line": 460,
       "heading": "### 10.1 `count` — three useful forms"
     },
-    "query": "-- Every document\nSELECT count(*) AS total FROM movies;\n\n-- Documents where the field is present and non-NULL\nSELECT count(ratings.imdb) AS rated FROM movies;\n\n-- Distinct values\nSELECT count(DISTINCT director.name) AS directors FROM movies;",
+    "query": "-- Every document\nSELECT count(*) AS total FROM movies;\n\n-- Documents where the field is present and non-NULL",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_d04b784f",
@@ -2119,11 +1699,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_c3ec94d1",
@@ -2137,11 +1713,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_e47ebac5",
@@ -2150,16 +1722,12 @@
       "line": 52,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
-    "query": "-- Single ascending key\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year);\n\n-- Descending — useful for \"newest first\" patterns\nCREATE INDEX IF NOT EXISTS movies_year_desc ON movies (year DESC);\n\n-- Composite (year asc, rating desc)\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC);\n\n-- Nested path\nCREATE INDEX IF NOT EXISTS movies_director_name\n  ON movies (director.name);\n\n-- Explicit INCLUDE / EXCLUDE MISSING\nCREATE INDEX movies_first_genre\n  ON movies (genres ASC INCLUDE MISSING);\n\nCREATE INDEX reviews_score_recent\n  ON reviews (score DESC, created_at DESC EXCLUDE MISSING);",
+    "query": "-- Single ascending key\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year);\n\n-- Descending — useful for \"newest first\" patterns",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_a464ae18",
@@ -2168,16 +1736,12 @@
       "line": 77,
       "heading": "### 1.3 Form B — `collection.name`"
     },
-    "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC);\n\nCREATE INDEX reviews.by_movie_recent\n  (movie_id ASC, created_at DESC);",
+    "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC);",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_e8ec669c",
@@ -2186,16 +1750,12 @@
       "line": 89,
       "heading": "### 1.4 Indexing nested paths"
     },
-    "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC);\nCREATE INDEX movies_imdb2 ON movies (`ratings.imdb` DESC);",
+    "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC);",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_b15020c9",
@@ -2204,16 +1764,12 @@
       "line": 120,
       "heading": "### 2.2 Examples"
     },
-    "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies;\nDROP INDEX movies.movies_year_imdb;\nDROP INDEX IF EXISTS reviews.by_movie_recent;",
+    "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_39d0d658",
@@ -2222,16 +1778,12 @@
       "line": 138,
       "heading": "### 3.1 Comment-style directives"
     },
-    "query": "-- Block comment form\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010;\n\n-- Line comment form (closes at end-of-line)\n--+ {\"#prefer_order\": true}\nSELECT title FROM movies WHERE year >= 2000 ORDER BY ratings.imdb DESC;\n\n-- Multiple top-level directives\n/*+ {\"#prefer_order\": true, \"#max_scans\": 4} */\nSELECT title FROM movies WHERE year >= 1990 ORDER BY year DESC LIMIT 100;",
+    "query": "-- Block comment form\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010;\n\n-- Line comment form (closes at end-of-line)\n--+ {\"#prefer_order\": true}",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_e4f1d884",
@@ -2245,11 +1797,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_0fe943d1",
@@ -2263,11 +1811,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_eb65397f",
@@ -2276,16 +1820,12 @@
       "line": 218,
       "heading": "### 3.5 Per-collection example"
     },
-    "query": "/*+ {\n  \"movies\":  { \"#index\": [\"movies_year_imdb\"] },\n  \"reviews\": { \"#index\": [\"reviews_movie_id_recent\"] }\n} */\nSELECT r.movie_id, r.score\nFROM reviews r\nWHERE r.movie_id IN (\n  SELECT _id FROM movies WHERE year >= 2000\n);",
+    "query": "/*+ {\n  \"movies\":  { \"#index\": [\"movies_year_imdb\"] },\n  \"reviews\": { \"#index\": [\"reviews_movie_id_recent\"] }\n} */\nSELECT r.movie_id, r.score\nFROM reviews r\nWHERE r.movie_id IN (",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_27403405",
@@ -2299,11 +1839,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_fa4eba74",
@@ -2317,11 +1853,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_874c874f",
@@ -2335,11 +1867,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_88bc9959",
@@ -2353,11 +1881,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_2abb528e",
@@ -2366,16 +1890,12 @@
       "line": 286,
       "heading": "## 5. USE INDEX"
     },
-    "query": "-- Pin an index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010;\n\n-- Reverse traversal of the index\nSELECT title FROM movies USE INDEX 'movies_year_imdb' DESC\nWHERE year >= 1990\nORDER BY year DESC, ratings.imdb DESC\nLIMIT 10;\n\n-- Forbid any index scan (forces collection scan)\nSELECT * FROM movies USE INDEX '' WHERE year = 2010;",
+    "query": "-- Pin an index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010;\n\n-- Reverse traversal of the index",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_975fc985",
@@ -2384,16 +1904,12 @@
       "line": 333,
       "heading": "### 6.2 Worked examples"
     },
-    "query": "-- A covering plan: every projected and filtered field lives in the index\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC);\n\nEXPLAIN SELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC;",
+    "query": "-- A covering plan: every projected and filtered field lives in the index\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC);",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_698833ae",
@@ -2402,16 +1918,12 @@
       "line": 346,
       "heading": "### 6.2 Worked examples"
     },
-    "query": "-- A full collection scan\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500;\n\n-- An intersect plan: AND of two indexed predicates\nCREATE INDEX IF NOT EXISTS movies_year     ON movies (year);\nCREATE INDEX IF NOT EXISTS movies_director ON movies (director.name);\n\nEXPLAIN SELECT title FROM movies\nWHERE year = 2010 AND director.name = 'Christopher Nolan';",
+    "query": "-- A full collection scan\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500;\n\n-- An intersect plan: AND of two indexed predicates",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_2c7c560d",
@@ -2425,11 +1937,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_308e000e",
@@ -2438,16 +1946,12 @@
       "line": 372,
       "heading": "### 6.3 Forcing a comparison"
     },
-    "query": "-- Good plan\nEXPLAIN SELECT title FROM movies WHERE year = 2010;\n\n-- Forced collection scan (same predicate)\nEXPLAIN SELECT title FROM movies USE INDEX '' WHERE year = 2010;",
+    "query": "-- Good plan\nEXPLAIN SELECT title FROM movies WHERE year = 2010;\n\n-- Forced collection scan (same predicate)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_210a2699",
@@ -2461,11 +1965,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_510a4561",
@@ -2474,15 +1974,11 @@
       "line": 397,
       "heading": "### 7.1 Two forms"
     },
-    "query": "-- Directive form: works on any statement\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10;\n\n-- Leading-keyword form (5.0+ on SELECT, see statements.md §10)\nPROFILE SELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10;",
+    "query": "-- Directive form: works on any statement\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10;\n\n-- Leading-keyword form (5.0+ on SELECT, see statements.md §10)",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_c2f122d5",
@@ -2491,15 +1987,11 @@
       "line": 420,
       "heading": "### 7.3 Combining with EXPLAIN"
     },
-    "query": "-- Plan-only (no execution); cheap and safe\nEXPLAIN SELECT title FROM movies WHERE year = 1994;\n\n-- Plan + execute + profile (5.0+)\nPROFILE SELECT title FROM movies WHERE year = 1994;",
+    "query": "-- Plan-only (no execution); cheap and safe\nEXPLAIN SELECT title FROM movies WHERE year = 1994;\n\n-- Plan + execute + profile (5.0+)",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_6144b70a",
@@ -2512,11 +2004,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_cf0fe5bb",
@@ -2529,11 +2017,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_b3e15a1a",
@@ -2546,11 +2030,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_abdf8ffb",
@@ -2563,11 +2043,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_e9d30e47",
@@ -2580,11 +2056,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_24c65890",
@@ -2597,11 +2069,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_448d147e",
@@ -2610,15 +2078,11 @@
       "line": 512,
       "heading": "### 8.3 Index direction matters for `ORDER BY`"
     },
-    "query": "CREATE INDEX movies_year_asc ON movies (year ASC);\n\n-- Forward scan: natural fit\nSELECT title FROM movies ORDER BY year ASC LIMIT 10;\n\n-- Backward scan: needs USE INDEX … DESC or #prefer_order\nSELECT title FROM movies USE INDEX 'movies_year_asc' DESC\nORDER BY year DESC LIMIT 10;",
+    "query": "CREATE INDEX movies_year_asc ON movies (year ASC);\n\n-- Forward scan: natural fit",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_a64868cf",
@@ -2627,16 +2091,12 @@
       "line": 44,
       "heading": "## 2. Arithmetic operators"
     },
-    "query": "SELECT title, box_office_millions - 100 AS profit_over_100m\nFROM movies\nWHERE runtime_minutes * 60 > 10800            -- runtime in seconds > 3 hours\n\nSELECT title, ratings.imdb / 2 AS half_rating FROM movies\n\n-- unary minus\nWHERE box_office_millions = -50               -- not a real movie, illustrative",
+    "query": "SELECT title, box_office_millions - 100 AS profit_over_100m\nFROM movies\nWHERE runtime_minutes * 60 > 10800            -- runtime in seconds > 3 hours",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": true,
-    "_hints": {
-      "isWrong": true,
-      "hasOnlyParams": false
-    }
+    "expectError": true
   },
   {
     "id": "sk_operators_1a8cdfab",
@@ -2645,16 +2105,12 @@
       "line": 73,
       "heading": "## 3. Comparison operators"
     },
-    "query": "SELECT title FROM movies WHERE ratings.imdb > 8.0\nSELECT title FROM movies WHERE genres = ['Drama']\nSELECT _id FROM reviews WHERE score >= 4 AND comment <> ''",
+    "query": "SELECT title FROM movies WHERE ratings.imdb > 8.0",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_207731fb",
@@ -2663,16 +2119,12 @@
       "line": 102,
       "heading": "## 4. Unary `IS` predicates"
     },
-    "query": "SELECT title FROM movies WHERE director IS NOT MISSING\nSELECT title FROM movies WHERE is_classic IS TRUE\nSELECT _id FROM reviews WHERE comment IS UNKNOWN          -- comment NULL or absent\n\n-- distinguishing NULL from MISSING\nSELECT title FROM movies WHERE ratings IS NULL            -- field is explicitly null\nSELECT title FROM movies WHERE ratings IS MISSING         -- field is absent entirely",
+    "query": "SELECT title FROM movies WHERE director IS NOT MISSING",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_277e32af",
@@ -2686,11 +2138,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_d38f5365",
@@ -2704,11 +2152,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_479a0884",
@@ -2722,11 +2166,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_1430160e",
@@ -2740,11 +2180,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_9e8301be",
@@ -2758,11 +2194,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_54d04c2d",
@@ -2771,16 +2203,12 @@
       "line": 167,
       "heading": "## 6. Pattern matching"
     },
-    "query": "-- starts with \"The \"\nSELECT title FROM movies WHERE title LIKE 'The %'\n\n-- case-insensitive substring match\nSELECT title FROM movies WHERE title ILIKE '%lord of the%'\n\n-- literal percent sign via ESCAPE\nSELECT comment FROM reviews WHERE comment LIKE '5\\%%' ESCAPE '\\'\n\n-- full regex alternation\nSELECT title FROM movies WHERE director.name SIMILAR TO '%(Coppola|Spielberg)%'\n\n-- regexp_like for richer regex (anchors, character classes)\nSELECT _id FROM reviews WHERE regexp_like(comment, '^[A-Z][a-z]+!')",
+    "query": "-- starts with \"The \"\nSELECT title FROM movies WHERE title LIKE 'The %'\n\n-- case-insensitive substring match",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_7c75132d",
@@ -2789,16 +2217,12 @@
       "line": 221,
       "heading": "### `NOT`"
     },
-    "query": "-- 'is_classic AND has high IMDb' — rows where ratings is missing are excluded\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5\n\n-- defend against missing fields with IS NOT MISSING / IS NOT UNKNOWN\nSELECT title FROM movies\nWHERE ratings IS NOT MISSING AND ratings.imdb > 8.5",
+    "query": "-- 'is_classic AND has high IMDb' — rows where ratings is missing are excluded\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5\n\n-- defend against missing fields with IS NOT MISSING / IS NOT UNKNOWN",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_c148ae23",
@@ -2812,11 +2236,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_a81bfd94",
@@ -2830,11 +2250,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_84801219",
@@ -2843,16 +2259,12 @@
       "line": 256,
       "heading": "### Array indexing — `array[i]`"
     },
-    "query": "-- first cast member's name\nSELECT title, cast[0].name AS lead_actor FROM movies\n\n-- first listed genre\nSELECT title, genres[0] AS primary_genre FROM movies WHERE genres[0] = 'Drama'",
+    "query": "-- first cast member's name\nSELECT title, cast[0].name AS lead_actor FROM movies\n\n-- first listed genre",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_265c3240",
@@ -2866,11 +2278,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_bde82402",
@@ -2879,16 +2287,12 @@
       "line": 278,
       "heading": "### Object field access — `object.field` or `object[expr]`"
     },
-    "query": "-- dot form (typical)\nSELECT title, director.name AS dir FROM movies\n\n-- bracket form, useful when the key is dynamic or contains special chars\nSELECT title, ratings['rotten_tomatoes'] AS rt FROM movies",
+    "query": "-- dot form (typical)\nSELECT title, director.name AS dir FROM movies\n\n-- bracket form, useful when the key is dynamic or contains special chars",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_cec90080",
@@ -2902,11 +2306,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_015f85b4",
@@ -2915,70 +2315,12 @@
       "line": 303,
       "heading": "### 10.1 Boolean operators are keywords, not symbols"
     },
-    "query": "-- WRONG — these are not DQL operators\nWHERE is_classic && ratings.imdb > 8        -- parse error\nWHERE genres == ['Drama'] || year < 1970    -- || here is string concat, not OR\n\n-- CORRECT — use word forms\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
+    "query": "WHERE is_classic && ratings.imdb > 8        -- parse error\nWHERE genres == ['Drama'] || year < 1970    -- || here is string concat, not OR\n\n-- CORRECT — use word forms\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": true,
-    "_hints": {
-      "isWrong": true,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_operators_372397b6",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/references/operators.md",
-      "line": 317,
-      "heading": "### 10.2 String literals: single or double quotes; backticks are identifiers"
-    },
-    "query": "-- Both work — single and double quotes are equivalent string delimiters in DQL\nWHERE title = 'The Godfather'\nWHERE title = \"The Godfather\"\n\n-- Backticks are NOT a string delimiter — this looks for a column named \"The Godfather\"\nWHERE title = `The Godfather`   -- WRONG",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_operators_d1b783a6",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/references/operators.md",
-      "line": 330,
-      "heading": "### 10.3 `NULL` cannot be compared with `=`"
-    },
-    "query": "-- WRONG — always evaluates to NULL, so the row is never kept\nWHERE ratings = NULL\nWHERE ratings != NULL\n\n-- CORRECT\nWHERE ratings IS NULL\nWHERE ratings IS NOT NULL",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
-  },
-  {
-    "id": "sk_operators_80695984",
-    "source": {
-      "file": "plugins/ditto-dql/skills/dql/references/operators.md",
-      "line": 346,
-      "heading": "### 10.4 `MISSING` is not `NULL`"
-    },
-    "query": "-- WRONG when you mean \"no rating field on the document\"\nWHERE ratings IS NULL\n\n-- CORRECT\nWHERE ratings IS MISSING                    -- field absent\nWHERE ratings IS UNKNOWN                    -- absent or explicitly null",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x"
-    ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": true
   },
   {
     "id": "sk_operators_f3dc46d0",
@@ -2987,16 +2329,12 @@
       "line": 369,
       "heading": "## 11. `XOR` — version-gated"
     },
-    "query": "-- Ditto SDK 4.x only: classics XOR'd against high-rated picks\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0\n\n-- Portable across 4.x and 5.0.x — same result, no XOR keyword\nSELECT title FROM movies\nWHERE (is_classic OR ratings.imdb > 9.0)\n  AND NOT (is_classic AND ratings.imdb > 9.0)",
+    "query": "-- Ditto SDK 4.x only: classics XOR'd against high-rated picks\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0\n\n-- Portable across 4.x and 5.0.x — same result, no XOR keyword",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_50950e0c",
@@ -3005,16 +2343,12 @@
       "line": 61,
       "heading": "### 1.1 Wildcard"
     },
-    "query": "SELECT * FROM movies;\nSELECT * FROM reviews;",
+    "query": "SELECT * FROM movies;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_3fdfbce2",
@@ -3023,16 +2357,12 @@
       "line": 68,
       "heading": "### 1.2 Explicit expression list with aliases"
     },
-    "query": "SELECT title, year, ratings.imdb AS imdb\nFROM movies;\n\nSELECT\n  title,\n  year - 1900            AS years_since_1900,\n  runtime_minutes / 60.0 AS runtime_hours\nFROM movies;",
+    "query": "SELECT title, year, ratings.imdb AS imdb\nFROM movies;",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_0ec254d6",
@@ -3041,16 +2371,12 @@
       "line": 81,
       "heading": "### 1.3 `DISTINCT`"
     },
-    "query": "-- Distinct release years across the library\nSELECT DISTINCT year FROM movies ORDER BY year ASC;\n\n-- Distinct director / genre pairs (multi-column DISTINCT)\nSELECT DISTINCT director.name, genres FROM movies;",
+    "query": "-- Distinct release years across the library\nSELECT DISTINCT year FROM movies ORDER BY year ASC;\n\n-- Distinct director / genre pairs (multi-column DISTINCT)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_69abab16",
@@ -3059,16 +2385,12 @@
       "line": 108,
       "heading": "## 2. FROM clause"
     },
-    "query": "-- Default datasource, default register typing\nSELECT title, year FROM movies WHERE year >= 1990;\n\n-- Explicit datasource prefix\nSELECT _id, title FROM default:movies WHERE year = 1994;\n\n-- System collection\nSELECT * FROM system:collections;\n\n-- Collection alias for use in directives or qualified paths\nSELECT m.title, m.year FROM movies m WHERE m.year >= 2000;",
+    "query": "-- Default datasource, default register typing\nSELECT title, year FROM movies WHERE year >= 1990;\n\n-- Explicit datasource prefix",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_484e7a6e",
@@ -3082,11 +2404,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_2f6a8924",
@@ -3100,11 +2418,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_ed9e055e",
@@ -3113,16 +2427,12 @@
       "line": 151,
       "heading": "### 3.3 Parameter form"
     },
-    "query": "-- Bind a single id\nSELECT * FROM movies USE IDS (:id);\n\n-- Bind an array of ids in one parameter\nSELECT * FROM movies USE IDS (:id_list);",
+    "query": "-- Bind a single id\nSELECT * FROM movies USE IDS ('573a1390f29313caabcd4135');\n\n-- Bind an array of ids in one parameter",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_1685f05f",
@@ -3131,16 +2441,15 @@
       "line": 165,
       "heading": "### 3.4 Why USE IDS is SELECT-only"
     },
-    "query": "-- 1. Filter by IN-list\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');\n\n-- 2. Bind a parameter list\nDELETE FROM movies WHERE _id IN :id_list;",
+    "query": "-- 1. Filter by IN-list\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');\n\n-- 2. Bind a parameter list",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "postQueries": [
+      "DELETE FROM movies WHERE _id IN ('test_seed_id');"
+    ]
   },
   {
     "id": "sk_select_b88fc5b3",
@@ -3149,16 +2458,12 @@
       "line": 186,
       "heading": "## 4. USE INDEX"
     },
-    "query": "-- Use a specific index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010;\n\n-- Force descending traversal of the index\nSELECT title FROM movies USE INDEX 'movies_year_imdb' DESC\nWHERE year >= 1990\nORDER BY year DESC, ratings.imdb DESC\nLIMIT 10;\n\n-- Forbid index scan (force collection scan)\nSELECT * FROM movies USE INDEX '' WHERE year = 2010;",
+    "query": "-- Use a specific index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010;\n\n-- Force descending traversal of the index",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_cbb7633c",
@@ -3167,16 +2472,12 @@
       "line": 212,
       "heading": "## 5. USE DIRECTIVES"
     },
-    "query": "-- Steer the planner toward a named index\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010;\n\n-- Multiple candidates — planner picks among them\nSELECT title, ratings.imdb\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\", \"movies_year\"]}'\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 10;\n\n-- Per-collection override of #prefer_order\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#prefer_order\": true}'\nWHERE year >= 2000\nORDER BY year;",
+    "query": "-- Steer the planner toward a named index\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010;\n\n-- Multiple candidates — planner picks among them",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_0565484d",
@@ -3185,16 +2486,12 @@
       "line": 249,
       "heading": "## 6. WHERE clause"
     },
-    "query": "-- Simple comparison + IS NOT MISSING\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING;\n\n-- Compound predicate with AND / OR\nSELECT title FROM movies\nWHERE (year < 1980 AND is_classic = true)\n   OR ratings.imdb >= 9.0;\n\n-- Array containment (function form; see functions.md)\nSELECT title FROM movies\nWHERE array_contains(genres, 'Drama');\n\n-- IN list and IN array\nSELECT title FROM movies\nWHERE year IN (1994, 1999, 2010);\n\nSELECT _id, title FROM movies\nWHERE _id IN ('tt0111161', 'tt0468569');\n\n-- Pattern match\nSELECT title FROM movies WHERE title LIKE 'The %';\nSELECT title FROM movies WHERE title ILIKE '%lord of the rings%';\n\n-- NULL / MISSING\nSELECT title FROM movies WHERE box_office_millions IS NULL;\nSELECT title FROM movies WHERE box_office_millions IS NOT MISSING;",
+    "query": "-- Simple comparison + IS NOT MISSING\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING;\n\n-- Compound predicate with AND / OR",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_f2af3619",
@@ -3203,15 +2500,11 @@
       "line": 287,
       "heading": "### 6.1 Quantifier expressions (v5.0+)"
     },
-    "query": "-- Movies where at least one cast member played 'Cooper'\nSELECT title FROM movies\nWHERE ANY c IN cast SATISFIES c.role = 'Cooper' END;\n\n-- Movies where every cast entry has a non-empty name\nSELECT title FROM movies\nWHERE EVERY c IN cast SATISFIES c.name IS NOT MISSING AND c.name <> '' END;",
+    "query": "-- Movies where at least one cast member played 'Cooper'\nSELECT title FROM movies\nWHERE ANY c IN cast SATISFIES c.role = 'Cooper' END;\n\n-- Movies where every cast entry has a non-empty name",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_4862eebd",
@@ -3220,15 +2513,11 @@
       "line": 316,
       "heading": "### 7.1 Single-key grouping"
     },
-    "query": "-- Count movies per year\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC;\n\n-- Average IMDB by decade (computed key)\nSELECT year - (year % 10) AS decade, avg(ratings.imdb) AS avg_imdb\nFROM movies\nGROUP BY year - (year % 10)\nORDER BY decade ASC;",
+    "query": "-- Count movies per year\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC;\n\n-- Average IMDB by decade (computed key)",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_2eb8618b",
@@ -3237,15 +2526,11 @@
       "line": 332,
       "heading": "### 7.2 Multi-key grouping"
     },
-    "query": "-- Films per (year, primary genre)\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC;\n\n-- Director × decade\nSELECT\n  director.name                 AS director,\n  year - (year % 10)            AS decade,\n  count(*)                      AS films,\n  avg(ratings.imdb)             AS avg_imdb\nFROM movies\nGROUP BY director.name, year - (year % 10)\nORDER BY director, decade;",
+    "query": "-- Films per (year, primary genre)\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC;\n\n-- Director × decade",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_b18745d8",
@@ -3254,15 +2539,11 @@
       "line": 365,
       "heading": "## 8. HAVING"
     },
-    "query": "-- Directors with 3+ films AND average IMDB > 8.0\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC;\n\n-- Years with at least one billion-dollar box-office film\nSELECT year, max(box_office_millions) AS biggest\nFROM movies\nGROUP BY year\nHAVING max(box_office_millions) >= 1000\nORDER BY year DESC;",
+    "query": "-- Directors with 3+ films AND average IMDB > 8.0\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC;\n\n-- Years with at least one billion-dollar box-office film",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_034e66de",
@@ -3271,15 +2552,11 @@
       "line": 399,
       "heading": "## 9. ORDER BY"
     },
-    "query": "-- Top 10 by IMDB rating, breaking ties on title ascending\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10;\n\n-- Most-recent five films\nSELECT title, released FROM movies\nORDER BY released DESC\nLIMIT 5;\n\n-- Reviews newest-first per movie (multi-key)\nSELECT movie_id, user_id, score, created_at\nFROM reviews\nORDER BY movie_id ASC, created_at DESC;",
+    "query": "-- Top 10 by IMDB rating, breaking ties on title ascending\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10;\n\n-- Most-recent five films",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_e8df770f",
@@ -3292,11 +2569,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_5eef5834",
@@ -3305,15 +2578,11 @@
       "line": 440,
       "heading": "## 10. LIMIT / OFFSET"
     },
-    "query": "-- First page of 20, newest first\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20;\n\n-- Second page\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20 OFFSET 20;\n\n-- OFFSET before LIMIT\nSELECT _id, title FROM movies\nORDER BY released DESC\nOFFSET 40 LIMIT 20;\n\n-- Parameterised\nSELECT _id, title FROM movies\nORDER BY released DESC\nLIMIT :page_size OFFSET :page_offset;",
+    "query": "-- First page of 20, newest first\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20;\n\n-- Second page",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_ef103355",
@@ -3322,15 +2591,11 @@
       "line": 485,
       "heading": "## 11. Cross-type sort order"
     },
-    "query": "-- Box office values that are MISSING bubble to the end ascending,\n-- and to the front descending.\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC;\n\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions DESC;",
+    "query": "-- Box office values that are MISSING bubble to the end ascending,\n-- and to the front descending.\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC;",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_d8fc0cd9",
@@ -3343,11 +2608,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_57058055",
@@ -3356,15 +2617,11 @@
       "line": 539,
       "heading": "### 12.3 Portable subscription patterns"
     },
-    "query": "-- Portable subscription: SELECT * with WHERE only\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true;\n\nSELECT * FROM reviews WHERE movie_id = :movie_id;\n\nSELECT * FROM movies WHERE array_contains(genres, 'Drama');",
+    "query": "-- Portable subscription: SELECT * with WHERE only\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true;",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_31d8d6d1",
@@ -3377,11 +2634,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_a9a02456",
@@ -3390,15 +2643,11 @@
       "line": 567,
       "heading": "## 13. Worked examples (movies dataset)"
     },
-    "query": "-- 1. Top 10 highest-rated movies\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10;\n\n-- 2. Movies released in a window, grouped by primary genre\nSELECT genres[0] AS primary_genre, count(*) AS n, avg(ratings.imdb) AS avg_imdb\nFROM movies\nWHERE year BETWEEN 2000 AND 2010\nGROUP BY genres[0]\nHAVING count(*) >= 3\nORDER BY avg_imdb DESC;\n\n-- 3. Director leaderboard\nSELECT\n  director.name       AS director,\n  count(*)            AS films,\n  avg(ratings.imdb)   AS avg_imdb,\n  max(box_office_millions) AS biggest\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 2\nORDER BY avg_imdb DESC, films DESC\nLIMIT 20;\n\n-- 4. Paginated browse, newest first\nSELECT _id, title, released\nFROM movies\nORDER BY released DESC\nLIMIT :page_size OFFSET :page_offset;\n\n-- 5. Lookup by id list (SELECT-only USE IDS)\nSELECT _id, title, year\nFROM movies\nUSE IDS ('tt0111161', 'tt0468569', 'tt1375666', 'tt0816692');\n\n-- 6. Planner-hinted scan\nSELECT title FROM movies\nUSE INDEX 'movies_year_imdb'\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 25;\n\n-- 7. Cross-collection lookup via subquery\nSELECT r.*\nFROM reviews r\nWHERE r.movie_id IN (\n  SELECT _id FROM movies WHERE is_classic = true\n);\n\n-- 8. Latest review per movie (project + ORDER BY)\nSELECT movie_id, user_id, score, created_at\nFROM reviews\nORDER BY movie_id ASC, created_at DESC;\n\n-- 9. Quantifier WHERE (v5.0+)\nSELECT title FROM movies\nWHERE ANY c IN cast SATISFIES c.role = 'Cooper' END;\n\n-- 10. Force-no-index path for benchmarking\nSELECT title FROM movies USE INDEX '' WHERE year = 2010;",
+    "query": "-- 1. Top 10 highest-rated movies\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10;\n\n-- 2. Movies released in a window, grouped by primary genre",
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_5c6e2195",
@@ -3412,11 +2661,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_0c4461df",
@@ -3431,10 +2676,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
+    ]
   },
   {
     "id": "sk_statements_92da0a1b",
@@ -3449,10 +2696,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ]
   },
   {
     "id": "sk_statements_85c08734",
@@ -3461,16 +2710,20 @@
       "line": 103,
       "heading": "### 1.5 `ON ID CONFLICT` actions"
     },
-    "query": "-- Upsert: insert if new, merge fields if existing\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE;\n\n-- Skip conflicts silently\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING;\n\n-- Replicate only the changed fields (smaller mesh footprint)\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0816692', 'box_office_millions': 681.0 })\nON ID CONFLICT DO UPDATE_LOCAL_DIFF;   -- SDK 4.12+",
+    "query": "-- Upsert: insert if new, merge fields if existing\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE;\n\n-- Skip conflicts silently",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt1160419')"
+    ],
+    "postQueries": [
+      "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING;\n\n-- Replicate only the changed fields (smaller mesh footprint)",
+      "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0816692', 'box_office_millions': 681.0 })\nON ID CONFLICT DO UPDATE_LOCAL_DIFF;   -- SDK 4.12+",
+      "EVICT FROM movies WHERE _id IN ('tt1160419')"
+    ]
   },
   {
     "id": "sk_statements_947aed2b",
@@ -3485,10 +2738,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('seed-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('seed-1')"
+    ]
   },
   {
     "id": "sk_statements_5df1161c",
@@ -3502,11 +2757,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_16eba816",
@@ -3521,10 +2772,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_statements_199ef599",
@@ -3539,10 +2792,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_statements_2a9caf53",
@@ -3551,16 +2806,21 @@
       "line": 217,
       "heading": "### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`"
     },
-    "query": "-- Increment a state-based COUNTER (4.13+)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161';\n\n-- Decrement (negative argument)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY -1\nWHERE _id = 'tt0111161';\n\n-- Reset the counter to a new baseline (COUNTER only)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE title = 'The Shawshank Redemption';\n\n-- Legacy PN_COUNTER (4.11+); prefer COUNTER on new code\nUPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'tt0111161';",
+    "query": "-- Increment a state-based COUNTER (4.13+)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161';\n\n-- Decrement (negative argument)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY -1\nWHERE _id = 'tt0111161';\n\n-- Reset the counter to a new baseline (COUNTER only)",
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE title = 'The Shawshank Redemption';\n\n-- Legacy PN_COUNTER (4.11+); prefer COUNTER on new code",
+      "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'tt0111161';",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_statements_fa5114c0",
@@ -3569,16 +2829,15 @@
       "line": 241,
       "heading": "### 2.5 Combined clauses + `RETURNING`"
     },
-    "query": "-- Mark every pre-1980 film as a classic and return the result\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic;\n\n-- Bump watch_count for the most recent five and return them\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nORDER BY released DESC\nLIMIT 5\nRETURNING _id, title, watch_count;",
+    "query": "-- Mark every pre-1980 film as a classic and return the result\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic;\n\n-- Bump watch_count for the most recent five and return them",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nORDER BY released DESC\nLIMIT 5\nRETURNING _id, title, watch_count;"
+    ]
   },
   {
     "id": "sk_statements_336b3454",
@@ -3587,16 +2846,15 @@
       "line": 274,
       "heading": "## 3. EVICT"
     },
-    "query": "-- Drop all pre-1950 movies from this device's local store\nEVICT FROM movies\nWHERE year < 1950;\n\n-- Sweep already-watched reviews, returning what was evicted\nEVICT FROM reviews\nWHERE score < 3\nRETURNING _id, movie_id;",
+    "query": "-- Drop all pre-1950 movies from this device's local store\nEVICT FROM movies\nWHERE year < 1950;\n\n-- Sweep already-watched reviews, returning what was evicted",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "EVICT FROM reviews\nWHERE score < 3\nRETURNING _id, movie_id;"
+    ]
   },
   {
     "id": "sk_statements_fb4ac612",
@@ -3605,16 +2863,19 @@
       "line": 305,
       "heading": "## 4. TOMBSTONE"
     },
-    "query": "-- Retract a withdrawn movie mesh-wide, returning what was tombstoned\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year;\n\n-- Bulk withdraw an entire batch\nTOMBSTONE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');",
+    "query": "-- Retract a withdrawn movie mesh-wide, returning what was tombstoned\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year;\n\n-- Bulk withdraw an entire batch",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "TOMBSTONE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_statements_a10bd8b8",
@@ -3623,16 +2884,15 @@
       "line": 336,
       "heading": "## 5. DELETE — alias"
     },
-    "query": "-- Bulk delete by id list (resolves to EVICT on Small Peer, TOMBSTONE on Big Peer)\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');\n\n-- Conditional delete with RETURNING\nDELETE FROM reviews\nWHERE created_at < '2020-01-01'\nRETURNING _id, movie_id, user_id, score;",
+    "query": "-- Bulk delete by id list (resolves to EVICT on Small Peer, TOMBSTONE on Big Peer)\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');\n\n-- Conditional delete with RETURNING",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "postQueries": [
+      "DELETE FROM reviews\nWHERE created_at < '2020-01-01'\nRETURNING _id, movie_id, user_id, score;"
+    ]
   },
   {
     "id": "sk_statements_dbd3c48a",
@@ -3641,16 +2901,12 @@
       "line": 369,
       "heading": "## 6. EXPLAIN"
     },
-    "query": "-- Plan a SELECT against an indexed collection\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8;\n\n-- Plan a mutating statement (no docs are modified)\nEXPLAIN UPDATE movies\nSET is_classic = true\nWHERE year < 1980;\n\n-- Plan a multi-collection lookup (manual join via WHERE)\nEXPLAIN SELECT r.*\nFROM reviews r\nWHERE r.movie_id IN (SELECT _id FROM movies WHERE year = 1994);",
+    "query": "-- Plan a SELECT against an indexed collection\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8;\n\n-- Plan a mutating statement (no docs are modified)",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_67faae31",
@@ -3659,16 +2915,12 @@
       "line": 408,
       "heading": "## 7. ALTER SYSTEM"
     },
-    "query": "-- Switch off strict mode (5.0.x ships strict=false by default; 4.x ships strict=true)\nALTER SYSTEM SET DQL_STRICT_MODE = false;\n\n-- Same thing using TO\nALTER SYSTEM SET DQL_STRICT_MODE TO false;\n\n-- Reset one parameter to its default\nALTER SYSTEM RESET DQL_STRICT_MODE;\n\n-- Reset everything\nALTER SYSTEM RESET ALL;",
+    "query": "-- Switch off strict mode (5.0.x ships strict=false by default; 4.x ships strict=true)\nALTER SYSTEM SET DQL_STRICT_MODE = false;\n\n-- Same thing using TO",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_08f3cf8c",
@@ -3677,16 +2929,12 @@
       "line": 436,
       "heading": "## 8. SHOW"
     },
-    "query": "SHOW ALL;                                    -- every parameter\nSHOW ALL LIKE 'transport_%';                 -- all transport_… parameters\nSHOW ALL ILIKE 'DQL_%';                      -- DQL_… (case-insensitive)\nSHOW ALL LIKE 'transport!_%' ESCAPE '!';     -- literal underscore in pattern\nSHOW DQL_STRICT_MODE;                        -- one parameter",
+    "query": "SHOW ALL;                                    -- every parameter",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_99eb6593",
@@ -3695,16 +2943,12 @@
       "line": 461,
       "heading": "## 9. SYNC CONTEXT (RemoteQuery)"
     },
-    "query": "-- Ask all kiosk peers for their list of classic movies\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')\n  SELECT _id, title, year\n  FROM movies\n  WHERE is_classic = true;\n\n-- Inspect strict-mode setting on every staging peer\nSYNC CONTEXT (PEERS WHERE peerMetadata.environment = 'staging')\n  SHOW DQL_STRICT_MODE;",
+    "query": "-- Ask all kiosk peers for their list of classic movies\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_statements_4740b6ca",
@@ -3717,11 +2961,7 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_types_mutators_ea2ee6f3",
@@ -3736,10 +2976,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ]
   },
   {
     "id": "sk_types_mutators_165e53d4",
@@ -3754,10 +2996,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_6c9fcc95",
@@ -3766,16 +3010,19 @@
       "line": 94,
       "heading": "## 1. REGISTER"
     },
-    "query": "-- INSERT — every REGISTER field is just a key in the document literal\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight', 'year': 2008, 'is_classic': true });\n\n-- UPDATE — SET overwrites, UNSET removes\nUPDATE movies\nSET    is_classic = true,\n       box_office_millions = 28.34\nUNSET  tags\nWHERE  _id = 'tt0111161';",
+    "query": "-- INSERT — every REGISTER field is just a key in the document literal\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight', 'year': 2008, 'is_classic': true });\n\n-- UPDATE — SET overwrites, UNSET removes",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569')"
+    ],
+    "postQueries": [
+      "UPDATE movies\nSET    is_classic = true,\n       box_office_millions = 28.34\nUNSET  tags\nWHERE  _id = 'tt0111161';",
+      "EVICT FROM movies WHERE _id IN ('tt0468569')"
+    ]
   },
   {
     "id": "sk_types_mutators_1deb747b",
@@ -3784,16 +3031,19 @@
       "line": 128,
       "heading": "## 2. MAP"
     },
-    "query": "-- Bare MAP — all sub-fields default to REGISTER\nINSERT INTO COLLECTION movies (director MAP)\nDOCUMENTS ({ '_id': 'tt0111161', 'director': { 'name': 'Frank Darabont', 'born': 1959 } });\n\n-- Nested MAP — director.name is REGISTER, director.awards is itself a MAP\nINSERT INTO COLLECTION movies (\n  director MAP (name REGISTER, awards MAP)\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'director': { 'name': 'Frank Darabont', 'awards': { 'oscars': 0, 'baftas': 1 } }\n});",
+    "query": "-- Bare MAP — all sub-fields default to REGISTER\nINSERT INTO COLLECTION movies (director MAP)\nDOCUMENTS ({ '_id': 'tt0111161', 'director': { 'name': 'Frank Darabont', 'born': 1959 } });\n\n-- Nested MAP — director.name is REGISTER, director.awards is itself a MAP",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "INSERT INTO COLLECTION movies (\n  director MAP (name REGISTER, awards MAP)\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'director': { 'name': 'Frank Darabont', 'awards': { 'oscars': 0, 'baftas': 1 } }\n});",
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
   },
   {
     "id": "sk_types_mutators_d36363db",
@@ -3802,16 +3052,20 @@
       "line": 145,
       "heading": "## 2. MAP"
     },
-    "query": "-- Only ratings.imdb changes; rotten_tomatoes and metacritic survive\nUPDATE COLLECTION movies (ratings MAP)\nSET    ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161';\n\n-- Dotted-path SET targets exactly one sub-field\nUPDATE COLLECTION movies (director MAP)\nSET    director.born = 1959\nWHERE  _id = 'tt0111161';\n\n-- Mix sub-field SET and parent-level bulk merge in one statement\nUPDATE COLLECTION movies (director MAP, ratings MAP)\nSET    director.born = 1959,\n       ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161';",
+    "query": "-- Only ratings.imdb changes; rotten_tomatoes and metacritic survive\nUPDATE COLLECTION movies (ratings MAP)\nSET    ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161';\n\n-- Dotted-path SET targets exactly one sub-field",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (director MAP)\nSET    director.born = 1959\nWHERE  _id = 'tt0111161';\n\n-- Mix sub-field SET and parent-level bulk merge in one statement",
+      "UPDATE COLLECTION movies (director MAP, ratings MAP)\nSET    director.born = 1959,\n       ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161';",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_1eac4b30",
@@ -3826,10 +3080,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_50cbea6e",
@@ -3844,10 +3100,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
   },
   {
     "id": "sk_types_mutators_87db79eb",
@@ -3856,16 +3114,20 @@
       "line": 200,
       "heading": "## 3. COUNTER"
     },
-    "query": "-- Increment / decrement\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY 1\nWHERE  _id = 'tt0111161';\n\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY -1\nWHERE  _id = 'tt0111161';\n\n-- Reset to baseline (rolls last period's count over)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count RESTART WITH 0\nWHERE  title = 'The Shawshank Redemption';",
+    "query": "-- Increment / decrement\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY 1\nWHERE  _id = 'tt0111161';",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY -1\nWHERE  _id = 'tt0111161';\n\n-- Reset to baseline (rolls last period's count over)",
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count RESTART WITH 0\nWHERE  title = 'The Shawshank Redemption';",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_c8ca10b5",
@@ -3880,10 +3142,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
   },
   {
     "id": "sk_types_mutators_6e8e9e7d",
@@ -3898,10 +3162,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_ec9cf749",
@@ -3916,10 +3182,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
   },
   {
     "id": "sk_types_mutators_f320c519",
@@ -3928,16 +3196,19 @@
       "line": 297,
       "heading": "## 5. ATTACHMENT"
     },
-    "query": "-- Replace the poster with a new attachment handle the SDK just created\nUPDATE COLLECTION movies (poster ATTACHMENT)\nSET    poster = :new_handle\nWHERE  _id = 'tt0111161';\n\n-- Remove the attachment entirely\nUPDATE movies UNSET poster WHERE _id = 'tt0111161';",
+    "query": "-- Replace the poster with a new attachment handle the SDK just created\nUPDATE COLLECTION movies (poster ATTACHMENT)\nSET    poster = 'alice'\nWHERE  _id = 'tt0111161';\n\n-- Remove the attachment entirely",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE movies UNSET poster WHERE _id = 'tt0111161';",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
   },
   {
     "id": "sk_types_mutators_f4f15776",
@@ -3946,16 +3217,12 @@
       "line": 315,
       "heading": "## 6. Reading typed fields with `SELECT`"
     },
-    "query": "-- Read director.name as a MAP sub-field\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161';\n\n-- Aggregate over a COUNTER\nSELECT SUM(watch_count) AS total_views\nFROM   COLLECTION movies (watch_count COUNTER);",
+    "query": "-- Read director.name as a MAP sub-field\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161';\n\n-- Aggregate over a COUNTER",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_types_mutators_5d6655be",
@@ -3970,10 +3237,12 @@
       "5.0.x"
     ],
     "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
   },
   {
     "id": "sk_types_mutators_c0932220",
@@ -3982,16 +3251,12 @@
       "line": 378,
       "heading": "### Cross-version recommendation"
     },
-    "query": "-- On v4.14.x: opt into lenient (object → MAP) behavior\nALTER SYSTEM SET dql_strict_mode = false\n\n-- On v5.0.x: opt back into strict (object → REGISTER) behavior\nALTER SYSTEM SET dql_strict_mode = true\n\n-- Check current setting\nSHOW dql_strict_mode",
+    "query": "-- On v4.14.x: opt into lenient (object → MAP) behavior\nALTER SYSTEM SET dql_strict_mode = false\n\n-- On v5.0.x: opt back into strict (object → REGISTER) behavior",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   },
   {
     "id": "sk_versions_72c53326",
@@ -4005,11 +3270,7 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": false
-    }
+    "expectError": false
   },
   {
     "id": "sk_versions_c47eb914",
@@ -4018,15 +3279,11 @@
       "line": 215,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
-    "query": "-- On v4.14.x: opt into the v5-style lenient default\nALTER SYSTEM SET dql_strict_mode = false;\n\n-- On v5.0.x: opt back into the v4-style strict default\nALTER SYSTEM SET dql_strict_mode = true;",
+    "query": "-- On v4.14.x: opt into the v5-style lenient default\nALTER SYSTEM SET dql_strict_mode = false;\n\n-- On v5.0.x: opt back into the v4-style strict default",
     "availableIn": [
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false,
-    "_hints": {
-      "isWrong": false,
-      "hasOnlyParams": true
-    }
+    "expectError": false
   }
 ]
