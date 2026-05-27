@@ -1,0 +1,20 @@
+{
+  "from": "~/Developer/dql-metrics/benchmarks/skills-test/movies.ndjson",
+  "to": "plugins/ditto-dql/tests/fixtures/movies-pedagogical.ndjson",
+  "fields": {
+    "_id":                 "_id.id",
+    "title":               "_id.title",
+    "year":                "{ parseInt(_id.year) }",
+    "runtime_minutes":     "runtime",
+    "genres":              "genres",
+    "director":            "{ name: directors[0] || null, born: null }",
+    "cast":                "{ cast.map(name => ({ name, role: '' })) }",
+    "ratings":             "{ imdb: imdb.rating, rotten_tomatoes: tomatoes.viewer.meter, metacritic: null }",
+    "box_office_millions": "{ Math.floor(imdb.votes / 10000) }",
+    "tags":                "countries",
+    "watch_count":         "0",
+    "is_classic":          "{ year < 1980 }",
+    "released":            "{ released.slice(0,10) }"
+  },
+  "limit": 200
+}
