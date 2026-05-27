@@ -1,8 +1,10 @@
 # DQL Best Practices - Data Modeling, Optimization, and Schema Versioning
 
-**Read this file ONLY when:** You need guidance on data modeling, query optimization, schema versioning, or understanding strict mode.
+**Read this file ONLY when:** You need guidance on data modeling, query optimization, schema versioning, timestamps, soft delete, or understanding strict mode.
 
-**For basic queries:** Use SKILL.md instead.
+**For basic queries:** Use `SKILL.md` instead.
+
+**For canonical syntax and per-version (4.14.x vs 5.0.x) behavior:** Use the files under `references/` — see the [Related Reference Files](#related-reference-files) list at the bottom of this file.
 
 ---
 
@@ -450,67 +452,49 @@ Access paths determine how Ditto retrieves documents. The query planner automati
 -- Check access path
 EXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'
 
--- Look for operators:
--- "index_scan" = Good (uses index, fast)
--- "scan" = Bad (full collection scan, slow)
--- "intersect" = Multiple indexes (AND logic)
--- "union" = Multiple indexes (OR logic)
+-- Look for operators (canonical names):
+-- IndexScan       = Good (uses index, fast)
+-- CollectionScan  = Bad (full collection scan, slow)
+-- Intersect       = Multiple indexes combined under AND
+-- Union           = Multiple indexes combined under OR
+-- Fetch           = Document materialization after an IndexScan (absent on covering plans)
+-- Filter          = Residual WHERE predicate the index could not satisfy
 ```
 
-**Example Output:**
-```json
-{
-  "plan": {
-    "#operator": "sequence",
-    "children": [
-      {"#operator": "index_scan", "index": "idx_assignee"},  // ✅ Using index
-      {"#operator": "fetch"},
-      {"#operator": "final_projection"}
-    ]
-  }
-}
-```
-
-**vs Bad Plan:**
-```json
-{
-  "plan": {
-    "#operator": "sequence",
-    "children": [
-      {"#operator": "scan", "collection": "tasks"},  // ❌ Full collection scan
-      {"#operator": "filter", "condition": "assignee = 'alice'"},
-      {"#operator": "final_projection"}
-    ]
-  }
-}
-```
+> Operator names and JSON shape are diagnostic, not a stable contract — see [`references/indexing.md`](references/indexing.md) §6 for the canonical operator catalog and worked example plans. Older SDKs and some tools render lowercase variants (e.g. `index_scan`); read shape, not exact spelling.
 
 ### Optimization Strategies
 
 **1. Create Indexes for Frequently Queried Fields**
 
-Contact Ditto team for index creation. Prioritize:
+`CREATE INDEX` is user-facing DQL on both 4.14.x and 5.0.x. Prioritize:
 - Fields used in WHERE clauses
 - Fields used in ORDER BY
 - High cardinality fields (many unique values)
 
 ```sql
 -- Fields that benefit from indexes:
-WHERE assignee = 'alice'        -- Index on 'assignee'
-WHERE status = 'active'         -- Index on 'status'
-ORDER BY created_at DESC        -- Index on 'created_at'
+CREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee);
+CREATE INDEX IF NOT EXISTS idx_status     ON tasks (status);
+CREATE INDEX IF NOT EXISTS idx_created_at ON tasks (created_at DESC);
+
+WHERE assignee = 'alice'        -- Uses idx_assignee
+WHERE status = 'active'         -- Uses idx_status
+ORDER BY created_at DESC        -- Uses idx_created_at
 ```
+
+For full `CREATE INDEX` grammar, covering plans, planner directives (`#profile`, `#disable_index_scan`, etc.), `EXPLAIN` output shape, and the `USE IDS` fast path, see [`references/indexing.md`](references/indexing.md).
 
 **2. Use EXPLAIN to Verify Index Usage**
 
 ```sql
 -- Before optimization
 EXPLAIN SELECT * FROM tasks WHERE priority > 5
--- Output: {"#operator": "scan", ...}  -- ❌ Full scan
+-- Plan rooted at CollectionScan  -- ❌ Full scan
 
--- After adding index on 'priority'
+-- After CREATE INDEX ON tasks (priority)
 EXPLAIN SELECT * FROM tasks WHERE priority > 5
--- Output: {"#operator": "index_scan", "index": "idx_priority"}  -- ✅ Using index
+-- Plan rooted at IndexScan referencing idx_priority  -- ✅ Using index
 ```
 
 **3. Combine Filters for Intersect Scans**
@@ -522,11 +506,8 @@ When multiple fields are indexed:
 SELECT * FROM tasks
 WHERE assignee = 'alice' AND status = 'active'
 
--- EXPLAIN shows:
--- {"#operator": "intersect", "children": [
---   {"#operator": "index_scan", "index": "idx_assignee"},
---   {"#operator": "index_scan", "index": "idx_status"}
--- ]}
+-- EXPLAIN shows an Intersect node with two IndexScan children
+-- (one per index). See references/indexing.md §6 for full plan shapes.
 ```
 
 **4. Avoid Collection Scans on Large Collections**
@@ -550,6 +531,15 @@ LIMIT 100
 
 **5. Monitor with System Collections**
 
+DQL exposes a `system` datasource that holds virtual collections describing peer state. The ones most useful for diagnostics:
+
+| Collection                | What it returns                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `system:collections`      | List of every collection the peer knows about, with declared types per field.    |
+| `system:vitals`           | Per-query performance counters (parse/plan/execution time, request counts).      |
+| `system:active_requests`  | Currently-running queries and subscriptions on this peer.                        |
+| `__presence`              | Peer-to-peer presence — which peers are visible on the mesh, with metadata.      |
+
 ```sql
 -- Query performance statistics
 SELECT * FROM system:vitals
@@ -563,8 +553,14 @@ SELECT * FROM system:vitals
 -- Active query execution
 SELECT * FROM system:active_requests
 
--- Identify slow queries and optimize
+-- Collection catalog
+SELECT * FROM system:collections
+
+-- Mesh presence
+SELECT * FROM __presence
 ```
+
+See [`references/select.md`](references/select.md) for the FROM-clause grammar that accepts these datasources.
 
 ### Performance Tips
 
@@ -597,6 +593,8 @@ SELECT * FROM tasks ORDER BY created_at DESC LIMIT 20
 SELECT * FROM tasks ORDER BY created_at DESC  -- No LIMIT
 ```
 
+For full `SELECT` clause grammar — `WHERE`, `ORDER BY`, `LIMIT`/`OFFSET`, `GROUP BY`/`HAVING`, subqueries, `USE IDS`, and system datasources — see [`references/select.md`](references/select.md). System datasources like `system:collections`, `system:vitals`, and `system:active_requests` are documented there (§ on FROM clauses).
+
 **Push Filters to WHERE (not HAVING):**
 ```sql
 -- ✅ GOOD: Filter before aggregation
@@ -616,12 +614,14 @@ HAVING category != 'deleted'
 
 ### Overview
 
-Strict mode controls type inference and CRDT type safety in Ditto collections.
+Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an object literal with no type definition.
 
 **Default State:**
-- SDK 4.x: Enabled (strict mode = true)
-- SDK 5.0: Disabled (strict mode = false)
+- SDK 4.14.x: `dql_strict_mode = true` → object → `REGISTER` (last-write-wins on the whole object)
+- SDK 5.0.x: `dql_strict_mode = false` → object → `MAP` (per-field merge)
 - Available: SDK 4.11+
+
+For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag, and worked merge examples, see [`references/types-mutators.md`](references/types-mutators.md) §7.
 
 ### Behavioral Differences
 
@@ -635,20 +635,22 @@ Strict mode controls type inference and CRDT type safety in Ditto collections.
 
 ### Configuration
 
+The canonical user-facing parameter is `dql_strict_mode` (lowercase — the literal name accepted by `ALTER SYSTEM SET` / `SHOW`). `DQL_STRICT_MODE` is the internal Rust constant; don't pass that as the parameter name. See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
+
 **Disable Strict Mode (Recommended):**
 ```sql
 -- Apply before starting sync
-ALTER SYSTEM SET DQL_STRICT_MODE = false
+ALTER SYSTEM SET dql_strict_mode = false
 ```
 
 **Enable Strict Mode:**
 ```sql
-ALTER SYSTEM SET DQL_STRICT_MODE = true
+ALTER SYSTEM SET dql_strict_mode = true
 ```
 
 **Check Current Setting:**
 ```sql
-SHOW DQL_STRICT_MODE
+SHOW dql_strict_mode
 ```
 
 ### Example: Object Merge Behavior
@@ -680,6 +682,8 @@ UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user
 -- Last write wins per field, not per object
 ```
 
+> Dotted path syntax (`profile.bio`, `features.seats`, etc.) is a **path expression** — supported in `SET`, `WHERE`, projections, and `ORDER BY` on both 4.14.x and 5.0.x. See [`references/expressions.md`](references/expressions.md) §4 for the full path-expression grammar including array indexing (`tags[0]`) and parameter-driven keys.
+
 ### Cross-Peer Compatibility
 
 **⚠️ CRITICAL: All peers should use same strict mode setting**
@@ -695,7 +699,7 @@ When peers use different strict mode settings without explicit MAP definitions:
 1. **Match strict mode across all peers:**
    ```sql
    -- All peers run:
-   ALTER SYSTEM SET DQL_STRICT_MODE = false
+   ALTER SYSTEM SET dql_strict_mode = false
    ```
 
 2. **Explicitly define MAP types (strict=true peers):**
@@ -771,6 +775,32 @@ INSERT INTO tasks DOCUMENTS ({
 - `DO UPDATE_LOCAL_DIFF` (SDK 4.12+) - Update only changed fields (optimal)
 - `DO NOTHING` - Skip if ID exists
 - `FAIL` - Error if ID exists (default, rarely used)
+
+### Deleting Documents — TTL Awareness
+
+When deleting documents you need mesh-wide (`TOMBSTONE`, or `DELETE` from a Big Peer), the replicated tombstone is **not** kept forever:
+
+- **7 days** on Small Peer / Edge SDKs.
+- **30 days** on Big Peer / Cloud.
+
+An offline peer that comes back online after the TTL has expired can re-introduce the document, because no peer still holds a tombstone to suppress it. Design for the TTL window — e.g. keep a soft-deleted marker until you're past 30 days, then issue `TOMBSTONE`. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
+
+### Soft Delete Pattern
+
+For data you want to "hide" without losing mesh-wide:
+
+```sql
+-- Soft delete: mark as deleted, retain document
+UPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = :id
+
+-- Reads filter out deleted documents
+SELECT * FROM tasks WHERE NOT coalesce(deleted, false)
+
+-- Periodic cleanup: hard-delete once safely past the TTL window
+DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')
+```
+
+This keeps writers in control of the deletion timeline rather than relying on the replicated tombstone TTL.
 
 ---
 
@@ -939,6 +969,19 @@ WHERE expires_at < clock()
 - [ ] Document migration path
 
 ---
+
+## Related Reference Files
+
+This best-practices file covers the cross-cutting "how should I think about this?" advice. For canonical syntax, grammar, and per-version behavior:
+
+- [`references/statements.md`](references/statements.md) — `INSERT`/`UPDATE`/`EVICT`/`TOMBSTONE`/`DELETE`/`ALTER SYSTEM`/`SHOW`/`SYNC CONTEXT`/`PROFILE` grammar, including TOMBSTONE TTL specifics.
+- [`references/select.md`](references/select.md) — full `SELECT` grammar, `USE IDS`, system datasources.
+- [`references/expressions.md`](references/expressions.md) — literals, path expressions (`a.b.c`, `arr[i]`), `CASE`, quantifiers, comprehensions.
+- [`references/operators.md`](references/operators.md) — comparison, logical, arithmetic, string, set operators.
+- [`references/functions.md`](references/functions.md) — scalar and aggregate function catalog.
+- [`references/types-mutators.md`](references/types-mutators.md) — `REGISTER`/`MAP`/`COUNTER`/`PN_COUNTER`/`ATTACHMENT` types, `SET`/`UNSET`/`APPLY` mutators, the `dql_strict_mode` parameter.
+- [`references/indexing.md`](references/indexing.md) — `CREATE INDEX`/`DROP INDEX`, `EXPLAIN`, `#profile`, planner directives, covering plans, `USE IDS`.
+- [`references/versions.md`](references/versions.md) — SDK 4.14.x vs 5.0.x compatibility matrix.
 
 ## Official Documentation
 
