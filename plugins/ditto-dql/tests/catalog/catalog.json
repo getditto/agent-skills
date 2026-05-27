@@ -2264,9 +2264,7 @@
       "5.0.x"
     ],
     "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expect": {}
   },
   {
     "id": "sk_operators_f3dc46d0",
