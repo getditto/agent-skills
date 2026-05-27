@@ -5,6 +5,8 @@ description: Single-pane compatibility matrix for DQL features across Ditto SDK 
 
 # Ditto SDK version compatibility
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 This file is the **single source of truth** for "which SDK do I need?" Every version annotation in [`operators.md`](operators.md), [`functions.md`](functions.md), [`expressions.md`](expressions.md), [`statements.md`](statements.md), [`select.md`](select.md), [`types-mutators.md`](types-mutators.md), and [`indexing.md`](indexing.md) ladders up to the tables on this page.
 
 If you are debugging a parse error or a behavior change after upgrading, start here.

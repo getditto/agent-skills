@@ -5,6 +5,8 @@ description: Literals, identifiers, parameters, path expressions, CASE, quantifi
 
 # DQL expressions reference
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 An **expression** evaluates to a value (or `NULL` / `MISSING`). This file catalogs the expression grammar usable on **Ditto SDK 4.14.x and 5.0.x** — literals, identifiers, parameters, path expressions, conditional `CASE`, the array/object quantifiers (`ANY`/`EVERY ... SATISFIES`), and the comprehension forms (`ARRAY ... FOR ...`, `OBJECT k:v FOR ...`).
 
 Operators (arithmetic, comparison, logical, `IN`, `LIKE`, `IS NULL`, etc.) live in [`operators.md`](operators.md). Functions (`array_contains`, `cast`, `coalesce`, `regexp_like`, type predicates, aggregates, date helpers) live in [`functions.md`](functions.md). Statement-level clauses (`SELECT`, `WHERE`, `ORDER BY`, `INSERT … DOCUMENTS`, mutators) live in `statements.md` / `select.md`.

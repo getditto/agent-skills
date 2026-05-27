@@ -5,6 +5,8 @@ description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, 
 
 # DQL SELECT reference
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 Authoritative reference for the `SELECT` statement on **Ditto SDK 4.14.x and 5.0.x**. All other top-level statements (`INSERT`, `UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `PROFILE`) live in [`statements.md`](statements.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md).
 
 Unless a section carries an "Available in:" note, the clause works identically on 4.14.x and 5.0.x.

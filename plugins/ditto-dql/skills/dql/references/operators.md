@@ -5,6 +5,8 @@ description: Complete operator catalog with precedence, NULL/MISSING semantics, 
 
 # DQL operators reference
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 Authoritative catalog of every operator usable on **Ditto SDK 4.14.x and 5.0.x**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
 
 Unless a section carries an "Available in:" note, the operator works identically on 4.14.x and 5.0.x. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).

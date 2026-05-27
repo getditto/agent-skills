@@ -5,6 +5,8 @@ description: Complete built-in function catalog for Ditto DQL (math, string, arr
 
 # DQL functions reference
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x and 5.0.x**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
 
 Every function in this catalog exists in **both** Ditto SDK 4.14.x and 5.0.x. Version-gated functions (none in this list, but watch for `serialize_json` and `object_size` arriving in v5.1) will carry an explicit `Available in:` tag. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).

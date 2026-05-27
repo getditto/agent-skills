@@ -5,6 +5,8 @@ description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 # DQL CRDT types and mutators
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x and 5.0.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
 Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
