@@ -95,16 +95,21 @@ if (typeof ditto.setOfflineOnlyLicenseToken === "function") {
   }
 }
 
-// Start sync if the API exists. We don't actually need peer sync for
-// local-only DQL tests, but v4 historically required startSync() before
-// store operations would flush.
-if (typeof ditto.startSync === "function") {
+// v4 only: disable legacy v3 sync protocol. Required before any DQL mutations.
+// Without this, INSERT/UPDATE/DELETE/EVICT throw
+// "Mutating DQL statements require ... disable sync with V3".
+if (typeof ditto.disableSyncWithV3 === "function") {
   try {
-    ditto.startSync();
+    ditto.disableSyncWithV3();
   } catch (e) {
-    console.warn("startSync failed:", e.message);
+    console.warn("disableSyncWithV3 failed:", e.message);
   }
 }
+
+// NOTE: deliberately NOT calling startSync() on v4. With
+// disableSyncWithV3() set, calling startSync() causes the FFI layer to
+// SIGABRT during the first DQL mutation (observed on 4.14.4). The tests
+// are local-only DQL — no peer sync needed.
 
 const store = ditto.store;
 if (!store) {

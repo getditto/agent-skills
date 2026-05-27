@@ -17,7 +17,10 @@
     ],
     "postQueries": [
       "EVICT FROM users WHERE _id IN ('user-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_cd852ff9",
@@ -38,7 +41,10 @@
     "postQueries": [
       "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})\n\n-- Query separately",
       "EVICT FROM people WHERE _id IN ('person-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_49a9a073",
@@ -58,7 +64,10 @@
     ],
     "postQueries": [
       "EVICT FROM orders WHERE _id IN ('order-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_9ec741d2",
@@ -98,7 +107,10 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_5cd86715",
@@ -112,7 +124,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_e812539c",
@@ -126,7 +141,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_5041c104",
@@ -148,7 +166,10 @@
       "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'\n\n-- ✅ SAFE: Add new collections",
       "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_cb06bec6",
@@ -168,7 +189,10 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_ce76b803",
@@ -185,7 +209,10 @@
     "expectError": false,
     "postQueries": [
       "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1\n\n-- Old versions still read 'year' (INTEGER)\n-- New versions prefer 'year_string' (STRING) but fall back to 'year'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_c70f84e8",
@@ -199,7 +226,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_415f7002",
@@ -213,7 +243,16 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "6a16840900fb6e46008900b8",
+        "color": "unknown",
+        "schema_version": 2,
+        "year": 2024
+      }
+    }
   },
   {
     "id": "sk_best_practices_b6aa9e9f",
@@ -230,7 +269,15 @@
     "expectError": false,
     "postQueries": [
       "INSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue',\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "6a16840900fb6e46008900b8",
+        "color": "unknown",
+        "year": 2024
+      }
+    }
   },
   {
     "id": "sk_best_practices_d27b377c",
@@ -244,7 +291,26 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "plan": {
+          "#operator": "sequence",
+          "children": [
+            {
+              "#operator": "scan",
+              "collection": "tasks",
+              "datasource": "default"
+            },
+            {
+              "#operator": "filter",
+              "condition": "(`assignee` = \"alice\")"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "id": "sk_best_practices_9554f475",
@@ -272,7 +338,26 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "plan": {
+          "#operator": "sequence",
+          "children": [
+            {
+              "#operator": "scan",
+              "collection": "tasks",
+              "datasource": "default"
+            },
+            {
+              "#operator": "filter",
+              "condition": "(`priority` > 5)"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "id": "sk_best_practices_8d0cf3ae",
@@ -286,7 +371,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_4ef87616",
@@ -300,7 +388,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_cf8ea35a",
@@ -314,7 +405,22 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "1",
+        "deletes": 12,
+        "execution_time": {
+          "max": 215209,
+          "mean": 129776,
+          "median": 117938,
+          "min": 20667
+        },
+        "failed": 3,
+        "inserts": 204
+      }
+    }
   },
   {
     "id": "sk_best_practices_e19c6a48",
@@ -328,7 +434,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "($1)": 0
+      }
+    }
   },
   {
     "id": "sk_best_practices_ebe3165a",
@@ -342,7 +454,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_abd40b97",
@@ -356,7 +471,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_bc8b8ad7",
@@ -370,7 +488,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "($2)": 0
+      }
+    }
   },
   {
     "id": "sk_best_practices_227b77cb",
@@ -384,7 +508,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "dql_strict_mode": false
+      }
+    }
   },
   {
     "id": "sk_best_practices_8579d6ad",
@@ -398,7 +528,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "dql_strict_mode": true
+      }
+    }
   },
   {
     "id": "sk_best_practices_8fa5b773",
@@ -412,7 +548,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "dql_strict_mode": true
+      }
+    }
   },
   {
     "id": "sk_best_practices_21a96712",
@@ -433,7 +575,10 @@
     "postQueries": [
       "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'\n\n-- Result: Last-write-wins (one completely replaces the other)\n-- Either: {bio: 'Designer', location: 'NYC'}\n-- Or:     {bio: 'Engineer', city: 'SF'}\n-- One wins entirely, the other is lost",
       "EVICT FROM users WHERE _id = 'user-1'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_1f5c258a",
@@ -503,7 +648,10 @@
     "postQueries": [
       "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})\n-- Error: \"Identifier conflict on document {\\\"_id\\\":\\\"...\\\": using FAIL conflict policy\"",
       "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_9a77052f",
@@ -524,7 +672,10 @@
     "postQueries": [
       "DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
       "EVICT FROM tasks WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_45cd3617",
@@ -538,7 +689,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_92f13f2a",
@@ -558,7 +712,10 @@
     ],
     "postQueries": [
       "EVICT FROM messages WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_6d2a4da4",
@@ -586,7 +743,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_best_practices_20456517",
@@ -600,7 +760,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_movies_cookbook_410d153f",
@@ -949,7 +1112,38 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "_id": "573a1399f29313caabcee345",
+        "box_office_millions": 2,
+        "cast": [
+          {
+            "name": "Aamir Khan",
+            "role": ""
+          },
+          {
+            "name": "Salman Khan",
+            "role": ""
+          },
+          {
+            "name": "Raveena Tandon",
+            "role": ""
+          },
+          {
+            "name": "Karisma Kapoor",
+            "role": ""
+          }
+        ],
+        "genres": [
+          "Comedy",
+          "Family",
+          "Romance"
+        ],
+        "is_classic": false
+      }
+    }
   },
   {
     "id": "sk_expressions_5438b528",
@@ -963,7 +1157,14 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "cast_size": 4,
+        "title": "Peter Pan"
+      }
+    }
   },
   {
     "id": "sk_expressions_44ff7d0c",
@@ -977,7 +1178,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_expressions_32796337",
@@ -991,7 +1195,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_expressions_8a13e3e7",
@@ -1005,7 +1215,14 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "genre_score": 3,
+        "title": "Boiling Point"
+      }
+    }
   },
   {
     "id": "sk_expressions_c94386e0",
@@ -1019,7 +1236,14 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "A Big Hand for the Little Lady",
+        "verdict": "unrated"
+      }
+    }
   },
   {
     "id": "sk_expressions_8e3d2e9d",
@@ -1032,7 +1256,13 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "title": "Robin Hood: Prince of Thieves"
+      }
+    }
   },
   {
     "id": "sk_expressions_0cc1d79f",
@@ -1045,7 +1275,10 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_expressions_52615efc",
@@ -1058,7 +1291,10 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_expressions_5e3653e9",
@@ -1071,7 +1307,10 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_expressions_db954cef",
@@ -1084,7 +1323,18 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "_id": "573a1390f29313caabcd4135",
+        "cast_names": [
+          "Charles Kayser",
+          "John Ott"
+        ],
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_expressions_e88ee2b5",
@@ -1097,7 +1347,18 @@
     "availableIn": [
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "_id": "573a1390f29313caabcd4135",
+        "cast_by_name": {
+          "Charles Kayser": "",
+          "John Ott": ""
+        },
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_functions_15f6c5c4",
@@ -2110,7 +2371,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_operators_207731fb",
@@ -2124,7 +2388,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_operators_277e32af",
@@ -2138,7 +2405,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 69,
+      "firstRow": {
+        "title": "Boiling Point"
+      }
+    }
   },
   {
     "id": "sk_operators_d38f5365",
@@ -2152,7 +2425,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 187,
+      "firstRow": {
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_operators_479a0884",
@@ -2166,7 +2445,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_operators_1430160e",
@@ -2180,7 +2462,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 118,
+      "firstRow": {
+        "title": "Tabu: A Story of the South Seas"
+      }
+    }
   },
   {
     "id": "sk_operators_9e8301be",
@@ -2194,7 +2482,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_operators_54d04c2d",
@@ -2208,7 +2502,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 39,
+      "firstRow": {
+        "title": "The Four Feathers"
+      }
+    }
   },
   {
     "id": "sk_operators_7c75132d",
@@ -2222,7 +2522,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_operators_c148ae23",
@@ -2236,7 +2539,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "label": "Blacksmith Scene (1893)"
+      }
+    }
   },
   {
     "id": "sk_operators_a81bfd94",
@@ -2250,7 +2559,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "bumped": "Blacksmith Scene: 1894"
+      }
+    }
   },
   {
     "id": "sk_operators_84801219",
@@ -2278,7 +2593,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 32,
+      "firstRow": {
+        "title": "Dance Program"
+      }
+    }
   },
   {
     "id": "sk_operators_bde82402",
@@ -2292,7 +2613,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "Blacksmith Scene"
+      }
+    }
   },
   {
     "id": "sk_operators_cec90080",
@@ -2306,7 +2633,10 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
     "id": "sk_operators_015f85b4",
@@ -3256,7 +3586,13 @@
       "4.14.x",
       "5.0.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "dql_strict_mode": false
+      }
+    }
   },
   {
     "id": "sk_versions_72c53326",
