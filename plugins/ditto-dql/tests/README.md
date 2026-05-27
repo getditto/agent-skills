@@ -45,7 +45,7 @@ Each SDK lives in its own `node_modules` tree under `sdks/v<version>/` because t
 
 ### Requirements
 
-- Node 20+
+- Node 24+ (required by the GitHub Actions matrix; Node 20 is deprecated as of June 2026)
 - A Ditto offline license token (`DITTO_OFFLINE_LICENSE` env var)
 - macOS or Linux (the SDK ships native binaries for both)
 

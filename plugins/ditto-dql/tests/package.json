@@ -11,5 +11,5 @@
     "test:v5": "DITTO_SDK_VERSION=5.0.0 node runner/run.mjs",
     "report": "node scripts/report.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=24" }
 }
