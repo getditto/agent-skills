@@ -62,6 +62,26 @@ The `write-dql` skill activates automatically when you ask about DQL queries, Di
 
 Claude will detect your SDK version, consult the relevant reference files, and produce a version-correct query.
 
+## Testing
+
+The plugin ships with an automated test harness that runs every documented DQL example against actual Ditto Node SDK installations. Each example is verified to work on the SDK version it claims to support.
+
+```bash
+cd plugins/ditto-dql/tests
+# One-time setup
+(cd sdks/v4.14.4 && npm install)
+(cd sdks/v5.0.0 && npm install)
+npm run transform               # produce pedagogical-schema test dataset (one-time)
+
+# Run against both SDK versions
+DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm test
+npm run report
+```
+
+Current status: **185 PASS / 7 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.0`; **166 PASS / 26 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.4` (192 catalog entries). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the off-version (e.g., `XOR` on v5.0, `ANY ... SATISFIES` on v4.14).
+
+See `tests/README.md` for the harness internals.
+
 ## Links
 
 - [Ditto documentation](https://docs.ditto.com)
