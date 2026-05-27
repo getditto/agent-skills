@@ -24,8 +24,11 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 
 ## Where to look
 
+> **First time reading an example?** Every operator, function, statement, expression, and cookbook task in this skill queries the same two collections (`movies`, `reviews`). The full schema — field names, types, and CRDT designations — lives in [`references/schema.md`](references/schema.md). Open that alongside any reference file the first time you read it.
+
 | If you're doing this... | Read |
 |---|---|
+| Wondering what a field in an example means | `references/schema.md` |
 | Picking which features apply to your SDK version | `references/versions.md` |
 | Writing a `SELECT` | `references/select.md` |
 | Writing `INSERT` / `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE` / `ALTER SYSTEM` / `SHOW` / `SYNC CONTEXT` | `references/statements.md` |

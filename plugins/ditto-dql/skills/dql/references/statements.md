@@ -5,6 +5,8 @@ description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, 
 
 # DQL statements reference
 
+> All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
+
 Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x and 5.0.x**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
 
 Both SDKs ship the same `Statement` enum: `Explain`, `Query` (`SELECT`), `Insert`, `Update`, `Remove` (`EVICT` / `TOMBSTONE` / `DELETE`), `AlterSystem`, `Show`, `RemoteQuery` (`SYNC CONTEXT`), `CreateIndex`, `DropIndex`. A statement may be prefixed by `EXPLAIN` and (on **5.0+ only**) by the `PROFILE` keyword.
