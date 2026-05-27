@@ -7,7 +7,7 @@ description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x and 5.0.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_mutator_objects_as_maps-flag).
+Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 
@@ -36,7 +36,7 @@ SELECT ... FROM COLLECTION  <coll> ( <field> <crdt_type> [, ...] ) WHERE ...
 Rules that apply to every CRDT type:
 
 - The declaration is **per-statement**. It does not create a global schema; it tells the engine how to interpret values in *this* statement.
-- A type definition is **required** whenever the statement touches a non-`REGISTER` field — `MAP`, `COUNTER`, `PN_COUNTER`, or `ATTACHMENT`. Without it, strict-mode v4 will silently store the value as `REGISTER`; see [§7](#7-strict-mode-and-the-dql_mutator_objects_as_maps-flag).
+- A type definition is **required** whenever the statement touches a non-`REGISTER` field — `MAP`, `COUNTER`, `PN_COUNTER`, or `ATTACHMENT`. Without it, strict-mode v4 will silently store the value as `REGISTER`; see [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 - Fields omitted from the list default to `REGISTER`.
 - `_id` may **never** appear in a type definition.
 - Duplicate field names in one definition raise a parse error.
@@ -327,7 +327,7 @@ See [`select.md`](select.md) for the rest of the `SELECT` grammar.
 
 ---
 
-## 7. Strict mode and the `DQL_MUTATOR_OBJECTS_AS_MAPS` flag
+## 7. Strict mode and the `dql_strict_mode` system parameter
 
 This is the single most important cross-version behaviour change between SDK 4.14.x and 5.0.x.
 
@@ -336,14 +336,16 @@ When the engine encounters an **object literal** in `INSERT`/`UPDATE` and no typ
 - `REGISTER` (last-write-wins on the whole object) — **strict mode**
 - `MAP` (per-field merge) — **lenient mode**
 
-The choice is controlled by the engine flag `DQL_MUTATOR_OBJECTS_AS_MAPS`. The flag defaults flipped between the two SDK versions:
+The choice is controlled by the user-facing system parameter `dql_strict_mode`. Its default flips between the two SDK versions:
 
-| Behavior                                  | v4.14.x default       | v5.0.x default        |
-| ----------------------------------------- | --------------------- | --------------------- |
-| `INSERT`/`UPDATE` object → CRDT type      | `REGISTER` (strict)   | `MAP` (lenient)       |
-| `DQL_MUTATOR_OBJECTS_AS_MAPS` flag        | OFF (`false`)         | ON (`true`)           |
-| Override                                  | `ALTER SYSTEM SET DQL_MUTATOR_OBJECTS_AS_MAPS = true` | `ALTER SYSTEM SET DQL_MUTATOR_OBJECTS_AS_MAPS = false` |
+| Behavior                                 | v4.14.x default                          | v5.0.x default                           |
+| ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
+| `dql_strict_mode` (user-facing)          | `true` (strict)                          | `false` (lenient)                        |
+| `INSERT`/`UPDATE` object → CRDT type     | `REGISTER` (strict)                      | `MAP` (lenient)                          |
+| `DQL_MUTATOR_OBJECTS_AS_MAPS` (internal) | OFF (`false`), derived from strict mode  | ON (`true`), derived from strict mode    |
 | Explicit type definition REQUIRED for `MAP`? | Yes — without one, strict mode picks `REGISTER` | No — lenient picks `MAP` by default, but declaring is still recommended for clarity |
+
+> `DQL_MUTATOR_OBJECTS_AS_MAPS` is the **internal** feature flag derived from `dql_strict_mode`; you may see it referenced in internal docs or error messages, but `dql_strict_mode` is the knob you set.
 
 ### Worked example: same statement, different results
 
@@ -367,27 +369,24 @@ This is a behaviour difference that does **not** show up at parse time. Both sta
 
 That gives you:
 
-- **Portability** — the same statement does the same thing on 4.14.x and 5.0.x, regardless of either peer's flag.
-- **Resilience to flag changes** — a future `ALTER SYSTEM` on either peer can't silently change your data shape.
+- **Portability** — the same statement does the same thing on 4.14.x and 5.0.x, regardless of either peer's setting.
+- **Resilience to setting changes** — a future `ALTER SYSTEM` on either peer can't silently change your data shape.
 - **Clarity for reviewers** — the intent is in the query, not in engine config.
 
-To inspect the current mode:
+To inspect the current mode and override it on a peer (rarely needed when you declare types explicitly):
 
 ```sql
-SHOW DQL_MUTATOR_OBJECTS_AS_MAPS;
+-- On v4.14.x: opt into lenient (object → MAP) behavior
+ALTER SYSTEM SET dql_strict_mode = false
+
+-- On v5.0.x: opt back into strict (object → REGISTER) behavior
+ALTER SYSTEM SET dql_strict_mode = true
+
+-- Check current setting
+SHOW dql_strict_mode
 ```
 
-To flip it on a peer (rarely needed when you declare types explicitly):
-
-```sql
--- Match 4.x behaviour on a 5.0 peer
-ALTER SYSTEM SET DQL_MUTATOR_OBJECTS_AS_MAPS = false;
-
--- Match 5.0 behaviour on a 4.x peer
-ALTER SYSTEM SET DQL_MUTATOR_OBJECTS_AS_MAPS = true;
-```
-
-> **Cross-peer note:** the flag is per-peer. Mismatched peers can produce per-peer divergent views of the same documents even though replication is correct. The fix is always to declare types in the statement, not to chase down every peer's setting. For deeper guidance see [`best-practices.md`](../best-practices.md#strict-mode).
+> **Cross-peer note:** the setting is per-peer. Mismatched peers can produce per-peer divergent views of the same documents even though replication is correct. The fix is always to declare types in the statement, not to chase down every peer's setting. For deeper guidance see [`best-practices.md`](../best-practices.md#strict-mode).
 
 ---
 
