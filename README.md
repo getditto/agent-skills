@@ -2,6 +2,8 @@
 
 A Claude Code plugin marketplace for [Ditto](https://ditto.com) - the peer-to-peer sync platform.
 
+**Note: This repo is currently private, but we intend to make this PUBLIC for use by customers. Do not add any plugins to this repo that are not appropriate for customer use.**
+
 ## Available Plugins
 
 | Plugin | Description |
