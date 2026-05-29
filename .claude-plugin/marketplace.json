@@ -18,17 +18,6 @@
       },
       "source": "./plugins/ditto-dql",
       "category": "development"
-    },
-    {
-      "name": "ditto-platform-skills",
-      "description": "SRE and platform engineering skills for Ditto infrastructure workflows",
-      "version": "1.0.0",
-      "author": {
-        "name": "Ditto",
-        "email": "support@ditto.com"
-      },
-      "source": "./plugins/ditto-platform-skills",
-      "category": "operations"
     }
   ]
 }
