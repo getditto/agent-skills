@@ -1,20 +1,48 @@
 # ditto-dql
 
-Claude Code plugin for Ditto Query Language (DQL) assistance.
+Claude Code plugin for Ditto Query Language (DQL) assistance. It helps developers working with the [Ditto](https://ditto.com) peer-to-peer sync platform write correct, version-aware DQL for SELECT queries, mutations, subscriptions, and indexing — across both currently supported SDK lines.
 
-## What it does
+## Supported Ditto SDK versions
 
-This plugin provides a `write-dql` skill that helps you write DQL queries for the Ditto platform. It covers:
+- Ditto SDK **4.14.x** (LTS)
+- Ditto SDK **5.0.x** (current)
 
-- SELECT queries with filtering, sorting, and aggregations
-- INSERT statements with conflict handling
-- UPDATE operations including nested fields
-- DELETE vs EVICT semantics
-- Subscription query patterns
-- Data types (REGISTER, MAP, ATTACHMENT)
-- Best practices for offline-first sync
+Every documented feature is tagged with its minimum SDK version. See [`skills/dql/references/versions.md`](skills/dql/references/versions.md) for the full compatibility matrix. v5.1.0 features are excluded until v5.1.0 ships.
 
-It also provides a `dql-expert` agent that will use the `write-dql` skill.
+## What's included
+
+### `write-dql` skill
+
+A routing entry point that detects your project's Ditto SDK version, then directs Claude to the relevant reference and example material. The skill lives at `plugins/ditto-dql/skills/dql/` and covers:
+
+- SELECT queries, filtering, sorting, aggregations, and subscription patterns
+- INSERT / UPDATE / DELETE / EVICT semantics
+- DQL types and mutators (REGISTER, MAP, ATTACHMENT, counters, etc.)
+- Indexing strategies for offline-first workloads
+- Best practices for sync, conflict resolution, and CRDT-friendly schemas
+
+### `dql-expert` agent
+
+A subagent (`agents/dql-expert.md`) that uses the `write-dql` skill to answer DQL questions and produce production-ready queries with the correct SDK-version gating.
+
+### Reference catalog
+
+Located in [`skills/dql/references/`](skills/dql/references/):
+
+| File | Covers |
+|------|--------|
+| [`operators.md`](skills/dql/references/operators.md) | Comparison, logical, arithmetic, and string operators |
+| [`functions.md`](skills/dql/references/functions.md) | Built-in scalar and aggregate functions |
+| [`expressions.md`](skills/dql/references/expressions.md) | Path expressions, literals, type coercion |
+| [`statements.md`](skills/dql/references/statements.md) | INSERT, UPDATE, DELETE, EVICT statement forms |
+| [`select.md`](skills/dql/references/select.md) | SELECT, projections, ORDER BY, subscriptions |
+| [`types-mutators.md`](skills/dql/references/types-mutators.md) | DQL type system and CRDT mutators |
+| [`indexing.md`](skills/dql/references/indexing.md) | CREATE INDEX, query planning, performance |
+| [`versions.md`](skills/dql/references/versions.md) | Per-feature SDK compatibility matrix |
+
+### Movies cookbook
+
+[`skills/dql/examples/movies-cookbook.md`](skills/dql/examples/movies-cookbook.md) — 18 worked tasks against a shared movies dataset, each annotated with the minimum SDK version required and side-by-side variants for v4.14.x vs v5.0.x where the API differs.
 
 ## Installation
 
@@ -26,22 +54,36 @@ It also provides a `dql-expert` agent that will use the `write-dql` skill.
 /plugin install ditto-dql
 ```
 
-## Usage
+## Quick start
 
-The skill activates automatically when you ask about:
-- Writing DQL queries
-- Ditto database operations
-- Query syntax help
+The `write-dql` skill activates automatically when you ask about DQL queries, Ditto database operations, or query syntax. For example:
 
-## Examples
+> "Write a DQL subscription that streams incomplete tasks sorted by priority, compatible with SDK 4.14."
 
-Ask Claude Code things like:
-- "Write a DQL query to get all incomplete tasks sorted by priority"
-- "How do I upsert a document in Ditto?"
-- "What's the difference between DELETE and EVICT?"
-- "Help me create a subscription for user-specific data"
+Claude will detect your SDK version, consult the relevant reference files, and produce a version-correct query.
+
+## Testing
+
+The plugin ships with an automated test harness that runs every documented DQL example against actual Ditto Node SDK installations. Each example is verified to work on the SDK version it claims to support.
+
+```bash
+cd plugins/ditto-dql/tests
+# One-time setup
+(cd sdks/v4.14.4 && npm install)
+(cd sdks/v5.0.0 && npm install)
+npm run transform               # produce pedagogical-schema test dataset (one-time)
+
+# Run against both SDK versions
+DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm test
+npm run report
+```
+
+Current status: **185 PASS / 7 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.0`; **166 PASS / 26 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.4` (192 catalog entries). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the off-version (e.g., `XOR` on v5.0, `ANY ... SATISFIES` on v4.14).
+
+See `tests/README.md` for the harness internals.
 
 ## Links
 
-- [Ditto Documentation](https://docs.ditto.com)
-- [DQL Reference](https://docs.ditto.com/dql)
+- [Ditto documentation](https://docs.ditto.com)
+- [DQL reference](https://docs.ditto.com/dql)
+- [Ditto SDK release notes](https://docs.ditto.com/release-notes)

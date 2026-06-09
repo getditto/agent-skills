@@ -1,0 +1,9 @@
+{
+  "name": "ditto-dql-tests-sdk-v5",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@dittolive/ditto": "5.0.0"
+  }
+}
