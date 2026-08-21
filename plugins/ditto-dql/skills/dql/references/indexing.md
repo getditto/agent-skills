@@ -16,7 +16,8 @@ Cross-references:
 - `SELECT` grammar including the thin `USE IDS` / `USE INDEX` / `USE DIRECTIVES` summary → [`select.md`](select.md) §§3–5
 - Top-level statements including the `EXPLAIN` wrapper and the v5.0+ `PROFILE` keyword → [`statements.md`](statements.md) §§6, 10
 - Path expressions and parameter syntax used inside index keys → [`expressions.md`](expressions.md)
-- CRDT field types — only `REGISTER` fields are indexable; `MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT` are not → [`types-mutators.md`](types-mutators.md)
+- CRDT field types — on 4.14.x/5.0.x, only `REGISTER` fields are indexable; `MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT` are not → [`types-mutators.md`](types-mutators.md)
+- **Changed in 5.1.0 — object and array *values* are indexable.** The planner gates this on `composite_types_indexed`, set as `mode != Mode::BigPeerLocal` (`crates/ditto-dql/src/planner/mod.rs`), so it is on everywhere except Big-Peer-local planning. `span_bound_ok` (`planner/rule_based.rs`) rejects an index span bound only for `Value::Binary`, for `Value::Null` without `permit_null_ops`, and for `Value::Object`/`Value::Array` **when `composite_types` is not indicated** — which on a Small Peer it is. Such values are matched as complete values, not by sub-path. Note this is about the indexed *value shape*; the DQL index resolver (`resolver/index.rs`) applies no CRDT-type filter of its own, so treat the blanket "REGISTER only" line above as a 4.14/5.0 statement rather than a 5.1 one.
 - SDK compatibility matrix → `versions.md` (forthcoming reference)
 
 ---
@@ -442,6 +443,10 @@ Adding an index is not free. Every write to the indexed collection updates the i
 ### 8.1 The ESR rule — Equality, Sort, Range
 
 Order composite index keys so that **equality predicates come first, sort columns next, and range predicates last**. The planner can satisfy the prefix of the index that matches this discipline; anything past a range predicate cannot be used for further filtering or ordering.
+
+> **Confirmed against the engine, and the published docs are looser than this.** The in-tree language reference describes what `ADVISE` itself emits: "Each recommendation combines the indexable clauses of a statement into as few composite indexes as possible, ordering the keys as **equality keys, then `ORDER BY` keys, then range keys**, followed by projected fields when a covering index is worthwhile" (`crates/ditto-dql/docs/lang-ref/Statements.md`, `sdk-release-5.1.0`). So sort keys genuinely precede range keys.
+>
+> The public docs page instead says "put fields used in equality filters first, followed by fields used for range filters **or sorting**", which lumps the two together and loses the ordering. Prefer the rule as stated here; `ADVISE` will produce keys in this order.
 
 Take this query:
 

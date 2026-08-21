@@ -270,8 +270,9 @@ EVICT FROM <collection>
   [ RETURNING <projection> ]
 ```
 
-- Small Peer only.
-- **`USE IDS` is not supported on `EVICT`** in either 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- Small Peer only. Confirmed by the in-tree language reference: "`EVICT` evicts documents locally within a peer. It is only supported by the small peer." On the Big Peer it exists behind the `is_enabled_evictions_in_big_peer` config and otherwise returns `unimplemented("Evict")`.
+- **`USE IDS` is not supported on `EVICT`** in 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- **Available in 5.1.0:** `USE IDS` *is* supported — see the note under [§5](#5-delete--the-replicating-removal). `RETURNING` on a remove statement is also 5.1.0+; the 5.0.3 `EvictOrTombstone` grammar has neither clause.
 
 ```sql
 -- Drop all pre-1950 movies from this device's local store
@@ -319,9 +320,26 @@ WHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');
 
 ---
 
-## 5. DELETE — alias
+## 5. DELETE — the replicating removal
 
-`DELETE FROM ...` is a **context-resolved alias**: on a Small Peer it behaves like `EVICT`; on a Big Peer it behaves like `TOMBSTONE`. Syntax is identical to both.
+`DELETE FROM ...` **overwrites the matching documents with tombstones**, so the removal replicates. It is its own operation, not an alias whose meaning changes with peer role.
+
+> **Corrected.** This section previously said `DELETE` was a "context-resolved alias" behaving like `EVICT` on a Small Peer and `TOMBSTONE` on a Big Peer. That was never true — not even for 4.14.x/5.0.x. Verified against the engine at both `sdk-release-5.1.0` and `sdk-release-5.0.3`, which carry an identical enum in `crates/ditto-dql-shared/src/ast/remove.rs`:
+>
+> ```rust
+> pub enum RemoveMode {
+>     /// `EVICT` statement. Evicts documents matching a given predicate.
+>     Evict,
+>     // `DELETE` statement. Overwrites documents matching a given predicate with tombstones.
+>     Delete,
+>     // `TOMBSTONE` statement. Deprecated BP-only alias for `DELETE`.
+>     Tombstone,
+> }
+> ```
+>
+> `ResolvedRemoveMode` is a plain re-export of that enum (`crates/ditto-dql/src/resolver/mod.rs`), so no resolution step exists — the mode is whatever you wrote. On the Small Peer store path, `EVICT` calls `evict_ids` while `DELETE` calls `remove_docs_batch` (`crates/ditto-core/src/dql/access.rs`), which is a replicating removal.
+>
+> The alias runs the other way round: **`TOMBSTONE` is the deprecated Big-Peer-only alias for `DELETE`.**
 
 ```
 DELETE FROM <collection>
@@ -332,13 +350,17 @@ DELETE FROM <collection>
   [ RETURNING <projection> ]
 ```
 
-- Available on both Small and Big Peer.
-- **`USE IDS` is not supported on `DELETE`** in either 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- Available on both Small and Big Peer. On the Big Peer it is gated behind the `is_enabled_deletions_in_big_peer` config and otherwise returns `unimplemented("Delete")`.
+- **`USE IDS` is not supported on `DELETE`** in 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- **Available in 5.1.0:** `USE IDS` *is* supported. The `EvictOrTombstone` grammar gained `('USE' 'IDS' Expression)?`, and `parse_remove_statement` now calls `parse_collection(true, true)` — `permit_use = true`. At 5.0.3 the same call was `parse_collection(true)` and the grammar had no `USE IDS`, so the restriction above is correct for those versions only.
 
 ```sql
--- Bulk delete by id list (resolves to EVICT on Small Peer, TOMBSTONE on Big Peer)
+-- Bulk delete by id list — replicates as tombstones on both peer roles
 DELETE FROM movies
 WHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');
+
+-- 5.1.0+ only
+DELETE FROM movies USE IDS ('tt9999990', 'tt9999991');
 
 -- Conditional delete with RETURNING
 DELETE FROM reviews
@@ -350,11 +372,13 @@ RETURNING _id, movie_id, user_id, score;
 
 | Keyword     | Scope                                    | Replicates? | Available on  | Pick it when…                                                  |
 | ----------- | ---------------------------------------- | ----------- | ------------- | -------------------------------------------------------------- |
-| `EVICT`     | Local Small-Peer store only              | No          | Small Peer    | You want to free local storage / shrink working set.           |
-| `TOMBSTONE` | Mesh-wide, replicates to all peers       | Yes         | Big Peer      | You want the document gone everywhere, permanently.            |
-| `DELETE`    | Resolves to `EVICT` (Small) or `TOMBSTONE` (Big) | Depends     | Both          | You want one statement that "just does the right thing" per peer role. |
+| `EVICT`     | Local store only                         | No          | Small Peer (Big Peer only behind `is_enabled_evictions_in_big_peer`) | You want to free local storage / shrink working set. |
+| `DELETE`    | Mesh-wide — writes tombstones            | Yes         | Both          | You want the document gone everywhere. **This is the one to reach for.** |
+| `TOMBSTONE` | Mesh-wide — deprecated alias for `DELETE` | Yes         | Big Peer      | Nothing new. Prefer `DELETE`; `TOMBSTONE` is slated for removal in a future major release. |
 
-Mental shorthand: **EVICT = local sweep, TOMBSTONE = "tell the mesh to forget"**. If you `EVICT` a document on one peer, another peer that still has it can replicate it back. If you `TOMBSTONE` it, the tombstone propagates and the document stays gone everywhere (subject to TTL).
+Mental shorthand: **EVICT = local sweep, DELETE = "tell the mesh to forget"**. If you `EVICT` a document on one peer, another peer that still has it can replicate it back. If you `DELETE` it, the tombstone propagates and the document stays gone everywhere (subject to TTL).
+
+There is no keyword that "does the right thing per peer role" — pick `EVICT` for local reclamation or `DELETE` for mesh-wide removal, deliberately.
 
 ---
 
