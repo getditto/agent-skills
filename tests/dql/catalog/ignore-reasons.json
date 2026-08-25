@@ -1,0 +1,23 @@
+{
+  "sk_best_practices_396bffb1": "unsubstituted parameters: :attachment_object",
+  "sk_best_practices_2be7e9ad": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_71f36c16": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_2bcf1d6b": "no executable statement (pure comments / fragment)",
+  "sk_expressions_c125b032": "no executable statement (pure comments / fragment)",
+  "sk_functions_d1fed97a": "SELECT without FROM clause (expression-semantics example)",
+  "sk_functions_40f68cc3": "SELECT without FROM clause (expression-semantics example)",
+  "sk_functions_e3f3ee11": "SELECT without FROM clause (expression-semantics example)",
+  "sk_functions_1d20b2e8": "SELECT without FROM clause (expression-semantics example)",
+  "sk_functions_8b9a1dcc": "SELECT without FROM clause (expression-semantics example)",
+  "sk_operators_ed1b9f92": "no executable statement (pure comments / fragment)",
+  "sk_operators_4bdb1212": "no executable statement (pure comments / fragment)",
+  "sk_operators_4d74a28c": "no executable statement (pure comments / fragment)",
+  "sk_types_mutators_a83cc87e": "attachment :new_handle is a placeholder",
+  "sk_types_mutators_c470932c": "attachment handle id is a placeholder",
+  "sk_operators_f5b07555": "advisory example near WRONG marker; query itself is syntactically valid",
+  "sk_best_practices_e70d4b7c": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
+  "sk_best_practices_02c22829": "advisory example in an UNSAFE/WRONG context; query itself is syntactically valid",
+  "sk_best_practices_d46a5323": "JS snippet embedded in a sql block (extractor false positive)",
+  "sk_best_practices_7ecc7bc6": "strict-mode illustration; needs collection type declaration context the snippet omits",
+  "sk_best_practices_b6874103": "generic placeholder (collection name 'collection', inline comments inside document literal)"
+}

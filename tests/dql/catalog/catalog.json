@@ -1,0 +1,4742 @@
+[
+  {
+    "id": "sk_best_practices_2cc05702",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 41,
+      "heading": "#### When to Use Embedded Objects"
+    },
+    "query": "INSERT INTO users DOCUMENTS ({\n  '_id': 'user-1',\n  'name': 'Alice',\n  'profile': {\n    'bio': 'Software Engineer',\n    'location': 'NYC',\n    'avatar_url': 'https://...'\n  }\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM users WHERE _id IN ('user-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM users WHERE _id IN ('user-1')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_c67467d2",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 68,
+      "heading": "#### When to Use Flat Models"
+    },
+    "query": "\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM people WHERE _id IN ('person-1')"
+    ],
+    "postQueries": [
+      "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})",
+      "EVICT FROM people WHERE _id IN ('person-1')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_308d5e99",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 109,
+      "heading": "### Additional Guidelines"
+    },
+    "query": "\nINSERT INTO orders DOCUMENTS ({\n  '_id': 'order-1',\n  'user_id': 'user-123',  \n  'product_id': 'prod-456',\n  'quantity': 2\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM orders WHERE _id IN ('order-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM orders WHERE _id IN ('order-1')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_21fc57a8",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 161,
+      "heading": "#### 1. Backward-Compatibility"
+    },
+    "query": "\nINSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,  \n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue'  \n}) ON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM cars WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "EVICT FROM cars WHERE _id IN ('test_seed_id')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_17c2d5ae",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 188,
+      "heading": "#### 2. Same-Version Compatibility"
+    },
+    "query": "\nSELECT * FROM cars WHERE schema_version = 1",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_6e4b2b9c",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 210,
+      "heading": "#### 3. Force Upgrade"
+    },
+    "query": "\nSELECT * FROM cars WHERE schema_version > 1",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_145986c7",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 241,
+      "heading": "#### 4. Forward-Compatibility (Most Critical)"
+    },
+    "query": "\nUPDATE cars SET color = 'blue' WHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO cars DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'",
+      "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
+      "EVICT FROM cars WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_10ce7018",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 257,
+      "heading": "#### 4. Forward-Compatibility (Most Critical)"
+    },
+    "query": "\n\n\n\n\n\nUPDATE cars UNSET make WHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO cars DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM cars WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_afb90f44",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 274,
+      "heading": "#### 4. Forward-Compatibility (Most Critical)"
+    },
+    "query": "\n\n\n\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  \n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_3dc8c62d",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 348,
+      "heading": "### Implementation Pattern"
+    },
+    "query": "\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  \nWHERE schema_version = 1 AND color IS MISSING",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_bcf443b6",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 364,
+      "heading": "### Implementation Pattern"
+    },
+    "query": "\nSELECT * FROM cars WHERE schema_version = 2",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_78708f96",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 382,
+      "heading": "### Multi-Version Support Example"
+    },
+    "query": "\n\n\n\n\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  \n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "INSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue',\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_76d07a0b",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 451,
+      "heading": "### Using EXPLAIN"
+    },
+    "query": "\nEXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_c0bd64e4",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 475,
+      "heading": "### Optimization Strategies"
+    },
+    "query": "\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_640f7792",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 490,
+      "heading": "### Optimization Strategies"
+    },
+    "query": "\nEXPLAIN SELECT * FROM tasks WHERE priority > 5",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_8259ba7c",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 504,
+      "heading": "### Optimization Strategies"
+    },
+    "query": "\nSELECT * FROM tasks\nWHERE assignee = 'alice' AND status = 'active'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_24b0ebac",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 515,
+      "heading": "### Optimization Strategies"
+    },
+    "query": "\nSELECT * FROM large_collection",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_95be610d",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 543,
+      "heading": "### Optimization Strategies"
+    },
+    "query": "\nSELECT * FROM system:vitals",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_3d9c8ee3",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 568,
+      "heading": "### Performance Tips"
+    },
+    "query": "\nSELECT COUNT(*) FROM large_collection",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_a62d8c3a",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 579,
+      "heading": "### Performance Tips"
+    },
+    "query": "\nSELECT DISTINCT category FROM products",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_b31a48ac",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 588,
+      "heading": "### Performance Tips"
+    },
+    "query": "\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_22972778",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 599,
+      "heading": "### Performance Tips"
+    },
+    "query": "\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_abb2048f",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 641,
+      "heading": "### Configuration"
+    },
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "ALTER SYSTEM RESET dql_strict_mode"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_5e84a36e",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 647,
+      "heading": "### Configuration"
+    },
+    "query": "ALTER SYSTEM SET dql_strict_mode = true",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "ALTER SYSTEM RESET dql_strict_mode"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_2ba14e9b",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 652,
+      "heading": "### Configuration"
+    },
+    "query": "SHOW dql_strict_mode",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_best_practices_fbb003d2",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 659,
+      "heading": "### Example: Object Merge Behavior"
+    },
+    "query": "\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'",
+      "EVICT FROM users WHERE _id = 'user-1'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_409cb4f2",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 756,
+      "heading": "### Always Use ON ID CONFLICT"
+    },
+    "query": "\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})",
+      "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_5f63de30",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 792,
+      "heading": "### Soft Delete Pattern"
+    },
+    "query": "\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO tasks DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
+      "EVICT FROM tasks WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_ebf9a58a",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 879,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "SELECT\n  _id,\n  title,\n  clock() - created_at AS age_ms,\n  date_diff(clock(), created_at, 'hours') AS age_hours\nFROM documents",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_9e1d2f43",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 889,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  \n  'sender_id': 'u-42'\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM messages WHERE _id IN ('test_seed_id')"
+    ],
+    "postQueries": [
+      "EVICT FROM messages WHERE _id IN ('test_seed_id')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_552073bb",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 913,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "SELECT * FROM tasks\nWHERE updated_at >= '2024-12-01T00:00:00Z'\nORDER BY updated_at DESC\nLIMIT 50",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_acd16358",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 921,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "SELECT * FROM sessions\nWHERE expires_at < clock()",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_67c25134",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 55,
+      "heading": "### Task 1 — Load movies with conflict-tolerant upserts"
+    },
+    "query": "INSERT INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)\nDOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,\n     'runtime_minutes': 142, 'genres': ['Drama'],\n     'director': { 'name': 'Frank Darabont', 'born': 1959 },\n     'cast': [\n       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },\n       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n     ],\n     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,\n     'released': '1994-09-23' }),\n  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,\n     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],\n     'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },\n     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,\n     'released': '2010-07-16' })\nON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_fc265026",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 85,
+      "heading": "### Task 2 — Seed reviews with auto-generated ids"
+    },
+    "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-42',\n     'score': 5, 'comment': 'Hope is a good thing.',\n     'created_at': '2024-03-15T10:00:00Z' }),\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-7',\n     'score': 4, 'comment': 'A slow burn that pays off.',\n     'created_at': '2024-03-18T09:15:00Z' }),\n  ({ 'movie_id': 'tt1375666', 'user_id': 'u-7',\n     'score': 4, 'comment': 'Everyone should watch it twice.',\n     'created_at': '2024-04-02T22:31:00Z' })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_bb4f91f7",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 110,
+      "heading": "### Task 3 — Top-rated movies in a decade with pagination"
+    },
+    "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN 1990 AND 1999\n  AND ratings.imdb >= 7.0\nORDER BY imdb DESC, title ASC\nLIMIT 25 OFFSET 0",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 25,
+      "firstRow": {
+        "_id": "573a1399f29313caabcee345",
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna",
+        "year": 1994
+      }
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_1ea4288f",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 127,
+      "heading": "### Task 4 — Single-document lookup (fastest path)"
+    },
+    "query": "SELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_4f596cb8",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 141,
+      "heading": "### Task 5 — Films featuring a specific actor"
+    },
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\nORDER BY year ASC",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "573a1399f29313caabcecb4a",
+        "title": "Robin Hood: Prince of Thieves",
+        "year": 1991
+      }
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_4079a59d",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 150,
+      "heading": "### Task 5 — Films featuring a specific actor"
+    },
+    "query": "\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_acf7179b",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 168,
+      "heading": "### Task 6 — Films in any of N genres"
+    },
+    "query": "SELECT _id, title, genres\nFROM movies\nWHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 128
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_5a351308",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 176,
+      "heading": "### Task 6 — Films in any of N genres"
+    },
+    "query": "SELECT _id, title, genres\nFROM movies\nWHERE array_contains(genres, 'Drama')\n   OR array_contains(genres, 'Crime')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 128
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_93f6901f",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 191,
+      "heading": "### Task 7 — Flat view with computed fields"
+    },
+    "query": "SELECT\n  _id,\n  title,\n  year,\n  ratings.imdb AS imdb,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict,\n  year < 1980 AS is_pre_1980\nFROM movies\nORDER BY year DESC",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "imdb": 7.6,
+        "is_pre_1980": false,
+        "title": "The Tracker",
+        "verdict": "good"
+      }
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_b58f96e2",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 216,
+      "heading": "### Task 8 — Director leaderboard"
+    },
+    "query": "SELECT\n  director.name            AS director,\n  count(*)                 AS films,\n  avg(ratings.imdb)        AS avg_imdb,\n  max(box_office_millions) AS top_grossing\nFROM movies\nWHERE director IS NOT MISSING\nGROUP BY director.name\nHAVING count(*) >= 3\nORDER BY avg_imdb DESC\nLIMIT 25",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_6d3f6531",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 238,
+      "heading": "### Task 9 — Per-movie review statistics"
+    },
+    "query": "SELECT\n  movie_id,\n  count(*)   AS review_count,\n  avg(score) AS avg_score,\n  min(score) AS min_score,\n  max(score) AS max_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 10\nORDER BY avg_score DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_c24d7057",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 259,
+      "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
+    },
+    "query": "SELECT movie_id, avg(score) AS avg_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 50 AND avg(score) >= 4.5\nORDER BY avg_score DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_5b9fcc9c",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 270,
+      "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
+    },
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN (('573a1390f29313caabcd4135'))",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_7d37a327",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 298,
+      "heading": "### Task 11 — Increment the watch counter"
+    },
+    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_3a5a0563",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 306,
+      "heading": "### Task 11 — Increment the watch counter"
+    },
+    "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_c2a52a9a",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 320,
+      "heading": "### Task 12 — Update a nested MAP field without clobbering siblings"
+    },
+    "query": "UPDATE COLLECTION movies (ratings MAP)\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_3fe09002",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 336,
+      "heading": "### Task 13 — Flag pre-1980 films as classics with RETURNING"
+    },
+    "query": "UPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_86aa4674",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 351,
+      "heading": "### Task 14 — Remove a derived field post-backfill (UNSET)"
+    },
+    "query": "UPDATE movies\nUNSET legacy_field\nWHERE legacy_field IS NOT MISSING",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_215100f8",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 367,
+      "heading": "### Task 15 — Reset the watch counter on a re-release (RESTART)"
+    },
+    "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE _id = 'test_seed_id'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_3c1d2e82",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 381,
+      "heading": "### Task 16 — Local cleanup of pre-1950 films (EVICT)"
+    },
+    "query": "EVICT FROM movies\nWHERE year < 1950",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_be3461e2",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 394,
+      "heading": "### Task 17 — Mesh-wide retraction of a withdrawn film (TOMBSTONE)"
+    },
+    "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title",
+    "availableIn": [],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'test_seed_id'"
+    ]
+  },
+  {
+    "id": "sk_movies_cookbook_1f11c879",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 408,
+      "heading": "### Task 18 — Bulk delete with an id list"
+    },
+    "query": "DELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_763b9bf6",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 431,
+      "heading": "### Task 19 — Reviews joined to their movie (INNER JOIN)"
+    },
+    "query": "SELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.created_at DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_f0c67c84",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 445,
+      "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_fe50edb0",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 455,
+      "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
+    },
+    "query": "SELECT m._id, m.title,\n       COUNT(r._id)      AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC, m.title ASC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a1395f29313caabce2b21",
+        "avg_score": 0,
+        "review_count": 0,
+        "title": "A Big Hand for the Little Lady"
+      }
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_b9853e8f",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 476,
+      "heading": "### Task 21 — Only well-reviewed movies (JOIN + HAVING)"
+    },
+    "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_c751b1fd",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 494,
+      "heading": "### Task 22 — Movies with no reviews (anti-join)"
+    },
+    "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "title": "The Tracker",
+        "year": 2002
+      }
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_f4fc40f6",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 513,
+      "heading": "### Task 23 — Composite index for the review feed"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS reviews_movie_created\n  ON reviews (movie_id ASC, created_at DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_movies_cookbook_dc3e7c5a",
+    "source": {
+      "file": "skills/dql/examples/movies-cookbook.md",
+      "line": 518,
+      "heading": "### Task 23 — Composite index for the review feed"
+    },
+    "query": "SELECT r._id, r.score, r.user_id, m.title\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nWHERE r.movie_id = 'tt0111161'\nORDER BY r.created_at DESC\nLIMIT 20",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_302b39fd",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 28,
+      "heading": "### Task R1 — An order with its store details"
+    },
+    "query": "SELECT _id, store_id, total, order_date\nFROM orders\nWHERE _id = 'order_20221210_0001'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_d23530f6",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 36,
+      "heading": "### Task R1 — An order with its store details"
+    },
+    "query": "SELECT _id, store_name, location.city\nFROM stores\nUSE IDS ('store_seattle')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_29455eea",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 50,
+      "heading": "### Task R2 — Recent orders with customer names"
+    },
+    "query": "SELECT _id, customer_id, total, order_date\nFROM orders\nWHERE deleted = false\nORDER BY order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "customer_id": "9f15ed64-7249-461d-b2f0-fde51ccbc4a8",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_e05664da",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 60,
+      "heading": "### Task R2 — Recent orders with customer names"
+    },
+    "query": "SELECT _id, first_name, last_name\nFROM customers\nWHERE _id IN ('edf7a497-c04e-4326-a08a-837de9335a9a', 'e652232a-95ab-4fcf-86b7-e40cea3d749d')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_2afc646b",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 74,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "SELECT _id, product_id, quantity, line_total\nFROM order_items\nWHERE order_id = 'order_20221210_0001'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_c1a1cb57",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 82,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "SELECT _id, product_name, base_price\nFROM products\nWHERE _id IN ('prod_hnd_0005', 'prod_grd_0048', 'prod_elc_0009')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_1e70e345",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 90,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS items_order ON order_items (order_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_bf800f84",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 100,
+      "heading": "### Task R4 — Revenue per store"
+    },
+    "query": "SELECT store_id, SUM(total) AS revenue\nFROM orders\nWHERE deleted = false\nGROUP BY store_id\nORDER BY revenue DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_baebcf6f",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 110,
+      "heading": "### Task R4 — Revenue per store"
+    },
+    "query": "SELECT _id, store_name\nFROM stores\nWHERE _id IN ('store_seattle', 'store_redmond')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_2d6092fe",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 124,
+      "heading": "### Task R5 — Stores above a revenue threshold"
+    },
+    "query": "SELECT store_id, SUM(total) AS revenue\nFROM orders\nWHERE deleted = false\nGROUP BY store_id\nHAVING SUM(total) > 300000\nORDER BY revenue DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_a92e69a0",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 141,
+      "heading": "### Task R6 — Customers who have never ordered"
+    },
+    "query": "SELECT _id FROM customers WHERE deleted = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1000
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_3af12196",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 147,
+      "heading": "### Task R6 — Customers who have never ordered"
+    },
+    "query": "SELECT DISTINCT customer_id FROM orders",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 292
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_74f50d06",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 159,
+      "heading": "### Task R7 — Projection discipline without joins"
+    },
+    "query": "SELECT _id AS order_ref, total AS amount, store_id\nFROM orders\nWHERE deleted = false\nORDER BY order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 704.72,
+        "order_ref": "order_20250325_0001",
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_f29f7b27",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 175,
+      "heading": "### Task R8 — Inventory value by product"
+    },
+    "query": "SELECT product_id, SUM(stock_level) AS units_on_hand\nFROM inventory\nWHERE deleted = false\nGROUP BY product_id\nORDER BY units_on_hand DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "product_id": "prod_grd_0050",
+        "units_on_hand": 95
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_3945ca75",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 186,
+      "heading": "### Task R8 — Inventory value by product"
+    },
+    "query": "SELECT _id, product_name, cost\nFROM products\nWHERE _id IN ('prod_hnd_0005', 'prod_grd_0048')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_790c2c37",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 45,
+      "heading": "### Task J1 — An order with its store details (INNER JOIN)"
+    },
+    "query": "SELECT o._id, o.total, s.store_name, s.location.city\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o._id = 'order_20221210_0001'",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_403b7de5",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 62,
+      "heading": "### Task J2 — Orders joined to customers"
+    },
+    "query": "SELECT o._id, o.total, o.order_date, c.first_name, c.last_name\nFROM orders AS o\nINNER JOIN customers AS c ON o.customer_id = c._id\nWHERE o.deleted = false\nORDER BY o.order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "first_name": "Jessica",
+        "last_name": "Cunningham",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_9401fe19",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 79,
+      "heading": "### Task J3 — The items of an order, with product names"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS items_order ON order_items (order_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_64eccfd5",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 87,
+      "heading": "### Task J3 — The items of an order, with product names"
+    },
+    "query": "SELECT i._id, i.quantity, i.line_total, p.product_name, p.base_price\nFROM order_items AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.order_id = 'order_20221210_0001'\nORDER BY i._id",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3,
+      "firstRow": {
+        "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
+        "base_price": 63.37,
+        "line_total": 228.13,
+        "product_name": "ELC item 0009",
+        "quantity": 4
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_27ea1e29",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 101,
+      "heading": "### Task J4 — Revenue per store (JOIN + GROUP BY)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_store ON orders (store_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_7a462c12",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 111,
+      "heading": "### Task J4 — Revenue per store (JOIN + GROUP BY)"
+    },
+    "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nORDER BY revenue DESC",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_cd231acd",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 130,
+      "heading": "### Task J5 — Stores above a revenue threshold (JOIN + HAVING)"
+    },
+    "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nHAVING SUM(o.total) > 300000\nORDER BY revenue DESC",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_bcc6bfe3",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 148,
+      "heading": "### Task J6 — Customers who have never ordered (anti-join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_customer ON orders (customer_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_66b1fc72",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 156,
+      "heading": "### Task J6 — Customers who have never ordered (anti-join)"
+    },
+    "query": "SELECT c._id, c.first_name, c.last_name\nFROM customers AS c\nLEFT OUTER JOIN orders AS o ON o.customer_id = c._id\nWHERE o._id IS MISSING AND c.deleted = false\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_14ff9331",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 174,
+      "heading": "### Task J7 — Projection discipline with joins"
+    },
+    "query": "SELECT o._id AS order_ref, o.total AS amount, s.store_name AS store\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o.deleted = false\nORDER BY s.store_name\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 960.51,
+        "order_ref": "order_20221210_0001",
+        "store": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_2021712d",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 193,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS inv_product ON inventory (product_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_00e23f06",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 199,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_store_date ON orders (store_id ASC, order_date DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_2702a4f8",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 207,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "SELECT p._id, p.product_name, SUM(i.stock_level) AS units_on_hand, SUM(i.stock_level * p.cost) AS inventory_value\nFROM inventory AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.deleted = false\nGROUP BY p._id, p.product_name\nORDER BY inventory_value DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "prod_pwr_0003",
+        "inventory_value": 25011,
+        "product_name": "PWR item 0003",
+        "units_on_hand": 70
+      }
+    }
+  },
+  {
+    "id": "sk_expressions_262d5d00",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 36,
+      "heading": "## 1. Literals"
+    },
+    "query": "SELECT * FROM movies WHERE year = 1994",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 5
+    }
+  },
+  {
+    "id": "sk_expressions_cf187696",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 78,
+      "heading": "## 2. Identifiers"
+    },
+    "query": "\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "cast_size": 4,
+        "title": "Peter Pan"
+      }
+    }
+  },
+  {
+    "id": "sk_expressions_7cacbbb7",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 99,
+      "heading": "## 3. Parameters"
+    },
+    "query": "\nSELECT title, ratings.imdb FROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC\nLIMIT 25",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_expressions_709ee84a",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 141,
+      "heading": "### Examples against `movies`"
+    },
+    "query": "\nSELECT title, director.name AS director FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_expressions_31d07b72",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 169,
+      "heading": "## 5. `CASE` — simple form"
+    },
+    "query": "\nSELECT\n  title,\n  CASE genres[0]\n    WHEN 'Drama'  THEN 1\n    WHEN 'Comedy' THEN 2\n    WHEN 'Action' THEN 3\n    ELSE 0\n  END AS genre_score\nFROM movies\nORDER BY genre_score DESC, title",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "genre_score": 3,
+        "title": "Boiling Point"
+      }
+    }
+  },
+  {
+    "id": "sk_expressions_3bb5893d",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 199,
+      "heading": "## 6. `CASE` — searched form"
+    },
+    "query": "\nSELECT\n  title,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict\nFROM movies\nORDER BY title",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "A Big Hand for the Little Lady",
+        "verdict": "good"
+      }
+    }
+  },
+  {
+    "id": "sk_expressions_154cf2ec",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 236,
+      "heading": "## 7. `ANY ... IN ... SATISFIES ... END`"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_expressions_4f621df3",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 256,
+      "heading": "## 8. `EVERY ... IN ... SATISFIES ... END`"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_expressions_d7f4229a",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 276,
+      "heading": "## 9. `ANY AND EVERY ... IN ... SATISFIES ... END`"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE ANY AND EVERY actor IN `cast`\n  SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_expressions_b2ca6ad8",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 294,
+      "heading": "## 10. `IN` vs `WITHIN` inside quantifiers and comprehensions"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_expressions_cc7958c1",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 330,
+      "heading": "## 11. `ARRAY expr FOR ... IN ... [WHEN ...] END`"
+    },
+    "query": "\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_expressions_da58d5fa",
+    "source": {
+      "file": "skills/dql/references/expressions.md",
+      "line": 366,
+      "heading": "## 12. `OBJECT NameExpr : ValueExpr FOR ... IN ... [WHEN ...] END`"
+    },
+    "query": "\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_82c0afbc",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 32,
+      "heading": "## 1. Mathematical"
+    },
+    "query": "SELECT title, ceil(runtime_minutes / 60.0) AS approx_hours FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_585f1bb1",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 36,
+      "heading": "## 1. Mathematical"
+    },
+    "query": "SELECT title, abs(box_office_millions - 100) AS distance_from_100m FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_86ac6b83",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 58,
+      "heading": "## 2. Conditional / null-handling"
+    },
+    "query": "\nSELECT title, coalesce(cast(ratings.imdb, 'string'), 'N/A') AS imdb FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_c5b3f557",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 63,
+      "heading": "## 2. Conditional / null-handling"
+    },
+    "query": "\nSELECT _id, decode(score,\n    5, 'love',\n    4, 'like',\n    3, 'meh',\n    2, 'dislike',\n    1, 'hate',\n    'unrated'\n) AS label\nFROM reviews",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_functions_9cf3029c",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 76,
+      "heading": "## 2. Conditional / null-handling"
+    },
+    "query": "\nSELECT _id, nullif(score, 0) AS score FROM reviews",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_functions_5ecf0bce",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 100,
+      "heading": "## 3. Type / conversion"
+    },
+    "query": "\nSELECT title, cast(year, 'string') AS year_str FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_cc2ef4f9",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 108,
+      "heading": "## 3. Type / conversion"
+    },
+    "query": "\nSELECT _id, type(ratings.imdb) AS imdb_type FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_88dc470d",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 150,
+      "heading": "### 4.1 SQL keyword forms"
+    },
+    "query": "\nSELECT title, POSITION('The' IN title) AS where_the FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_4da2a1d0",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 166,
+      "heading": "### 4.1 SQL keyword forms"
+    },
+    "query": "\nSELECT `trim`('  hello  ') AS trimmed FROM movies LIMIT 1",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_functions_2e026687",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 183,
+      "heading": "### 4.2 `regexp_like` flags"
+    },
+    "query": "\nSELECT _id, score FROM reviews\nWHERE regexp_like(comment, '(amaz|fantast|brilliant)', 'i')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_e00ef285",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 191,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT title FROM movies WHERE starts_with(title, 'The ')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 39
+    }
+  },
+  {
+    "id": "sk_functions_af231be0",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 196,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_7b27e431",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 202,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT _id,\n    byte_length(comment) AS bytes,\n    char_length(comment) AS chars\nFROM reviews",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_functions_2d1dde36",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 210,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT title, upper(substr(title, 0, 3)) AS prefix FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_ca74ed47",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 215,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_9dfbb020",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 220,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT title, repeat('★', cast(round(ratings.imdb), 'integer')) AS stars FROM movies",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_99b7306d",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 225,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_1961cb8f",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 230,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT rpad(title, 30, '.') AS title_padded FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_390ec1b8",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 235,
+      "heading": "### 4.3 String examples"
+    },
+    "query": "\nSELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_functions_45c78488",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 250,
+      "heading": "## 5. Array"
+    },
+    "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 118
+    }
+  },
+  {
+    "id": "sk_functions_582951c6",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 255,
+      "heading": "## 5. Array"
+    },
+    "query": "\n\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "cast_size": 4,
+        "title": "Peter Pan"
+      }
+    }
+  },
+  {
+    "id": "sk_functions_3a2fdb07",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 262,
+      "heading": "## 5. Array"
+    },
+    "query": "\nSELECT _id FROM movies WHERE array_contains_null(tags)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_041bd709",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 298,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_keys(ratings) AS metrics FROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_35c58874",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 304,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_set(ratings, 'imdb', 9.4, true) AS new_ratings\nFROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_102e0a20",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 310,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_concat({'imdb': 0, 'rotten_tomatoes': 0, 'metacritic': 0}, ratings) AS filled\nFROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_209833f3",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 316,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_unset(director, 'born') AS dir_no_dob FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_add6a07b",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 321,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_rename(ratings, 'imdb', 'imdb_rating') AS renamed FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_9bdee4a8",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 326,
+      "heading": "### 6.2 Object examples"
+    },
+    "query": "\nSELECT object_content(ratings, 'nested') AS flat FROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_db7785c0",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 357,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE date_part(date_cast(released), 'year')\n    = date_part(clock(), 'year')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_599ed7a8",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 364,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT _id,\n    date_format(\n        date_add(date_cast(created_at), 'day', 90),\n        'YYYY-MM-DD'\n    ) AS warranty_end\nFROM reviews",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_functions_2883c783",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 374,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT title,\n    date_format(date_cast(released), 'YYYY-MM-DD') AS d\nFROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_4e87a26b",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 381,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT title,\n    date_diff(date_cast(released), clock(), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
+  },
+  {
+    "id": "sk_functions_dd6be9f6",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 394,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT title,\n    date_format(\n        date_sub(date_cast(released), 'year', 10),\n        'YYYY'\n    ) AS released_minus_decade\nFROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_functions_8b9ae414",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 404,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT date_trunc(date_cast(released), 'year') AS year_start FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_13f500ae",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 409,
+      "heading": "## 7. Date / time"
+    },
+    "query": "\nSELECT _id, tz_offset('2024-06-15T14:00:00-05:00') AS minutes_off FROM reviews LIMIT 1",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_functions_71e8ef1e",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 428,
+      "heading": "## 8. Duration"
+    },
+    "query": "\nSELECT title, duration_format(watch_count, 'ms') AS watched_for FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_functions_959aa9e5",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 462,
+      "heading": "### 10.1 `count` — three useful forms"
+    },
+    "query": "\nSELECT count(*) AS total FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_functions_575d49d9",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 475,
+      "heading": "### 10.2 Aggregate examples"
+    },
+    "query": "\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_functions_ee5a6efe",
+    "source": {
+      "file": "skills/dql/references/functions.md",
+      "line": 488,
+      "heading": "### 10.2 Aggregate examples"
+    },
+    "query": "\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 41
+    }
+  },
+  {
+    "id": "sk_indexing_e4109ccf",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 56,
+      "heading": "### 1.2 Form A — `name ON collection`"
+    },
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_fc1494cf",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 64,
+      "heading": "### 1.2 Form A — `name ON collection`"
+    },
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_b3f1b32c",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 88,
+      "heading": "### 1.3 Form B — `collection.name`"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_631b3c7c",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 100,
+      "heading": "### 1.4 Indexing nested paths"
+    },
+    "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_a99040e3",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 131,
+      "heading": "### 2.2 Examples"
+    },
+    "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_17469189",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 149,
+      "heading": "### 3.1 Comment-style directives"
+    },
+    "query": "\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_3ffdb8b4",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 173,
+      "heading": "### 3.2 `USE DIRECTIVES` clause"
+    },
+    "query": "SELECT title FROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"], \"#prefer_order\": true}'\nWHERE year >= 2000\nORDER BY ratings.imdb DESC\nLIMIT 25",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 7,
+      "firstRow": {
+        "title": "Jails, Hospitals & Hip-Hop"
+      }
+    }
+  },
+  {
+    "id": "sk_indexing_739e09f4",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 190,
+      "heading": "### 3.3 Top-level vs per-collection keys"
+    },
+    "query": "\n\n/*+ {\n  \"#max_scans\": 4,\n  \"movies\": { \"#index\": [\"movies_year_imdb\"] }\n} */\nSELECT title FROM movies\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "title": "Andaz Apna Apna"
+      }
+    }
+  },
+  {
+    "id": "sk_indexing_3ee66db0",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 229,
+      "heading": "### 3.5 Per-collection example"
+    },
+    "query": "/*+ {\n  \"movies\":  { \"#index\": [\"movies_year_imdb\"] },\n  \"reviews\": { \"#index\": [\"reviews_movie_id_recent\"] }\n} */\nSELECT r.movie_id, r.score\nFROM reviews r\nWHERE r.movie_id IN (\n  SELECT _id FROM movies WHERE year >= 2000\n)",
+    "availableIn": [],
+    "expectError": false
+  },
+  {
+    "id": "sk_indexing_eb91b659",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 243,
+      "heading": "### 3.5 Per-collection example"
+    },
+    "query": "/*+ {\"m\": {\"#index\": [\"movies_year_imdb\"]}} */\nSELECT m.title FROM movies m\nWHERE m.year >= 1990\nORDER BY m.ratings.imdb DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "title": "Andaz Apna Apna"
+      }
+    }
+  },
+  {
+    "id": "sk_indexing_b35874bc",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 261,
+      "heading": "## 4. USE IDS"
+    },
+    "query": "SELECT * FROM movies USE IDS ('tt0111161', 'tt0468569')",
+    "availableIn": [],
+    "expectError": false
+  },
+  {
+    "id": "sk_indexing_d72057fb",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 279,
+      "heading": "### 4.3 EXPLAIN confirms the fast path"
+    },
+    "query": "EXPLAIN SELECT * FROM movies USE IDS ('tt0111161')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_6b7b2064",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 285,
+      "heading": "### 4.3 EXPLAIN confirms the fast path"
+    },
+    "query": "EXPLAIN SELECT * FROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_782c30eb",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 297,
+      "heading": "## 5. USE INDEX"
+    },
+    "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_76e8b57b",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 346,
+      "heading": "### 6.2 Worked examples"
+    },
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_03e16bd6",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 361,
+      "heading": "### 6.2 Worked examples"
+    },
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_064ee7d0",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 375,
+      "heading": "### 6.2 Worked examples"
+    },
+    "query": "\nEXPLAIN SELECT title FROM movies\nWHERE year = 2010 OR director.name = 'Christopher Nolan'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_9fbc5bc7",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 387,
+      "heading": "### 6.3 Forcing a comparison"
+    },
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_da1e8118",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 397,
+      "heading": "### 6.3 Forcing a comparison"
+    },
+    "query": "/*+ {\"#disable_index_scan\": true} */\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_0bfbc985",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 412,
+      "heading": "### 7.1 Two forms"
+    },
+    "query": "\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_indexing_670b9079",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 435,
+      "heading": "### 7.3 Combining with EXPLAIN"
+    },
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 1994",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_indexing_04bfcb6f",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 461,
+      "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
+    },
+    "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              \n  AND ratings.imdb > 8.0       \nORDER BY ratings.imdb DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_9045033b",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 473,
+      "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_533c6000",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 490,
+      "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_7d47d833",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 501,
+      "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
+    },
+    "query": "CREATE INDEX movies_year_director_box\n  ON movies (year DESC, director.name ASC, box_office_millions ASC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_ded6595b",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 512,
+      "heading": "### 8.2 Covering indexes"
+    },
+    "query": "\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_47dc1040",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 524,
+      "heading": "### 8.2 Covering indexes"
+    },
+    "query": "/*+ {\"#disable_covering\": true} */\nSELECT year, ratings.imdb FROM movies WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_indexing_dd79907a",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 533,
+      "heading": "### 8.3 Index direction matters for `ORDER BY`"
+    },
+    "query": "CREATE INDEX movies_year_asc ON movies (year ASC)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_operators_7a025688",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 75,
+      "heading": "## 3. Comparison operators"
+    },
+    "query": "SELECT title FROM movies WHERE ratings.imdb > 8.0",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_operators_b061c17b",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 104,
+      "heading": "## 4. Unary `IS` predicates"
+    },
+    "query": "SELECT title FROM movies WHERE director IS NOT MISSING",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_operators_5a0fc377",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 120,
+      "heading": "### `BETWEEN`"
+    },
+    "query": "SELECT title FROM movies WHERE year BETWEEN 1990 AND 1999",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_operators_db076d63",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 129,
+      "heading": "### `BETWEEN`"
+    },
+    "query": "SELECT title FROM movies WHERE year NOT BETWEEN 2000 AND 2009",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 187
+    }
+  },
+  {
+    "id": "sk_operators_091afc3a",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 135,
+      "heading": "### `IN` (scalar list)"
+    },
+    "query": "SELECT title FROM movies\nWHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_operators_a271d717",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 143,
+      "heading": "### `IN` (scalar list)"
+    },
+    "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 118
+    }
+  },
+  {
+    "id": "sk_operators_9a733372",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 152,
+      "heading": "### `IN` (scalar list)"
+    },
+    "query": "SELECT title FROM movies WHERE year NOT IN (2020, 2021, 2022)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_operators_55249043",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 169,
+      "heading": "## 6. Pattern matching"
+    },
+    "query": "\nSELECT title FROM movies WHERE title LIKE 'The %'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 39
+    }
+  },
+  {
+    "id": "sk_operators_b65c103a",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 223,
+      "heading": "### `NOT`"
+    },
+    "query": "\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_operators_34f56b19",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 238,
+      "heading": "## 8. String operator `||`"
+    },
+    "query": "\nSELECT title || ' (' || cast(year AS string) || ')' AS label\nFROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_operators_9926aead",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 246,
+      "heading": "## 8. String operator `||`"
+    },
+    "query": "SELECT (title || ': ') || cast(year + 1 AS string) AS bumped FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_operators_225677a8",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 258,
+      "heading": "### Array indexing — `array[i]`"
+    },
+    "query": "\nSELECT title, `cast`[0].name AS lead_actor FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_operators_3370cb44",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 268,
+      "heading": "### Array indexing — `array[i]`"
+    },
+    "query": "SELECT title FROM movies WHERE genres = ['Drama']",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 32
+    }
+  },
+  {
+    "id": "sk_operators_5146d7bf",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 280,
+      "heading": "### Object field access — `object.field` or `object[expr]`"
+    },
+    "query": "\nSELECT title, director.name AS dir FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_operators_be08f334",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 290,
+      "heading": "### Object field access — `object.field` or `object[expr]`"
+    },
+    "query": "SELECT _id, {'name': 'Anonymous', 'verified': false} AS placeholder_user\nFROM reviews",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_operators_a940f3e8",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 305,
+      "heading": "### 10.1 Boolean operators are keywords, not symbols"
+    },
+    "query": "WHERE is_classic && ratings.imdb > 8        \nWHERE genres == ['Drama'] || year < 1970    \n\n\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": true
+  },
+  {
+    "id": "sk_operators_52080c2a",
+    "source": {
+      "file": "skills/dql/references/operators.md",
+      "line": 371,
+      "heading": "## 11. `XOR` — version-gated"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0",
+    "availableIn": [],
+    "expectError": false
+  },
+  {
+    "id": "sk_schema_5595752b",
+    "source": {
+      "file": "skills/dql/references/schema.md",
+      "line": 82,
+      "heading": "## Seeding the dataset"
+    },
+    "query": "INSERT INTO COLLECTION movies (\n  director MAP,\n  ratings MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_a1128461",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 63,
+      "heading": "### 1.1 Wildcard"
+    },
+    "query": "SELECT * FROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_select_f3666302",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 70,
+      "heading": "### 1.2 Explicit expression list with aliases"
+    },
+    "query": "SELECT title, year, ratings.imdb AS imdb\nFROM movies",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_select_642b7400",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 83,
+      "heading": "### 1.3 `DISTINCT`"
+    },
+    "query": "\nSELECT DISTINCT year FROM movies ORDER BY year ASC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_select_dc59b934",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 110,
+      "heading": "## 2. FROM clause"
+    },
+    "query": "\nSELECT title, year FROM movies WHERE year >= 1990",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
+  },
+  {
+    "id": "sk_select_2cbf2070",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 154,
+      "heading": "### 3.1 Single id"
+    },
+    "query": "SELECT * FROM movies USE IDS ('tt0111161')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_906a8612",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 160,
+      "heading": "### 3.1 Single id"
+    },
+    "query": "EXPLAIN SELECT * FROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_select_c7bf45a6",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 168,
+      "heading": "### 3.2 Id list"
+    },
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_866ea5b5",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 178,
+      "heading": "### 3.3 Parameter form"
+    },
+    "query": "\nSELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_select_d2683d71",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 189,
+      "heading": "### 3.4 Why USE IDS is SELECT-only"
+    },
+    "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "DELETE FROM movies WHERE _id IN ('test_seed_id')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_ec8f7140",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 210,
+      "heading": "## 4. USE INDEX"
+    },
+    "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_6dc138b3",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 236,
+      "heading": "## 5. USE DIRECTIVES"
+    },
+    "query": "\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_c1ca245e",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 273,
+      "heading": "## 6. WHERE clause"
+    },
+    "query": "\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
+  },
+  {
+    "id": "sk_select_97e1a68a",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 311,
+      "heading": "### 6.1 Quantifier expressions (v5.0+)"
+    },
+    "query": "\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_1367cae5",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 340,
+      "heading": "### 7.1 Single-key grouping"
+    },
+    "query": "\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 69,
+      "firstRow": {
+        "n": 12,
+        "year": 1996
+      }
+    }
+  },
+  {
+    "id": "sk_select_a4c5e68e",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 356,
+      "heading": "### 7.2 Multi-key grouping"
+    },
+    "query": "\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 144,
+      "firstRow": {
+        "n": 1,
+        "primary_genre": "Drama",
+        "year": 2002
+      }
+    }
+  },
+  {
+    "id": "sk_select_4e3a0372",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 389,
+      "heading": "## 8. HAVING"
+    },
+    "query": "\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_04f6eb97",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 423,
+      "heading": "## 9. ORDER BY"
+    },
+    "query": "\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
+  },
+  {
+    "id": "sk_select_930da004",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 445,
+      "heading": "### NULL / MISSING in ORDER BY"
+    },
+    "query": "SELECT title, box_office_millions\nFROM movies\nWHERE box_office_millions IS NOT MISSING\nORDER BY box_office_millions DESC\nLIMIT 20",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 20,
+      "firstRow": {
+        "box_office_millions": 22,
+        "title": "Ferris Bueller's Day Off"
+      }
+    }
+  },
+  {
+    "id": "sk_select_57c61599",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 464,
+      "heading": "## 10. LIMIT / OFFSET"
+    },
+    "query": "\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 20,
+      "firstRow": {
+        "_id": "573a1396f29313caabce397c",
+        "title": "The Land",
+        "year": 1969
+      }
+    }
+  },
+  {
+    "id": "sk_select_a840f3b5",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 509,
+      "heading": "## 11. Cross-type sort order"
+    },
+    "query": "\n\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
+  },
+  {
+    "id": "sk_select_a0fd6744",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 521,
+      "heading": "## 11. Cross-type sort order"
+    },
+    "query": "SELECT title, box_office_millions FROM movies\nORDER BY ifmissingornull(box_office_millions, -1) DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "box_office_millions": 22,
+        "title": "Ferris Bueller's Day Off"
+      }
+    }
+  },
+  {
+    "id": "sk_select_bd0eed35",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 563,
+      "heading": "### 12.3 Portable subscription patterns"
+    },
+    "query": "\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_79f7d3d1",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 574,
+      "heading": "### 12.3 Portable subscription patterns"
+    },
+    "query": "\n\nSELECT title, ratings.imdb AS imdb FROM movies\nWHERE year >= 1990\nORDER BY imdb DESC\nLIMIT 50",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 50
+    }
+  },
+  {
+    "id": "sk_select_02bdd933",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 591,
+      "heading": "## 13. Worked examples (movies dataset)"
+    },
+    "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {}
+  },
+  {
+    "id": "sk_select_37a89cf7",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 684,
+      "heading": "### 14.1 Inner join — projection from both sides"
+    },
+    "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_71681b1d",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 699,
+      "heading": "### 14.2 Inner join — FK on the right side needs an index"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_0c43416d",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 705,
+      "heading": "### 14.2 Inner join — FK on the right side needs an index"
+    },
+    "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_4dd972c5",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 718,
+      "heading": "### 14.3 Outer join + aggregation — reviews per movie"
+    },
+    "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false
+  },
+  {
+    "id": "sk_select_6ed9bae0",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 734,
+      "heading": "### 14.4 Join + HAVING — keep only well-reviewed movies"
+    },
+    "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_6154833e",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 747,
+      "heading": "### 14.5 Anti-join — movies with no reviews"
+    },
+    "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "title": "The Tracker",
+        "year": 2002
+      }
+    }
+  },
+  {
+    "id": "sk_statements_77a42f13",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 43,
+      "heading": "### 1.2 Plain insert with auto-generated id"
+    },
+    "query": "INSERT INTO movies DOCUMENTS\n  ({ 'title': 'Inception', 'year': 2010, 'runtime_minutes': 148 })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_dc9b676c",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 50,
+      "heading": "### 1.3 Explicit `_id` with batched documents"
+    },
+    "query": "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight',   'year': 2008 }),\n  ({ '_id': 'tt1375666', 'title': 'Inception',         'year': 2010 }),\n  ({ '_id': 'tt1853728', 'title': 'Django Unchained',  'year': 2012 })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_b6f3d332",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 61,
+      "heading": "### 1.4 Full schema with CRDT type definitions"
+    },
+    "query": "INSERT INTO COLLECTION movies (\n  director    MAP,\n  ratings     MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0816692',\n  'title': 'Interstellar',\n  'year': 2014,\n  'runtime_minutes': 169,\n  'genres': ['Adventure', 'Drama', 'Sci-Fi'],\n  'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n  'cast': [\n    { 'name': 'Matthew McConaughey', 'role': 'Cooper' },\n    { 'name': 'Anne Hathaway',       'role': 'Brand' }\n  ],\n  'ratings': { 'imdb': 8.6, 'rotten_tomatoes': 73, 'metacritic': 74 },\n  'box_office_millions': 677.5,\n  'tags': ['space', 'time'],\n  'watch_count': 0,\n  'is_classic': false,\n  'released': '2014-11-07'\n})\nON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_52333e7a",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 105,
+      "heading": "### 1.5 `ON ID CONFLICT` actions"
+    },
+    "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt1160419')"
+    ],
+    "postQueries": [
+      "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING",
+      "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0816692', 'box_office_millions': 681.0 })\nON ID CONFLICT DO UPDATE_LOCAL_DIFF",
+      "EVICT FROM movies WHERE _id IN ('tt1160419')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_0a2d1955",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 136,
+      "heading": "### 1.7 `INITIAL` — seed default data (Small Peer)"
+    },
+    "query": "\nINSERT INTO movies INITIAL DOCUMENTS\n  ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('seed-1')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('seed-1')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_e161be30",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 152,
+      "heading": "### 1.8 `RETURNING`"
+    },
+    "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-99', 'score': 5,\n     'comment': 'Perfect.', 'created_at': '2024-06-01T12:00:00Z' })\nRETURNING _id, movie_id, score",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_statements_450f4ecd",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 195,
+      "heading": "### 2.2 `SET` and `UNSET`"
+    },
+    "query": "\nUPDATE movies\nSET is_classic = true,\n    box_office_millions = 28.34\nUNSET tags\nWHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_ae8039c1",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 208,
+      "heading": "### 2.3 Updating nested MAP fields"
+    },
+    "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET ratings = { 'imdb': 9.4 }\nWHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_154af192",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 221,
+      "heading": "### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`"
+    },
+    "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY -1\nWHERE _id = 'tt0111161'",
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE title = 'The Shawshank Redemption'",
+      "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'tt0111161'",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_9a4fa491",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 247,
+      "heading": "### 2.5 Combined clauses + `RETURNING`"
+    },
+    "query": "\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nORDER BY released DESC\nLIMIT 5\nRETURNING _id, title, watch_count"
+    ],
+    "expect": {
+      "rowCount": 76
+    }
+  },
+  {
+    "id": "sk_statements_e5f2119d",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 280,
+      "heading": "## 3. EVICT"
+    },
+    "query": "\nEVICT FROM movies\nWHERE year < 1950",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "EVICT FROM reviews\nWHERE score < 3\nRETURNING _id, movie_id"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_d1a85ca0",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 312,
+      "heading": "## 4. TOMBSTONE"
+    },
+    "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
+    "availableIn": [],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "TOMBSTONE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ]
+  },
+  {
+    "id": "sk_statements_2d43e08c",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 343,
+      "heading": "## 5. DELETE — alias"
+    },
+    "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "DELETE FROM reviews\nWHERE created_at < '2020-01-01'\nRETURNING _id, movie_id, user_id, score"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_statements_4d59482e",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 376,
+      "heading": "## 6. EXPLAIN"
+    },
+    "query": "\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_statements_067a2a80",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 415,
+      "heading": "## 7. ALTER SYSTEM"
+    },
+    "query": "\nALTER SYSTEM SET DQL_STRICT_MODE = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "ALTER SYSTEM RESET DQL_STRICT_MODE"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_statements_e7378508",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 443,
+      "heading": "## 8. SHOW"
+    },
+    "query": "SHOW ALL",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_statements_780a8c87",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 468,
+      "heading": "## 9. SYNC CONTEXT (RemoteQuery)"
+    },
+    "query": "\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
+    "availableIn": [],
+    "expectError": false
+  },
+  {
+    "id": "sk_statements_fdeabe43",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 492,
+      "heading": "## 10. PROFILE"
+    },
+    "query": "\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
+    "availableIn": [
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_types_mutators_dc0e0abe",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 48,
+      "heading": "## Type-definition syntax (recap)"
+    },
+    "query": "INSERT INTO COLLECTION movies (\n  director    MAP (name REGISTER, born REGISTER),\n  ratings     MAP,\n  watch_count COUNTER,\n  poster      ATTACHMENT\n)\nDOCUMENTS ({\n  '_id'   : 'tt0816692',\n  'title' : 'Interstellar',\n  'year'  : 2014,\n  'director'    : { 'name': 'Christopher Nolan', 'born': 1970 },\n  'ratings'     : { 'imdb': 8.6, 'rotten_tomatoes': 73 },\n  'watch_count' : 0\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0816692')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_5e40f434",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 87,
+      "heading": "## 1. REGISTER"
+    },
+    "query": "\nUPDATE COLLECTION movies (ratings REGISTER)\nSET ratings = { 'imdb': 9.4, 'rotten_tomatoes': 98, 'metacritic': 99 }\nWHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_bb81e982",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 96,
+      "heading": "## 1. REGISTER"
+    },
+    "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight', 'year': 2008, 'is_classic': true })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0468569')"
+    ],
+    "postQueries": [
+      "UPDATE movies\nSET    is_classic = true,\n       box_office_millions = 28.34\nUNSET  tags\nWHERE  _id = 'tt0111161'",
+      "EVICT FROM movies WHERE _id IN ('tt0468569')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_5dd12193",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 130,
+      "heading": "## 2. MAP"
+    },
+    "query": "\nINSERT INTO COLLECTION movies (director MAP)\nDOCUMENTS ({ '_id': 'tt0111161', 'director': { 'name': 'Frank Darabont', 'born': 1959 } })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "INSERT INTO COLLECTION movies (\n  director MAP (name REGISTER, awards MAP)\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'director': { 'name': 'Frank Darabont', 'awards': { 'oscars': 0, 'baftas': 1 } }\n})",
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_150e4d13",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 147,
+      "heading": "## 2. MAP"
+    },
+    "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET    ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (director MAP)\nSET    director.born = 1959\nWHERE  _id = 'tt0111161'",
+      "UPDATE COLLECTION movies (director MAP, ratings MAP)\nSET    director.born = 1959,\n       ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_db3ac989",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 167,
+      "heading": "## 2. MAP"
+    },
+    "query": "UPDATE COLLECTION movies (engagement MAP (views COUNTER, likes COUNTER))\nAPPLY  engagement.views INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_ded854b9",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 193,
+      "heading": "## 3. COUNTER"
+    },
+    "query": "INSERT INTO COLLECTION movies (watch_count COUNTER)\nDOCUMENTS ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'watch_count': 0 })",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_020d5a25",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 202,
+      "heading": "## 3. COUNTER"
+    },
+    "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY -1\nWHERE  _id = 'tt0111161'",
+      "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count RESTART WITH 0\nWHERE  title = 'The Shawshank Redemption'",
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_466cf90f",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 239,
+      "heading": "## 4. PN_COUNTER"
+    },
+    "query": "INSERT INTO COLLECTION movies (legacy_views PN_COUNTER)\nDOCUMENTS ({ '_id': 'tt0111161', 'legacy_views': 0 })",
+    "availableIn": [],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
+  },
+  {
+    "id": "sk_types_mutators_2f81bb74",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 246,
+      "heading": "## 4. PN_COUNTER"
+    },
+    "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY  legacy_views PN_INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id = 'tt0111161'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_4af1eca2",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 317,
+      "heading": "## 6. Reading typed fields with `SELECT`"
+    },
+    "query": "\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_cf2bc68c",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 354,
+      "heading": "### Worked example: same statement, different results"
+    },
+    "query": "\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_types_mutators_dcbe053b",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 380,
+      "heading": "### Cross-version recommendation"
+    },
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "ALTER SYSTEM RESET dql_strict_mode"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_versions_4c45dff1",
+    "source": {
+      "file": "skills/dql/references/versions.md",
+      "line": 210,
+      "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
+    },
+    "query": "\nSHOW dql_strict_mode",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_versions_3d5c11f4",
+    "source": {
+      "file": "skills/dql/references/versions.md",
+      "line": 220,
+      "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
+    },
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "postQueries": [
+      "ALTER SYSTEM RESET dql_strict_mode"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
+  }
+]
