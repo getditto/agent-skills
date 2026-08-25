@@ -79,7 +79,6 @@ The repo provides MCP server endpoints for enhanced Ditto assistance:
 | Server | Endpoint | Description |
 |--------|----------|-------------|
 | `ditto-docs` | <https://docs.ditto.com/mcp> | Access Ditto documentation directly |
-| `ditto-inkeep` | <https://mcp.inkeep.com/dittolive/mcp> | Ditto AI assistant for questions and troubleshooting |
 
 - **Claude Code / Claude-format tools**: `.mcp.json` at the repo root is
   picked up automatically (via `mcp-remote`).
