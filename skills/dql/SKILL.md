@@ -53,14 +53,7 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 
 This skill covers **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Every feature in the reference files is tagged with its minimum SDK version. See `references/versions.md` for the full matrix.
 
-Some features land in v5.1.0 (still upcoming) and are intentionally excluded from this skill — they will be added in a follow-up when v5.1.0 ships:
-
-- `ADVISE` / `ADVISE AND PROVISION` statements — use `EXPLAIN` and the indexing patterns in `references/indexing.md`
-- Structured `PROFILE` output — use the `#profile` directive (see `references/indexing.md`)
-- `XOR` operator — was a v4 binary operator; removed in v5.0; returns in v5.1
-- `INSERT ... ON ID CONFLICT DO MERGE` — was a v4 alias for DO UPDATE; removed in v5.0; returns in v5.1 as first-class
-- `serialize_json()`, `object_size()` functions
-- `USE IDS` on `UPDATE` / `DELETE` / `EVICT` / `TOMBSTONE` — use `WHERE _id IN (...)` instead
+Not in the tested SDK lines (verified against 4.14.4 / 5.0.0 / 5.1.0): `XOR` (parser-rejected everywhere), structured `PROFILE` output, `DO MERGE`, multi-id `USE IDS` lists, and `USE IDS` on mutations. See `references/versions.md` for details.
 
 ## Decision tree for query problems
 

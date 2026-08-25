@@ -576,7 +576,7 @@ What to do **on 4.14.x and 5.0.x** when you would otherwise reach for `ADVISE`:
 4. Re-run `EXPLAIN`; verify the plan is now `IndexScan`. On 5.0+, layer `PROFILE` (§7) on top to confirm the runtime is also better.
 5. Drop the candidate (§2) if `EXPLAIN` shows the planner still prefers a different plan.
 
-The cookbook walks through this loop end-to-end on the movies dataset — see [`examples/movies-cookbook.md`](../examples/movies-cookbook.md) once it's populated.
+The cookbook walks through this loop end-to-end on the movies dataset — see [`examples/movies-cookbook.md`](../examples/movies-cookbook.md).
 
 ---
 
@@ -591,4 +591,4 @@ The cookbook walks through this loop end-to-end on the movies dataset — see [`
 | CRDT field types (only REGISTER is indexable)        | [`types-mutators.md`](types-mutators.md)        |
 | Aggregate / scalar functions that may degrade plans  | [`functions.md`](functions.md)                  |
 | Mutation alternatives to `USE IDS` (`WHERE _id IN`)  | [`statements.md`](statements.md) §§3–5          |
-| SDK-by-feature compatibility matrix                  | `versions.md` (forthcoming reference)           |
+| SDK-by-feature compatibility matrix                  | [`versions.md`](versions.md)                     |

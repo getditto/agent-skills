@@ -8,7 +8,7 @@ AI agent skill for Ditto Query Language (DQL) assistance — works with any agen
 - Ditto SDK **5.0.x**
 - Ditto SDK **5.1.x** (current — adds JOINs, composite indexes, RETURNING, ADVISE)
 
-Every documented feature is tagged with its minimum SDK version. See [`references/versions.md`](references/versions.md) for the full compatibility matrix. v5.1.0 features are excluded until v5.1.0 ships.
+Every documented feature is tagged with its minimum SDK version. See [`references/versions.md`](references/versions.md) for the full compatibility matrix.
 
 ## What's included
 

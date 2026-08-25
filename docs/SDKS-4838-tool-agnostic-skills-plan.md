@@ -2,7 +2,7 @@
 
 Linear: https://linear.app/ditto/issue/SDKS-4838/restructure-the-repo-to-work-with-any-ai-agent
 
-Parent issue: [SDKS-3600](https://linear.app/ditto/issue/SDKS-3600/define-skill-template-and-contributor-guide) — defines the skill template and contributor guide (Phase 4 deliverables).-guide
+Parent issue: [SDKS-3600](https://linear.app/ditto/issue/SDKS-3600/define-skill-template-and-contributor-guide) — defines the skill template and contributor guide (Phase 4 deliverables).
 
 ## Goal
 
@@ -102,9 +102,8 @@ agent-skills/
 - **Tests layout**: `tests/<skill>/` with per-skill subdirs (not colocated).
 - **Install**: documented copy/symlink per tool in README; no `install.sh`
   (avoid extra maintenance surface; symlink caveats documented for Windows).
-- **Catalog IDs**: extractor now hashes repo-relative paths (stable across
-  machines/moves). Committed catalog/ignore IDs predate this and are flagged
-  stale-until-next-recuration in `tests/dql/README.md`.
+- **Catalog IDs**: extractor hashes repo-relative paths (stable across
+  machines/moves); the catalog was fully regenerated as part of this work.
 
 ## Open questions to resolve during implementation
 

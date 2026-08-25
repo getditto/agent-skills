@@ -137,14 +137,7 @@ When starting any DQL task:
 
 ## v5.1.0-only features — not yet shipped
 
-The skill explicitly excludes features that land only in v5.1.0. If the user asks about any of these, explain they're not yet shipped and propose a workaround:
-
-- `ADVISE` / `ADVISE AND PROVISION` — use `EXPLAIN` and the indexing patterns in `skills/dql/references/indexing.md`
-- Structured `PROFILE` output — use the `#profile` directive (see `skills/dql/references/indexing.md`)
-- `XOR` operator (was v4, removed in v5.0, returns in v5.1)
-- `INSERT ... ON ID CONFLICT DO MERGE` (was a v4 alias, removed in v5.0, returns in v5.1 first-class)
-- `serialize_json()`, `object_size()` functions
-- `USE IDS` on `UPDATE` / `DELETE` / `EVICT` / `TOMBSTONE` — use `WHERE _id IN (...)` instead
+v5.1.0 features (JOINs, composite indexes, RETURNING, ADVISE) are supported — this skill covers 4.14.x, 5.0.x, and 5.1.x. Features verified **not** present in any tested SDK line: `XOR` (parser-rejected everywhere — decompose as `(a OR b) AND NOT (a AND b)`), `DO MERGE`, structured `PROFILE` output, multi-id `USE IDS` lists, `USE IDS` on mutations (use `WHERE _id IN (...)`), and `serialize_json()` / `object_size()`. See the full matrix in `skills/dql/references/versions.md`.
 
 ## Error Handling
 
