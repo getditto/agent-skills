@@ -400,7 +400,7 @@
     ],
     "expectError": false,
     "expect": {
-      "rowCount": 0
+      "rowCount": 1
     }
   },
   {
@@ -1212,6 +1212,550 @@
     "expectError": false,
     "expect": {
       "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_302b39fd",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 28,
+      "heading": "### Task R1 — An order with its store details"
+    },
+    "query": "SELECT _id, store_id, total, order_date\nFROM orders\nWHERE _id = 'order_20221210_0001'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_d23530f6",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 36,
+      "heading": "### Task R1 — An order with its store details"
+    },
+    "query": "SELECT _id, store_name, location.city\nFROM stores\nUSE IDS ('store_seattle')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_29455eea",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 50,
+      "heading": "### Task R2 — Recent orders with customer names"
+    },
+    "query": "SELECT _id, customer_id, total, order_date\nFROM orders\nWHERE deleted = false\nORDER BY order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "customer_id": "9f15ed64-7249-461d-b2f0-fde51ccbc4a8",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_e05664da",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 60,
+      "heading": "### Task R2 — Recent orders with customer names"
+    },
+    "query": "SELECT _id, first_name, last_name\nFROM customers\nWHERE _id IN ('edf7a497-c04e-4326-a08a-837de9335a9a', 'e652232a-95ab-4fcf-86b7-e40cea3d749d')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_2afc646b",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 74,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "SELECT _id, product_id, quantity, line_total\nFROM order_items\nWHERE order_id = 'order_20221210_0001'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_c1a1cb57",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 82,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "SELECT _id, product_name, base_price\nFROM products\nWHERE _id IN ('prod_hnd_0005', 'prod_grd_0048', 'prod_elc_0009')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_1e70e345",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 90,
+      "heading": "### Task R3 — The items of an order, with product names"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS items_order ON order_items (order_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_bf800f84",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 100,
+      "heading": "### Task R4 — Revenue per store"
+    },
+    "query": "SELECT store_id, SUM(total) AS revenue\nFROM orders\nWHERE deleted = false\nGROUP BY store_id\nORDER BY revenue DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_baebcf6f",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 110,
+      "heading": "### Task R4 — Revenue per store"
+    },
+    "query": "SELECT _id, store_name\nFROM stores\nWHERE _id IN ('store_seattle', 'store_redmond')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_2d6092fe",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 124,
+      "heading": "### Task R5 — Stores above a revenue threshold"
+    },
+    "query": "SELECT store_id, SUM(total) AS revenue\nFROM orders\nWHERE deleted = false\nGROUP BY store_id\nHAVING SUM(total) > 300000\nORDER BY revenue DESC",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_a92e69a0",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 141,
+      "heading": "### Task R6 — Customers who have never ordered"
+    },
+    "query": "SELECT _id FROM customers WHERE deleted = false",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1000
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_3af12196",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 147,
+      "heading": "### Task R6 — Customers who have never ordered"
+    },
+    "query": "SELECT DISTINCT customer_id FROM orders",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 292
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_74f50d06",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 159,
+      "heading": "### Task R7 — Projection discipline without joins"
+    },
+    "query": "SELECT _id AS order_ref, total AS amount, store_id\nFROM orders\nWHERE deleted = false\nORDER BY order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 704.72,
+        "order_ref": "order_20250325_0001",
+        "store_id": "store_seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_f29f7b27",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 175,
+      "heading": "### Task R8 — Inventory value by product"
+    },
+    "query": "SELECT product_id, SUM(stock_level) AS units_on_hand\nFROM inventory\nWHERE deleted = false\nGROUP BY product_id\nORDER BY units_on_hand DESC\nLIMIT 10",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "product_id": "prod_grd_0050",
+        "units_on_hand": 95
+      }
+    }
+  },
+  {
+    "id": "sk_retail_cookbook_3945ca75",
+    "source": {
+      "file": "skills/dql/examples/retail-cookbook.md",
+      "line": 186,
+      "heading": "### Task R8 — Inventory value by product"
+    },
+    "query": "SELECT _id, product_name, cost\nFROM products\nWHERE _id IN ('prod_hnd_0005', 'prod_grd_0048')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_790c2c37",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 45,
+      "heading": "### Task J1 — An order with its store details (INNER JOIN)"
+    },
+    "query": "SELECT o._id, o.total, s.store_name, s.location.city\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o._id = 'order_20221210_0001'",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_403b7de5",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 62,
+      "heading": "### Task J2 — Orders joined to customers"
+    },
+    "query": "SELECT o._id, o.total, o.order_date, c.first_name, c.last_name\nFROM orders AS o\nINNER JOIN customers AS c ON o.customer_id = c._id\nWHERE o.deleted = false\nORDER BY o.order_date DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "first_name": "Jessica",
+        "last_name": "Cunningham",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_9401fe19",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 79,
+      "heading": "### Task J3 — The items of an order, with product names"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS items_order ON order_items (order_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_64eccfd5",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 87,
+      "heading": "### Task J3 — The items of an order, with product names"
+    },
+    "query": "SELECT i._id, i.quantity, i.line_total, p.product_name, p.base_price\nFROM order_items AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.order_id = 'order_20221210_0001'\nORDER BY i._id",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 3,
+      "firstRow": {
+        "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
+        "base_price": 63.37,
+        "line_total": 228.13,
+        "product_name": "ELC item 0009",
+        "quantity": 4
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_27ea1e29",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 101,
+      "heading": "### Task J4 — Revenue per store (JOIN + GROUP BY)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_store ON orders (store_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_7a462c12",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 111,
+      "heading": "### Task J4 — Revenue per store (JOIN + GROUP BY)"
+    },
+    "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nORDER BY revenue DESC",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_cd231acd",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 130,
+      "heading": "### Task J5 — Stores above a revenue threshold (JOIN + HAVING)"
+    },
+    "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nHAVING SUM(o.total) > 300000\nORDER BY revenue DESC",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_bcc6bfe3",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 148,
+      "heading": "### Task J6 — Customers who have never ordered (anti-join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_customer ON orders (customer_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_66b1fc72",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 156,
+      "heading": "### Task J6 — Customers who have never ordered (anti-join)"
+    },
+    "query": "SELECT c._id, c.first_name, c.last_name\nFROM customers AS c\nLEFT OUTER JOIN orders AS o ON o.customer_id = c._id\nWHERE o._id IS MISSING AND c.deleted = false\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_14ff9331",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 174,
+      "heading": "### Task J7 — Projection discipline with joins"
+    },
+    "query": "SELECT o._id AS order_ref, o.total AS amount, s.store_name AS store\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o.deleted = false\nORDER BY s.store_name\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 960.51,
+        "order_ref": "order_20221210_0001",
+        "store": "Zava Retail Seattle"
+      }
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_2021712d",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 193,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS inv_product ON inventory (product_id)",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_00e23f06",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 199,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "CREATE INDEX IF NOT EXISTS orders_store_date ON orders (store_id ASC, order_date DESC)",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_retail_joins_cookbook_2702a4f8",
+    "source": {
+      "file": "skills/dql/examples/retail-joins-cookbook.md",
+      "line": 207,
+      "heading": "### Task J8 — Inventory value by product (composite _id join)"
+    },
+    "query": "SELECT p._id, p.product_name, SUM(i.stock_level) AS units_on_hand, SUM(i.stock_level * p.cost) AS inventory_value\nFROM inventory AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.deleted = false\nGROUP BY p._id, p.product_name\nORDER BY inventory_value DESC\nLIMIT 10",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "prod_pwr_0003",
+        "inventory_value": 25011,
+        "product_name": "PWR item 0003",
+        "units_on_hand": 70
+      }
     }
   },
   {

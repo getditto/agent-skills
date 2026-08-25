@@ -23,7 +23,7 @@ import path from "node:path";
 import os from "node:os";
 import { loadSdk } from "./version-shim.mjs";
 import { assertRowCount, assertFirstRow } from "./assertions.mjs";
-import { seedMovies } from "../scripts/seed-store.mjs";
+import { seedMovies, seedRetail } from "../scripts/seed-store.mjs";
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
@@ -128,6 +128,7 @@ const seedStart = Date.now();
 let seeded = 0;
 try {
   seeded = await seedMovies(store);
+  seeded += await seedRetail(store);
 } catch (e) {
   console.error(`Seeding failed on ${VERSION}: ${e.message}`);
   console.error(
@@ -175,6 +176,7 @@ for (const entry of catalog) {
     try {
       await store.execute(`EVICT FROM movies`);
       await seedMovies(store);
+      await seedRetail(store);
     } catch (e) {
       console.warn(`Reseed failed before ${entry.id}:`, e.message);
     }

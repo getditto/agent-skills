@@ -44,6 +44,8 @@ Located in [`references/`](references/):
 ### Movies cookbook
 
 [`examples/movies-cookbook.md`](examples/movies-cookbook.md) — 23 worked tasks against a shared movies dataset, each annotated with the minimum SDK version required. Includes JOIN tasks (inner/outer/anti-join, aggregates, HAVING) for SDK 5.1+.
+- [`examples/retail-cookbook.md`](examples/retail-cookbook.md) — those same cross-collection questions answered without JOINs (two-query patterns, IN-list resolution, denormalization); runs on every supported SDK.
+- [`examples/retail-joins-cookbook.md`](examples/retail-joins-cookbook.md) — the identical retail tasks rewritten with SDK 5.1 JOINs (INNER/LEFT/anti-join, composite-index examples). Compare the two files task-by-task.
 
 ## Installation
 

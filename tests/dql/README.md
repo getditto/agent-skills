@@ -6,11 +6,11 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 
 | SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION |
 |---|---|---|---|---|
-| `@dittolive/ditto@4.14.4` | 174 | 46 | 0 | 0 |
-| `@dittolive/ditto@5.0.0`  | 191 | 29 | 0 | 0 |
-| `@dittolive/ditto@5.1.0`  | 211 | 9  | 0 | 0 |
+| `@dittolive/ditto@4.14.4` | 193 | 55 | 0 | 0 |
+| `@dittolive/ditto@5.0.0`  | 210 | 38 | 0 | 0 |
+| `@dittolive/ditto@5.1.0`  | 239 | 9  | 0 | 0 |
 
-Catalog size: **220 entries** (plus 21 ignored) extracted from `skills/dql/**/*.md`.
+Catalog size: **247 entries** (plus 21 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
 
 ## How it works
 
@@ -18,7 +18,7 @@ Catalog size: **220 entries** (plus 21 ignored) extracted from `skills/dql/**/*.
 
 2. **Curation.** `scripts/curate-catalog.mjs` splits multi-statement blocks (paren-depth aware, so subqueries aren't chopped), substitutes concrete values for `:param` placeholders, marks version-gated features with `availableIn`, strips statement-terminator semicolons (the SDK takes exactly one statement, no `;`), ignores `SELECT`s with no top-level `FROM` clause, and applies the manual decisions in `catalog/overrides.json` — version corrections for features the tested SDKs don't actually ship, plus ignores with reasons. Entry IDs are stable: a hash of the repo-relative `(file, line, query)`, independent of machine and repo location.
 
-3. **Transformation.** `scripts/transform-dataset.mjs` reads the real `~/Developer/dql-metrics/benchmarks/skills-test/movies.ndjson`, strides across it for an even era distribution, and writes 194 pedagogical-schema docs to `fixtures/movies-pedagogical.ndjson`. This is committed to the repo.
+3. **Transformation.** `scripts/transform-dataset.mjs` reads the real `~/Developer/dql-metrics/benchmarks/skills-test/movies.ndjson`, strides across it for an even era distribution, and writes 194 pedagogical-schema docs to `fixtures/movies-pedagogical.ndjson`. This is committed to the repo. The `fixtures/retail/*.ndjson` files come from the dql-metric's `retail-joins-1k` benchmark suite (committed as-is) and are seeded alongside the movies data by `seed-store.mjs`.
 
 4. **Execution.** `runner/run.mjs` (one invocation per SDK version) opens a Ditto Small Peer using the version-shim, seeds the movies dataset, and runs every catalog entry as `[preQueries], query, [postQueries]`. Results are classified and written to `results/<version>.json`.
 
@@ -124,7 +124,8 @@ tests/dql/
 │   ├── version-shim.mjs                   loads @dittolive/ditto from versioned tree
 │   └── assertions.mjs                     rowCount + firstRow checks
 ├── fixtures/
-│   └── movies-pedagogical.ndjson          194 docs spanning 1893–2002 (committed)
+│   ├── movies-pedagogical.ndjson         194 docs spanning 1893–2002 (committed)
+│   └── retail/*.ndjson                   8 collections, ~4.9k docs (committed, from dql-metrics retail-joins-1k)
 ├── sdks/
 │   ├── v4.14.4/                           isolated node_modules
 │   ├── v5.0.0/                            isolated node_modules

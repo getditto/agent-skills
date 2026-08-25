@@ -1,0 +1,32 @@
+{"_id":"ptype_hnd_hammer","type_id":"ptype_hnd_hammer","category_id":"cat_hand_tools","type_name":"Hammer","deleted":false}
+{"_id":"ptype_hnd_screwdriver","type_id":"ptype_hnd_screwdriver","category_id":"cat_hand_tools","type_name":"Screwdriver","deleted":false}
+{"_id":"ptype_hnd_wrench","type_id":"ptype_hnd_wrench","category_id":"cat_hand_tools","type_name":"Wrench","deleted":false}
+{"_id":"ptype_hnd_plier","type_id":"ptype_hnd_plier","category_id":"cat_hand_tools","type_name":"Plier","deleted":false}
+{"_id":"ptype_hnd_other","type_id":"ptype_hnd_other","category_id":"cat_hand_tools","type_name":"Other Hand Tool","deleted":false}
+{"_id":"ptype_pwr_drill","type_id":"ptype_pwr_drill","category_id":"cat_power_tools","type_name":"Drill","deleted":false}
+{"_id":"ptype_pwr_saw","type_id":"ptype_pwr_saw","category_id":"cat_power_tools","type_name":"Saw","deleted":false}
+{"_id":"ptype_pwr_sander","type_id":"ptype_pwr_sander","category_id":"cat_power_tools","type_name":"Sander","deleted":false}
+{"_id":"ptype_pwr_grinder","type_id":"ptype_pwr_grinder","category_id":"cat_power_tools","type_name":"Grinder","deleted":false}
+{"_id":"ptype_pwr_other","type_id":"ptype_pwr_other","category_id":"cat_power_tools","type_name":"Other Power Tool","deleted":false}
+{"_id":"ptype_pnt_interior","type_id":"ptype_pnt_interior","category_id":"cat_paint","type_name":"Interior Paint","deleted":false}
+{"_id":"ptype_pnt_exterior","type_id":"ptype_pnt_exterior","category_id":"cat_paint","type_name":"Exterior Paint","deleted":false}
+{"_id":"ptype_pnt_primer","type_id":"ptype_pnt_primer","category_id":"cat_paint","type_name":"Primer","deleted":false}
+{"_id":"ptype_pnt_brush","type_id":"ptype_pnt_brush","category_id":"cat_paint","type_name":"Brush / Roller","deleted":false}
+{"_id":"ptype_lmb_dimensional","type_id":"ptype_lmb_dimensional","category_id":"cat_lumber","type_name":"Dimensional Lumber","deleted":false}
+{"_id":"ptype_lmb_plywood","type_id":"ptype_lmb_plywood","category_id":"cat_lumber","type_name":"Plywood / Sheet","deleted":false}
+{"_id":"ptype_lmb_treated","type_id":"ptype_lmb_treated","category_id":"cat_lumber","type_name":"Pressure-Treated","deleted":false}
+{"_id":"ptype_grd_tool","type_id":"ptype_grd_tool","category_id":"cat_garden","type_name":"Garden Tool","deleted":false}
+{"_id":"ptype_grd_plant","type_id":"ptype_grd_plant","category_id":"cat_garden","type_name":"Plant / Seed","deleted":false}
+{"_id":"ptype_grd_soil","type_id":"ptype_grd_soil","category_id":"cat_garden","type_name":"Soil / Fertilizer","deleted":false}
+{"_id":"ptype_grd_furniture","type_id":"ptype_grd_furniture","category_id":"cat_garden","type_name":"Outdoor Furniture","deleted":false}
+{"_id":"ptype_plb_pipe","type_id":"ptype_plb_pipe","category_id":"cat_plumbing","type_name":"Pipe / Fitting","deleted":false}
+{"_id":"ptype_plb_valve","type_id":"ptype_plb_valve","category_id":"cat_plumbing","type_name":"Valve / Faucet","deleted":false}
+{"_id":"ptype_plb_fixture","type_id":"ptype_plb_fixture","category_id":"cat_plumbing","type_name":"Fixture","deleted":false}
+{"_id":"ptype_elc_wire","type_id":"ptype_elc_wire","category_id":"cat_electrical","type_name":"Wire / Cable","deleted":false}
+{"_id":"ptype_elc_outlet","type_id":"ptype_elc_outlet","category_id":"cat_electrical","type_name":"Outlet / Switch","deleted":false}
+{"_id":"ptype_elc_lighting","type_id":"ptype_elc_lighting","category_id":"cat_electrical","type_name":"Lighting","deleted":false}
+{"_id":"ptype_hrd_fastener","type_id":"ptype_hrd_fastener","category_id":"cat_hardware","type_name":"Fastener","deleted":false}
+{"_id":"ptype_hrd_hinge","type_id":"ptype_hrd_hinge","category_id":"cat_hardware","type_name":"Hinge / Bracket","deleted":false}
+{"_id":"ptype_hrd_chain","type_id":"ptype_hrd_chain","category_id":"cat_hardware","type_name":"Chain / Rope","deleted":false}
+{"_id":"ptype_saf_ppe","type_id":"ptype_saf_ppe","category_id":"cat_safety","type_name":"PPE","deleted":false}
+{"_id":"ptype_saf_alarm","type_id":"ptype_saf_alarm","category_id":"cat_safety","type_name":"Alarm / Detector","deleted":false}

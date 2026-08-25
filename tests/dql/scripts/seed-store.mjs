@@ -43,3 +43,56 @@ export async function cleanupTestDocs(store) {
 export async function resetMovies(store) {
   await store.execute(`EVICT FROM movies`);
 }
+
+// ---------------------------------------------------------------------------
+// Retail dataset (former dql-metrics retail-joins-1k fixture)
+// ---------------------------------------------------------------------------
+
+const RETAIL_DIR = path.resolve(import.meta.dirname, "..", "fixtures", "retail");
+
+// Field type declarations that matter for cross-version reads: on 4.14.x
+// (strict mode default) bare objects become REGISTER; on 5.0+ they become
+// MAP. Declaring MAP explicitly keeps `store.location.city`-style nested
+// reads identical across versions.
+const RETAIL_TYPED_FIELDS = {
+  stores: "location MAP",
+  products: "specifications MAP",
+  categories: "seasonal_multipliers MAP",
+  inventory: "location MAP",
+};
+
+let cachedRetail = null;
+function loadRetailDocs() {
+  if (cachedRetail) return cachedRetail;
+  cachedRetail = {};
+  for (const file of fs.readdirSync(RETAIL_DIR)) {
+    if (!file.endsWith(".ndjson")) continue;
+    const collection = file.slice(0, -".ndjson".length);
+    cachedRetail[collection] = fs
+      .readFileSync(path.join(RETAIL_DIR, file), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map(JSON.parse);
+  }
+  return cachedRetail;
+}
+
+/**
+ * Seeds the retail dataset (orders, customers, stores, products, order_items,
+ * inventory, categories, product_types). Idempotent. Returns doc count.
+ */
+export async function seedRetail(store) {
+  const byCollection = loadRetailDocs();
+  let n = 0;
+  for (const [collection, docs] of Object.entries(byCollection)) {
+    const typed = RETAIL_TYPED_FIELDS[collection];
+    const sql = typed
+      ? `INSERT INTO COLLECTION ${collection} (${typed}) DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE`
+      : `INSERT INTO ${collection} DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE`;
+    for (const d of docs) {
+      await store.execute(sql, { doc: d });
+      n++;
+    }
+  }
+  return n;
+}

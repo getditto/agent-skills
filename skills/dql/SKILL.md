@@ -39,6 +39,7 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 | `CREATE INDEX`, `EXPLAIN`, profiling with `#profile`, planner directives | `references/indexing.md` |
 | Designing schemas, schema versioning, strict mode, timestamps | `best-practices.md` |
 | Want a runnable end-to-end example | `examples/movies-cookbook.md` |
+| Compare non-JOIN vs JOIN implementations of the same retail tasks | `examples/retail-cookbook.md` and `examples/retail-joins-cookbook.md` |
 
 ## Five things that bite people
 
