@@ -30,7 +30,7 @@
       "line": 68,
       "heading": "#### When to Use Flat Models"
     },
-    "query": "-- ✅ GOOD: Separate collections with foreign keys\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})",
+    "query": "\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -41,7 +41,7 @@
       "EVICT FROM people WHERE _id IN ('person-1')"
     ],
     "postQueries": [
-      "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})\n\n-- Query separately",
+      "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})",
       "EVICT FROM people WHERE _id IN ('person-1')"
     ],
     "expect": {
@@ -55,7 +55,7 @@
       "line": 109,
       "heading": "### Additional Guidelines"
     },
-    "query": "-- _id never changes (stable reference)\nINSERT INTO orders DOCUMENTS ({\n  '_id': 'order-1',\n  'user_id': 'user-123',  -- Immutable foreign key\n  'product_id': 'prod-456',\n  'quantity': 2\n})",
+    "query": "\nINSERT INTO orders DOCUMENTS ({\n  '_id': 'order-1',\n  'user_id': 'user-123',  \n  'product_id': 'prod-456',\n  'quantity': 2\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -79,7 +79,7 @@
       "line": 161,
       "heading": "#### 1. Backward-Compatibility"
     },
-    "query": "-- Bump version on schema changes\nINSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,  -- Incremented from 1\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue'  -- New field added in v2\n}) ON ID CONFLICT DO UPDATE\n\n-- Old v1 documents still readable:\n-- {_id: 'car-1', schema_version: 1, make: 'Honda', model: 'Civic', year: 2020}\n-- New v2 documents include color:\n-- {_id: 'car-2', schema_version: 2, make: 'Tesla', model: 'Model 3', year: 2024, color: 'blue'}",
+    "query": "\nINSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,  \n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue'  \n}) ON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -103,7 +103,7 @@
       "line": 188,
       "heading": "#### 2. Same-Version Compatibility"
     },
-    "query": "-- Query specific version only\nSELECT * FROM cars WHERE schema_version = 1\n\n-- Or current version",
+    "query": "\nSELECT * FROM cars WHERE schema_version = 1",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -121,7 +121,7 @@
       "line": 210,
       "heading": "#### 3. Force Upgrade"
     },
-    "query": "-- Detect documents with newer schema\nSELECT * FROM cars WHERE schema_version > 1\n\n-- If found, show user:\n-- \"Please update to the latest version to view this content\"",
+    "query": "\nSELECT * FROM cars WHERE schema_version > 1",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -139,7 +139,7 @@
       "line": 241,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- ✅ SAFE: Add new optional fields\nUPDATE cars SET color = 'blue' WHERE _id = 'test_seed_id'\n\n-- ✅ SAFE: Add nested fields (with strict mode off or MAP type)",
+    "query": "\nUPDATE cars SET color = 'blue' WHERE _id = 'test_seed_id'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -150,7 +150,7 @@
       "INSERT INTO cars DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
     ],
     "postQueries": [
-      "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'\n\n-- ✅ SAFE: Add new collections",
+      "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'",
       "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
     ],
@@ -165,7 +165,7 @@
       "line": 257,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- ❌ UNSAFE: Change field type\n-- v1: 'year': 2024 (INTEGER)\n-- v2: 'year': '2024' (STRING)\n-- Result: Old versions crash trying to read string as integer\n\n-- ❌ UNSAFE: Remove existing field\nUPDATE cars UNSET make WHERE _id = 'test_seed_id'\n-- Result: Old versions expect 'make' field, may crash\n\n-- ❌ UNSAFE: Rename field\n-- v1: 'color'\n-- v2: 'paint_color'\n-- Result: Old versions can't find 'color', may crash or show blank",
+    "query": "\n\n\n\n\n\nUPDATE cars UNSET make WHERE _id = 'test_seed_id'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -189,7 +189,7 @@
       "line": 274,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
-    "query": "-- Instead of changing type, add new field\n-- Keep old field for compatibility\n\n-- v1: year (INTEGER)\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  -- INTEGER\n})\n\n-- v2: Add year_string, keep year",
+    "query": "\n\n\n\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  \n})",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -197,7 +197,7 @@
     ],
     "expectError": false,
     "postQueries": [
-      "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1\n\n-- Old versions still read 'year' (INTEGER)\n-- New versions prefer 'year_string' (STRING) but fall back to 'year'"
+      "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1"
     ],
     "expect": {
       "rowCount": 0
@@ -210,7 +210,7 @@
       "line": 348,
       "heading": "### Implementation Pattern"
     },
-    "query": "-- Migrate v1 documents to v2\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  -- Add missing field with default\nWHERE schema_version = 1 AND color IS MISSING\n\n-- Verify migration",
+    "query": "\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  \nWHERE schema_version = 1 AND color IS MISSING",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -228,7 +228,7 @@
       "line": 364,
       "heading": "### Implementation Pattern"
     },
-    "query": "-- Read only current version\nSELECT * FROM cars WHERE schema_version = 2\n\n-- Read compatible versions (current and previous)",
+    "query": "\nSELECT * FROM cars WHERE schema_version = 2",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -246,7 +246,7 @@
       "line": 382,
       "heading": "### Multi-Version Support Example"
     },
-    "query": "-- Application supports v1 and v2\n-- v1: Basic car info (make, model, year)\n-- v2: Adds 'features' nested object and 'color'\n\n-- Read query handles both versions\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  -- v2 field with fallback\n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)\n\n-- Write always uses latest version",
+    "query": "\n\n\n\n\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  \n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -266,7 +266,7 @@
       "line": 451,
       "heading": "### Using EXPLAIN"
     },
-    "query": "-- Check access path\nEXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'\n\n-- Look for operators (canonical names):\n-- IndexScan       = Good (uses index, fast)\n-- CollectionScan  = Bad (full collection scan, slow)\n-- Intersect       = Multiple indexes combined under AND\n-- Union           = Multiple indexes combined under OR\n-- Fetch           = Document materialization after an IndexScan (absent on covering plans)\n-- Filter          = Residual WHERE predicate the index could not satisfy",
+    "query": "\nEXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -284,7 +284,7 @@
       "line": 475,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Fields that benefit from indexes:\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee)",
+    "query": "\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -302,7 +302,7 @@
       "line": 490,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Before optimization\nEXPLAIN SELECT * FROM tasks WHERE priority > 5\n-- Plan rooted at CollectionScan  -- ❌ Full scan\n\n-- After CREATE INDEX ON tasks (priority)",
+    "query": "\nEXPLAIN SELECT * FROM tasks WHERE priority > 5",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -320,7 +320,7 @@
       "line": 504,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Uses intersect scan (combines multiple indexes)\nSELECT * FROM tasks\nWHERE assignee = 'alice' AND status = 'active'\n\n-- EXPLAIN shows an Intersect node with two IndexScan children\n-- (one per index). See references/indexing.md §6 for full plan shapes.",
+    "query": "\nSELECT * FROM tasks\nWHERE assignee = 'alice' AND status = 'active'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -338,7 +338,7 @@
       "line": 515,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- ❌ BAD: Full collection scan\nSELECT * FROM large_collection\n\n-- ✅ BETTER: Use WHERE to filter",
+    "query": "\nSELECT * FROM large_collection",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -356,7 +356,7 @@
       "line": 543,
       "heading": "### Optimization Strategies"
     },
-    "query": "-- Query performance statistics\nSELECT * FROM system:vitals\n\n-- Fields include:\n-- - execution_time (total time)\n-- - parse_time (parsing time)\n-- - plan_time (planning time)\n-- - request_count (number of executions)\n\n-- Active query execution",
+    "query": "\nSELECT * FROM system:vitals",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -374,7 +374,7 @@
       "line": 568,
       "heading": "### Performance Tips"
     },
-    "query": "-- ⚠️ Processes ALL documents before returning\nSELECT COUNT(*) FROM large_collection",
+    "query": "\nSELECT COUNT(*) FROM large_collection",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -392,7 +392,7 @@
       "line": 579,
       "heading": "### Performance Tips"
     },
-    "query": "-- ⚠️ Buffers ALL results in memory\nSELECT DISTINCT category FROM products\n\n-- ✅ Better: Use GROUP BY (more efficient)",
+    "query": "\nSELECT DISTINCT category FROM products",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -410,7 +410,7 @@
       "line": 588,
       "heading": "### Performance Tips"
     },
-    "query": "-- ✅ Return results incrementally\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20\n\n-- ❌ Returns ALL, then discards most",
+    "query": "\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -428,7 +428,7 @@
       "line": 599,
       "heading": "### Performance Tips"
     },
-    "query": "-- ✅ GOOD: Filter before aggregation\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category\n\n-- ❌ BAD: Aggregate all, then filter",
+    "query": "\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -446,7 +446,7 @@
       "line": 641,
       "heading": "### Configuration"
     },
-    "query": "-- Apply before starting sync\nALTER SYSTEM SET dql_strict_mode = false",
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -506,7 +506,7 @@
       "line": 659,
       "heading": "### Example: Object Merge Behavior"
     },
-    "query": "-- Device A writes:\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'\n\n-- Device B writes (offline):",
+    "query": "\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -517,7 +517,7 @@
       "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
     ],
     "postQueries": [
-      "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'\n\n-- Result: Last-write-wins (one completely replaces the other)\n-- Either: {bio: 'Designer', location: 'NYC'}\n-- Or:     {bio: 'Engineer', city: 'SF'}\n-- One wins entirely, the other is lost",
+      "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'",
       "EVICT FROM users WHERE _id = 'user-1'"
     ],
     "expect": {
@@ -531,7 +531,7 @@
       "line": 756,
       "heading": "### Always Use ON ID CONFLICT"
     },
-    "query": "-- ✅ CORRECT: Handles duplicate IDs gracefully\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE\n\n-- ❌ WRONG: Fails if ID exists",
+    "query": "\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -542,7 +542,7 @@
       "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
     ],
     "postQueries": [
-      "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})\n-- Error: \"Identifier conflict on document {\\\"_id\\\":\\\"...\\\": using FAIL conflict policy\"",
+      "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})",
       "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
     ],
     "expect": {
@@ -556,7 +556,7 @@
       "line": 792,
       "heading": "### Soft Delete Pattern"
     },
-    "query": "-- Soft delete: mark as deleted, retain document\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'\n\n-- Reads filter out deleted documents",
+    "query": "\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -599,7 +599,7 @@
       "line": 889,
       "heading": "### Common Timestamp Patterns"
     },
-    "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  -- Current time\n  'sender_id': 'u-42'\n})",
+    "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  \n  'sender_id': 'u-42'\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -764,7 +764,7 @@
       "line": 150,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
-    "query": "-- v4-portable: maintain a parallel actor_names array\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC",
+    "query": "\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1239,7 +1239,7 @@
       "line": 78,
       "heading": "## 2. Identifiers"
     },
-    "query": "-- Collision: cast is the actor-array field; backtick to read it\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
+    "query": "\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1261,7 +1261,7 @@
       "line": 99,
       "heading": "## 3. Parameters"
     },
-    "query": "-- Bind { year: 1994 } from the SDK call\nSELECT title, ratings.imdb FROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC\nLIMIT 25",
+    "query": "\nSELECT title, ratings.imdb FROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC\nLIMIT 25",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1279,7 +1279,7 @@
       "line": 141,
       "heading": "### Examples against `movies`"
     },
-    "query": "-- nested path\nSELECT title, director.name AS director FROM movies\n\n-- array index + nested field",
+    "query": "\nSELECT title, director.name AS director FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1297,7 +1297,7 @@
       "line": 169,
       "heading": "## 5. `CASE` — simple form"
     },
-    "query": "-- Genre score keyed off the first listed genre\nSELECT\n  title,\n  CASE genres[0]\n    WHEN 'Drama'  THEN 1\n    WHEN 'Comedy' THEN 2\n    WHEN 'Action' THEN 3\n    ELSE 0\n  END AS genre_score\nFROM movies\nORDER BY genre_score DESC, title",
+    "query": "\nSELECT\n  title,\n  CASE genres[0]\n    WHEN 'Drama'  THEN 1\n    WHEN 'Comedy' THEN 2\n    WHEN 'Action' THEN 3\n    ELSE 0\n  END AS genre_score\nFROM movies\nORDER BY genre_score DESC, title",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1318,7 +1318,7 @@
       "line": 199,
       "heading": "## 6. `CASE` — searched form"
     },
-    "query": "-- IMDb verdict — defends against missing ratings via IS MISSING\nSELECT\n  title,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict\nFROM movies\nORDER BY title",
+    "query": "\nSELECT\n  title,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict\nFROM movies\nORDER BY title",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1339,7 +1339,7 @@
       "line": 236,
       "heading": "## 7. `ANY ... IN ... SATISFIES ... END`"
     },
-    "query": "-- Movies featuring Morgan Freeman\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\n\n-- Movies whose ratings object contains at least one score above 9.0",
+    "query": "\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1356,7 +1356,7 @@
       "line": 256,
       "heading": "## 8. `EVERY ... IN ... SATISFIES ... END`"
     },
-    "query": "-- Movies where every cast entry has a non-empty role string\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END\n\n-- Movies whose every rating in the ratings object is at least 7.0",
+    "query": "\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1371,7 +1371,7 @@
       "line": 276,
       "heading": "## 9. `ANY AND EVERY ... IN ... SATISFIES ... END`"
     },
-    "query": "-- Movies that have a cast and every entry has a recorded role\nSELECT title FROM movies\nWHERE ANY AND EVERY actor IN `cast`\n  SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
+    "query": "\nSELECT title FROM movies\nWHERE ANY AND EVERY actor IN `cast`\n  SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1386,7 +1386,7 @@
       "line": 294,
       "heading": "## 10. `IN` vs `WITHIN` inside quantifiers and comprehensions"
     },
-    "query": "-- IN: any score directly in the ratings object is null\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END\n\n-- WITHIN: any value anywhere in ratings (incl. inside nested objects) is null",
+    "query": "\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1403,7 +1403,7 @@
       "line": 330,
       "heading": "## 11. `ARRAY expr FOR ... IN ... [WHEN ...] END`"
     },
-    "query": "-- Pull just the cast names out of the cast array of objects\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies\n\n-- Pull names of cast members whose role string starts with \"Lead\"",
+    "query": "\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1420,7 +1420,7 @@
       "line": 366,
       "heading": "## 12. `OBJECT NameExpr : ValueExpr FOR ... IN ... [WHEN ...] END`"
     },
-    "query": "-- Build an actor->role map from the cast array\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies\n\n-- Normalize ratings: uppercase the keys, keep the values",
+    "query": "\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -1473,7 +1473,7 @@
       "line": 58,
       "heading": "## 2. Conditional / null-handling"
     },
-    "query": "-- Display \"N/A\" when a movie has no IMDb rating\nSELECT title, coalesce(cast(ratings.imdb, 'string'), 'N/A') AS imdb FROM movies",
+    "query": "\nSELECT title, coalesce(cast(ratings.imdb, 'string'), 'N/A') AS imdb FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1491,7 +1491,7 @@
       "line": 63,
       "heading": "## 2. Conditional / null-handling"
     },
-    "query": "-- Map a numeric score (1..5) to a label\nSELECT _id, decode(score,\n    5, 'love',\n    4, 'like',\n    3, 'meh',\n    2, 'dislike',\n    1, 'hate',\n    'unrated'\n) AS label\nFROM reviews",
+    "query": "\nSELECT _id, decode(score,\n    5, 'love',\n    4, 'like',\n    3, 'meh',\n    2, 'dislike',\n    1, 'hate',\n    'unrated'\n) AS label\nFROM reviews",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1509,7 +1509,7 @@
       "line": 76,
       "heading": "## 2. Conditional / null-handling"
     },
-    "query": "-- Suppress a sentinel value: convert score 0 to NULL\nSELECT _id, nullif(score, 0) AS score FROM reviews",
+    "query": "\nSELECT _id, nullif(score, 0) AS score FROM reviews",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1527,7 +1527,7 @@
       "line": 100,
       "heading": "## 3. Type / conversion"
     },
-    "query": "-- Function form\nSELECT title, cast(year, 'string') AS year_str FROM movies",
+    "query": "\nSELECT title, cast(year, 'string') AS year_str FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1545,7 +1545,7 @@
       "line": 108,
       "heading": "## 3. Type / conversion"
     },
-    "query": "-- Type-introspect a polymorphic field\nSELECT _id, type(ratings.imdb) AS imdb_type FROM movies",
+    "query": "\nSELECT _id, type(ratings.imdb) AS imdb_type FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1563,7 +1563,7 @@
       "line": 150,
       "heading": "### 4.1 SQL keyword forms"
     },
-    "query": "-- POSITION(substr IN str) is alternative syntax for pos(str, substr)\nSELECT title, POSITION('The' IN title) AS where_the FROM movies",
+    "query": "\nSELECT title, POSITION('The' IN title) AS where_the FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1581,7 +1581,7 @@
       "line": 166,
       "heading": "### 4.1 SQL keyword forms"
     },
-    "query": "-- bare `trim` clashes with the SQL keyword — backtick it\nSELECT `trim`('  hello  ') AS trimmed FROM movies LIMIT 1",
+    "query": "\nSELECT `trim`('  hello  ') AS trimmed FROM movies LIMIT 1",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1599,7 +1599,7 @@
       "line": 183,
       "heading": "### 4.2 `regexp_like` flags"
     },
-    "query": "-- Reviews mentioning any of three positive adjectives, case-insensitively\nSELECT _id, score FROM reviews\nWHERE regexp_like(comment, '(amaz|fantast|brilliant)', 'i')",
+    "query": "\nSELECT _id, score FROM reviews\nWHERE regexp_like(comment, '(amaz|fantast|brilliant)', 'i')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1617,7 +1617,7 @@
       "line": 191,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Movies whose title starts with \"The \"\nSELECT title FROM movies WHERE starts_with(title, 'The ')",
+    "query": "\nSELECT title FROM movies WHERE starts_with(title, 'The ')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1635,7 +1635,7 @@
       "line": 196,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Build a display label two ways (functionally equivalent)\nSELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies",
+    "query": "\nSELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1653,7 +1653,7 @@
       "line": 202,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Comment length stats — beware: byte_length counts UTF-8 bytes, char_length counts characters\nSELECT _id,\n    byte_length(comment) AS bytes,\n    char_length(comment) AS chars\nFROM reviews",
+    "query": "\nSELECT _id,\n    byte_length(comment) AS bytes,\n    char_length(comment) AS chars\nFROM reviews",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1671,7 +1671,7 @@
       "line": 210,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Substring & case\nSELECT title, upper(substr(title, 0, 3)) AS prefix FROM movies",
+    "query": "\nSELECT title, upper(substr(title, 0, 3)) AS prefix FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1689,7 +1689,7 @@
       "line": 215,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- Joinstr is friendlier than chained || for mixed types\nSELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies",
+    "query": "\nSELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1707,7 +1707,7 @@
       "line": 220,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- repeat: build a star-rating indicator from the IMDb score\nSELECT title, repeat('★', cast(round(ratings.imdb), 'integer')) AS stars FROM movies",
+    "query": "\nSELECT title, repeat('★', cast(round(ratings.imdb), 'integer')) AS stars FROM movies",
     "availableIn": [
       "5.1.x"
     ],
@@ -1723,7 +1723,7 @@
       "line": 225,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- lpad: zero-pad the year for fixed-width display\nSELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies",
+    "query": "\nSELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1741,7 +1741,7 @@
       "line": 230,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- rpad: right-pad the title to a fixed width with dots\nSELECT rpad(title, 30, '.') AS title_padded FROM movies",
+    "query": "\nSELECT rpad(title, 30, '.') AS title_padded FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1759,7 +1759,7 @@
       "line": 235,
       "heading": "### 4.3 String examples"
     },
-    "query": "-- split: tokenise a comment on whitespace\nSELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1",
+    "query": "\nSELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1777,7 +1777,7 @@
       "line": 250,
       "heading": "## 5. Array"
     },
-    "query": "-- Movies tagged with the Drama genre\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
+    "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1795,7 +1795,7 @@
       "line": 255,
       "heading": "## 5. Array"
     },
-    "query": "-- Movies whose cast list is the largest\n-- `cast` is a SQL keyword (and a function name) — backtick the field identifier\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
+    "query": "\n\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1817,7 +1817,7 @@
       "line": 262,
       "heading": "## 5. Array"
     },
-    "query": "-- Movies whose tags array has at least one explicit NULL slot\nSELECT _id FROM movies WHERE array_contains_null(tags)",
+    "query": "\nSELECT _id FROM movies WHERE array_contains_null(tags)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1835,7 +1835,7 @@
       "line": 298,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Top-level keys of a movie's ratings object\nSELECT object_keys(ratings) AS metrics FROM movies WHERE _id = 'tt0111161'",
+    "query": "\nSELECT object_keys(ratings) AS metrics FROM movies WHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1853,7 +1853,7 @@
       "line": 304,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Overwrite a rating without errors\nSELECT object_set(ratings, 'imdb', 9.4, true) AS new_ratings\nFROM movies WHERE _id = 'tt0111161'",
+    "query": "\nSELECT object_set(ratings, 'imdb', 9.4, true) AS new_ratings\nFROM movies WHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1871,7 +1871,7 @@
       "line": 310,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Backfill missing rating sources with defaults\nSELECT object_concat({'imdb': 0, 'rotten_tomatoes': 0, 'metacritic': 0}, ratings) AS filled\nFROM movies",
+    "query": "\nSELECT object_concat({'imdb': 0, 'rotten_tomatoes': 0, 'metacritic': 0}, ratings) AS filled\nFROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1889,7 +1889,7 @@
       "line": 316,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Remove a key\nSELECT object_unset(director, 'born') AS dir_no_dob FROM movies",
+    "query": "\nSELECT object_unset(director, 'born') AS dir_no_dob FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1907,7 +1907,7 @@
       "line": 321,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Rename a key\nSELECT object_rename(ratings, 'imdb', 'imdb_rating') AS renamed FROM movies",
+    "query": "\nSELECT object_rename(ratings, 'imdb', 'imdb_rating') AS renamed FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1925,7 +1925,7 @@
       "line": 326,
       "heading": "### 6.2 Object examples"
     },
-    "query": "-- Flatten a nested object for inspection\nSELECT object_content(ratings, 'nested') AS flat FROM movies WHERE _id = 'tt0111161'",
+    "query": "\nSELECT object_content(ratings, 'nested') AS flat FROM movies WHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1943,7 +1943,7 @@
       "line": 357,
       "heading": "## 7. Date / time"
     },
-    "query": "-- Movies released this year\nSELECT title FROM movies\nWHERE date_part(date_cast(released), 'year')\n    = date_part(clock(), 'year')",
+    "query": "\nSELECT title FROM movies\nWHERE date_part(date_cast(released), 'year')\n    = date_part(clock(), 'year')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1961,7 +1961,7 @@
       "line": 364,
       "heading": "## 7. Date / time"
     },
-    "query": "-- date_add: warranty expires 90 days after each review\nSELECT _id,\n    date_format(\n        date_add(date_cast(created_at), 'day', 90),\n        'YYYY-MM-DD'\n    ) AS warranty_end\nFROM reviews",
+    "query": "\nSELECT _id,\n    date_format(\n        date_add(date_cast(created_at), 'day', 90),\n        'YYYY-MM-DD'\n    ) AS warranty_end\nFROM reviews",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1979,7 +1979,7 @@
       "line": 374,
       "heading": "## 7. Date / time"
     },
-    "query": "-- date_format: render the release date in a human-readable form\nSELECT title,\n    date_format(date_cast(released), 'YYYY-MM-DD') AS d\nFROM movies WHERE _id = 'tt0111161'",
+    "query": "\nSELECT title,\n    date_format(date_cast(released), 'YYYY-MM-DD') AS d\nFROM movies WHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -1997,7 +1997,7 @@
       "line": 381,
       "heading": "## 7. Date / time"
     },
-    "query": "-- Days since release\nSELECT title,\n    date_diff(date_cast(released), clock(), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
+    "query": "\nSELECT title,\n    date_diff(date_cast(released), clock(), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2015,7 +2015,7 @@
       "line": 394,
       "heading": "## 7. Date / time"
     },
-    "query": "-- date_sub mirrors date_add with sign flipped\nSELECT title,\n    date_format(\n        date_sub(date_cast(released), 'year', 10),\n        'YYYY'\n    ) AS released_minus_decade\nFROM movies WHERE _id = 'tt0111161'",
+    "query": "\nSELECT title,\n    date_format(\n        date_sub(date_cast(released), 'year', 10),\n        'YYYY'\n    ) AS released_minus_decade\nFROM movies WHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2033,7 +2033,7 @@
       "line": 404,
       "heading": "## 7. Date / time"
     },
-    "query": "-- date_trunc to the start of the year\nSELECT date_trunc(date_cast(released), 'year') AS year_start FROM movies",
+    "query": "\nSELECT date_trunc(date_cast(released), 'year') AS year_start FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2051,7 +2051,7 @@
       "line": 409,
       "heading": "## 7. Date / time"
     },
-    "query": "-- TZ offset (in minutes) embedded in an ISO timestamp\nSELECT _id, tz_offset('2024-06-15T14:00:00-05:00') AS minutes_off FROM reviews LIMIT 1",
+    "query": "\nSELECT _id, tz_offset('2024-06-15T14:00:00-05:00') AS minutes_off FROM reviews LIMIT 1",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2069,7 +2069,7 @@
       "line": 428,
       "heading": "## 8. Duration"
     },
-    "query": "-- Render watch_count as a fake \"duration\" string (illustrative)\nSELECT title, duration_format(watch_count, 'ms') AS watched_for FROM movies",
+    "query": "\nSELECT title, duration_format(watch_count, 'ms') AS watched_for FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2087,7 +2087,7 @@
       "line": 462,
       "heading": "### 10.1 `count` — three useful forms"
     },
-    "query": "-- Every document\nSELECT count(*) AS total FROM movies",
+    "query": "\nSELECT count(*) AS total FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2105,7 +2105,7 @@
       "line": 475,
       "heading": "### 10.2 Aggregate examples"
     },
-    "query": "-- Headline catalogue stats\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
+    "query": "\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2123,7 +2123,7 @@
       "line": 488,
       "heading": "### 10.2 Aggregate examples"
     },
-    "query": "-- Aggregates with GROUP BY — see select.md for the full clause\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
+    "query": "\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2141,7 +2141,7 @@
       "line": 56,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
-    "query": "-- Composite (year asc, rating desc) — requires SDK 5.1+\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
       "5.1.x"
     ],
@@ -2157,7 +2157,7 @@
       "line": 64,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
-    "query": "-- Single ascending key\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year)",
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2227,7 +2227,7 @@
       "line": 149,
       "heading": "### 3.1 Comment-style directives"
     },
-    "query": "-- Block comment form\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010",
+    "query": "\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2266,7 +2266,7 @@
       "line": 190,
       "heading": "### 3.3 Top-level vs per-collection keys"
     },
-    "query": "-- Top-level: cap planner candidates to 4\n-- Per-collection: pin movies to a specific index\n/*+ {\n  \"#max_scans\": 4,\n  \"movies\": { \"#index\": [\"movies_year_imdb\"] }\n} */\nSELECT title FROM movies\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 10",
+    "query": "\n\n/*+ {\n  \"#max_scans\": 4,\n  \"movies\": { \"#index\": [\"movies_year_imdb\"] }\n} */\nSELECT title FROM movies\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2366,7 +2366,7 @@
       "line": 297,
       "heading": "## 5. USE INDEX"
     },
-    "query": "-- Pin an index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
+    "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2384,7 +2384,7 @@
       "line": 346,
       "heading": "### 6.2 Worked examples"
     },
-    "query": "-- A covering plan: every projected and filtered field lives in the index\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
+    "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
       "5.1.x"
     ],
@@ -2400,7 +2400,7 @@
       "line": 361,
       "heading": "### 6.2 Worked examples"
     },
-    "query": "-- A full collection scan\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500",
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2418,7 +2418,7 @@
       "line": 375,
       "heading": "### 6.2 Worked examples"
     },
-    "query": "-- A union plan: OR across indexed predicates\nEXPLAIN SELECT title FROM movies\nWHERE year = 2010 OR director.name = 'Christopher Nolan'",
+    "query": "\nEXPLAIN SELECT title FROM movies\nWHERE year = 2010 OR director.name = 'Christopher Nolan'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2436,7 +2436,7 @@
       "line": 387,
       "heading": "### 6.3 Forcing a comparison"
     },
-    "query": "-- Good plan\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2472,7 +2472,7 @@
       "line": 412,
       "heading": "### 7.1 Two forms"
     },
-    "query": "-- Directive form: works on any statement\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10",
+    "query": "\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2488,7 +2488,7 @@
       "line": 435,
       "heading": "### 7.3 Combining with EXPLAIN"
     },
-    "query": "-- Plan-only (no execution); cheap and safe\nEXPLAIN SELECT title FROM movies WHERE year = 1994",
+    "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 1994",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2506,7 +2506,7 @@
       "line": 461,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
-    "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              -- equality\n  AND ratings.imdb > 8.0       -- range\nORDER BY ratings.imdb DESC",
+    "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              \n  AND ratings.imdb > 8.0       \nORDER BY ratings.imdb DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2540,7 +2540,7 @@
       "line": 490,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
-    "query": "-- Equality on year + director.name, range on box_office_millions, sort on year\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
+    "query": "\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2574,7 +2574,7 @@
       "line": 512,
       "heading": "### 8.2 Covering indexes"
     },
-    "query": "-- Covered by movies_year_imdb (year, ratings.imdb)\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
+    "query": "\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2660,7 +2660,7 @@
       "line": 120,
       "heading": "### `BETWEEN`"
     },
-    "query": "SELECT title FROM movies WHERE year BETWEEN 1990 AND 1999\n-- equivalent to (year >= 1990 AND year <= 1999)",
+    "query": "SELECT title FROM movies WHERE year BETWEEN 1990 AND 1999",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -2692,7 +2692,7 @@
       "line": 135,
       "heading": "### `IN` (scalar list)"
     },
-    "query": "SELECT title FROM movies\nWHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666')\n-- equivalent to _id = 'tt0111161' OR _id = 'tt0468569' OR _id = 'tt1375666'",
+    "query": "SELECT title FROM movies\nWHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2710,7 +2710,7 @@
       "line": 143,
       "heading": "### `IN` (scalar list)"
     },
-    "query": "-- scalar 'Drama' is an element of the genres array\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
+    "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2746,7 +2746,7 @@
       "line": 169,
       "heading": "## 6. Pattern matching"
     },
-    "query": "-- starts with \"The \"\nSELECT title FROM movies WHERE title LIKE 'The %'\n\n-- case-insensitive substring match",
+    "query": "\nSELECT title FROM movies WHERE title LIKE 'The %'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2764,7 +2764,7 @@
       "line": 223,
       "heading": "### `NOT`"
     },
-    "query": "-- 'is_classic AND has high IMDb' — rows where ratings is missing are excluded\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5\n\n-- defend against missing fields with IS NOT MISSING / IS NOT UNKNOWN",
+    "query": "\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2782,7 +2782,7 @@
       "line": 238,
       "heading": "## 8. String operator `||`"
     },
-    "query": "-- need to cast year (an integer) before concatenating\nSELECT title || ' (' || cast(year AS string) || ')' AS label\nFROM movies",
+    "query": "\nSELECT title || ' (' || cast(year AS string) || ')' AS label\nFROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2818,7 +2818,7 @@
       "line": 258,
       "heading": "### Array indexing — `array[i]`"
     },
-    "query": "-- first cast member's name — backquoted because 'cast' is a keyword\nSELECT title, `cast`[0].name AS lead_actor FROM movies\n\n-- first listed genre",
+    "query": "\nSELECT title, `cast`[0].name AS lead_actor FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2854,7 +2854,7 @@
       "line": 280,
       "heading": "### Object field access — `object.field` or `object[expr]`"
     },
-    "query": "-- dot form (typical)\nSELECT title, director.name AS dir FROM movies\n\n-- bracket form, useful when the key is dynamic or contains special chars",
+    "query": "\nSELECT title, director.name AS dir FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2888,7 +2888,7 @@
       "line": 305,
       "heading": "### 10.1 Boolean operators are keywords, not symbols"
     },
-    "query": "WHERE is_classic && ratings.imdb > 8        -- parse error\nWHERE genres == ['Drama'] || year < 1970    -- || here is string concat, not OR\n\n-- CORRECT — use word forms\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
+    "query": "WHERE is_classic && ratings.imdb > 8        \nWHERE genres == ['Drama'] || year < 1970    \n\n\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2903,7 +2903,7 @@
       "line": 371,
       "heading": "## 11. `XOR` — version-gated"
     },
-    "query": "-- Ditto SDK 4.x only: classics XOR'd against high-rated picks\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0\n\n-- Portable across 4.x and 5.0.x — same result, no XOR keyword",
+    "query": "\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0",
     "availableIn": [],
     "expectError": false
   },
@@ -2974,7 +2974,7 @@
       "line": 83,
       "heading": "### 1.3 `DISTINCT`"
     },
-    "query": "-- Distinct release years across the library\nSELECT DISTINCT year FROM movies ORDER BY year ASC",
+    "query": "\nSELECT DISTINCT year FROM movies ORDER BY year ASC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2990,7 +2990,7 @@
       "line": 110,
       "heading": "## 2. FROM clause"
     },
-    "query": "-- Default datasource, default register typing\nSELECT title, year FROM movies WHERE year >= 1990",
+    "query": "\nSELECT title, year FROM movies WHERE year >= 1990",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3037,7 +3037,7 @@
       "line": 155,
       "heading": "### 3.3 Parameter form"
     },
-    "query": "-- Bind a single id\nSELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
+    "query": "\nSELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3055,7 +3055,7 @@
       "line": 169,
       "heading": "### 3.4 Why USE IDS is SELECT-only"
     },
-    "query": "-- 1. Filter by IN-list\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+    "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3076,7 +3076,7 @@
       "line": 190,
       "heading": "## 4. USE INDEX"
     },
-    "query": "-- Use a specific index\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
+    "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3094,7 +3094,7 @@
       "line": 216,
       "heading": "## 5. USE DIRECTIVES"
     },
-    "query": "-- Steer the planner toward a named index\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010",
+    "query": "\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3112,7 +3112,7 @@
       "line": 253,
       "heading": "## 6. WHERE clause"
     },
-    "query": "-- Simple comparison + IS NOT MISSING\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING",
+    "query": "\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3130,7 +3130,7 @@
       "line": 291,
       "heading": "### 6.1 Quantifier expressions (v5.0+)"
     },
-    "query": "-- Movies where at least one cast member played 'Cooper'\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
+    "query": "\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -3147,7 +3147,7 @@
       "line": 320,
       "heading": "### 7.1 Single-key grouping"
     },
-    "query": "-- Count movies per year\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC",
+    "query": "\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3169,7 +3169,7 @@
       "line": 336,
       "heading": "### 7.2 Multi-key grouping"
     },
-    "query": "-- Films per (year, primary genre)\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC",
+    "query": "\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3192,7 +3192,7 @@
       "line": 369,
       "heading": "## 8. HAVING"
     },
-    "query": "-- Directors with 3+ films AND average IMDB > 8.0\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC",
+    "query": "\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3210,7 +3210,7 @@
       "line": 403,
       "heading": "## 9. ORDER BY"
     },
-    "query": "-- Top 10 by IMDB rating, breaking ties on title ascending\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10",
+    "query": "\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3250,7 +3250,7 @@
       "line": 444,
       "heading": "## 10. LIMIT / OFFSET"
     },
-    "query": "-- First page of 20, newest first\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20",
+    "query": "\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3273,7 +3273,7 @@
       "line": 489,
       "heading": "## 11. Cross-type sort order"
     },
-    "query": "-- Box office values that are MISSING bubble to the end ascending,\n-- and to the front descending.\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC",
+    "query": "\n\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3313,7 +3313,7 @@
       "line": 543,
       "heading": "### 12.3 Portable subscription patterns"
     },
-    "query": "-- Portable subscription: SELECT * with WHERE only\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true",
+    "query": "\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3331,7 +3331,7 @@
       "line": 554,
       "heading": "### 12.3 Portable subscription patterns"
     },
-    "query": "-- Only available when DQL_RESTRICT_TO_ORIGINAL_SYNTAX is not set\n-- AND (for ORDER BY / LIMIT) when DQL_RESTRICT_LIMIT_ORDER_BY is not set.\nSELECT title, ratings.imdb AS imdb FROM movies\nWHERE year >= 1990\nORDER BY imdb DESC\nLIMIT 50",
+    "query": "\n\nSELECT title, ratings.imdb AS imdb FROM movies\nWHERE year >= 1990\nORDER BY imdb DESC\nLIMIT 50",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3349,7 +3349,7 @@
       "line": 571,
       "heading": "## 13. Worked examples (movies dataset)"
     },
-    "query": "-- 1. Top 10 highest-rated movies\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
+    "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3365,7 +3365,7 @@
       "line": 664,
       "heading": "### 14.1 Inner join — projection from both sides"
     },
-    "query": "-- Every review with its movie's title and year\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
+    "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
@@ -3399,7 +3399,7 @@
       "line": 685,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
-    "query": "-- Each movie with its review scores\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
+    "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
     "availableIn": [
       "5.1.x"
     ],
@@ -3415,7 +3415,7 @@
       "line": 698,
       "heading": "### 14.3 Outer join + aggregation — reviews per movie"
     },
-    "query": "-- Review count and average per movie, including movies with none\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
+    "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
@@ -3531,7 +3531,7 @@
       "line": 105,
       "heading": "### 1.5 `ON ID CONFLICT` actions"
     },
-    "query": "-- Upsert: insert if new, merge fields if existing\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE",
+    "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3557,7 +3557,7 @@
       "line": 136,
       "heading": "### 1.7 `INITIAL` — seed default data (Small Peer)"
     },
-    "query": "-- Seed a default movie record on first launch\nINSERT INTO movies INITIAL DOCUMENTS\n  ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 })",
+    "query": "\nINSERT INTO movies INITIAL DOCUMENTS\n  ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 })",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3597,7 +3597,7 @@
       "line": 195,
       "heading": "### 2.2 `SET` and `UNSET`"
     },
-    "query": "-- Set + unset, both REGISTER fields\nUPDATE movies\nSET is_classic = true,\n    box_office_millions = 28.34\nUNSET tags\nWHERE _id = 'tt0111161'",
+    "query": "\nUPDATE movies\nSET is_classic = true,\n    box_office_millions = 28.34\nUNSET tags\nWHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3621,7 +3621,7 @@
       "line": 208,
       "heading": "### 2.3 Updating nested MAP fields"
     },
-    "query": "-- Only ratings.imdb is updated; rotten_tomatoes / metacritic remain\nUPDATE COLLECTION movies (ratings MAP)\nSET ratings = { 'imdb': 9.4 }\nWHERE _id = 'tt0111161'",
+    "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET ratings = { 'imdb': 9.4 }\nWHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3645,7 +3645,7 @@
       "line": 221,
       "heading": "### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`"
     },
-    "query": "-- Increment a state-based COUNTER (4.13+)\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161'",
+    "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3672,7 +3672,7 @@
       "line": 247,
       "heading": "### 2.5 Combined clauses + `RETURNING`"
     },
-    "query": "-- Mark every pre-1980 film as a classic and return the result\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
+    "query": "\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
     "availableIn": [
       "5.1.x"
     ],
@@ -3691,7 +3691,7 @@
       "line": 280,
       "heading": "## 3. EVICT"
     },
-    "query": "-- Drop all pre-1950 movies from this device's local store\nEVICT FROM movies\nWHERE year < 1950",
+    "query": "\nEVICT FROM movies\nWHERE year < 1950",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3712,7 +3712,7 @@
       "line": 312,
       "heading": "## 4. TOMBSTONE"
     },
-    "query": "-- Retract a withdrawn movie mesh-wide, returning what was tombstoned\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
+    "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
     "availableIn": [],
     "expectError": false,
     "preQueries": [
@@ -3730,7 +3730,7 @@
       "line": 343,
       "heading": "## 5. DELETE — alias"
     },
-    "query": "-- Bulk delete by id list (resolves to EVICT on Small Peer, TOMBSTONE on Big Peer)\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
+    "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3751,7 +3751,7 @@
       "line": 376,
       "heading": "## 6. EXPLAIN"
     },
-    "query": "-- Plan a SELECT against an indexed collection\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8",
+    "query": "\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3769,7 +3769,7 @@
       "line": 415,
       "heading": "## 7. ALTER SYSTEM"
     },
-    "query": "-- Switch off strict mode (5.0.x ships strict=false by default; 4.x ships strict=true)\nALTER SYSTEM SET DQL_STRICT_MODE = false",
+    "query": "\nALTER SYSTEM SET DQL_STRICT_MODE = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3808,7 +3808,7 @@
       "line": 468,
       "heading": "## 9. SYNC CONTEXT (RemoteQuery)"
     },
-    "query": "-- Ask all kiosk peers for their list of classic movies\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
+    "query": "\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
     "availableIn": [],
     "expectError": false
   },
@@ -3819,7 +3819,7 @@
       "line": 492,
       "heading": "## 10. PROFILE"
     },
-    "query": "-- Profile a SELECT (5.0+)\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
+    "query": "\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
     "availableIn": [
       "5.0.x",
       "5.1.x"
@@ -3860,7 +3860,7 @@
       "line": 87,
       "heading": "## 1. REGISTER"
     },
-    "query": "-- Force REGISTER on an object — needed on 5.0 when you want LWW on the whole object.\nUPDATE COLLECTION movies (ratings REGISTER)\nSET ratings = { 'imdb': 9.4, 'rotten_tomatoes': 98, 'metacritic': 99 }\nWHERE _id = 'tt0111161'",
+    "query": "\nUPDATE COLLECTION movies (ratings REGISTER)\nSET ratings = { 'imdb': 9.4, 'rotten_tomatoes': 98, 'metacritic': 99 }\nWHERE _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3884,7 +3884,7 @@
       "line": 96,
       "heading": "## 1. REGISTER"
     },
-    "query": "-- INSERT — every REGISTER field is just a key in the document literal\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight', 'year': 2008, 'is_classic': true })",
+    "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight', 'year': 2008, 'is_classic': true })",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3909,7 +3909,7 @@
       "line": 130,
       "heading": "## 2. MAP"
     },
-    "query": "-- Bare MAP — all sub-fields default to REGISTER\nINSERT INTO COLLECTION movies (director MAP)\nDOCUMENTS ({ '_id': 'tt0111161', 'director': { 'name': 'Frank Darabont', 'born': 1959 } })",
+    "query": "\nINSERT INTO COLLECTION movies (director MAP)\nDOCUMENTS ({ '_id': 'tt0111161', 'director': { 'name': 'Frank Darabont', 'born': 1959 } })",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3934,7 +3934,7 @@
       "line": 147,
       "heading": "## 2. MAP"
     },
-    "query": "-- Only ratings.imdb changes; rotten_tomatoes and metacritic survive\nUPDATE COLLECTION movies (ratings MAP)\nSET    ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
+    "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET    ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4008,7 +4008,7 @@
       "line": 202,
       "heading": "## 3. COUNTER"
     },
-    "query": "-- Increment / decrement\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
+    "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4075,7 +4075,7 @@
       "line": 317,
       "heading": "## 6. Reading typed fields with `SELECT`"
     },
-    "query": "-- Read director.name as a MAP sub-field\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161'",
+    "query": "\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4093,7 +4093,7 @@
       "line": 354,
       "heading": "### Worked example: same statement, different results"
     },
-    "query": "-- Same INSERT on both versions, no type definition\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
+    "query": "\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4117,7 +4117,7 @@
       "line": 380,
       "heading": "### Cross-version recommendation"
     },
-    "query": "-- On v4.14.x: opt into lenient (object → MAP) behavior\nALTER SYSTEM SET dql_strict_mode = false\n\n-- On v5.0.x: opt back into strict (object → REGISTER) behavior",
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4138,7 +4138,7 @@
       "line": 209,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
-    "query": "-- See what the engine is using right now\nSHOW dql_strict_mode",
+    "query": "\nSHOW dql_strict_mode",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4156,7 +4156,7 @@
       "line": 219,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
-    "query": "-- On v4.14.x: opt into the v5-style lenient default\nALTER SYSTEM SET dql_strict_mode = false",
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",

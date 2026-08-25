@@ -129,9 +129,12 @@ function stripLeadingComments(stmt) {
  * a source-verbatim `;` fails with "Unexpected token ;".
  */
 function stripTerminator(stmt) {
-  const t = stmt.trim();
-  // Strip a `;` that ends the statement even if `--` comment lines follow it.
-  return t.replace(/;((\s|--[^\n]*)*)$/, "");
+  // Strip `-- comments` per line (a comment may share the line with the `;`),
+  // then drop the trailing `;` itself. Line-based, not a single regex: avoids
+  // catastrophic backtracking (CodeQL js/redos).
+  const lines = stmt.trim().split("\n");
+  const stripped = lines.map(stripLineComment).join("\n").replace(/\s+$/, "");
+  return stripped.replace(/;\s*$/, "");
 }
 
 /** Returns the first top-level keyword in a statement (after leading comments). */
