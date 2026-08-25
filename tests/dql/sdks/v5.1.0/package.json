@@ -1,0 +1,8 @@
+{
+  "name": "ditto-sdk-5.1.0",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@dittolive/ditto": "5.1.0"
+  }
+}

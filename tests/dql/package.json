@@ -1,0 +1,18 @@
+{
+  "name": "ditto-dql-skill-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract-queries.mjs",
+    "transform": "node scripts/transform-dataset.mjs",
+    "test": "npm run test:v5 && npm run test:v4 && npm run test:v51",
+    "test:v4": "DITTO_SDK_VERSION=4.14.4 node runner/run.mjs",
+    "test:v5": "DITTO_SDK_VERSION=5.0.0 node runner/run.mjs",
+    "report": "node scripts/report.mjs",
+    "test:v51": "DITTO_SDK_VERSION=5.1.0 node runner/run.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

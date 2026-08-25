@@ -3,12 +3,14 @@ name: DQL Skill Tests
 on:
   pull_request:
     paths:
-      - 'plugins/ditto-dql/**'
+      - 'skills/dql/**'
+      - 'tests/dql/**'
       - '.github/workflows/dql-skill-tests.yml'
   push:
     branches: [main]
     paths:
-      - 'plugins/ditto-dql/**'
+      - 'skills/dql/**'
+      - 'tests/dql/**'
       - '.github/workflows/dql-skill-tests.yml'
 
 permissions:
@@ -23,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['4.14.4', '5.0.0']
+        sdk: ['4.14.4', '5.0.0', '5.1.0']
     steps:
       - uses: actions/checkout@v4
 
@@ -34,13 +36,13 @@ jobs:
       - name: Install SDK
         env:
           SDK_VERSION: ${{ matrix.sdk }}
-        working-directory: plugins/ditto-dql/tests
+        working-directory: tests/dql
         run: |
           cd "sdks/v${SDK_VERSION}"
           npm install
 
       - name: Verify transformed fixture exists
-        working-directory: plugins/ditto-dql/tests
+        working-directory: tests/dql
         run: |
           if [ ! -f fixtures/movies-pedagogical.ndjson ]; then
             echo "fixtures/movies-pedagogical.ndjson not found — the committed fixture is required"
@@ -49,7 +51,7 @@ jobs:
           wc -l fixtures/movies-pedagogical.ndjson
 
       - name: Run tests
-        working-directory: plugins/ditto-dql/tests
+        working-directory: tests/dql
         env:
           SDK_VERSION: ${{ matrix.sdk }}
           DITTO_SDK_VERSION: ${{ matrix.sdk }}
@@ -57,6 +59,8 @@ jobs:
         run: |
           if [ "$SDK_VERSION" = "4.14.4" ]; then
             npm run test:v4
+          elif [ "$SDK_VERSION" = "5.1.0" ]; then
+            npm run test:v51
           else
             npm run test:v5
           fi
@@ -66,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dql-test-results-${{ matrix.sdk }}
-          path: plugins/ditto-dql/tests/results/
+          path: tests/dql/results/
 
   summary:
     name: Combined report
@@ -82,15 +86,15 @@ jobs:
           node-version: 24
       - uses: actions/download-artifact@v4
         with:
-          path: plugins/ditto-dql/tests/results-merged
+          path: tests/dql/results-merged
       - name: Merge artifacts into single results dir
         run: |
-          mkdir -p plugins/ditto-dql/tests/results
-          for d in plugins/ditto-dql/tests/results-merged/*/; do
-            cp -r "$d"* plugins/ditto-dql/tests/results/ 2>/dev/null || true
+          mkdir -p tests/dql/results
+          for d in tests/dql/results-merged/*/; do
+            cp -r "$d"* tests/dql/results/ 2>/dev/null || true
           done
-          ls plugins/ditto-dql/tests/results/
+          ls tests/dql/results/
       - name: Print report
-        working-directory: plugins/ditto-dql/tests
+        working-directory: tests/dql
         continue-on-error: true
         run: node scripts/report.mjs || true
