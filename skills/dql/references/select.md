@@ -125,7 +125,7 @@ SELECT m.title, m.year FROM movies m WHERE m.year >= 2000;
 
 ## 3. USE IDS
 
-> **SELECT-only.** `USE IDS` is supported on `SELECT` in both 4.14.x and 5.0.x. It is **not** supported on `UPDATE`, `EVICT`, `TOMBSTONE`, or `DELETE` (parser TODO in both SDK versions). For mutations targeting a known id set, use `WHERE _id IN (...)` — see [`statements.md`](statements.md).
+> **SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. It is **not** supported on `UPDATE`, `EVICT`, `TOMBSTONE`, or `DELETE`. For mutations targeting a known id set, use `WHERE _id IN (...)` — see [`statements.md`](statements.md).
 
 ```
 USE IDS ( <id_expr> [, <id_expr> ...] )
@@ -134,7 +134,20 @@ USE IDS ( <list_param> )           -- :param holding a list of ids
 
 Skips the collection scan and goes directly to the indexed-by-id path.
 
-> **Tested-SDK note:** only the single-id form is accepted by 4.14.x / 5.0.x / 5.1.0 as shipped — the multi-id list form (§3.2) currently fails with ``(...) is not supported``. Bind one id at a time. With the default `#auto_use_ids` directive (`true`) the planner will automatically rewrite a `WHERE _id = …` into a `USE IDS …` lookup; supplying `USE IDS` explicitly is recommended when you want the plan shape to be stable across SDK versions.
+> **Tested-SDK note:** only the single-id form of the explicit syntax is accepted by 4.14.x / 5.0.x / 5.1.0 as shipped — the multi-id list and list-parameter forms (§§3.2–3.3) currently fail with ``(...) is not supported``.
+>
+> You rarely need to write `USE IDS` at all on 5.0+: the planner **automatically rewrites** `_id` equality filters into an id-direct plan when it can. Harness-verified against 4.14.4 / 5.0.0 / 5.1.0 (`EXPLAIN` shows the `idScan` operator when the rewrite fires):
+>
+> | Filter shape | 4.14.x | 5.0.x | 5.1.x |
+> |---|---|---|---|
+> | `WHERE _id = '…'` | scan | `idScan` | `idScan` |
+> | `… AND _id = '…'` (any `_id=` branch) | scan | `idScan` | `idScan` |
+> | `_id = 'a' OR _id = 'b'` (every OR branch has `_id=`) | scan | `idScan` on both ids | `idScan` on both ids |
+> | `_id = 'a' OR year > 2000` (partial OR) | scan | scan | scan |
+> | `WHERE _id IN ('a', 'b')` | scan | scan | `idScan` on the whole list |
+> | `_id LIKE` / non-equality | scan | scan | scan |
+>
+> A residual `FILTER` operator stays in the plan, so correctness is unaffected. Use explicit `USE IDS` when you need the shortest path explicitly (e.g. to make the intent visible at 4.14.x, where the rewrite does not exist).
 
 ### 3.1 Single id
 
@@ -142,25 +155,32 @@ Skips the collection scan and goes directly to the indexed-by-id path.
 SELECT * FROM movies USE IDS ('tt0111161');
 ```
 
+To see the plan pick the id path yourself (note the `idScan` operator on 5.0+; 4.14.x shows a plain `scan` — same result, the explicit `USE IDS` is how v4 gets the direct lookup):
+
+```sql
+EXPLAIN SELECT * FROM movies WHERE _id = 'tt0111161';
+```
+
 ### 3.2 Id list
+
+The explicit list form `USE IDS ('a', 'b', …)` is in the grammar but **parser-rejected on all tested versions** (`is not supported`). The supported way to fetch a known set of ids is the predicate form:
 
 ```sql
 SELECT _id, title, year
 FROM movies
-USE IDS ('tt0111161', 'tt0468569', 'tt1375666');
+WHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666');
 ```
+
+On 5.1+ this rewrites to the direct id path automatically (see the table in §3); on 5.0.x and 4.14.x it runs as scan+filter — for a hot path there, spell it as an `OR` chain so the same rewrite fires on 5.0+.
 
 ### 3.3 Parameter form
 
 ```sql
 -- Bind a single id
 SELECT * FROM movies USE IDS (:id);
-
--- Bind an array of ids in one parameter
-SELECT * FROM movies USE IDS (:id_list);
 ```
 
-The host SDK binds `:id_list` to a list value. Both single-id and array forms accept the parameter shape — pass an array of strings and the planner expands it.
+Binding an *array* of ids (`USE IDS (:id_list)`) is the parser-rejected list form again — use `WHERE _id IN :id_list` instead, which the 5.1+ planner then rewrites to the direct id path.
 
 ### 3.4 Why USE IDS is SELECT-only
 

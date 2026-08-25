@@ -39,7 +39,7 @@ FROM stores
 USE IDS ('store_seattle');
 ```
 
-**Notes:** two round trips, ordered — you cannot run them in parallel (the second depends on the first). `USE IDS` is SELECT-only and hits the primary id index directly (see [`select.md`](../references/select.md) §3). Micro-optimisation: if your UI shows the same store often, cache it — stores are tiny and stable.
+**Notes:** two round trips, ordered — you cannot run them in parallel (the second depends on the first). `USE IDS` is SELECT-only and hits the primary id index directly (see [`select.md`](../references/select.md) §3). On 5.0+ an explicit `USE IDS` is optional — the planner already rewrites `WHERE _id = '…'` to the same direct path (QE-313; see §3 of `select.md`), so write `USE IDS` explicitly only when you care about the 4.14.x plan shape. Micro-optimisation: if your UI shows the same store often, cache it — stores are tiny and stable.
 
 ### Task R2 — Recent orders with customer names
 
@@ -63,7 +63,7 @@ FROM customers
 WHERE _id IN ('edf7a497-c04e-4326-a08a-837de9335a9a', 'e652232a-95ab-4fcf-86b7-e40cea3d749d');
 ```
 
-**Notes:** `WHERE _id IN (...)` is the supported list form; keep the list small enough to round-trip (hundreds is fine). Alternatives considered SQL-ish — correlated subqueries — are not needed here: ids from step 1 are plain values.
+**Notes:** `WHERE _id IN (...)` is the supported list form; keep the list small enough to round-trip (hundreds is fine). Plan note: on 5.1+ the planner rewrites `IN` on `_id` into the direct id path; on 5.0.x only `=` (or `OR` of equalities) triggers that rewrite, and 4.14.x always scans — for a hot path on pre-5.1, prefer the OR form or step through with single-id `USE IDS`.
 
 ### Task R3 — The items of an order, with product names
 

@@ -148,7 +148,8 @@ All other operators (`+`, `-`, `*`, `/`, `%`, comparison family, `LIKE` / `ILIKE
 | Per-collection planner directives (`#prefer_order`, `#intersects`, `#index`, `#max_scans`, `#max_inlist`, `#max_serial_ranges`) | ✓ | ✓ | See [`indexing.md`](indexing.md) §3. |
 | Top-level planner directives (`#disable_index_scan`, `#disable_covering`, `#disable_special`, `#disable_intersect_eo`, `#auto_use_ids`, `#reprepare`) | ✓ | ✓ | |
 | `#profile` planner directive                       |   ✗    |   ✓   | **SDK 5.0+**. v4 has no `PROFILE`/`profile` token in the parser.               |
-| `USE IDS (…)` on `SELECT`                          |   ✓    |   ✓   |                                                                                |
+| `USE IDS (…)` on `SELECT` (`=`-filter form)          |   ✓    |   ✓   | Explicit single-id form only; list form is parser-rejected on all tested lines. |
+| Automatic `_id` equality rewrite (QE-313)            |   ✗    |   ✓   | 5.0+: `WHERE _id = '…'` / `AND` / all-`OR`-branches rewrite to `idScan`. 5.1.0 also rewrites `WHERE _id IN (…)` lists. |
 | `USE IDS (…)` on `UPDATE` / `DELETE` / `EVICT` / `TOMBSTONE` | ✗ | ✗   | Parser TODO in both lines. v5.1+ may add.                                      |
 | `ADVISE` / `ADVISE AND PROVISION`                  |   ✗    |   ✗   | **v5.1.0** only. See [`indexing.md`](indexing.md) §9 for today's workaround.   |
 

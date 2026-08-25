@@ -5,7 +5,6 @@
     "sk_statements_d1a85ca0": [],
     "sk_statements_780a8c87": [],
     "sk_indexing_b35874bc": [],
-    "sk_select_232d9543": [],
     "sk_indexing_3ee66db0": [],
     "sk_types_mutators_466cf90f": [],
     "sk_functions_9dfbb020": [
@@ -62,6 +61,6 @@
     "sk_types_mutators_a83cc87e": "attachment :new_handle is a placeholder"
   },
   "skipGoldens": {
-    "sk_select_50fe35c9": "ORDER BY on an aggregate with many ties \u2014 firstRow is not reproducible"
+    "sk_select_4dd972c5": "ORDER BY on an aggregate with many ties \u2014 firstRow is not reproducible"
   }
 }

@@ -3546,10 +3546,10 @@
     }
   },
   {
-    "id": "sk_select_fb3d0732",
+    "id": "sk_select_2cbf2070",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 141,
+      "line": 154,
       "heading": "### 3.1 Single id"
     },
     "query": "SELECT * FROM movies USE IDS ('tt0111161')",
@@ -3564,21 +3564,46 @@
     }
   },
   {
-    "id": "sk_select_232d9543",
+    "id": "sk_select_906a8612",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 147,
-      "heading": "### 3.2 Id list"
+      "line": 160,
+      "heading": "### 3.1 Single id"
     },
-    "query": "SELECT _id, title, year\nFROM movies\nUSE IDS ('tt0111161', 'tt0468569', 'tt1375666')",
-    "availableIn": [],
-    "expectError": false
+    "query": "EXPLAIN SELECT * FROM movies WHERE _id = 'tt0111161'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_select_b154783b",
+    "id": "sk_select_c7bf45a6",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 155,
+      "line": 168,
+      "heading": "### 3.2 Id list"
+    },
+    "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN ('tt0111161', 'tt0468569', 'tt1375666')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_select_866ea5b5",
+    "source": {
+      "file": "skills/dql/references/select.md",
+      "line": 178,
       "heading": "### 3.3 Parameter form"
     },
     "query": "\nSELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
@@ -3593,10 +3618,10 @@
     }
   },
   {
-    "id": "sk_select_9fb0af93",
+    "id": "sk_select_d2683d71",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 169,
+      "line": 189,
       "heading": "### 3.4 Why USE IDS is SELECT-only"
     },
     "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
@@ -3614,10 +3639,10 @@
     }
   },
   {
-    "id": "sk_select_fa445658",
+    "id": "sk_select_ec8f7140",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 190,
+      "line": 210,
       "heading": "## 4. USE INDEX"
     },
     "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
@@ -3632,10 +3657,10 @@
     }
   },
   {
-    "id": "sk_select_fd7b40c1",
+    "id": "sk_select_6dc138b3",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 216,
+      "line": 236,
       "heading": "## 5. USE DIRECTIVES"
     },
     "query": "\nSELECT *\nFROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"]}'\nWHERE year = 2010",
@@ -3650,10 +3675,10 @@
     }
   },
   {
-    "id": "sk_select_0425635d",
+    "id": "sk_select_c1ca245e",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 253,
+      "line": 273,
       "heading": "## 6. WHERE clause"
     },
     "query": "\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING",
@@ -3668,10 +3693,10 @@
     }
   },
   {
-    "id": "sk_select_3d1542e3",
+    "id": "sk_select_97e1a68a",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 291,
+      "line": 311,
       "heading": "### 6.1 Quantifier expressions (v5.0+)"
     },
     "query": "\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
@@ -3685,10 +3710,10 @@
     }
   },
   {
-    "id": "sk_select_8506ec58",
+    "id": "sk_select_1367cae5",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 320,
+      "line": 340,
       "heading": "### 7.1 Single-key grouping"
     },
     "query": "\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC",
@@ -3707,10 +3732,10 @@
     }
   },
   {
-    "id": "sk_select_65c7b241",
+    "id": "sk_select_a4c5e68e",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 336,
+      "line": 356,
       "heading": "### 7.2 Multi-key grouping"
     },
     "query": "\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC",
@@ -3730,10 +3755,10 @@
     }
   },
   {
-    "id": "sk_select_61c74ddf",
+    "id": "sk_select_4e3a0372",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 369,
+      "line": 389,
       "heading": "## 8. HAVING"
     },
     "query": "\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC",
@@ -3748,10 +3773,10 @@
     }
   },
   {
-    "id": "sk_select_935a0ab0",
+    "id": "sk_select_04f6eb97",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 403,
+      "line": 423,
       "heading": "## 9. ORDER BY"
     },
     "query": "\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10",
@@ -3766,10 +3791,10 @@
     }
   },
   {
-    "id": "sk_select_50053e70",
+    "id": "sk_select_930da004",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 425,
+      "line": 445,
       "heading": "### NULL / MISSING in ORDER BY"
     },
     "query": "SELECT title, box_office_millions\nFROM movies\nWHERE box_office_millions IS NOT MISSING\nORDER BY box_office_millions DESC\nLIMIT 20",
@@ -3788,10 +3813,10 @@
     }
   },
   {
-    "id": "sk_select_bf8ada5c",
+    "id": "sk_select_57c61599",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 444,
+      "line": 464,
       "heading": "## 10. LIMIT / OFFSET"
     },
     "query": "\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20",
@@ -3811,10 +3836,10 @@
     }
   },
   {
-    "id": "sk_select_847357e4",
+    "id": "sk_select_a840f3b5",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 489,
+      "line": 509,
       "heading": "## 11. Cross-type sort order"
     },
     "query": "\n\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC",
@@ -3829,10 +3854,10 @@
     }
   },
   {
-    "id": "sk_select_a91591f8",
+    "id": "sk_select_a0fd6744",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 501,
+      "line": 521,
       "heading": "## 11. Cross-type sort order"
     },
     "query": "SELECT title, box_office_millions FROM movies\nORDER BY ifmissingornull(box_office_millions, -1) DESC",
@@ -3851,10 +3876,10 @@
     }
   },
   {
-    "id": "sk_select_0b175b13",
+    "id": "sk_select_bd0eed35",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 543,
+      "line": 563,
       "heading": "### 12.3 Portable subscription patterns"
     },
     "query": "\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true",
@@ -3869,10 +3894,10 @@
     }
   },
   {
-    "id": "sk_select_afdf0c60",
+    "id": "sk_select_79f7d3d1",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 554,
+      "line": 574,
       "heading": "### 12.3 Portable subscription patterns"
     },
     "query": "\n\nSELECT title, ratings.imdb AS imdb FROM movies\nWHERE year >= 1990\nORDER BY imdb DESC\nLIMIT 50",
@@ -3887,10 +3912,10 @@
     }
   },
   {
-    "id": "sk_select_20218305",
+    "id": "sk_select_02bdd933",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 571,
+      "line": 591,
       "heading": "## 13. Worked examples (movies dataset)"
     },
     "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
@@ -3903,10 +3928,10 @@
     "expect": {}
   },
   {
-    "id": "sk_select_7a8a7cdc",
+    "id": "sk_select_37a89cf7",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 664,
+      "line": 684,
       "heading": "### 14.1 Inner join — projection from both sides"
     },
     "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
@@ -3919,10 +3944,10 @@
     }
   },
   {
-    "id": "sk_select_234bb22a",
+    "id": "sk_select_71681b1d",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 679,
+      "line": 699,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -3937,10 +3962,10 @@
     }
   },
   {
-    "id": "sk_select_1b8b3a84",
+    "id": "sk_select_0c43416d",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 685,
+      "line": 705,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
@@ -3953,10 +3978,10 @@
     }
   },
   {
-    "id": "sk_select_50fe35c9",
+    "id": "sk_select_4dd972c5",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 698,
+      "line": 718,
       "heading": "### 14.3 Outer join + aggregation — reviews per movie"
     },
     "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
@@ -3966,10 +3991,10 @@
     "expectError": false
   },
   {
-    "id": "sk_select_12b7cc12",
+    "id": "sk_select_6ed9bae0",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 714,
+      "line": 734,
       "heading": "### 14.4 Join + HAVING — keep only well-reviewed movies"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC",
@@ -3982,10 +4007,10 @@
     }
   },
   {
-    "id": "sk_select_af481e08",
+    "id": "sk_select_6154833e",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 727,
+      "line": 747,
       "heading": "### 14.5 Anti-join — movies with no reviews"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
@@ -4676,10 +4701,10 @@
     }
   },
   {
-    "id": "sk_versions_c1cf91eb",
+    "id": "sk_versions_4c45dff1",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 209,
+      "line": 210,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nSHOW dql_strict_mode",
@@ -4694,10 +4719,10 @@
     }
   },
   {
-    "id": "sk_versions_71e95d1e",
+    "id": "sk_versions_3d5c11f4",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 219,
+      "line": 220,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
