@@ -1,0 +1,16 @@
+{
+  "_id": "k-100",
+  "teamId": "t-9",
+  "assigneeId": "u-1",
+  "title": "Replace gate sensor",
+  "state": "open",
+  "points": 3,
+  "commentsCount": 0,
+  "comments": [
+    { "by": "u-2", "at": "2026-08-25T09:00:00Z", "body": "Parts ordered" }
+  ],
+  "history": [
+    { "at": "2026-08-25T09:00:00Z", "state": "open" }
+  ],
+  "labels": ["hardware", "urgent"]
+}

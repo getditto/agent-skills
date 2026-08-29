@@ -29,12 +29,15 @@ agents/                        # Portable agent definitions (markdown)
 └── dql-expert.md
 
 tests/                         # Per-skill test harnesses
-└── dql/                       # Skill: name-matched subdirectory
-    ├── catalog/  scripts/  runner/  fixtures/  sdks/
+├── dql/                       # DQL: name-matched subdirectory
+│   ├── catalog/  scripts/  runner/  fixtures/  sdks/
+│   └── README.md
+└── data-modeling/             # data-modeling: live-model JSON-review evals
+    ├── cases/  runner/
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
-└── ditto-dql/
+└── ditto-<plugin>/
     ├── .claude-plugin/plugin.json
     ├── skills -> ../../skills   (symlink)
     └── agents -> ../../agents   (symlink)
@@ -70,7 +73,11 @@ never duplicated in the wrapper.
 
 `tests/<skill>/` holds executable verification for a skill's documented
 examples. For DQL: `tests/dql` runs every ```sql block in `skills/dql/`
-against real Ditto SDK versions (see `tests/dql/README.md`). CI workflows:
+against real Ditto SDK versions (see `tests/dql/README.md`). For
+data-modeling: `tests/data-modeling` feeds raw-JSON cases plus the skill to
+live AI models and deterministically scores the recommendations against the
+rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
+`tests/data-modeling/README.md`). CI workflows:
 
 - `.github/workflows/ci.yml` — validates JSON manifests and SKILL.md
   frontmatter, checks marketplace `source` targets exist.

@@ -14,6 +14,7 @@ customer use.**
 | Skill | Description |
 |-------|-------------|
 | [dql](skills/dql) (`write-dql`) | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
+| [data-modeling](skills/data-modeling) (`data-modeling`) | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x. |
 
 ## Repository layout
 
@@ -38,6 +39,8 @@ Install via the bundled plugin marketplace (backed by thin wrappers in
 ```bash
 /plugin marketplace add getditto/claude-code-plugins
 /plugin install ditto-dql
+# or
+/plugin install ditto-data-modeling
 ```
 
 `.claude-plugin/marketplace.json` → `plugins/ditto-dql/.claude-plugin/plugin.json`

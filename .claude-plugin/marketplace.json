@@ -18,6 +18,17 @@
       },
       "source": "./plugins/ditto-dql",
       "category": "development"
+    },
+    {
+      "name": "ditto-data-modeling",
+      "description": "CRDT-aware data modeling for Ditto: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed vs split decisions, document size budgets, and JSON review across SDK 4.14.x and 5.x",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-data-modeling",
+      "category": "development"
     }
   ]
 }

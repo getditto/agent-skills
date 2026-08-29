@@ -1,0 +1,32 @@
+{
+  "id": "iot-sensor",
+  "title": "IoT sensor with embedded telemetry stream",
+  "context": "Ditto SDK 4.14.x (LTS) on the sensors' gateways. A new reading is appended every 10 seconds, 24/7. Gateways sync to a Big Peer over WiFi; a technician's phone connects over BLE to read live state.",
+  "findings": [
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "readings",
+      "severity": "blocker",
+      "groups": [["readings?"], ["unbounded|grow|append|time.?series"], ["separate collection|own document|per.?reading|child collection|split"]]
+    },
+    {
+      "id": "SIZE_HARD",
+      "path": "document",
+      "severity": "blocker",
+      "groups": [["256\\s?(k|kb|kib)|5\\s?(m|mb|mib)|soft.?limit|hard.?limit|size.?limit|grow"]]
+    },
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "connectionCount",
+      "severity": "blocker",
+      "groups": [["connection.?count"], ["counter"], ["4\\.14"]]
+    },
+    {
+      "id": "ARRAY_LWW",
+      "path": "readings",
+      "severity": "blocker",
+      "groups": [["array"], ["last.?write.?wins|lww|whole.?array|overwrit|lost"]]
+    }
+  ],
+  "antiFindings": []
+}

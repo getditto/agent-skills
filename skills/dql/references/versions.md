@@ -43,11 +43,11 @@ Still **not** supported in 5.1.0 (verified): `XOR` (parse error on every line �
 Four categories of version annotation appear throughout the reference files:
 
 1. **Always supported** — no tag. The feature works identically on 4.14.x, 5.0.x, and 5.1.x. Example: `LIKE`, `array_contains()`, almost every scalar in [`functions.md`](functions.md), every aggregate.
-2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.13+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
+2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
 3. **SDK 5.0+** — the feature landed in v5 and is **not** available in v4 at all. Example: quantifier expressions (`ANY/EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), recursive descent via `WITHIN`, the `PROFILE` leading keyword, the `#profile` directive, `DQL_RESTRICT_LIMIT_ORDER_BY`.
 4. **Removed in v5.0** — the feature was in v4 but is **gone in v5.0** and may return in v5.1. Two members of this category: `XOR` (operator) and `INSERT ... ON ID CONFLICT DO MERGE`. Both will be first-class in v5.1.
 
-When you see a tag like "SDK 4.13+" it means: works on 4.13 through 4.14.x **and** on 5.0.x. When you see "SDK 5.0+" it means: 5.0.x and newer only — will parse-error on any 4.x release.
+When you see a tag like "SDK 4.14+" it means: works on 4.14.x **and** on 5.0.x. When you see "SDK 5.0+" it means: 5.0.x and newer only — will parse-error on any 4.x release.
 
 ---
 
@@ -116,7 +116,7 @@ When you see a tag like "SDK 4.13+" it means: works on 4.13 through 4.14.x **and
 | `REGISTER`    | 4.x     |   ✓    |   ✓   | Default for scalars; default for objects under `dql_strict_mode = true`.         |
 | `MAP`         | 4.x     |   ✓    |   ✓   | Default for objects under `dql_strict_mode = false` (v5.0 default).              |
 | `ATTACHMENT`  | 4.x     |   ✓    |   ✓   | Binary blob; handle merges as `REGISTER`, bytes content-addressed.               |
-| `COUNTER`     | 4.13+   |   ✓    |   ✓   | State-based counter. Mutator: `APPLY ... INCREMENT BY` / `APPLY ... RESTART [WITH]`. |
+| `COUNTER`     | 4.14+   |   ✓    |   ✓   | State-based counter. Mutator: `APPLY ... INCREMENT BY` / `APPLY ... RESTART [WITH]`. |
 | `PN_COUNTER`  | 4.11+   |   ✓    |   ✓   | Legacy positive-negative counter. Mutator: `APPLY ... PN_INCREMENT BY`. No `RESTART`. |
 
 See [`types-mutators.md`](types-mutators.md) for full semantics and the "COUNTER vs PN_COUNTER" decision table.
@@ -244,7 +244,7 @@ Three reasons portability is worth thinking about up front.
 - [`operators.md`](operators.md) — operator precedence, comparison/logical semantics, the `XOR` cross-version note in §11.
 - [`functions.md`](functions.md) — every scalar function (all dual-version) and aggregate.
 - [`expressions.md`](expressions.md) — quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN` — all v5.0+.
-- [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.13+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), the `DO MERGE` cross-version note.
+- [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), the `DO MERGE` cross-version note.
 - [`select.md`](select.md) — `DQL_RESTRICT_LIMIT_ORDER_BY` (5.0+).
 - [`types-mutators.md`](types-mutators.md) — the canonical writeup of the strict-mode flip.
 - [`indexing.md`](indexing.md) — `#profile` (5.0+) and the `ADVISE` workaround for 4.14.x / 5.0.x.

@@ -23,7 +23,7 @@ The schema is "pedagogical" in the sense that it's designed to teach DQL: it int
 | `ratings` | object | **MAP** | `{ imdb: number, rotten_tomatoes: number, metacritic: number \| null }`. Demonstrates partial MAP updates (`SET ratings.imdb = 9.4` leaves siblings untouched). |
 | `box_office_millions` | number | REGISTER | Gross in millions. Used for range filters. |
 | `tags` | array<string> | REGISTER | Free-form tag list. |
-| `watch_count` | integer | **COUNTER** | Distributed counter (`APPLY watch_count INCREMENT BY 1`). Available SDK 4.13+. |
+| `watch_count` | integer | **COUNTER** | Distributed counter (`APPLY watch_count INCREMENT BY 1`). Available SDK 4.14+. |
 | `is_classic` | boolean | REGISTER | Used in CASE / boolean-operator examples. |
 | `released` | string | REGISTER | ISO-8601 date (`"1994-09-23"`). Used in date function examples. |
 | `poster` | ATTACHMENT | ATTACHMENT | Binary blob with `id`/`len`/`metadata`. Optional. Not seeded in the test fixture (attachment uploads need an out-of-band ingest path). |

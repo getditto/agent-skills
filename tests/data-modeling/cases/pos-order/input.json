@@ -1,0 +1,18 @@
+{
+  "_id": "order-2026-00042",
+  "store": { "id": 42, "name": "Portland Pearl", "region": "us-west" },
+  "cashier": "emp-991",
+  "customer": { "name": "Ada Lovelace", "email": "ada@example.com", "tier": "gold" },
+  "items": [
+    { "sku": "SKU-100", "name": "Widget", "qty": 2, "price": 19.99, "discount": 0.10 },
+    { "sku": "SKU-205", "name": "Gadget", "qty": 1, "price": 4.99 }
+  ],
+  "subtotal": 44.97,
+  "tax": 3.60,
+  "total": 48.57,
+  "status": "placed",
+  "statusHistory": ["placed"],
+  "receiptPdfBase64": "JVBERi0xLjQKJeLjz9MKMyAwIG9iago8PC9MZW5ndGgg... (~380 KB of base64 truncated for the case)",
+  "createdAt": "2026-08-25T10:30:45.891Z",
+  "updatedAt": "2026-08-25T10:30:45.891Z"
+}

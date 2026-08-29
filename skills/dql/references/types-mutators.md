@@ -1,6 +1,6 @@
 ---
 title: DQL CRDT types and mutators
-description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip. Covers Ditto SDK 4.14.x and 5.0.x.
+description: REGISTER, MAP, COUNTER (4.14+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip. Covers Ditto SDK 4.14.x and 5.0.x.
 ---
 
 # DQL CRDT types and mutators
@@ -9,7 +9,7 @@ description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x and 5.0.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.14+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 
@@ -30,7 +30,7 @@ SELECT ... FROM COLLECTION  <coll> ( <field> <crdt_type> [, ...] ) WHERE ...
 
 <crdt_type> ::= REGISTER
              |  MAP [ ( <field> <crdt_type> [, ...] ) ]   -- nested type def
-             |  COUNTER       -- SDK 4.13+
+             |  COUNTER       -- SDK 4.14+
              |  PN_COUNTER    -- SDK 4.11+
              |  ATTACHMENT
 ```
@@ -142,7 +142,7 @@ DOCUMENTS ({
 });
 ```
 
-**Mutation pattern:** `SET` on a MAP field is a **bulk merge**, not a replace. Sub-fields you don't mention are left intact. To remove a sub-field, `UNSET` the parent and re-insert, or rebuild it.
+**Mutation pattern:** `SET` on a MAP field is a **bulk merge**, not a replace. Sub-fields you don't mention are left intact. To remove one sub-field, dotted-path `UNSET` (e.g. `UNSET ratings.imdb`) writes a per-key tombstone; clearing many keys is cheaper with `UNSET` on the parent field (less tombstone metadata).
 
 ```sql
 -- Only ratings.imdb changes; rotten_tomatoes and metacritic survive
@@ -174,7 +174,7 @@ WHERE  _id = 'tt0111161';
 
 ## 3. COUNTER
 
-> **Available in:** Ditto SDK 4.13+.
+> **Available in:** Ditto SDK 4.14+.
 
 **Merge semantics:** state-based distributed counter. Every peer maintains its own contribution; the merged value is the sum across peers. Increments from concurrent offline peers all survive.
 
@@ -228,11 +228,11 @@ Counters can be combined with other mutation clauses in one statement; see [`sta
 **When to use it:**
 
 - Documents that already use `PN_COUNTER` on existing peers (your old code base — migrating these fields would require coordinated rewrites).
-- Targeting an SDK pinned between 4.11 and 4.12 (i.e. before `COUNTER` shipped).
+- Targeting an SDK older than 4.14 (before `COUNTER` shipped — note these releases are no longer supported).
 
 **When NOT to use it:**
 
-- New code on SDK 4.13+. Prefer `COUNTER` for everything new — it has the same merge semantics plus `RESTART WITH`.
+- New code on SDK 4.14+. Prefer `COUNTER` for everything new — it has the same merge semantics plus `RESTART WITH`.
 
 **Declaration syntax:** identical shape to `COUNTER`, different keyword.
 
@@ -253,8 +253,8 @@ WHERE  _id = 'tt0111161';
 
 | Need                                                  | Pick           | Why                                                |
 | ----------------------------------------------------- | -------------- | -------------------------------------------------- |
-| New code, SDK 4.13+ or 5.0.x                          | `COUNTER`      | Adds `RESTART WITH`, otherwise identical merge.    |
-| Code targeting SDK 4.11 or 4.12 only                  | `PN_COUNTER`   | `COUNTER` does not exist yet.                      |
+| New code, SDK 4.14+ or 5.0.x                          | `COUNTER`      | Adds `RESTART WITH`, otherwise identical merge.    |
+| Code targeting an SDK older than 4.14 (unsupported)     | `PN_COUNTER`   | `COUNTER` does not exist yet.                      |
 | Existing field in production storage already `PN_COUNTER` | `PN_COUNTER`   | Don't change the type of an existing field. See [`best-practices.md`](../best-practices.md#schema-versioning-best-practices). |
 | Need to roll a counter to zero each period            | `COUNTER`      | `PN_COUNTER` has no `RESTART`.                     |
 
@@ -398,8 +398,8 @@ SHOW dql_strict_mode
 | ---------------------------------------------------------- | -------------- | ------------------- |
 | Scalar overwritten as a whole (title, score, status)       | `REGISTER`     | `SET` / `UNSET`     |
 | Object with independently edited sub-fields                | `MAP`          | `SET` (bulk merge), dotted-path `SET`, nested `APPLY` |
-| Distributed counter — new code, SDK 4.13+                  | `COUNTER`      | `APPLY ... INCREMENT BY`, `APPLY ... RESTART [WITH]` |
-| Distributed counter — legacy, pre-4.13                     | `PN_COUNTER`   | `APPLY ... PN_INCREMENT BY` |
+| Distributed counter — new code, SDK 4.14+                  | `COUNTER`      | `APPLY ... INCREMENT BY`, `APPLY ... RESTART [WITH]` |
+| Distributed counter — legacy, pre-4.14 (unsupported)         | `PN_COUNTER`   | `APPLY ... PN_INCREMENT BY` |
 | Binary blob (image, video, file > 250 KB)                  | `ATTACHMENT`   | `SET` (new handle) / `UNSET` |
 
 For the broader "embedded vs flat" data-modelling decision, the document-size limits, and the schema-versioning rules that constrain which type changes are safe over time, see the skill-level [`best-practices.md`](../best-practices.md).

@@ -87,7 +87,7 @@ ON ID CONFLICT DO UPDATE;
 
 A counter initialised to `0` here will accept `APPLY watch_count INCREMENT BY n` afterwards (see [§2 UPDATE](#2-update)).
 
-> **Available in:** `COUNTER` requires SDK 4.13+. `PN_COUNTER` requires SDK 4.11+. `MAP` and `ATTACHMENT` are available in all 4.x and 5.0.x.
+> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+. `MAP` and `ATTACHMENT` are available in all 4.x and 5.0.x.
 
 ### 1.5 `ON ID CONFLICT` actions
 
@@ -178,7 +178,7 @@ UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
   [ RETURNING <projection> ]
 
 <counter_mutator> ::=
-    INCREMENT    BY <expr>        -- requires field declared COUNTER     (SDK 4.13+)
+    INCREMENT    BY <expr>        -- requires field declared COUNTER     (SDK 4.14+)
   | PN_INCREMENT BY <expr>        -- requires field declared PN_COUNTER  (SDK 4.11+)
   | RESTART [ WITH <expr> ]       -- counter only; resets to baseline
 ```
@@ -212,14 +212,14 @@ SET ratings = { 'imdb': 9.4 }
 WHERE _id = 'tt0111161';
 ```
 
-To remove a sub-field from a MAP, `UNSET` the parent field or rebuild it. See [`types-mutators.md`](types-mutators.md) for the full MAP semantics.
+To remove a sub-field from a MAP, dotted-path `UNSET` (e.g. `UNSET ratings.imdb`) — each removal writes per-key tombstone metadata, so for mass clearing prefer `UNSET` on the parent field. See [`types-mutators.md`](types-mutators.md) for the full MAP semantics.
 
 ### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`
 
-> **Available in:** `COUNTER` and `APPLY ... INCREMENT BY` require SDK 4.13+. `PN_COUNTER` and `APPLY ... PN_INCREMENT BY` require SDK 4.11+.
+> **Available in:** `COUNTER` and `APPLY ... INCREMENT BY` require SDK 4.14+. `PN_COUNTER` and `APPLY ... PN_INCREMENT BY` require SDK 4.11+.
 
 ```sql
--- Increment a state-based COUNTER (4.13+)
+-- Increment a state-based COUNTER (4.14+)
 UPDATE COLLECTION movies (watch_count COUNTER)
 APPLY watch_count INCREMENT BY 1
 WHERE _id = 'tt0111161';

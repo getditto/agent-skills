@@ -1,0 +1,9 @@
+{
+  "_id": "sku-100",
+  "name": "Widget",
+  "price": 19.99,
+  "stock": 500,
+  "soldToday": 0,
+  "restockLevel": 25,
+  "attrs": { "color": "red", "weightKg": 0.4, "dims": { "w": 10, "h": 5, "d": 3 } }
+}

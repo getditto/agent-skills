@@ -1,0 +1,16 @@
+{
+  "_id": "channel-7",
+  "name": "field-ops",
+  "members": ["u-1", "u-2", "u-3"],
+  "messageCount": 0,
+  "messages": [
+    {
+      "id": "m-9001",
+      "from": "u-1",
+      "text": "Gate B is open",
+      "sentAt": "2026-08-25T10:31:00Z",
+      "readBy": ["u-2"],
+      "imageBase64": "/9j/4AAQSkZJRgABAQEASABIAAD... (~1.2 MB of base64 truncated for the case)"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "user-profile",
+  "title": "Ordinary user profile — negative control (model is mostly fine)",
+  "context": "Ditto SDK 5.1.x, phone app on WiFi/LAN only, single account holder edits their own profile. No BLE, no multi-writer fields.",
+  "findings": [
+    {
+      "id": "DECLARE_TYPES",
+      "path": "preferences/homeAddress",
+      "severity": "info",
+      "groups": [["map|register|declar|explicit|strict"]]
+    }
+  ],
+  "antiFindings": [
+    {
+      "desc": "does not demand splitting the profile into multiple collections",
+      "groups": [["(should|recommend(?:s|ed|ing)?|must|suggest(?:s|ed|ing)?|advises?|needs? to)[^\\n.]{0,50}(split|move)[^\\n.]{0,50}(collection|document)"]]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "team-portal",
+  "title": "Support ticket migrating from MongoDB, with comments/history/labels",
+  "context": "Migrating from MongoDB. Fleet is all on Ditto SDK 5.1.x, but the team asks whether they could add 4.14.x LTS devices later. Kanban screens list tickets per team; a detail screen shows one ticket with its comments and history.",
+  "findings": [
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "comments",
+      "severity": "blocker",
+      "groups": [["comments?"], ["separate collection|own document|per.?comment|child collection|split"]]
+    },
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "history",
+      "severity": "blocker",
+      "groups": [["history|state.?log|state_log"], ["separate|own document|timestamp.?keyed|map|split"]]
+    },
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "commentsCount",
+      "severity": "warn",
+      "groups": [["commentscount|count"], ["counter|drop|remove|count at read|compute"]]
+    },
+    {
+      "id": "JOIN_VS_DENORMALIZE",
+      "path": "teamId/assigneeId reads",
+      "severity": "info",
+      "groups": [["join"], ["5\\.1"], ["4\\.14|lts"]]
+    },
+    {
+      "id": "OBSERVER_SCOPE",
+      "path": "kanban screen",
+      "severity": "warn",
+      "groups": [["observer|live.?query|subscribe|watch"], ["team|state|scope|narrow|filter|limit"]]
+    }
+  ],
+  "antiFindings": []
+}

@@ -1,0 +1,44 @@
+{
+  "id": "chat-channel",
+  "title": "Chat channel with embedded message thread and inline image",
+  "context": "Ditto SDK 5.1.x everywhere. Field workers message over Bluetooth LE and LAN. Channels are busy: dozens of messages per hour, photos common, and several devices are routinely offline for hours.",
+  "findings": [
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "messages",
+      "severity": "blocker",
+      "groups": [["messages?"], ["unbounded|grow|append"], ["separate collection|own document|per.?message|child collection|split"]]
+    },
+    {
+      "id": "ATTACHMENT_CANDIDATE",
+      "path": "messages[].imageBase64",
+      "severity": "blocker",
+      "groups": [["image|photo|base64|binary"], ["attachment"]]
+    },
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "messageCount",
+      "severity": "blocker",
+      "groups": [["messagecount|count"], ["counter"]]
+    },
+    {
+      "id": "ARRAY_LWW",
+      "path": "readBy",
+      "severity": "blocker",
+      "groups": [["readby|read.?receipt|readers"], ["map|keyed|last.?write.?wins|lww|overwrit|lost"]]
+    },
+    {
+      "id": "ARRAY_LWW",
+      "path": "members",
+      "severity": "warn",
+      "groups": [["members"], ["map|keyed|lww|last.?write|overwrit|single.?writer"]]
+    },
+    {
+      "id": "OBSERVER_SCOPE",
+      "path": "latest-messages screen",
+      "severity": "warn",
+      "groups": [["observer|live.?query|subscribe"], ["limit|bounded|recent|latest|narrow|scope"]]
+    }
+  ],
+  "antiFindings": []
+}

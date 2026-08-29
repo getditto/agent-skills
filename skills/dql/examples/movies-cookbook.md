@@ -7,7 +7,7 @@ description: 18 end-to-end DQL tasks against a sample movies dataset. Every stat
 
 A practical walkthrough of every major DQL capability the v5.0.0 SDK supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
-> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.13+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`, structured `PROFILE` output, `INSERT ... ON ID CONFLICT DO MERGE`, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. **Note:** the `watch_count` field uses COUNTER (SDK 4.13+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`, structured `PROFILE` output, `INSERT ... ON ID CONFLICT DO MERGE`, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
 
 ## Dataset
 
@@ -46,7 +46,7 @@ The cookbook uses two collections: `movies` and `reviews`.
 
 ### Task 1 — Load movies with conflict-tolerant upserts
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER)
+> **Available in:** Ditto SDK 4.14+ (COUNTER)
 
 **Goal:** Insert a batch of movies, treating an existing `_id` as an update rather than an error.
 
@@ -74,7 +74,7 @@ DOCUMENTS
 ON ID CONFLICT DO UPDATE;
 ```
 
-**Notes:** The `INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)` clause is what makes the statement portable across SDK 4.14.x (strict default) and 5.0.x (lenient default) — without it, v4 would store `director` and `ratings` as `REGISTER` and concurrent edits would clobber each other. `COUNTER` requires SDK 4.13+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
+**Notes:** The `INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)` clause is what makes the statement portable across SDK 4.14.x (strict default) and 5.0.x (lenient default) — without it, v4 would store `director` and `ratings` as `REGISTER` and concurrent edits would clobber each other. `COUNTER` requires SDK 4.14+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
 
 ### Task 2 — Seed reviews with auto-generated ids
 
@@ -289,11 +289,11 @@ const movies = await store.execute(step2Query, { top_ids: topIds });
 
 ### Task 11 — Increment the watch counter
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER). PN_COUNTER variant requires SDK 4.11+.
+> **Available in:** Ditto SDK 4.14+ (COUNTER). PN_COUNTER variant requires SDK 4.11+.
 
 **Goal:** Bump a peer-safe counter by one.
 
-**Query (COUNTER — recommended, 4.13+):**
+**Query (COUNTER — recommended, 4.14+):**
 
 ```sql
 UPDATE COLLECTION movies (watch_count COUNTER)
@@ -309,7 +309,7 @@ APPLY legacy_views PN_INCREMENT BY 1
 WHERE _id = :id;
 ```
 
-**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer state-based `COUNTER` (4.13+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
+**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer state-based `COUNTER` (4.14+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
 
 ### Task 12 — Update a nested MAP field without clobbering siblings
 
@@ -358,7 +358,7 @@ WHERE legacy_field IS NOT MISSING;
 
 ### Task 15 — Reset the watch counter on a re-release (RESTART)
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER)
+> **Available in:** Ditto SDK 4.14+ (COUNTER)
 
 **Goal:** Rebaseline a counter back to zero — later `INCREMENT BY` mutations start fresh from this value.
 
