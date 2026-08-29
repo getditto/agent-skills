@@ -46,13 +46,15 @@ DOCUMENTS ({
 });
 
 -- reading: one doc per sample
-INSERT INTO readings DOCUMENTS ({
+INSERT INTO readings
+DOCUMENTS ({
   '_id': 'sensor-4471:2026-08-25T10:30:10.000Z',  -- device id + timestamp: idempotent re-sends
   'device_id': 'sensor-4471',
   't': '2026-08-25T10:30:10.000Z',
   'temp_c': 21.5,
   'humidity': 44
-});
+})
+ON ID CONFLICT DO NOTHING;                       -- re-transmitted readings no-op
 
 INSERT INTO COLLECTION devices (connection_count COUNTER)
 VALUES ({ '_id': 'sensor-4471', 'connection_count': 1340 })

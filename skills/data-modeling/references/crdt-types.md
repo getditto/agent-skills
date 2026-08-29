@@ -43,8 +43,8 @@ WHERE _id = 'order-1';
 
 **Behavioral traps:**
 
-- Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`UNSET items.\`SKU-100\``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
-- **Strict-mode read trap (4.14.x):** a MAP field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. Always declare on both writes and reads when 4.14.x peers exist.
+- Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`` `UNSET items.`SKU-100``` ``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
+- **Strict-mode read trap (4.14.x):** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. Always declare on both writes and reads when 4.14.x peers exist.
 - `SET map_field = {...}` is a **bulk merge**: keys you don't mention survive.
 - Heavy add/remove churn on dynamic keys accumulates tombstone metadata; if the churn set is large, prefer `UNSET` on the parent, a fresh document, or a separate collection. See [`performance.md`](performance.md).
 
@@ -72,7 +72,7 @@ DOCUMENTS ({
 
 **Traps:**
 
-- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field, but don't rely on inference: strict-mode peers can't see undeclared counter fields. Always declare `COUNTER`.
+- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field, but don't rely on inference: strict-mode peers can't see undeclared counter fields, and even *declared* counters need the declaration repeated on reads against strict peers. Always declare `COUNTER`.
 - Values are integers. Model money as integer cents, not floats.
 - A counter's stored state grows with the number of **distinct peers** that have ever touched it (one entry per actor), not with the number of operations. See [`performance.md`](performance.md).
 
@@ -119,6 +119,7 @@ Rules of thumb (detail in [`../best-practices.md`](../best-practices.md)):
 
 - Model growable collections of things as a `MAP` keyed by a stable ID (natural key or UUID): `lineItems: { "item-1": {...}, "item-2": {...} }`.
 - Or one document per item in a separate collection — required when the set is unbounded, large, or independently permissioned.
+- **Ordered/queue-like collections** (waitlists, playlists, ranked steps): neither remedy preserves order by itself. Use a child collection plus read-time `ORDER BY` on a sequence or timestamp field (tolerating clock skew), or designate a single writer as position authority.
 - Arrays are acceptable when exactly one device ever writes them, others only read (e.g. a precomputed "top 3 tags" summary). Order is by definition what the single writer wrote.
 - Array elements are **not indexable**; scalar values inside MAP entries are. If you need to query or sort by the element, it cannot stay in an array.
 

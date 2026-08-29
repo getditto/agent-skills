@@ -22,7 +22,7 @@
       "groups": [["4\\.14|strict.?mode"], ["register|whole.?object|atomic"], ["map|declar|explicit"]]
     },
     {
-      "id": "money-as-integer-cents",
+      "id": "FLOAT_MONEY",
       "path": "price",
       "severity": "info",
       "groups": [["price|money|currency"], ["cents|integer|float|rounding"]]

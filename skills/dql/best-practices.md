@@ -16,8 +16,8 @@
 ### Document Size Limits
 
 **Hard Limits:**
-- Documents > **5 MB** don't sync with connected peers
-- Documents > **250 KB** trigger console warnings
+- Documents > **5 MiB**: local writes are rejected on SDK 5.1+; on 4.14.x/5.0.x the write succeeds with an error log (replicated oversized docs are still stored on all versions)
+- Documents > **256 KiB** trigger console warnings (the write succeeds)
 - Bluetooth LE: ~20 KB/second (large docs slow to replicate)
 
 **Recommendation:** Keep documents small and focused.
@@ -637,7 +637,7 @@ For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_M
 
 The canonical user-facing parameter is `dql_strict_mode` (lowercase — the literal name accepted by `ALTER SYSTEM SET` / `SHOW`). `DQL_STRICT_MODE` is the internal Rust constant; don't pass that as the parameter name. See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
 
-**Disable Strict Mode (Recommended):**
+**Opting into lenient mode (the 5.0+ default):**
 ```sql
 -- Apply before starting sync
 ALTER SYSTEM SET dql_strict_mode = false
@@ -723,7 +723,7 @@ When peers use different strict mode settings without explicit MAP definitions:
 - Working with legacy data
 - Mixed client versions in production
 
-**Recommendation:** Use strict mode = false (will be default in SDK 5.0) for most applications.
+**Recommendation:** on 5.0+ keep the lenient default; on 4.x prefer declaring types explicitly on every statement over flipping the setting mesh-wide.
 
 ---
 

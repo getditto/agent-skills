@@ -5,7 +5,7 @@ description: The expert process for reviewing or designing a Ditto data model. I
 
 # Data-modeling workflow
 
-Three phases. Phase 1 gathers context, phase 2 walks the user's JSON with the rubric, phase 3 produces the deliverable. The finding IDs in §2 (`ARRAY_LWW`, `COUNTER_CANDIDATE`, …) are stable identifiers — use them verbatim in findings so reviews are comparable.
+Three phases. Phase 1 gathers context, phase 2 walks the user's JSON with the rubric, phase 3 produces the deliverable. The finding IDs in §2 (`ARRAY_LWW`, `COUNTER_CANDIDATE`, …) are stable identifiers — use them verbatim in findings so reviews are comparable (positive confirmations and free-form hygiene notes are fine alongside them; only rubric findings need IDs).
 
 ## §1 Intake — ask before designing
 
@@ -23,25 +23,26 @@ Ask whatever the user hasn't already provided, in one concise batch. Don't block
 | 8 | Different permission scopes for different parts? | Big Peer permissions are query-level; scope boundaries are collection boundaries |
 | 9 | Retention/deletion expectations? | Tombstone TTL (7 days Small Peer / 30 days Big Peer) → soft delete where resurrection is unacceptable |
 
-Version sanity check if the user doesn't know: `SHOW dql_strict_mode` returns `"true"` on a default 4.14.x engine and `"false"` on a default 5.0+ engine — but the SDK package version in their build files is the authoritative signal.
+Version sanity check if the user doesn't know: `SHOW dql_strict_mode` returns boolean `true` on a default 4.14.x engine and `false` on a default 5.0+ engine — but the SDK package version in their build files is the authoritative signal.
 
 ## §2 The JSON review rubric
 
 Walk the source JSON field by field (document → each nested object → each array element shape) and run this checklist. Severity: **blocker** (will lose data or fail), **warn** (conflict loss plausible / performance hazard), **info** (hygiene).
-
 ### Field-level findings
 
 | Finding ID | Trigger in the JSON | Recommendation |
 |---|---|---|
 | `ARRAY_LWW` (blocker if multi-writer/unbounded, else warn) | Any array | Whole-array last-write-wins, no per-element merge, no error on lost appends → `MAP` keyed by stable ID, or child collection. OK only if strictly single-writer and bounded — say so explicitly |
 | `COUNTER_CANDIDATE` (blocker if multi-writer) | Numbers that accumulate: stock, count, quantity, inventory, votes, likes, views, score totals, balance | `COUNTER` (4.14+): concurrent increments merge correctly. Integer only — model money as integer cents. Never `SET` arithmetic on a REGISTER for these |
-| `ATTACHMENT_CANDIDATE` (warn/blocker by size) | base64 strings, image/audio/PDF payloads, any single value > ~250 KB, URL-free blobs | Move bytes to `ATTACHMENT`; keep only the token + minimal metadata in the doc |
-| `DECLARE_TYPES` (blocker on 4.14.x, warn otherwise) | Nested objects with no explicit CRDT declaration | On 4.14.x these store as monolithic REGISTERs (whole-object LWW), and plain `SELECT` on strict peers silently omits MAP fields unless the read repeats the declaration. Declare `MAP` explicitly on every INSERT/UPDATE; works identically on 5.x |
+| `ATTACHMENT_CANDIDATE` (blocker when it pushes the doc past the 256 KiB soft limit, warn otherwise) | base64 strings, image/audio/PDF payloads, any single value > ~250 KB (i.e. approaching the soft limit), URL-free blobs | Move bytes to `ATTACHMENT`; keep only the token + minimal metadata in the doc |
+| `DECLARE_TYPES` (warn; blocker when multi-writer sub-fields would silently lose concurrent edits on 4.14.x strict peers) | Nested objects with no explicit CRDT declaration | On 4.14.x these store as monolithic REGISTERs (whole-object LWW), and plain `SELECT` on strict peers silently omits MAP/COUNTER fields unless the read repeats the declaration. Declare `MAP` explicitly on every INSERT/UPDATE; works identically on 5.x |
 | `ATOMIC_OBJECT_REGISTER` (info) | Object whose fields must stay mutually consistent (address, geo pair, opening-hours struct) | Force `REGISTER` explicitly — on 5.x the default would be MAP, which can surface a half-merged object |
 | `TIMESTAMP_SKEW` (info) | Timestamps compared for exact equality or used as ordering keys | Device clocks skew; use ISO-8601 strings, ranges not equality, and timestamp-keyed MAPs for event trails |
 | `ID_DESIGN` (info/blocker if mutable) | `_id` that is null, reassigned over time, or duplicated across types | `_id` is immutable and never typed; composite-object `_id` (e.g. `{region, store, orderId}`) is allowed and useful as a permission partition key |
 | `MIXED_KEYED_MAP` (warn) | Object used as a dictionary with dynamic keys AND fixed keys | Split: dynamic keys into a keyed MAP, fixed keys as fields — dynamic-key churn accumulates tombstone metadata |
 | `ENUM_OR_STATE` (info) | A status/phase field string | Fine as REGISTER, but if the *history* matters, add a timestamp-keyed `status_log MAP` (audit-log pattern) |
+| `FLOAT_MONEY` (info) | Money/prices/totals as floating-point (e.g. `"price": 19.99`) | Model money as integer minor units (`price_cents`) — floats invite rounding drift and are also rejected inside `_id` values |
+| `ORDERED_LIST` (warn) | An array whose *order* is the data (queues, playlists, ranked lists, waitlists) | Keyed MAPs and child collections don't preserve order — use a child collection read with `ORDER BY` on a sequence/timestamp field (tolerate clock skew), or designate a single-writer authority for position |
 
 ### Document-level findings
 
@@ -70,7 +71,7 @@ Fine-grained scalar fields are cheap (merge metadata per scalar is bytes, not ki
 
 Deliver the review in this shape (prose around it is fine):
 
-```
+````text
 ## Findings
 - [blocker] ARRAY_LWW — orders.items: two devices appending items offline
   lose one append; whole-array LWW. …
@@ -90,6 +91,6 @@ INSERT INTO COLLECTION orders (customer MAP, items MAP (priceEach REGISTER)) …
 
 ## Budget
 - Estimated size: ~3–6 KiB/doc … BLE implication … observer scope …
-```
+````
 
 Every finding must cite the JSON path it refers to, the severity, and the one-line reason. Every recommendation must state its version requirements inline (e.g. "COUNTER — requires 4.14+").

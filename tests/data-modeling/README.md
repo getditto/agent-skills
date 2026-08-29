@@ -22,7 +22,7 @@ tests/data-modeling/
 │   ├── prompt.mjs          assembles skill files + case into one prompt
 │   ├── run.mjs             feeds prompts to a model command, saves responses
 │   └── score.mjs           regex-group scoring against expected findings
-└── results/             generated, gitignored (responses, prompts, scores)
+└── results/             generated, gitignored (responses, prompts)
 ```
 
 ## Cases
@@ -64,8 +64,11 @@ npm run score
 node runner/score.mjs --min 0.8
 ```
 
-Exit code: 0 when every scored case meets the recall threshold and no
-anti-finding regexes match; 1 otherwise.
+Exit codes: `score.mjs` returns 0 when every scored case meets the recall
+threshold and no anti-finding regexes match; 1 on any failing case **or when
+no responses were found** (run `run.mjs` first); 2 for an invalid `--min`
+value. `run.mjs` returns 1 if any case's model invocation failed (successful
+cases still get written).
 
 ## Adding a case
 

@@ -5,7 +5,7 @@ description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5
 
 # Version matrix for data modeling
 
-Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. If you need the DQL feature matrix (operators, functions, statements), see the `dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
+Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). If you need the DQL feature matrix (operators, functions, statements), see the `dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
 
 ## The strict-mode default flip (most important)
 
@@ -24,7 +24,7 @@ ALTER SYSTEM SET dql_strict_mode = false;   -- or = true; restore the default wi
 ALTER SYSTEM RESET dql_strict_mode;
 ```
 
-**Mixed-version meshes.** Data syncs correctly regardless of each peer's strict-mode setting, but a strict peer without an explicit definition treats a MAP written by a lenient peer as a REGISTER — nested fields silently appear **missing** on that peer. The same trap exists on the read side: on a strict-mode (default 4.14.x) peer, a MAP field written *with* a declaration is invisible to plain `SELECT *` / `SELECT field` unless the read repeats the declaration — `SELECT ... FROM COLLECTION orders (status_log MAP)`. No error, just absent fields. Fixes: declare `MAP` types explicitly in statements (best), repeat declarations on reads that touch strict peers, or align `dql_strict_mode = false` on all peers. The on-disk type is decided by the writing peer's declaration, so explicit declarations make behavior version-independent.
+**Mixed-version meshes.** Data syncs correctly regardless of each peer's strict-mode setting, but a strict peer without an explicit definition treats a MAP written by a lenient peer as a REGISTER — nested fields silently appear **missing** on that peer. The same trap exists on the read side: on a strict-mode (default 4.14.x) peer, a MAP **or COUNTER** field written *with* a declaration is invisible to plain `SELECT *` / `SELECT field` unless the read repeats the declaration — `SELECT ... FROM COLLECTION orders (status_log MAP)`. No error, just absent fields (verified on 4.14.4: plain reads return `{}`/omit the field entirely). Fixes: declare `MAP` types explicitly in statements (best), repeat declarations on reads that touch strict peers, or align `dql_strict_mode = false` on all peers. The on-disk type is decided by the writing peer's declaration, so explicit declarations make behavior version-independent.
 
 **HTTP API note:** `dql_strict_mode = false` requires the `/api/v5/store/execute` endpoint; `/api/v4/store/execute` does not support lenient mode. Both are sync-compatible.
 
@@ -45,7 +45,7 @@ ALTER SYSTEM RESET dql_strict_mode;
 | Feature | 4.14.x | 5.0.x | 5.1.x | Modeling relevance |
 |---|:-:|:-:|:-:|---|
 | `CREATE INDEX` (single/nested path) | ✓ (4.12+) | ✓ | ✓ | Which fields are queryable cheaply — informs embed-vs-split |
-| Composite (multi-column) indexes | ✗ | ✗ | ✓ | Combined-key queries without Splitting |
+| Composite (multi-column) indexes | ✗ | ✗ | ✓ | Combined-key queries without splitting |
 | `INSERT … ON ID CONFLICT DO UPDATE_LOCAL_DIFF` | ✓ (4.12+) | ✓ | ✓ | Safe denormalized duplication (skips unchanged fields) |
 | `RETURNING` on INSERT/UPDATE | ✗ | ✗ | ✓ | Write-then-read in one statement |
 | `JOIN` (inner/left) | ✗ | ✗ | ✓ | Normalize across collections and reassemble at read time; right-side key must be `_id` or indexed. **Small Peers only** — joins are unsupported on Big Peer and in `registerSubscription` (use `execute` / observers) |

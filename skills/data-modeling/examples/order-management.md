@@ -37,7 +37,7 @@ A team migrating a POS app brings this document:
 | warn | `COUNTER_CANDIDATE` | (implied) inventory side | `qty` decremented from *product* stock by many devices — that's a counter on the `products` collection, not a field here |
 | warn | `DECLARE_TYPES` | `store`, `customer` | On 4.14.x these silently store as REGISTERs — whole-object LWW. Declare MAP |
 | warn | `SPLIT_UNBOUNDED` | design-level | If items/history can grow or are edited post-creation, they belong out of the hot order doc |
-| info | money as floats | `price`, `total` | use integer cents everywhere |
+| info | `FLOAT_MONEY` | `price`, `total` | use integer cents everywhere |
 | info | `TIMESTAMP_SKEW` | `statusHistory` keys | device clocks skew; key history entries with high-res ISO-8601 and never exact-match |
 
 ## Recommended model — items stay embedded, as a keyed MAP

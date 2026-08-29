@@ -14,7 +14,7 @@ This skill turns agents into Ditto data-modeling experts: given an existing JSON
 
 **Use this skill when:** the user shows you a JSON document and asks how to store it in Ditto; asks whether to embed or split collections; hits lost-update conflicts; hits document size warnings; plans sync over Bluetooth LE; migrates from MongoDB/SQL/another document store; or asks how to model counters, votes, inventory, presence, audit trails, or attachments.
 
-**Do not use this skill when:** the user needs DQL statement syntax (SELECT/INSERT/UPDATE/JOIN/EXPLAIN) — use the `dql` skill (`../dql/SKILL.md`). This skill reuses its syntax but focuses on model design.
+**Do not use this skill when:** the user needs DQL statement syntax (SELECT/INSERT/UPDATE/JOIN/EXPLAIN) — use the `write-dql` skill (`../dql/SKILL.md`). This skill reuses its syntax but focuses on model design.
 
 ## Step 0: confirm SDK version(s), or assumptions will be wrong
 
@@ -64,7 +64,7 @@ Default pattern (from Ditto's own guidance): **denormalize related data into one
 - Different permission scopes → separate collections (Big Peer permissions are query-level).
 - The sub-entity is read/written independently at scale → separate collection with an index.
 
-On 5.1+, reassemble with `JOIN` (requires the right-side key to be `_id` or indexed). On 4.14.x there are **no joins** — either fetch both collections in app code or duplicate read-time fields with `ON ID CONFLICT DO UPDATE_LOCAL_DIFF`-friendly denormalization. Full guidance: [`best-practices.md`](best-practices.md) and [`examples/relational-migration.md`](examples/relational-migration.md).
+On 5.1+, reassemble with `JOIN` (requires the right-side key to be `_id` or indexed; Small Peers only — no joins on Big Peer or in `registerSubscription`). On 4.14.x there are **no joins** — either fetch both collections in app code or duplicate read-time fields with `ON ID CONFLICT DO UPDATE_LOCAL_DIFF`-friendly denormalization. Full guidance: [`best-practices.md`](best-practices.md) and [`examples/relational-migration.md`](examples/relational-migration.md).
 
 ## Where to look
 
@@ -91,13 +91,13 @@ When delivering a design, produce (format detail: [`references/workflow.md`](ref
 
 ## Things that bite people
 
-- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`UNSET items.\`SKU-100\``) — each removal writes a per-key tombstone, so for mass clearing `UNSET` the parent field instead.
+- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`` `UNSET items.`SKU-100``` ``) — each removal writes a per-key tombstone, so for mass clearing `UNSET` the parent field instead.
 - **A MAP overwrite merges; a REGISTER overwrite replaces.** `SET profile = {...}` on a MAP keeps untouched sub-fields; on a REGISTER the whole old object is gone.
 - **Inserting a plain integer without declaring `COUNTER` creates a `REGISTER`** that can never merge increments. (Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field — don't rely on it: strict-mode peers can't see undeclared counters. Always declare the type; same trap for PN_COUNTER + plain doubles.)
 - **`_id` is immutable and never a CRDT** — you cannot declare a type for it or update it. Composite-object `_id`s are supported and useful as permission partition keys.
 - **Nested arrays inside MAPs are still whole-array LWW registers** — the array rule applies at every depth.
 - **Tombstone TTL** — mesh deletes propagate via tombstones that expire after 7 days on Small Peers (30 on Big Peer). A peer offline longer than that can resurrect a deleted document. Prefer soft deletes for anything with a compliance/retention story.
-- **Strict-mode read trap (4.14.x)** — a MAP field written with a declaration is *stored* correctly but silently missing from plain `SELECT` on a strict peer unless the read repeats the declaration (`SELECT ... FROM COLLECTION c (field MAP)`). No error — just absent fields.
+- **Strict-mode read trap (4.14.x)** — a MAP or COUNTER field written with a declaration is *stored* correctly but silently missing from plain `SELECT` on a strict peer unless the read repeats the declaration (`SELECT ... FROM COLLECTION c (field MAP)`). No error — just absent fields.
 - **One statement per `execute()` call** — DQL rejects multi-statement strings (`;`-separated); run cookbook blocks statement by statement. `--` comments are tolerated.
 
 ## Compatibility

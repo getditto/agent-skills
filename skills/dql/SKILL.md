@@ -12,6 +12,8 @@ DQL is Ditto's SQL-like language for querying and mutating documents in a CRDT-a
 2. **`NULL` and `MISSING` are distinct.** `NULL` = field exists, value is null. `MISSING` = field is absent. They behave differently in every operator.
 3. **Every field is a CRDT.** The CRDT type (REGISTER, MAP, COUNTER, PN_COUNTER, ATTACHMENT) controls how concurrent edits merge.
 
+Scope: this skill covers DQL syntax and semantics. For schema design — CRDT type selection, embed-vs-split decisions, document size budgets, reviewing raw JSON models — use the `data-modeling` skill.
+
 ## First: which SDK version is the user on?
 
 DQL features land version by version. **Before answering a non-trivial DQL question, confirm the SDK version.** If the user has not said which Ditto SDK they're on, ask:

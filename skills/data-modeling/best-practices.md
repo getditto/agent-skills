@@ -93,7 +93,7 @@ SELECT * FROM tasks WHERE NOT coalesce(deleted, false);
 | Relying on the strict-mode default instead of declaring types | v4 and v5 peers in the same mesh store the same field differently | declare `MAP`/`COUNTER`/`ATTACHMENT` on every write |
 | base64 image inline in a document | blows the size budget; every edit re-syncs the blob's register | `ATTACHMENT`, lazy fetch |
 | JSON-string-encoding a sub-object into one field "to keep it simple" | unqueryable, unindexable, unmergeable | real MAP |
-| Watching the whole collection with a live observer | observers re-emit the full result set per change; ~10× memory over raw bytes | narrow observer + LIMIT |
+| Watching the whole collection with a live observer | observers re-emit the full result set per change; held state is substantially larger than the raw bytes (directionally an order of magnitude) | narrow observer + LIMIT |
 | Changing a field's type in a schema migration | breaks old app versions in the mesh | add a new field; keep the old one |
 | Packing scalars into fewer fields "to reduce CRDT overhead" | per-field metadata is bytes; you lose merge granularity for nothing | keep fine-grained fields; MAPs are cheap |
 

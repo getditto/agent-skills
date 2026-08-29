@@ -26,7 +26,7 @@ SHOW document_size_soft_limit_bytes;
 SHOW document_size_hard_limit_bytes;
 ```
 
-**Do not recommend changing these.** Both are per-peer system parameters settable via `ALTER SYSTEM SET …`, but changes are **runtime-only — they silently revert on app restart** (durable overrides need the `DITTO_*` env var or SDK startup config), values must match on every peer in the mesh including Big Peer, and setting the soft limit at or above the hard limit silently disables hard-limit enforcement. The fix for an oversized model is always the model — split, attach, rewrite under a new `_id` — not the limit. If a user insists on changing them, that's a Ditto-support conversation, not a DQL snippet.
+**Do not recommend changing these.** Both are per-peer system parameters settable via `ALTER SYSTEM SET …`, but changes are **runtime-only — they silently revert on app restart** (durable overrides need the `DITTO_*` env var or SDK startup config), values must match on every peer in the mesh including Big Peer, and setting the soft limit above the hard limit silently disables hard-limit enforcement. The fix for an oversized model is always the model — split, attach, rewrite under a new `_id` — not the limit. If a user insists on changing them, that's a Ditto-support conversation, not a DQL snippet.
 
 ## What actually costs when a document changes
 

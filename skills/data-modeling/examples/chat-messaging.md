@@ -74,7 +74,7 @@ Unread badges: keep a per-user, per-channel counter — `INSERT INTO COLLECTION 
 ## Reads
 
 ```sql
--- channel view (5.1+): latest 50 messages
+-- channel view: latest 50 messages (any version)
 SELECT * FROM messages
 WHERE channel_id = 'channel-7'
 ORDER BY sentAt DESC
