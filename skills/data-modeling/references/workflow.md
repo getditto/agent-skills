@@ -54,7 +54,7 @@ Walk the source JSON field by field (document → each nested object → each ar
 | `SPLIT_PERMISSIONS` (warn) | Sub-structure needs different access rules | Collection boundary (Big Peer permissions are query-level) |
 | `JOIN_VS_DENORMALIZE` (info) | Model would need cross-collection reads | 5.1+: `JOIN` with the right-side key as `_id` or indexed. 4.14.x: two fetches in app code, or denormalize read-time fields (`DO UPDATE_LOCAL_DIFF` keeps duplicated writes cheap) |
 | `INDEX_PLAN` (info) | Fields filtered/sorted in the user's stated queries | `CREATE INDEX` (composite is 5.1+); note array elements are not indexable |
-| `OBSERVER_SCOPE` (warn) | Design implies watching a whole collection or an unbounded result set | Observers re-deliver the full result set per fire and pin roughly an order of magnitude more than the raw bytes — scope tightly, page with LIMIT |
+| `OBSERVER_SCOPE` (warn) | Design implies watching a whole collection or an unbounded result set | Observers re-deliver the full result set per fire and pin substantially more memory than the raw bytes — scope tightly, page with LIMIT |
 | `SOFT_DELETE` (info) | User expects deletions to be permanent/mesh-wide | Tombstones expire (7d Small Peer / 30d Big Peer); long-offline peers can resurrect docs — soft delete + purge past TTL |
 | `SMART_UPSERT` (info) | Model implies frequent full-document rewrites (sync-from-API patterns) | `INSERT … ON ID CONFLICT DO UPDATE_LOCAL_DIFF` (4.12+) so unchanged fields don't replicate |
 

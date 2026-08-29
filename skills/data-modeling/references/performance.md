@@ -19,23 +19,26 @@ Two things people miss:
 1. The limits apply to the **serialized document including CRDT metadata** (per-field version state and tombstones) — not the JSON you handed to `INSERT`. A write that "shrinks" a document does not immediately shrink the serialized form: tombstones from earlier larger values remain. Remediation for a bloated document: rewrite it fresh **under a new `_id`** (tombstones don't travel to the new ID), or split the heavy sub-structure.
 2. **Attachments are exempt.** Blob bytes live outside the document; only the small token counts. This is the canonical escape hatch for large payloads.
 
+Inspect them (read-only) with:
+
 ```sql
 SHOW document_size_soft_limit_bytes;
-ALTER SYSTEM SET document_size_hard_limit_bytes = 5242880;  -- keep defaults unless you must; must match on every peer
+SHOW document_size_hard_limit_bytes;
 ```
+
+**Do not recommend changing these.** Both are per-peer system parameters settable via `ALTER SYSTEM SET …`, but changes are **runtime-only — they silently revert on app restart** (durable overrides need the `DITTO_*` env var or SDK startup config), values must match on every peer in the mesh including Big Peer, and setting the soft limit at or above the hard limit silently disables hard-limit enforcement. The fix for an oversized model is always the model — split, attach, rewrite under a new `_id` — not the limit. If a user insists on changing them, that's a Ditto-support conversation, not a DQL snippet.
 
 ## What actually costs when a document changes
 
 - **On the wire:** for MAP fields only the changed entries' CRDT state travels (field-level diff sync). But a REGISTER's value is atomic — touching one byte of a REGISTER'd object or array transmits the whole value. *Modeling consequence: put hot, independently-edited sub-fields in MAPs; never in registers or arrays.*
 - **On disk/CPU:** the whole document is re-serialized per write, and CRDT merge cost scales with **document size, not change size**. A one-field edit to a 2 MB document pays a 2 MB document's merge. This is the real reason for the 256 KiB soft limit.
-- **Deserialization** of large nested documents costs ~100× more per document than tiny ones; at high ingest rates large documents need pacing and modest write batches (a few hundred documents per batch for ~15 KB-class documents, not thousands).
+- **Deserialization** of large nested documents costs orders of magnitude more per document than tiny ones (directional rule of thumb). At high ingest rates large documents need pacing and modest write batches — hundreds, not thousands, per batch for ~15 KB-class documents.
 
 ## Transports: the bandwidth budget
 
 | Transport | Effective throughput | Time to first-replicate a 250 KiB doc |
 |---|---|---|
-| Bluetooth LE | ~20 KB/s | 10+ seconds |
-| 5 MiB document over BLE | ~20 KB/s | minutes — plan to forbid this by design |
+| Bluetooth LE | ~20 KB/s | 10+ seconds (a 5 MiB doc: minutes — forbid by design) |
 | AWDL / LAN / WiFi | orders of magnitude higher | sub-second to seconds |
 
 **Modeling consequences when BLE is in the mesh:** keep documents in the single-digit-KB range; split anything larger; move binaries to ATTACHMENT (blobs use a separate chunked protocol, but they still eat the same airtime — fetch them lazily and on demand); avoid large update bursts that queue behind each other on the same link.
@@ -52,7 +55,7 @@ Use the intake question "what's the slowest device class and OS in your fleet?" 
 
 ## Observers (live queries)
 
-- Every observer fire **re-runs the query and re-delivers the full current result set**, not just the delta. Held observer state is roughly an order of magnitude larger than the raw document bytes it surfaces.
+- Every observer fire **re-runs the query and re-delivers the full current result set**, not just the delta. Held observer state is substantially larger than the raw document bytes it surfaces (directionally: an order of magnitude, per internal measurement).
 - Wide observers (whole-collection, big unbounded result sets) over large collections are the most common "my app is slow / grows in memory" cause.
 - **Model so that the screens that observe are narrow:** small hot collections ("today's open orders") rather than one mega-collection filtered in-app.
 
