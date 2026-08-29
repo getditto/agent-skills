@@ -5,7 +5,7 @@ description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5
 
 # Version matrix for data modeling
 
-Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). If you need the DQL feature matrix (operators, functions, statements), see the `dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
+Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). If you need the DQL feature matrix (operators, functions, statements), see the `write-dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
 
 ## The strict-mode default flip (most important)
 

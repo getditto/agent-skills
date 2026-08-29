@@ -371,7 +371,7 @@ This is a behaviour difference that does **not** show up at parse time. Both sta
 
 That gives you:
 
-- **Portability** — the same statement does the same thing on 4.14.x and 5.0.x, regardless of either peer's setting.
+- **Portability** — the same statement does the same thing on 4.14.x and 5.0.x, regardless of either peer's setting; and strict-mode peers silently omit declared MAP/COUNTER fields from plain `SELECT` unless the read repeats the declaration.
 - **Resilience to setting changes** — a future `ALTER SYSTEM` on either peer can't silently change your data shape.
 - **Clarity for reviewers** — the intent is in the query, not in engine config.
 

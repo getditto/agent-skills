@@ -211,8 +211,8 @@ A version starting with `4.` (e.g. `4.14.3`) means 4.x lenient/strict surface as
 -- See what the engine is using right now
 SHOW dql_strict_mode;
 
--- Result is the string "true" on a 4.14.x default install,
--- "false" on a 5.0.x default install.
+-- Result is boolean true on a 4.14.x default install,
+-- false on a 5.0.x default install.
 ```
 
 This is **not** a perfect version check — an operator may have explicitly flipped strict mode on either line:

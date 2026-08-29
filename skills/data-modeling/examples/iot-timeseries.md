@@ -58,7 +58,7 @@ ON ID CONFLICT DO NOTHING;                       -- re-transmitted readings no-o
 
 INSERT INTO COLLECTION devices (connection_count COUNTER)
 VALUES ({ '_id': 'sensor-4471', 'connection_count': 1340 })
-ON ID CONFLICT DO UPDATE;                     -- 4.14+; idempotent re-seed
+ON ID CONFLICT DO UPDATE;                     -- 4.14+; replaying the seed is an LWW set (resets to 1340 — don't replay while live increments matter)
 ```
 
 Notes on the model:

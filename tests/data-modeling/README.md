@@ -65,10 +65,11 @@ node runner/score.mjs --min 0.8
 ```
 
 Exit codes: `score.mjs` returns 0 when every scored case meets the recall
-threshold and no anti-finding regexes match; 1 on any failing case **or when
-no responses were found** (run `run.mjs` first); 2 for an invalid `--min`
-value. `run.mjs` returns 1 if any case's model invocation failed (successful
-cases still get written).
+threshold and no anti-finding regexes match; 1 on any failing case, when no
+responses were found, or when `--case` matches nothing (run `run.mjs` first);
+2 for an invalid `--min` value. `run.mjs` returns 1 if any case's model
+invocation failed (successful cases still get written) or when
+`DM_MODEL_CMD` is unset without `--prompts-only`.
 
 ## Adding a case
 

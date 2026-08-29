@@ -953,8 +953,8 @@ WHERE expires_at < clock()
 
 ### Data Modeling
 
-- [ ] Documents < 250 KB (avoid warnings)
-- [ ] Documents < 5 MB (hard limit)
+- [ ] Documents < 256 KiB (avoid warnings)
+- [ ] Documents < 5 MiB (hard limit — 5.1+ rejects the write)
 - [ ] Use flat models for complex data
 - [ ] Use ATTACHMENT for large files
 - [ ] Include schema_version field

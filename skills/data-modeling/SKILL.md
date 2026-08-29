@@ -91,7 +91,7 @@ When delivering a design, produce (format detail: [`references/workflow.md`](ref
 
 ## Things that bite people
 
-- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`` `UNSET items.`SKU-100``` ``) — each removal writes a per-key tombstone, so for mass clearing `UNSET` the parent field instead.
+- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``) — each removal writes a per-key tombstone, so for mass clearing `UNSET` the parent field instead.
 - **A MAP overwrite merges; a REGISTER overwrite replaces.** `SET profile = {...}` on a MAP keeps untouched sub-fields; on a REGISTER the whole old object is gone.
 - **Inserting a plain integer without declaring `COUNTER` creates a `REGISTER`** that can never merge increments. (Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field — don't rely on it: strict-mode peers can't see undeclared counters. Always declare the type; same trap for PN_COUNTER + plain doubles.)
 - **`_id` is immutable and never a CRDT** — you cannot declare a type for it or update it. Composite-object `_id`s are supported and useful as permission partition keys.
@@ -102,4 +102,4 @@ When delivering a design, produce (format detail: [`references/workflow.md`](ref
 
 ## Compatibility
 
-This skill covers **Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x**, with 5.1.x as the headlining target. Every version-gated claim is tagged inline (`4.14+`, `5.0+`, `5.1+`); the matrix lives in [`references/versions.md`](references/versions.md). DQL syntax beyond what modeling declarations need (JOIN grammar, EXPLAIN, indexing, mutators) is in the `dql` skill — [`../dql/references/versions.md`](../dql/references/versions.md).
+This skill covers **Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x**, with 5.1.x as the headlining target. Every version-gated claim is tagged inline (`4.14+`, `5.0+`, `5.1+`); the matrix lives in [`references/versions.md`](references/versions.md). DQL syntax beyond what modeling declarations need (JOIN grammar, EXPLAIN, indexing, mutators) is in the `write-dql` skill — [`../dql/references/versions.md`](../dql/references/versions.md).

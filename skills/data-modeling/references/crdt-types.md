@@ -5,7 +5,7 @@ description: REGISTER, MAP, COUNTER, PN_COUNTER, and ATTACHMENT — exact merge 
 
 # CRDT types for data modeling
 
-Every field in a Ditto document is a CRDT. Choosing the model means choosing, per field, which CRDT it is. This file is the modeling-side reference for the five types; for full DQL mutation grammar see the `dql` skill's [`../../dql/references/types-mutators.md`](../../dql/references/types-mutators.md).
+Every field in a Ditto document is a CRDT. Choosing the model means choosing, per field, which CRDT it is. This file is the modeling-side reference for the five types; for full DQL mutation grammar see the `write-dql` skill's [`../../dql/references/types-mutators.md`](../../dql/references/types-mutators.md).
 
 | Type | Merge semantic | Payload | Min SDK | Mutators |
 |---|---|---|---|---|
@@ -43,7 +43,7 @@ WHERE _id = 'order-1';
 
 **Behavioral traps:**
 
-- Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`` `UNSET items.`SKU-100``` ``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
+- Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
 - **Strict-mode read trap (4.14.x):** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. Always declare on both writes and reads when 4.14.x peers exist.
 - `SET map_field = {...}` is a **bulk merge**: keys you don't mention survive.
 - Heavy add/remove churn on dynamic keys accumulates tombstone metadata; if the churn set is large, prefer `UNSET` on the parent, a fresh document, or a separate collection. See [`performance.md`](performance.md).
