@@ -32,7 +32,7 @@ Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. Chat is the canoni
 | blocker | `ARRAY_LWW` | `readBy` | Two readers marking read concurrently lose one receipt |
 | blocker | `COUNTER_CANDIDATE` | `messageCount` | Incremented by many writers as a plain number — lost increments on merge; must be `COUNTER` (4.14+) or dropped |
 | warn | `ARRAY_LWW` | `members` | Membership changes from multiple admins + LWW array = lost invites. OK only if membership changes are rare and human-resolved — still recommend keyed MAP |
-| warn | `DECLARE_TYPES` | nested objects | 4.14.x stores them as REGISTERs without declarations |
+| info | `DECLARE_TYPES` | nested objects | 5.1.x-only fleet: lenient defaults already infer MAP — no declaration needed. Would only matter if 4.14.x strict peers joined later (then: flip them to `false`, or declare during the transition) |
 | warn | `OBSERVER_SCOPE` | implied "latest messages" screen | Must observe a bounded window (`WHERE sentAt >= … ORDER BY sentAt DESC LIMIT 50`), never the whole collection |
 
 ## Recommended model

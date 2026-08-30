@@ -171,9 +171,9 @@ This is the most user-visible cross-version difference and the most likely cause
 | `dql_strict_mode` (user-facing knob)       | `true` (strict)                           | `false` (lenient)                         |
 | Bare object value on `INSERT` / `UPDATE`   | stored as `REGISTER` (whole-object LWW)   | stored as `MAP` (per-field merge)         |
 | `DQL_MUTATOR_OBJECTS_AS_MAPS` (internal flag, derived from strict mode) | OFF (`false`)            | ON (`true`)                               |
-| Explicit type definition required for `MAP`? | Yes — without it, strict mode picks `REGISTER` | No — lenient picks `MAP` by default, but declaring is still recommended for cross-version portability |
+| Explicit type definition required for `MAP`? | Yes — without it, strict mode picks `REGISTER` | No — lenient picks `MAP` by default; declare to override or for statements strict 4.x peers execute |
 
-**Portability rule:** if your code must run on both 4.14.x and 5.0.x peers in the same mesh, declare types explicitly with the `INTO COLLECTION coll (field MAP, …)` syntax on every statement that touches a non-`REGISTER` field. Don't rely on the strict-mode default to do the right thing — declare and be sure.
+**Portability rule:** the recommended end-state is `dql_strict_mode = false` on every peer (the 5.x default) — flip 4.x peers before upgrading them. While strict 4.x peers remain in a mixed mesh, declare types explicitly with the `INTO COLLECTION coll (field MAP, …)` syntax on every statement those peers execute that touches a non-`REGISTER` field; strict peers can't see undeclared non-REGISTER fields, on reads either.
 
 ---
 
@@ -235,7 +235,7 @@ Three reasons portability is worth thinking about up front.
 
 1. **Mixed-version mesh.** Ditto peers sync directly. A document inserted by a 5.0.x peer (where a bare object becomes `MAP`) replicates to a 4.14.x peer (which would have stored it as `REGISTER` had it inserted the same document). The on-disk representation is decided by the peer that wrote it — so the same field can be `REGISTER` on one peer and `MAP` on another, even on the same network. **Always declare CRDT types explicitly** on writes that touch non-register fields.
 2. **Write to the lowest common denominator.** Use the older SDK's feature surface as the baseline. Avoid `ANY/EVERY ... SATISFIES`, comprehensions, `WITHIN`, `PROFILE`, and `#profile` unless every peer that will execute the query is on 5.0+. Avoid `XOR` and `DO MERGE` unless you can pin to 4.x — or wait for 5.1 to reintroduce them.
-3. **Defaults are not contracts.** The flip from `dql_strict_mode = true` (v4) to `false` (v5.0) is the kind of silent behavior change that breaks code months after the upgrade, when the first concurrent write hits a field that's now a `MAP` instead of a `REGISTER`. The way to immunise your code is to declare types on every mutation — that way the default doesn't matter.
+3. **Defaults are not contracts.** The flip from `dql_strict_mode = true` (v4) to `false` (v5.0) is the kind of silent behavior change that breaks code months after the upgrade, when the first concurrent write hits a field that's now a `MAP` instead of a `REGISTER`. The way to immunise your mesh is to set `dql_strict_mode = false` on 4.x peers *before* upgrading — behavior then stays identical across the jump — and to declare types on statements that still-strict peers execute during the transition.
 
 ---
 

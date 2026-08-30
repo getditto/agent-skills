@@ -14,7 +14,7 @@ Tagging convention used across this skill: **4.14+** (exists in the LTS line and
 | `dql_strict_mode` default | `true` | `false` | `false` |
 | Bare object in INSERT/UPDATE becomes | `REGISTER` (whole-object LWW) | `MAP` (per-field merge) | `MAP` |
 | Scalars and arrays become | `REGISTER` | `REGISTER` | `REGISTER` (arrays are always registers) |
-| Collection definitions required for MAP/COUNTER fields? | Yes, under the strict default | Inferred — but INSERT of counter/attachment values still requires a declaration; always declare for portability | Same as 5.0.x |
+| Collection definitions required for MAP/COUNTER fields? | Yes, under the strict default (or flip to lenient) | No — defaults infer correctly; declare to *override* (e.g. force `REGISTER`) or to seed counters/attachments on INSERT | Same as 5.0.x |
 
 The knob exists since 4.11 and is runtime-only (not persisted across restarts); set it before starting sync or running queries:
 
@@ -24,7 +24,9 @@ ALTER SYSTEM SET dql_strict_mode = false;   -- or = true; restore the default wi
 ALTER SYSTEM RESET dql_strict_mode;
 ```
 
-**Mixed-version meshes.** Data syncs correctly regardless of each peer's strict-mode setting, but a strict peer without an explicit definition treats a MAP written by a lenient peer as a REGISTER — nested fields silently appear **missing** on that peer. The same trap exists on the read side: on a strict-mode (default 4.14.x) peer, a MAP **or COUNTER** field written *with* a declaration is invisible to plain `SELECT *` / `SELECT field` unless the read repeats the declaration — `SELECT ... FROM COLLECTION orders (status_log MAP)`. No error, just absent fields (verified on 4.14.4: plain reads return `{}`/omit the field entirely). Fixes: declare `MAP` types explicitly in statements (best), repeat declarations on reads that touch strict peers, or align `dql_strict_mode = false` on all peers. The on-disk type is decided by the writing peer's declaration, so explicit declarations make behavior version-independent.
+**Official guidance:** on **5.x, never change it** — the lenient default is designed to match JSON intuition (objects merge per-field like developers expect from JSON), and per-field type keywords are the override mechanism, not the global flag. On **4.x, migrate every peer to `false` as early as possible — and specifically before upgrading to v5**, so the upgrade itself changes no merge behavior. Changing the flag *during* a mesh's life without coordinating is how fields silently change CRDT type.
+
+**Mixed-version meshes.** Data syncs correctly regardless of each peer's strict-mode setting, but a strict peer without an explicit definition treats a MAP written by a lenient peer as a REGISTER — nested fields silently appear **missing** on that peer. The same trap exists on the read side: on a strict-mode (default 4.14.x) peer, a MAP **or COUNTER** field written *with* a declaration is invisible to plain `SELECT *` / `SELECT field` unless the read repeats the declaration — `SELECT ... FROM COLLECTION orders (status_log MAP)`. No error, just absent fields (verified on 4.14.4: plain reads return `{}`/omit the field entirely). Fixes, in order of preference: **(1) flip the 4.x peers to `dql_strict_mode = false`** — the recommended end-state for every mesh, and the required prep for a clean v5 upgrade; **(2) during the transition window**, declare MAP/COUNTER explicitly on any statement a still-strict peer executes (writes *and* reads); (3) as a last resort, repeat declarations on reads touching strict peers. Once every peer is lenient, explicit declarations are optional — the defaults are the intended behavior.
 
 **HTTP API note:** `dql_strict_mode = false` requires the `/api/v5/store/execute` endpoint; `/api/v4/store/execute` does not support lenient mode. Both are sync-compatible.
 
@@ -55,6 +57,6 @@ ALTER SYSTEM RESET dql_strict_mode;
 
 ## Practical rules by target version
 
-- **Targeting 4.14.x:** no JOINs — denormalize or fetch related collections in app code; declare every non-REGISTER type; expect bare objects to be registers unless declared; single-column indexes only.
-- **Targeting 5.1.x:** you may normalize more aggressively (JOIN + index the join key), but only where the split triggers in [`../best-practices.md`](../best-practices.md) actually fire — embedding is still the default.
-- **Mixed 4.14/5.x mesh:** model to the 4.14 baseline (no JOIN-dependent reads), declare all types explicitly, and treat `COUNTER` as the only counter for new fields.
+- **Targeting 4.14.x:** set `dql_strict_mode = false` mesh-wide (and before any v5 upgrade); until then declare every non-REGISTER type; no JOINs — denormalize or fetch related collections in app code; single-column indexes only.
+- **Targeting 5.1.x:** keep the strict-mode default `false` and rely on lenient inference for MAPs; use keywords only to override (e.g. `REGISTER` for atomic objects, `COUNTER` seeds on INSERT). You may normalize more aggressively (JOIN + index the join key), but only where the split triggers in [`../best-practices.md`](../best-practices.md) actually fire — embedding is still the default.
+- **Mixed 4.14/5.x mesh:** flip the 4.x peers to lenient as the first step of the upgrade; while any strict peers remain, declare MAP/COUNTER types on the statements those peers execute (including reads), and model to the 4.14 read surface (no JOIN-dependent screens).

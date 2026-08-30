@@ -25,7 +25,7 @@ Every field in a Ditto document is a CRDT. Choosing the model means choosing, pe
 
 **Do not model with REGISTER when:** different peers edit different sub-fields (they will overwrite each other's object); a number accumulates across peers; an array grows by appends from multiple devices.
 
-**Default note.** Every field you don't declare is a REGISTER for scalars and arrays. For *object* values the default depends on strict mode: `REGISTER` when `dql_strict_mode = true` (the 4.14.x default), `MAP` when `false` (the 5.0+ default). See [`versions.md`](versions.md). Declare explicitly and the default stops mattering.
+**Default note.** Scalars and arrays are always REGISTERs by default. For *object* values the default depends on strict mode: `REGISTER` when `dql_strict_mode = true` (the 4.14.x default), `MAP` when `false` (the 5.x default). See [`versions.md`](versions.md). The intended way to work: on 5.x, rely on the lenient defaults and declare a keyword only to *override* them (e.g. force `REGISTER` on an atomic object); on 4.x, flip the mesh to `dql_strict_mode = false` (recommended before any v5 upgrade) — or declare explicitly while strict peers remain.
 
 **Forcing REGISTER on an object:** the lenient (5.0+) default infers MAP for objects, so declare REGISTER when you actually want whole-object LWW. The declaration is also valid — though redundant — on 4.14.x strict mode:
 
@@ -44,7 +44,7 @@ WHERE _id = 'order-1';
 **Behavioral traps:**
 
 - Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
-- **Strict-mode read trap (4.14.x):** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. Always declare on both writes and reads when 4.14.x peers exist.
+- **Strict-mode read trap (4.14.x):** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. The clean fix is migrating 4.x peers to `dql_strict_mode = false`; while strict peers remain, declare on both writes and reads that touch them.
 - `SET map_field = {...}` is a **bulk merge**: keys you don't mention survive.
 - Heavy add/remove churn on dynamic keys accumulates tombstone metadata; if the churn set is large, prefer `UNSET` on the parent, a fresh document, or a separate collection. See [`performance.md`](performance.md).
 
@@ -72,7 +72,7 @@ DOCUMENTS ({
 
 **Traps:**
 
-- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field, but don't rely on inference: strict-mode peers can't see undeclared counter fields, and even *declared* counters need the declaration repeated on reads against strict peers. Always declare `COUNTER`.
+- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. In lenient mode (5.x default), `APPLY … INCREMENT BY` on an undeclared field auto-creates a counter; seeding an initial value on INSERT still needs the declaration, and on strict-mode 4.x peers undeclared counters are invisible — declare `COUNTER` wherever a counter lives.
 - Values are integers. Model money as integer cents, not floats.
 - A counter's stored state grows with the number of **distinct peers** that have ever touched it (one entry per actor), not with the number of operations. See [`performance.md`](performance.md).
 

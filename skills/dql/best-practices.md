@@ -723,7 +723,7 @@ When peers use different strict mode settings without explicit MAP definitions:
 - Working with legacy data
 - Mixed client versions in production
 
-**Recommendation:** on 5.0+ keep the lenient default; on 4.x prefer declaring types explicitly on every statement over flipping the setting mesh-wide.
+**Recommendation:** never change the flag on 5.0+ (the lenient default is correct); on 4.x migrate to `dql_strict_mode = false` mesh-wide before upgrading to 5.0.
 
 ---
 

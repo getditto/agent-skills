@@ -27,7 +27,10 @@ The single biggest behavioral difference in Ditto modeling is the strict-mode de
 
 If the user hasn't said which SDK they're on, ask: *"Which Ditto SDK version(s) will run this mesh — 4.14.x, 5.0.x, 5.1.x, or mixed?"* and get the rest of the intake context in one shot. The full intake checklist is [`references/workflow.md`](references/workflow.md) §1. Version matrix: [`references/versions.md`](references/versions.md).
 
-**Portability rule that overrides everything:** declare CRDT types explicitly on every write statement (`INSERT INTO COLLECTION c (field MAP, …)`). Then the strict-mode default on any peer in the mesh can't reshape the data. Never rely on the default.
+**Version guidance that overrides everything:**
+
+- **On 5.x: never change `dql_strict_mode`** — keep the default `false`. The lenient defaults are designed to match JSON intuition: objects become MAPs (per-field merge), scalars and arrays stay REGISTERs. You normally don't need `MAP`/`REGISTER` keywords on writes — the default behavior is the proper behavior in most situations. Use a keyword when you want to *override* the default for one field (e.g. `REGISTER` for an object that must stay atomic) or where inference can't help (a counter seeded by an INSERTed integer, an attachment token) — per-field, without touching the global flag.
+- **On 4.x (LTS): migrate the mesh to `dql_strict_mode = false` — and do it *before* upgrading to v5** (new customers stuck on 4.14 should set it immediately and learn the lenient behaviors). That way the version upgrade changes nothing about how fields merge. Until every 4.x peer is flipped, declare MAP/COUNTER explicitly on statements strict peers execute — they silently can't see undeclared non-REGISTER fields, on reads too ([`references/versions.md`](references/versions.md)).
 
 ## The intake questions (ask before designing)
 

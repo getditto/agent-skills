@@ -345,7 +345,7 @@ The choice is controlled by the user-facing system parameter `dql_strict_mode`. 
 | `dql_strict_mode` (user-facing)          | `true` (strict)                          | `false` (lenient)                        |
 | `INSERT`/`UPDATE` object → CRDT type     | `REGISTER` (strict)                      | `MAP` (lenient)                          |
 | `DQL_MUTATOR_OBJECTS_AS_MAPS` (internal) | OFF (`false`), derived from strict mode  | ON (`true`), derived from strict mode    |
-| Explicit type definition REQUIRED for `MAP`? | Yes — without one, strict mode picks `REGISTER` | No — lenient picks `MAP` by default, but declaring is still recommended for clarity |
+| Explicit type definition REQUIRED for `MAP`? | Yes — without one, strict mode picks `REGISTER` | No — lenient infers `MAP`; declare to override (e.g. force `REGISTER`) or for statements strict 4.x peers execute |
 
 > `DQL_MUTATOR_OBJECTS_AS_MAPS` is the **internal** feature flag derived from `dql_strict_mode`; you may see it referenced in internal docs or error messages, but `dql_strict_mode` is the knob you set.
 
@@ -367,9 +367,9 @@ This is a behaviour difference that does **not** show up at parse time. Both sta
 
 ### Cross-version recommendation
 
-> Always declare types explicitly when you mean `MAP`, `COUNTER`, `PN_COUNTER`, or `ATTACHMENT` — even on 5.0.x.
+> On 5.x the lenient default infers `MAP` for objects — declare types to *override* a default (`REGISTER`, `COUNTER` seeds on INSERT, `ATTACHMENT`) or for any statement a strict-mode 4.x peer will execute; and never change the flag on 5.x.
 
-That gives you:
+During a mixed-version transition, declaring explicitly buys you:
 
 - **Portability** — the same statement does the same thing on 4.14.x and 5.0.x, regardless of either peer's setting; and strict-mode peers silently omit declared MAP/COUNTER fields from plain `SELECT` unless the read repeats the declaration.
 - **Resilience to setting changes** — a future `ALTER SYSTEM` on either peer can't silently change your data shape.

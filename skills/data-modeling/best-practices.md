@@ -90,7 +90,7 @@ SELECT * FROM tasks WHERE NOT coalesce(deleted, false);
 |---|---|---|
 | Embedding an ever-growing array (messages, log lines) in a doc | array = whole-value LWW; concurrent appends silently lost; doc eventually hits hard limit | one doc per item in a child collection |
 | `SET views = views + 1` on a REGISTER | one increment silently wins on merge | `COUNTER` + `APPLY … INCREMENT BY` |
-| Relying on the strict-mode default instead of declaring types | v4 and v5 peers in the same mesh store the same field differently | declare `MAP`/`COUNTER`/`ATTACHMENT` on every write |
+| Flipping `dql_strict_mode` ad hoc, per peer | mismatched peers store and read the same field differently — strict peers silently drop undeclared MAP/COUNTER fields | keep 5.x at the default `false`, always; migrate 4.x peers to `false` (mesh-wide, before upgrading to v5) |
 | base64 image inline in a document | blows the size budget; every edit re-syncs the blob's register | `ATTACHMENT`, lazy fetch |
 | JSON-string-encoding a sub-object into one field "to keep it simple" | unqueryable, unindexable, unmergeable | real MAP |
 | Watching the whole collection with a live observer | observers re-emit the full result set per change; held state is substantially larger than the raw bytes (directionally an order of magnitude) | narrow observer + LIMIT |
@@ -103,4 +103,9 @@ The golden rule in a live mesh: **never change a field's type, never remove a fi
 
 ## Cross-version mesh discipline
 
-If 4.14.x and 5.x peers share a mesh: declare all types explicitly (the strict-mode default then can't diverge), model to the 4.14 read surface (no JOIN-dependent screens), and prefer `COUNTER` to `PN_COUNTER` for anything new. Full matrix: [`references/versions.md`](references/versions.md).
+The target end-state for every mesh is **`dql_strict_mode = false` everywhere** — it's the 5.x default, and its MAP-by-default behavior emulates JSON the way developers expect. If 4.14.x and 5.x peers share a mesh:
+
+1. **Flip the 4.x peers to `false` as the first step of the upgrade**, not after — behavior then stays identical across the version jump.
+2. **Never change the flag on 5.x.** Use per-field type keywords to override the defaults where needed (`REGISTER` for atomic objects, `COUNTER` seeds on INSERT).
+3. While any strict 4.x peer remains, declare MAP/COUNTER explicitly on the statements that peer executes — writes *and* reads (it silently can't see undeclared non-REGISTER fields) — and model reads to the 4.14 surface (no JOIN-dependent screens).
+4. Prefer `COUNTER` to `PN_COUNTER` for anything new. Full matrix: [`references/versions.md`](references/versions.md).
