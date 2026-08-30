@@ -18,6 +18,17 @@
       },
       "source": "./plugins/ditto-dql",
       "category": "development"
+    },
+    {
+      "name": "ditto-subscriptions",
+      "description": "How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-subscriptions",
+      "category": "development"
     }
   ]
 }

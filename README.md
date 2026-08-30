@@ -14,6 +14,7 @@ customer use.**
 | Skill | Description |
 |-------|-------------|
 | [dql](skills/dql) (`write-dql`) | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
+| [sync-subscriptions](skills/sync-subscriptions) (`sync-subscriptions`) | How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 
 ## Repository layout
 
