@@ -84,6 +84,12 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
   harness; triggers on changes to `skills/dql/**` or `tests/dql/**`.
 
+Local harness config lives in the repo-root `.env` (gitignored; copy
+`.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
+environment variables (and CI secrets) always take precedence. Keys:
+`DITTO_OFFLINE_LICENSE` (tests/dql, required), `DITTO_DATABASE_ID`
+(tests/dql, optional), `DM_MODEL_CMD` (tests/data-modeling, required).
+
 ## MCP Servers
 
 The root `.mcp.json` (Claude-format) exposes `ditto-docs` (Ditto

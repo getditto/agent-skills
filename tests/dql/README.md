@@ -50,8 +50,10 @@ Each SDK lives in its own `node_modules` tree under `sdks/v<version>/` because t
 ### Requirements
 
 - Node 24+ (required by the GitHub Actions matrix; Node 20 is deprecated as of June 2026)
-- A Ditto offline license token (`DITTO_OFFLINE_LICENSE` env var)
+- A Ditto offline license token — put `DITTO_OFFLINE_LICENSE` in the **repo-root `.env`** (`cp .env-sample .env`, gitignored) or export it in your shell; CI uses a repo secret. `DITTO_DATABASE_ID` is optional (harness defaults to the offline-playground zero UUID)
 - macOS or Linux (the SDK ships native binaries for both)
+
+Both test runners auto-load the repo-root `.env`; variables already set in the environment always win.
 
 ### One-time
 
@@ -70,25 +72,25 @@ npm run transform
 ## Running the tests
 
 ```bash
-# All three versions
-DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm test
+# All three versions (license picked up from repo-root .env)
+npm test
 
 # Single version
-DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm run test:v51
-DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm run test:v5
-DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm run test:v4
+npm run test:v51
+npm run test:v5
+npm run test:v4
 
 # Pretty report after a run
 npm run report
 
 # Capture expected outputs after content changes (rebuilds catalog goldens)
 for v in 4.14.4 5.0.0 5.1.0; do
-  DITTO_SDK_VERSION=$v DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" node runner/run.mjs --capture-expected
+  DITTO_SDK_VERSION=$v node runner/run.mjs --capture-expected
 done
 node scripts/merge-captured.mjs
 
 # Stop on first failure
-DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm run test:v5 -- --fail-fast
+npm run test:v5 -- --fail-fast
 ```
 
 ## Adding a new query to the skill

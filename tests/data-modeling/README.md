@@ -43,7 +43,10 @@ group has at least one match in the model's response.
 
 ## Running
 
-Requirements: Node 18+ and a model CLI. No Ditto license needed.
+Requirements: Node 18+ and a model CLI. No Ditto license needed. The runner
+auto-loads the repo-root `.env` (`cp .env-sample .env`, gitignored) — set
+`DM_MODEL_CMD` there once instead of exporting it per run. Variables already
+set in the environment always win.
 
 ```bash
 cd tests/data-modeling
@@ -53,16 +56,48 @@ npm run prompts
 
 # 2. Run all cases against a live model.
 #    DM_MODEL_CMD must read the prompt on stdin and write the answer to stdout.
-DM_MODEL_CMD="claude -p" npm run run          # e.g. Claude Code
+npm run run                                   # DM_MODEL_CMD from .env
+DM_MODEL_CMD="claude -p" npm run run          # or ad hoc: e.g. Claude Code
 DM_MODEL_CMD="opencode run" npm run run       # any stdin/stdout-wrapped CLI
 
 # Single case:
-DM_MODEL_CMD="claude -p" node runner/run.mjs --case pos-order
+node runner/run.mjs --case pos-order
 
 # 3. Score the saved responses (default recall threshold 0.75)
 npm run score
 node runner/score.mjs --min 0.8
 ```
+
+### How `DM_MODEL_CMD` works
+
+The harness is model-agnostic: instead of binding to a vendor SDK, it shells
+out to any command that reads a prompt on **stdin** and writes the model's
+answer on **stdout**. For each case the runner builds one self-contained
+prompt (the full skill files plus the case's raw JSON and deployment context —
+everything the model needs is in the prompt), spawns `DM_MODEL_CMD` via the
+shell, pipes the prompt in, and captures stdout verbatim as the response in
+`results/<case>.response.md` (gitignored). One invocation per case;
+`npm run score` then scores the saved responses — re-scoring never calls the
+model again.
+
+Any CLI with a non-interactive prompt-on-stdin mode works:
+
+| Command | Model under test |
+|---|---|
+| `claude -p` | Claude Code (uses your existing login) |
+| `opencode run` | opencode |
+| `gemini -p` | Gemini CLI |
+| `./wrapper.sh` | anything you can wrap — e.g. `curl` against an OpenAI-compatible endpoint |
+
+Tips:
+
+- Use the CLI's non-interactive/print mode (`-p`, …) — an interactive REPL
+  just hangs waiting on stdin.
+- Authentication is the CLI's own (login session, API-key env vars, whatever
+  it uses); the harness passes nothing but the prompt.
+- Model output varies run to run — re-run before reading much into one score.
+  `npm run prompts` (`--prompts-only`) writes the exact prompts to
+  `results/prompts/` for free, so you can eyeball what the model sees.
 
 Exit codes: `score.mjs` returns 0 when every scored case meets the recall
 threshold and no anti-finding regexes match; 1 on any failing case, when no

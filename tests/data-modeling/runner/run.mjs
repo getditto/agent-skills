@@ -15,6 +15,9 @@ import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildPrompt } from './prompt.mjs';
+import { loadEnv } from '../../lib/load-env.mjs';
+
+loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const here = dirname(fileURLToPath(import.meta.url));
 const casesDir = join(here, '..', 'cases');
@@ -51,7 +54,7 @@ if (cases.length === 0) {
 
 const modelCmd = process.env.DM_MODEL_CMD;
 if (!promptsOnly && !modelCmd) {
-  console.error('Set DM_MODEL_CMD (e.g. DM_MODEL_CMD="claude -p") or pass --prompts-only.');
+  console.error('Set DM_MODEL_CMD — in the repo-root .env (see .env-sample) or the environment — or pass --prompts-only.');
   process.exit(1);
 }
 

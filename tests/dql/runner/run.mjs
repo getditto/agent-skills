@@ -24,20 +24,23 @@ import os from "node:os";
 import { loadSdk } from "./version-shim.mjs";
 import { assertRowCount, assertFirstRow } from "./assertions.mjs";
 import { seedMovies, seedRetail } from "../scripts/seed-store.mjs";
+import { loadEnv } from "../../lib/load-env.mjs";
+
+loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
-  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.0");
+  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.0|5.1.0");
   process.exit(1);
 }
 
 const LICENSE = process.env.DITTO_OFFLINE_LICENSE || process.env.DITTO_PLAYGROUND_TOKEN;
 if (!LICENSE) {
-  console.error("Set DITTO_OFFLINE_LICENSE or DITTO_PLAYGROUND_TOKEN");
+  console.error("Set DITTO_OFFLINE_LICENSE — in the repo-root .env (see .env-sample) or the environment");
   process.exit(1);
 }
 
-const APP_ID = process.env.DITTO_APP_ID || "00000000-1111-2222-3333-444444444444";
+const DATABASE_ID = process.env.DITTO_DATABASE_ID || "00000000-1111-2222-3333-444444444444";
 const CAPTURE_EXPECTED = process.argv.includes("--capture-expected");
 const FAIL_FAST = process.argv.includes("--fail-fast");
 
@@ -69,13 +72,13 @@ let ditto;
 try {
   if (versionLine === "4.14.x") {
     ditto = new sdk.Ditto(
-      { type: "offlinePlayground", appID: APP_ID },
+      { type: "offlinePlayground", appID: DATABASE_ID }, // appID is the v4 SDK's own property name
       storeDir,
     );
   } else {
     // v5+: build a DittoConfig and call the static factory.
     const config = new sdk.DittoConfig(
-      APP_ID,
+      DATABASE_ID,
       { mode: "smallPeersOnly" },
       storeDir,
     );
