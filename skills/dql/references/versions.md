@@ -157,7 +157,7 @@ All other operators (`+`, `-`, `*`, `/`, `%`, comparison family, `LIKE` / `ILIKE
 
 | Engine flag                       | 4.14.x | 5.0.x | Effect                                                                                              |
 | --------------------------------- | :----: | :---: | --------------------------------------------------------------------------------------------------- |
-| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` |   ✓    |   ✓   | Subscriptions limited to V1 surface: `SELECT *`, no projection, no `USE IDS`, no `DISTINCT`.        |
+| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` |   ✓    |   ✓   | Subscriptions limited to V1 surface: `SELECT *`, no projection, one collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. Always on for `registerSubscription`. |
 | `DQL_RESTRICT_LIMIT_ORDER_BY`     |   ✗    |   ✓   | **SDK 5.0+**. `ORDER BY` and `LIMIT` are rejected in subscription queries. See [`select.md`](select.md) §12. |
 
 ---

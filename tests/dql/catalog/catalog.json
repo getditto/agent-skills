@@ -3894,13 +3894,13 @@
     }
   },
   {
-    "id": "sk_select_79f7d3d1",
+    "id": "sk_select_dfc62cd7",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 574,
+      "line": 575,
       "heading": "### 12.3 Portable subscription patterns"
     },
-    "query": "\n\nSELECT title, ratings.imdb AS imdb FROM movies\nWHERE year >= 1990\nORDER BY imdb DESC\nLIMIT 50",
+    "query": "\n\n\nSELECT * FROM movies\nWHERE year >= 1990\nORDER BY title ASC\nLIMIT 50",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3912,10 +3912,10 @@
     }
   },
   {
-    "id": "sk_select_02bdd933",
+    "id": "sk_select_171c0dac",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 591,
+      "line": 595,
       "heading": "## 13. Worked examples (movies dataset)"
     },
     "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
@@ -3928,10 +3928,10 @@
     "expect": {}
   },
   {
-    "id": "sk_select_37a89cf7",
+    "id": "sk_select_b2af8f15",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 684,
+      "line": 688,
       "heading": "### 14.1 Inner join — projection from both sides"
     },
     "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
@@ -3944,10 +3944,10 @@
     }
   },
   {
-    "id": "sk_select_71681b1d",
+    "id": "sk_select_7b16b02e",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 699,
+      "line": 703,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -3962,10 +3962,10 @@
     }
   },
   {
-    "id": "sk_select_0c43416d",
+    "id": "sk_select_13b1bfc3",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 705,
+      "line": 709,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
@@ -3978,10 +3978,10 @@
     }
   },
   {
-    "id": "sk_select_4dd972c5",
+    "id": "sk_select_61a37df2",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 718,
+      "line": 722,
       "heading": "### 14.3 Outer join + aggregation — reviews per movie"
     },
     "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
@@ -3991,10 +3991,10 @@
     "expectError": false
   },
   {
-    "id": "sk_select_6ed9bae0",
+    "id": "sk_select_9c1b6610",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 734,
+      "line": 738,
       "heading": "### 14.4 Join + HAVING — keep only well-reviewed movies"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC",
@@ -4007,10 +4007,10 @@
     }
   },
   {
-    "id": "sk_select_6154833e",
+    "id": "sk_select_2eaaccda",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 747,
+      "line": 751,
       "heading": "### 14.5 Anti-join — movies with no reviews"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",

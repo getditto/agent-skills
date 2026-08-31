@@ -78,6 +78,7 @@ sync only some fields of a document.
 | `SELECT *` (wildcard) | Required | — |
 | Projections (`SELECT make, model ...`) | No | `Unsupported feature: A projection other than wildcard (*)` |
 | `WHERE` on one collection | Yes | — |
+| `USE INDEX` / directives | Yes (planner hints honoured) | — |
 | JOIN / multiple collections in `FROM` | No | `Unsupported feature: Joining` (4.14.x/5.0.x: parse error) |
 | `USE IDS` | No | `Unsupported feature: USE IDS` (4.14.x/5.0.x: lowercase `use ids`) |
 | `DISTINCT` | No | `Unsupported feature: DISTINCT` |

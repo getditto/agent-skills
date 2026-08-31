@@ -529,20 +529,20 @@ See [`functions.md`](functions.md) for `ifmissingornull`, `coalesce`, `nvl`, and
 
 ## 12. Subscription patterns and constraints
 
-DQL `SELECT` statements can be used as **subscriptions** — long-lived queries that emit incremental updates as documents change. The engine restricts the surface that subscription queries can use, to keep cache invalidation cheap. The exact restriction depends on which feature flag the host enables.
+DQL `SELECT` statements can be used as **subscriptions** — long-lived queries that emit incremental updates as documents change. The engine restricts the surface that subscription queries can use, to keep cache invalidation cheap. Two feature flags control that surface; when each applies is covered below.
 
 ### 12.1 Feature flags that restrict subscription syntax
 
 | Flag                              | Available on    | Effect on subscription `SELECT`                                                                                                       |
 | --------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `DQL_RESTRICT_LIMIT_ORDER_BY`     | **SDK 5.0+**    | `ORDER BY` and `LIMIT` are rejected in subscription queries. Use the unrestricted query path for paginated or sorted reads.           |
-| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` | SDK 4.x and 5.x | Subscription queries are limited to the original V1 surface: `SELECT *` only (no expression projection), no `USE IDS`, no `DISTINCT`. |
+| `DQL_RESTRICT_LIMIT_ORDER_BY`     | **SDK 5.0+**    | `ORDER BY` and `LIMIT` are rejected in subscription queries. Use a one-shot store query for paginated or sorted reads.                    |
+| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` | SDK 4.x and 5.x | Subscription queries are limited to the original V1 surface: `SELECT *` only (no expression projection), a single collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. |
 
-Both flags default to a state determined by the host SDK at instance-creation time, so the practical restriction you hit in your code depends on which subscription path the SDK wires you through. The names above are the canonical engine-level flag identifiers; consult the SDK release notes for the per-language default.
+`DQL_RESTRICT_TO_ORIGINAL_SYNTAX` is always on for `registerSubscription` — on every SDK line (4.14.x, 5.0.x, 5.1.x); there is no unrestricted subscription path. `DQL_RESTRICT_LIMIT_ORDER_BY` tracks the `dql_restrict_subscriptions` system parameter: default `true` on 5.0+, so `LIMIT`/`ORDER BY` are rejected unless it is explicitly set to `false`. The parameter does not exist on 4.14.x, which accepts `LIMIT`/`ORDER BY` subscriptions and evaluates them statefully. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
 
 ### 12.2 What is — and isn't — allowed in a subscription
 
-The table below collapses both flags. "OK" means the syntax works in the typical subscription path on both SDK versions. "Restricted" means at least one of the flags above blocks it.
+The table below collapses both flags. "OK" means the syntax works in a subscription across SDK 4.14.x, 5.0.x, and 5.1.x. "Restricted" means at least one of the flags above blocks it.
 
 | Feature                              | One-shot `SELECT` | Subscription `SELECT`                                                  |
 | ------------------------------------ | ----------------- | ---------------------------------------------------------------------- |
@@ -552,13 +552,14 @@ The table below collapses both flags. "OK" means the syntax works in the typical
 | `USE IDS`                            | OK                | Restricted under `DQL_RESTRICT_TO_ORIGINAL_SYNTAX`                     |
 | `USE INDEX` / `USE DIRECTIVES`       | OK                | OK (planner hints are honoured)                                        |
 | `WHERE`                              | OK                | OK                                                                     |
-| `GROUP BY` / `HAVING`                | OK                | Not meaningful on a subscription (no aggregate emission contract)      |
-| `ORDER BY`                           | OK                | **Restricted under `DQL_RESTRICT_LIMIT_ORDER_BY`** (v5.0+)             |
-| `LIMIT` / `OFFSET`                   | OK                | **Restricted under `DQL_RESTRICT_LIMIT_ORDER_BY`** (v5.0+)             |
+| `GROUP BY` / `HAVING`                | OK                | Restricted under `DQL_RESTRICT_TO_ORIGINAL_SYNTAX`                     |
+| `ORDER BY`                           | OK                | **Restricted under `DQL_RESTRICT_LIMIT_ORDER_BY`** (default on 5.0+; accepted, stateful, on 4.14.x) |
+| `LIMIT`                              | OK                | **Restricted under `DQL_RESTRICT_LIMIT_ORDER_BY`** (default on 5.0+; accepted, stateful, on 4.14.x) |
+| `OFFSET` alone                       | OK                | OK — the restriction fires only on `LIMIT` / `ORDER BY`                |
 
 ### 12.3 Portable subscription patterns
 
-If you need to subscribe to a filtered set on both 4.14.x and 5.0.x, stick to the lowest-common-denominator surface:
+If you need to subscribe to a filtered set on 4.14.x, 5.0.x, and 5.1.x alike, stick to the lowest-common-denominator surface:
 
 ```sql
 -- Portable subscription: SELECT * with WHERE only
@@ -569,16 +570,19 @@ SELECT * FROM reviews WHERE movie_id = :movie_id;
 SELECT * FROM movies WHERE array_contains(genres, 'Drama');
 ```
 
-If your host enables the unrestricted subscription path (default for many SDK versions; check release notes), you can fall back to expression projection and ordering:
+Expression projections are never available in a subscription, on any supported SDK line — model partial documents as a separate collection or an attachment instead. `ORDER BY` / `LIMIT` subscriptions work only on 4.14.x, or on 5.0+ via the escape hatch:
 
 ```sql
--- Only available when DQL_RESTRICT_TO_ORIGINAL_SYNTAX is not set
--- AND (for ORDER BY / LIMIT) when DQL_RESTRICT_LIMIT_ORDER_BY is not set.
-SELECT title, ratings.imdb AS imdb FROM movies
+-- First: ALTER SYSTEM SET dql_restrict_subscriptions = false  (5.0+ only;
+-- 4.14.x accepts this query as-is). Stateful: every boundary change
+-- invalidates and re-evaluates — never filter/sort on mutable fields.
+SELECT * FROM movies
 WHERE year >= 1990
-ORDER BY imdb DESC
+ORDER BY title ASC
 LIMIT 50;
 ```
+
+Treat the escape hatch as a migration aid, not a recommendation.
 
 For sorting and pagination across a subscription stream, do the sort/limit **in the host application** over the unsorted subscription result, rather than relying on the engine to maintain a sorted projection.
 

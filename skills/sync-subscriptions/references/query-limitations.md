@@ -62,6 +62,8 @@ Additional consequences:
   subscription.
 - **Arguments are fine.** `:argument` placeholders work and are the right way
   to parameterize a subscription.
+- **Planner directives are fine.** `USE INDEX` / `USE DIRECTIVES` are honoured
+  in subscriptions on all supported versions.
 
 ### `LIMIT` and `ORDER BY`: version-dependent
 
@@ -126,6 +128,7 @@ Two design reasons:
 | `SELECT *` | Required | Yes |
 | Projections | No | Yes |
 | `WHERE` (single collection) | Yes | Yes |
+| `USE INDEX` / directives | Yes (planner hints) | Yes |
 | JOIN (5.1+) | No | Yes |
 | `USE IDS` | No | Yes |
 | `DISTINCT` | No | Yes |
