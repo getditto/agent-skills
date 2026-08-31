@@ -89,6 +89,7 @@ Local harness config lives in the repo-root `.env` (gitignored; copy
 environment variables (and CI secrets) always take precedence. Keys:
 `DITTO_OFFLINE_LICENSE` (tests/dql, required), `DITTO_DATABASE_ID`
 (tests/dql, optional), `DM_MODEL_CMD` (tests/data-modeling, required).
+Overview for contributors: `testing-readme.md`.
 
 ## MCP Servers
 
