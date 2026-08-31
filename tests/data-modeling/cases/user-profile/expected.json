@@ -7,7 +7,7 @@
       "id": "DECLARE_TYPES",
       "path": "preferences/homeAddress",
       "severity": "info",
-      "groups": [["map|register|declar|explicit|strict"]]
+      "groups": [["map|register|declar|explicit|strict|lenient|infer|no declaration"]]
     }
   ],
   "antiFindings": [

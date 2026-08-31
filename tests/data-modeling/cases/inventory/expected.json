@@ -19,7 +19,7 @@
       "id": "DECLARE_TYPES",
       "path": "attrs",
       "severity": "warn",
-      "groups": [["4\\.14|strict.?mode"], ["register|whole.?object|atomic"], ["map|declar|explicit"]]
+      "groups": [["4\\.14|strict.?mode"], ["register|whole.?object|atomic"], ["map|declar|explicit|migrat|flip|lenient|false"]]
     },
     {
       "id": "FLOAT_MONEY",

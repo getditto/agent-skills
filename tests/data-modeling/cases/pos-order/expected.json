@@ -25,7 +25,7 @@
       "id": "DECLARE_TYPES",
       "path": "customer/store",
       "severity": "warn",
-      "groups": [["4\\.14|strict.?mode|v4"], ["map"], ["declar|explicit"]]
+      "groups": [["4\\.14|strict.?mode|v4"], ["map"], ["declar|explicit|migrat|flip|lenient|false"]]
     },
     {
       "id": "SIZE_SOFT",

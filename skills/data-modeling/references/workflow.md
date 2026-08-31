@@ -13,7 +13,7 @@ Ask whatever the user hasn't already provided, in one concise batch. Don't block
 
 | # | Question | Why it changes the model |
 |---|---|---|
-| 1 | Which Ditto SDK version(s)? (4.14.x / 5.0.x / 5.1.x / mixed mesh) — and on 4.x, has `dql_strict_mode` been set to `false` yet? | Strict-mode default (REGISTER vs MAP for objects); the 4.x→v5 migration path (flip to `false` first); JOINs and composite indexes are 5.1+; `COUNTER` needs 4.14+ |
+| 1 | Which Ditto SDK version(s)? (4.14.x / 5.0.x / 5.1.x / mixed mesh) — and on 4.x, has `dql_strict_mode` been migrated to `false` yet? | Lenient mode is the assumed baseline (objects infer MAP; no type declarations on reads or writes); un-flipped 4.x strict peers get the migration playbook plus transition declarations; JOINs and composite indexes are 5.1+; `COUNTER` needs 4.14+ |
 | 2 | Who edits which parts, and can edits be concurrent/offline? | Drives MAP granularity, COUNTER fields, audit-log patterns; single-writer data can stay simple |
 | 3 | Which transports matter? (BLE, AWDL, LAN/WiFi, Big Peer only) | BLE ≈ 20 KB/s effective — a 250 KiB doc is 10+ s. Sets the acceptable document size budget |
 | 4 | Target hardware/OS tier? (budget Android vs modern iOS/macOS) | Storage and CPU throughput vary by an order of magnitude; pacing, observer scope, batch sizes follow |
@@ -36,8 +36,8 @@ Walk the source JSON field by field (document → each nested object → each ar
 | `ARRAY_LWW` (blocker if multi-writer/unbounded, else warn) | Any array | Whole-array last-write-wins, no per-element merge, no error on lost appends → `MAP` keyed by stable ID, or child collection. OK only if strictly single-writer and bounded — say so explicitly |
 | `COUNTER_CANDIDATE` (blocker if multi-writer) | Numbers that accumulate: stock, count, quantity, inventory, votes, likes, views, score totals, balance | `COUNTER` (4.14+): concurrent increments merge correctly. Integer only — model money as integer cents. Never `SET` arithmetic on a REGISTER for these |
 | `ATTACHMENT_CANDIDATE` (blocker when it pushes the doc past the 256 KiB soft limit, warn otherwise) | base64 strings, image/audio/PDF payloads, any single value > ~250 KB (i.e. approaching the soft limit), URL-free blobs | Move bytes to `ATTACHMENT`; keep only the token + minimal metadata in the doc |
-| `DECLARE_TYPES` (warn on 4.x/mixed meshes; info on 5.x-only meshes) | Nested objects relying on defaults where a keyword override or 4.x peers are involved | On 5.x the lenient defaults are usually correct — flag only when a field needs an override (`REGISTER` for atomic objects, `COUNTER` seed on INSERT) or when 4.x peers exist: strict peers store bare objects as REGISTERs and silently omit MAP/COUNTER fields from plain reads. Recommended 4.x fix: migrate to `dql_strict_mode = false` before the v5 upgrade; declare explicitly during the transition window |
-| `ATOMIC_OBJECT_REGISTER` (info) | Object whose fields must stay mutually consistent (address, geo pair, opening-hours struct) | Force `REGISTER` explicitly — on 5.x the default would be MAP, which can surface a half-merged object |
+| `DECLARE_TYPES` (info on lenient meshes; warn where un-migrated 4.x/strict peers exist) | Nested objects where a deliberate override applies, or fields read/written by strict-mode peers | Lenient baseline: objects infer MAP with **no declarations on writes or reads** — flag only deliberate overrides (`REGISTER` for atomic objects, `COUNTER` seed on INSERT) or un-flipped 4.x peers: strict peers store bare objects as whole-object REGISTERs and silently omit undeclared MAP/COUNTER fields from query results entirely. Recommended 4.x fix: migrate to `dql_strict_mode = false` before the v5 upgrade; declare explicitly only on statements strict peers execute during the transition |
+| `ATOMIC_OBJECT_REGISTER` (info) | Object whose fields must stay mutually consistent (address, geo pair, opening-hours struct) | Force `REGISTER` explicitly — a deliberate override of the lenient MAP default, which can otherwise surface a half-merged object |
 | `TIMESTAMP_SKEW` (info) | Timestamps compared for exact equality or used as ordering keys | Device clocks skew; use ISO-8601 strings, ranges not equality, and timestamp-keyed MAPs for event trails |
 | `ID_DESIGN` (info/blocker if mutable) | `_id` that is null, reassigned over time, or duplicated across types | `_id` is immutable and never typed; composite-object `_id` (e.g. `{region, store, orderId}`) is allowed and useful as a permission partition key |
 | `MIXED_KEYED_MAP` (warn) | Object used as a dictionary with dynamic keys AND fixed keys | Split: dynamic keys into a keyed MAP, fixed keys as fields — dynamic-key churn accumulates tombstone metadata |
@@ -81,10 +81,11 @@ Deliver the review in this shape (prose around it is fine):
 ## Recommended model
 ### Collection: orders
 - _id: composite or string, immutable
-- customer: MAP (...)
-... plus a pasteable DECLARE statement:
+- customer: MAP (inferred — no declaration under the lenient baseline)
+... plus a pasteable INSERT statement — declare only what inference
+can't infer (COUNTER, ATTACHMENT, deliberate REGISTER overrides):
 ```sql
-INSERT INTO COLLECTION orders (customer MAP, items MAP (priceEach REGISTER)) …
+INSERT INTO COLLECTION orders (receipt ATTACHMENT, stock COUNTER) …
 ```
 
 ## Split decisions

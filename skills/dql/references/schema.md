@@ -77,12 +77,10 @@ The schema is "pedagogical" in the sense that it's designed to teach DQL: it int
 
 ## Seeding the dataset
 
-INSERT with explicit CRDT type declarations the first time the collection is touched, so MAP and COUNTER fields are recognized correctly on both SDK 4.14.x (strict mode default, treats objects as REGISTER unless declared) and 5.0.x (lenient mode default, treats objects as MAP unless declared). See [`statements.md`](statements.md#1-insert) for `INSERT INTO COLLECTION ... DOCUMENTS` syntax.
+Assuming the lenient baseline (`dql_strict_mode = false` on every peer — the 5.x default and the 4.14.x migration target), `director` and `ratings` infer MAP with no declaration; only `watch_count` is declared, because inference can't guess a COUNTER from a plain integer. See [`statements.md`](statements.md#1-insert) for `INSERT INTO COLLECTION ... DOCUMENTS` syntax.
 
 ```sql
 INSERT INTO COLLECTION movies (
-  director MAP,
-  ratings MAP,
   watch_count COUNTER
 )
 DOCUMENTS ({
@@ -115,4 +113,4 @@ For the test harness, the `movies` fixture is generated from a real movies datas
 - **`director` and `ratings` are MAPs.** Updating one field leaves the others alone (`SET ratings.imdb = 9.4` keeps `rotten_tomatoes` and `metacritic` intact). REGISTER objects would replace the whole value.
 - **`watch_count` is a COUNTER.** Increment with `UPDATE movies APPLY watch_count INCREMENT BY 1 WHERE ...`, **never** with `SET watch_count = watch_count + 1`. See [`types-mutators.md`](types-mutators.md#3-counter).
 - **`released` is a string**, not a native date type. Use [`date_cast()`](functions.md#7-date--time) to parse it for arithmetic.
-- **Cross-version MAP defaults.** On SDK 4.14.x, an undeclared object becomes a REGISTER (LWW); on 5.0.x it becomes a MAP. Declare the types explicitly at INSERT time for portable behavior. See [`types-mutators.md`](types-mutators.md#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+- **Cross-version MAP defaults.** Under the assumed lenient baseline (`dql_strict_mode = false` everywhere), undeclared objects become MAPs — no declarations needed on writes or reads. Only an un-migrated 4.14.x strict peer turns a bare object into a REGISTER (LWW) and omits undeclared MAP/COUNTER fields from reads; the fix is migrating that peer to `false`, not declaring types everywhere. See [`types-mutators.md`](types-mutators.md#7-strict-mode-and-the-dql_strict_mode-system-parameter).

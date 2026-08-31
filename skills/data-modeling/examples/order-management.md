@@ -1,6 +1,6 @@
 # Cookbook: POS / e-commerce order
 
-Worked example of the review workflow from [`../references/workflow.md`](../references/workflow.md). Covers SDK **4.14.x and 5.1.x**; version gates are tagged inline.
+Worked example of the review workflow from [`../references/workflow.md`](../references/workflow.md). Covers SDK **4.14.x and 5.1.x**; version gates are tagged inline. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes).
 
 ## The input JSON
 
@@ -35,7 +35,7 @@ A team migrating a POS app brings this document:
 | blocker | `ARRAY_LWW` | `statusHistory` | Append-log in an array: concurrent status transitions drop. Also grows unbounded over a long-lived order |
 | blocker | `ATTACHMENT_CANDIDATE` | `receiptPdfBase64` | ~380 KB inline blows the 256 KiB soft limit and every order edit re-syncs the blob's register |
 | warn | `COUNTER_CANDIDATE` | (implied) inventory side | `qty` decremented from *product* stock by many devices — that's a counter on the `products` collection, not a field here |
-| warn | `DECLARE_TYPES` | `store`, `customer` | On the 4.14.x registers these silently store as whole-object REGISTERs. Move those peers to `dql_strict_mode = false` before the v5 rollout (recommended); declare `MAP` explicitly during the transition window |
+| warn | `DECLARE_TYPES` | `store`, `customer` | No declarations on the 5.1.x tablets — the lenient default infers MAP. But the 4.14.x registers under the strict `true` default silently store these as whole-object REGISTERs and drop them from plain reads. Migrate the registers to `dql_strict_mode = false` before the v5 rollout (recommended); declare `MAP` explicitly only on statements still-strict peers execute during the transition |
 | warn | `SPLIT_UNBOUNDED` | design-level | If items/history can grow or are edited post-creation, they belong out of the hot order doc |
 | info | `FLOAT_MONEY` | `price`, `total` | use integer cents everywhere |
 | info | `TIMESTAMP_SKEW` | `statusHistory` keys | device clocks skew; key history entries with high-res ISO-8601 and never exact-match |
@@ -45,13 +45,10 @@ A team migrating a POS app brings this document:
 Most-realistic POS constraint: items are finalized at checkout; disputes edit **quantity or void flags per item** from one register at a time. Keyed MAP handles that with clean merges:
 
 ```sql
-INSERT INTO COLLECTION orders (
-  store       MAP,
-  customer    MAP,
-  items       MAP,
-  status_log  MAP,
-  receipt     ATTACHMENT
-)
+-- store/customer/items/status_log infer MAP under the lenient default —
+-- no MAP/REGISTER declarations on writes or reads. ATTACHMENT is declared:
+-- inference can't guess it from a token-shaped object.
+INSERT INTO COLLECTION orders (receipt ATTACHMENT)
 DOCUMENTS ({
   '_id': 'order-2026-00042',
   'store':    { 'id': 42, 'name': 'Portland Pearl', 'region': 'us-west' },

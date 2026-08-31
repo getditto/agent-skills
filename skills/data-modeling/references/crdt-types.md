@@ -25,9 +25,9 @@ Every field in a Ditto document is a CRDT. Choosing the model means choosing, pe
 
 **Do not model with REGISTER when:** different peers edit different sub-fields (they will overwrite each other's object); a number accumulates across peers; an array grows by appends from multiple devices.
 
-**Default note.** Scalars and arrays are always REGISTERs by default. For *object* values the default depends on strict mode: `REGISTER` when `dql_strict_mode = true` (the 4.14.x default), `MAP` when `false` (the 5.x default). See [`versions.md`](versions.md). The intended way to work: on 5.x, rely on the lenient defaults and declare a keyword only to *override* them (e.g. force `REGISTER` on an atomic object); on 4.x, flip the mesh to `dql_strict_mode = false` (recommended before any v5 upgrade) — or declare explicitly while strict peers remain.
+**Default note (lenient baseline).** Scalars and arrays are always REGISTERs by default; object values default to `MAP` under `dql_strict_mode = false` — the baseline this skill assumes (5.x default, and the migration target for 4.x meshes). **In this world you write no `MAP`/`REGISTER` keywords on writes or reads**: writes duck-type the JSON, and reads return the most recent value of any type. Only on an un-migrated strict-mode 4.14.x peer do bare objects store as REGISTERs and require declarations on writes *and* reads — see [`versions.md`](versions.md).
 
-**Forcing REGISTER on an object:** the lenient (5.0+) default infers MAP for objects, so declare REGISTER when you actually want whole-object LWW. The declaration is also valid — though redundant — on 4.14.x strict mode:
+**Forcing REGISTER on an object (the one legitimate `REGISTER` keyword under lenient mode):** the default infers MAP for objects, so declare REGISTER when you actually want whole-object LWW. This is a per-field override of the default — not strict-mode boilerplate:
 
 ```sql
 UPDATE COLLECTION orders (address REGISTER)
@@ -44,23 +44,22 @@ WHERE _id = 'order-1';
 **Behavioral traps:**
 
 - Omitting a key is **"no change"**, not delete. Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``); it writes a per-key add-wins tombstone — a concurrent re-add from a peer that hasn't seen the remove survives. Clearing many keys? `UNSET` the parent field — cheaper on tombstone metadata.
-- **Strict-mode read trap (4.14.x):** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it silently unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`). Strict peers also reject nested-field `SET`/`UNSET` without the declaration. The clean fix is migrating 4.x peers to `dql_strict_mode = false`; while strict peers remain, declare on both writes and reads that touch them.
+- **Un-migrated strict peers (4.14.x default `true`) silently drop fields from reads:** a MAP or COUNTER field is *stored* correctly when written with a declaration, but plain `SELECT` on a strict peer omits it unless the read repeats the declaration (`SELECT ... FROM COLLECTION orders (status_log MAP)`); strict peers also reject nested-field `SET`/`UNSET` without it. No error — the field is absent as if it never existed. The fix is migrating those peers to `dql_strict_mode = false`; lenient peers never need read declarations.
 - `SET map_field = {...}` is a **bulk merge**: keys you don't mention survive.
 - Heavy add/remove churn on dynamic keys accumulates tombstone metadata; if the churn set is large, prefer `UNSET` on the parent, a fresh document, or a separate collection. See [`performance.md`](performance.md).
 
-**Declaration:**
+**Declaration:** none under the lenient baseline — bare objects infer MAP at any nesting depth:
 
 ```sql
-INSERT INTO COLLECTION orders (
-  customer MAP,                                   -- sub-fields default to REGISTER
-  status    MAP (history MAP)                     -- nested MAP
-)
+INSERT INTO orders
 DOCUMENTS ({
   '_id': 'order-1',
-  'customer': { 'name': 'Ada', 'tier': 'gold' },
-  'status': { 'current': 'placed', 'history': {} }
+  'customer': { 'name': 'Ada', 'tier': 'gold' },        -- infers MAP
+  'status': { 'current': 'placed', 'history': {} }      -- infers MAP, history infers MAP
 });
 ```
+
+The declaration syntax (`INSERT INTO COLLECTION orders (customer MAP, status MAP (history MAP)) …`) exists for the two remaining audiences: un-migrated strict-mode peers, which need it on writes *and* reads, and deliberate overrides. See [`versions.md`](versions.md).
 
 ## COUNTER (settable counter, 4.14+)
 
@@ -72,7 +71,7 @@ DOCUMENTS ({
 
 **Traps:**
 
-- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. In lenient mode (5.x default), `APPLY … INCREMENT BY` on an undeclared field auto-creates a counter; seeding an initial value on INSERT still needs the declaration, and on strict-mode 4.x peers undeclared counters are invisible — declare `COUNTER` wherever a counter lives.
+- Inserting a plain integer **without declaring the type** creates a REGISTER, not a counter — increments will never merge. `APPLY … INCREMENT BY` on an undeclared field auto-creates a counter in lenient mode, but seeding an initial value on INSERT still needs the declaration — declare `COUNTER` wherever a counter lives. (Un-migrated strict peers additionally can't *see* undeclared counters at all — another reason to migrate them.)
 - Values are integers. Model money as integer cents, not floats.
 - A counter's stored state grows with the number of **distinct peers** that have ever touched it (one entry per actor), not with the number of operations. See [`performance.md`](performance.md).
 
@@ -127,9 +126,9 @@ Rules of thumb (detail in [`../best-practices.md`](../best-practices.md)):
 
 | Field shape in the source JSON | First choice | When to deviate |
 |---|---|---|
-| Scalar, overwritten wholesale | `REGISTER` (no declaration needed) | — |
-| Object, sub-fields edited independently | `MAP` (declared) | `REGISTER` if the object must stay atomic |
-| Object, semantically atomic (address, geo pair) | `REGISTER` (declare on 5.0+) | — |
+| Scalar, overwritten wholesale | `REGISTER` (default — no declaration) | — |
+| Object, sub-fields edited independently | `MAP` (default under lenient mode — no declaration) | `REGISTER` if the object must stay atomic |
+| Object, semantically atomic (address, geo pair) | `REGISTER` (declare to override the MAP default) | — |
 | Number accumulated across peers | `COUNTER` (4.14+) | `PN_COUNTER` only for legacy storage |
 | Array, multi-writer or growable | `MAP` keyed by ID, or child collection | array only if strictly single-writer |
 | Binary / large string (> ~250 KB) | `ATTACHMENT` | inline only if small and queryable |

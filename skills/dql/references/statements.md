@@ -413,14 +413,14 @@ ALTER SYSTEM RESET ALL
 - Use `SHOW` (§8) to discover available parameter names.
 
 ```sql
--- Switch off strict mode (5.0.x ships strict=false by default; 4.x ships strict=true)
-ALTER SYSTEM SET DQL_STRICT_MODE = false;
+-- Lenient mode: the 5.0.x default, and the recommended setting on 4.x (which ships strict=true)
+ALTER SYSTEM SET dql_strict_mode = false;
 
 -- Same thing using TO
-ALTER SYSTEM SET DQL_STRICT_MODE TO false;
+ALTER SYSTEM SET dql_strict_mode TO false;
 
 -- Reset one parameter to its default
-ALTER SYSTEM RESET DQL_STRICT_MODE;
+ALTER SYSTEM RESET dql_strict_mode;
 
 -- Reset everything
 ALTER SYSTEM RESET ALL;
@@ -445,7 +445,7 @@ SHOW ALL;                                    -- every parameter
 SHOW ALL LIKE 'transport_%';                 -- all transport_… parameters
 SHOW ALL ILIKE 'DQL_%';                      -- DQL_… (case-insensitive)
 SHOW ALL LIKE 'transport!_%' ESCAPE '!';     -- literal underscore in pattern
-SHOW DQL_STRICT_MODE;                        -- one parameter
+SHOW dql_strict_mode;                        -- one parameter
 ```
 
 ---
@@ -474,7 +474,7 @@ SYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')
 
 -- Inspect strict-mode setting on every staging peer
 SYNC CONTEXT (PEERS WHERE peerMetadata.environment = 'staging')
-  SHOW DQL_STRICT_MODE;
+  SHOW dql_strict_mode;
 ```
 
 ---

@@ -22,6 +22,8 @@ DQL features land version by version. **Before answering a non-trivial DQL quest
 
 If they don't know, ask them to check the SDK package version in their project (`Ditto.swift` / `build.gradle` / `package.json`) — or to run `SHOW dql_strict_mode` to identify the v4 strict-default vs v5 lenient-default behavior. Then filter the rest of the conversation to features available in that version (see `references/versions.md`).
 
+**Strict mode:** this skill assumes `dql_strict_mode = false` (lenient) on every peer — the 5.x default and the migration target for 4.14.x meshes. Examples therefore use no `MAP`/`REGISTER` keywords on reads or writes (objects infer MAP; reads see every type). If a 4.x user reports fields missing from query results or whole-object overwrites on merge, suspect an un-migrated strict peer first — see `references/types-mutators.md` §7 and `best-practices.md` "Strict Mode".
+
 If the user explicitly says "give me the latest" or "use the newest" without picking a version, default to 5.1.x and say so.
 
 ## Where to look

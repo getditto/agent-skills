@@ -1,6 +1,6 @@
 # Cookbook: migrating a MongoDB/SQL-style model
 
-Covers SDK **4.14.x and 5.1.x** — the join question is where these versions diverge most. Scenario: a team-portal coming from MongoDB with normalized collections asks "how do I lay this out in Ditto?"
+Covers SDK **4.14.x and 5.1.x** — the join question is where these versions diverge most. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Scenario: a team-portal coming from MongoDB with normalized collections asks "how do I lay this out in Ditto?"
 
 ## The input shape (three related documents)
 
@@ -38,7 +38,7 @@ Covers SDK **4.14.x and 5.1.x** — the join question is where these versions di
 | blocker | `SPLIT_UNBOUNDED` + `ARRAY_LWW` | `tickets.history` | Same; state transitions from several devices get silently overwritten |
 | blocker | `COUNTER_CANDIDATE` | `tickets.commentsCount` | Plain number bumped by many peers → `COUNTER` (4.14+) — though after splitting comments into docs, prefer counting at read time and drop this field |
 | warn | `ARRAY_LWW` | `teams.memberIds` | Membership edited by multiple admins → keyed MAP |
-| warn | `DECLARE_TYPES` | `teams.settings` | Declare MAP (4.14.x would store REGISTER) |
+| warn | `DECLARE_TYPES` | `teams.settings` | No declaration once peers are lenient (infers MAP). Flagged because any un-migrated 4.14.x strict peer would store it as a whole-object REGISTER and silently omit it from plain reads — migrate those peers to `dql_strict_mode = false`; declare MAP explicitly only on their statements during the transition |
 | warn | `JOIN_VS_DENORMALIZE` | `teamId`, `assigneeId` lookups | 5.1+: JOIN on indexed keys; 4.14.x: denormalize display fields (`assigneeName`, `teamName`) into tickets |
 | warn | `OBSERVER_SCOPE` | kanban screen | Observe `WHERE teamId = 't-9' AND state = 'open'` — not all tickets |
 | info | `ATOMIC_OBJECT_REGISTER` vs MAP | `teams.settings` | fields flip independently (quietHours vs region) → MAP is right; keep per-field LWW |
@@ -58,7 +58,8 @@ DOCUMENTS ({
 });
 
 -- state history: timestamp-keyed MAP on the ticket (bounded for most tickets)
-INSERT INTO COLLECTION tickets (labels MAP, state_log MAP)
+-- labels/state_log infer MAP under the lenient default — no declarations
+INSERT INTO tickets
 DOCUMENTS ({
   '_id': 'k-100',
   'team_id': 't-9',
@@ -70,8 +71,8 @@ DOCUMENTS ({
   'state_log': { '2026-08-25T09:00:00.000Z': 'open' }
 });
 
--- teams
-INSERT INTO COLLECTION teams (members MAP, settings MAP)
+-- teams (members/settings infer MAP — no declarations)
+INSERT INTO teams
 DOCUMENTS ({
   '_id': 't-9',
   'name': 'Field Ops',

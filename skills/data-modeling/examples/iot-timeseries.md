@@ -1,6 +1,6 @@
 # Cookbook: IoT device telemetry
 
-Covers SDK **4.14.x and 5.1.x**. Time-series telemetry is the fastest way to hit the hard size limit: readings arrive every few seconds, forever.
+Covers SDK **4.14.x and 5.1.x**. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Time-series telemetry is the fastest way to hit the hard size limit: readings arrive every few seconds, forever.
 
 ## The input JSON
 
@@ -31,11 +31,11 @@ Covers SDK **4.14.x and 5.1.x**. Time-series telemetry is the fastest way to hit
 
 ## Recommended model
 
-The device doc holds only the *latest* state (single-writer by the device itself, so plain registers). Each reading is its own document — tiny, immutable, eviction-friendly.
+The device doc holds only the *latest* state, written solely by the device itself — so the lenient defaults are exactly right with zero declarations: scalars store as REGISTERs, the `lastReading` object infers as a MAP (a single writer rewriting the same keys wholesale makes MAP and REGISTER indistinguishable here). Each reading is its own document — tiny, immutable, eviction-friendly.
 
 ```sql
 -- device: warm, ~200 B
-INSERT INTO COLLECTION devices (lastReading REGISTER)
+INSERT INTO devices
 DOCUMENTS ({
   '_id': 'sensor-4471',
   'site': 'warehouse-3',

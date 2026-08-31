@@ -614,36 +614,39 @@ HAVING category != 'deleted'
 
 ### Overview
 
-Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an object literal with no type definition.
+Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an object literal with no type definition — and controls whether `SELECT` needs type declarations to *see* non-REGISTER fields.
+
+**This guidance assumes `dql_strict_mode = false` (lenient) on every peer** — the 5.x factory default and the migration target for 4.14.x meshes. With strict mode false you do **not** use `MAP`/`REGISTER` keywords on reads or writes: objects infer MAP, and reads return the most recent value of every field whatever its CRDT type.
 
 **Default State:**
-- SDK 4.14.x: `dql_strict_mode = true` → object → `REGISTER` (last-write-wins on the whole object)
+- SDK 4.14.x: `dql_strict_mode = true` (legacy default — migrate to `false`) → object → `REGISTER` (last-write-wins on the whole object)
 - SDK 5.0.x: `dql_strict_mode = false` → object → `MAP` (per-field merge)
-- Available: SDK 4.11+
+- Available: SDK 4.11+; runtime-only, re-apply at every app start
 
 For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag, and worked merge examples, see [`references/types-mutators.md`](references/types-mutators.md) §7.
 
 ### Behavioral Differences
 
-| Aspect | Strict=true | Strict=false |
+| Aspect | Strict=true (legacy 4.14.x default) | Strict=false (baseline) |
 |--------|------------|--------------|
-| **Objects** | Treated as REGISTER (last-write-wins) | Auto-inferred as MAP (per-field merge) |
+| **Objects on writes** | Stored as REGISTER (last-write-wins whole object) | Auto-inferred as MAP (per-field merge) — duck-typed from the JSON |
 | **Nested Updates** | Replace entire object | Merge individual fields |
-| **Collection Definitions** | Required for non-REGISTER types | Only needed for explicit REGISTER objects |
-| **Counter Visibility** | Must declare COUNTER type | Auto-visible |
+| **`MAP`/`REGISTER` keywords on writes** | Required for every non-REGISTER field | **Not needed — do not write them** |
+| **Type declarations on reads** | Required — an undeclared MAP/COUNTER field is **omitted from results entirely**, as if it never existed (no error) | **Not needed** — reads return the most recent value of any type |
+| **Counter Visibility** | Must declare COUNTER type on writes and reads | Declare COUNTER on writes; reads just work |
 | **Legacy Compatibility** | Difficult | Easy |
 
 ### Configuration
 
 The canonical user-facing parameter is `dql_strict_mode` (lowercase — the literal name accepted by `ALTER SYSTEM SET` / `SHOW`). `DQL_STRICT_MODE` is the internal Rust constant; don't pass that as the parameter name. See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
 
-**Opting into lenient mode (the 5.0+ default):**
+**Opting into lenient mode (the 5.0+ default; the migration target on 4.x):**
 ```sql
 -- Apply before starting sync
 ALTER SYSTEM SET dql_strict_mode = false
 ```
 
-**Enable Strict Mode:**
+**Enable Strict Mode (legacy 4.14.x default — not recommended on any version):**
 ```sql
 ALTER SYSTEM SET dql_strict_mode = true
 ```
@@ -686,23 +689,23 @@ UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user
 
 ### Cross-Peer Compatibility
 
-**⚠️ CRITICAL: All peers should use same strict mode setting**
+**⚠️ CRITICAL: every peer should run `dql_strict_mode = false`**
 
 **Problem:**
 When peers use different strict mode settings without explicit MAP definitions:
 - Data syncs correctly
-- But displays differently on each peer
+- But displays differently on each peer — strict peers silently omit undeclared MAP/COUNTER fields from query results, as if the fields never existed
 - Appears as sync issue (but isn't)
 
 **Solutions:**
 
-1. **Match strict mode across all peers:**
+1. **Set lenient mode on every peer (the fix — do this first):**
    ```sql
-   -- All peers run:
+   -- All peers run, at every app start:
    ALTER SYSTEM SET dql_strict_mode = false
    ```
 
-2. **Explicitly define MAP types (strict=true peers):**
+2. **Transition window only — declare MAP types on statements still-strict peers execute (writes and reads):**
    ```sql
    INSERT INTO users (
      profile MAP(bio STRING, location STRING, city STRING)
@@ -711,17 +714,13 @@ When peers use different strict mode settings without explicit MAP definitions:
 
 ### When to Use Strict Mode
 
-**Use Strict Mode = true when:**
-- Need explicit control over CRDT types
-- Want REGISTER (last-write-wins) for objects
-- Have well-defined schemas
-- Can ensure all peers use same setting
+**Strict mode = true is the legacy 4.14.x factory default, not a configuration choice.** No new mesh should adopt it, and existing 4.14.x meshes should migrate off it. If you find it set to `true` anywhere, plan the migration to `false` — mesh-wide, and before upgrading to v5 so the version jump changes no merge behavior.
 
-**Use Strict Mode = false when:**
-- Want automatic MAP inference (recommended)
-- Need per-field merge for nested objects
-- Working with legacy data
-- Mixed client versions in production
+**Strict Mode = false (the assumed baseline):**
+- Automatic MAP inference — objects duck-type to per-field merge
+- No `MAP`/`REGISTER` keywords on writes or reads
+- Reads return the most recent value of every field, whatever its CRDT type
+- Keywords remain only for `COUNTER`/`ATTACHMENT` and deliberate `REGISTER` overrides on atomic objects
 
 **Recommendation:** never change the flag on 5.0+ (the lenient default is correct); on 4.x migrate to `dql_strict_mode = false` mesh-wide before upgrading to 5.0.
 
@@ -742,7 +741,8 @@ SELECT * FROM tasks WHERE title = :search
 const query = "SELECT * FROM tasks WHERE title = '" + userInput + "'";
 ```
 
-**Multiple Parameters:**
+**Multiple parameters** bind the same way — one statement, several named placeholders:
+
 ```sql
 SELECT * FROM tasks
 WHERE assignee = :user AND status = :status AND priority >= :min_priority

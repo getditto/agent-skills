@@ -29,7 +29,7 @@ tests/data-modeling/
 
 | Case | What it must catch |
 |---|---|
-| `pos-order` | arrays that must become keyed MAPs, inline PDF → ATTACHMENT, 4.14.x strict-mode declarations, size limits |
+| `pos-order` | arrays that must become keyed MAPs, inline PDF → ATTACHMENT, 4.14.x strict-mode migration, size limits |
 | `chat-channel` | unbounded embedded messages → split, readBy/members arrays, messageCount → COUNTER, inline image, observer scoping |
 | `iot-sensor` | telemetry stream → one doc per reading, 256 KiB / 5 MiB limits, counter, whole-array LWW |
 | `team-portal` | comments/history splits, counter-or-count-at-read, JOIN (5.1+) vs denormalize (4.14.x), observer scoping |

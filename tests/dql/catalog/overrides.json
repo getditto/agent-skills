@@ -1,9 +1,9 @@
 {
   "$comment": "Manual curation applied by scripts/curate-catalog.mjs after its mechanical rules. Keys are entry ids (stable: hash of repo-relative file + line + query). availableIn: corrects the version tag when the tested SDKs disagree with doc inference ([] = fails on every tested version). ignore: drops the entry with a reason. setup: extra preQueries/postQueries.",
   "availableIn": {
-    "sk_movies_cookbook_be3461e2": [],
+    "sk_movies_cookbook_02bd55e9": [],
     "sk_statements_d1a85ca0": [],
-    "sk_statements_780a8c87": [],
+    "sk_statements_eea4dfb9": [],
     "sk_indexing_b35874bc": [],
     "sk_indexing_3ee66db0": [],
     "sk_types_mutators_466cf90f": [],
@@ -14,7 +14,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "sk_movies_cookbook_93f6901f": [
+    "sk_movies_cookbook_2124e19b": [
       "5.0.x",
       "5.1.x"
     ],
@@ -26,7 +26,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "sk_movies_cookbook_bb4f91f7": [
+    "sk_movies_cookbook_36c81677": [
       "5.0.x",
       "5.1.x"
     ],
@@ -38,12 +38,12 @@
       "5.0.x",
       "5.1.x"
     ],
-    "sk_movies_cookbook_4079a59d": [
+    "sk_movies_cookbook_b682d6f7": [
       "4.14.x",
       "5.0.x",
       "5.1.x"
     ],
-    "sk_movies_cookbook_5a351308": [
+    "sk_movies_cookbook_be6f4bc0": [
       "4.14.x",
       "5.0.x",
       "5.1.x"
@@ -51,11 +51,11 @@
     "sk_operators_52080c2a": []
   },
   "ignore": {
+    "sk_best_practices_abc707d7": "JS snippet embedded in a sql block (extractor false positive)",
+    "sk_best_practices_be1465d5": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
     "sk_best_practices_b6874103": "generic placeholder (collection name 'collection', inline comments inside document literal)",
     "sk_best_practices_7ecc7bc6": "strict-mode illustration; needs collection type declaration context the snippet omits",
-    "sk_best_practices_d46a5323": "JS snippet embedded in a sql block (extractor false positive)",
     "sk_best_practices_02c22829": "advisory example in an UNSAFE/WRONG context; query itself is syntactically valid",
-    "sk_best_practices_e70d4b7c": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
     "sk_operators_f5b07555": "advisory example near WRONG marker; query itself is syntactically valid",
     "sk_types_mutators_c470932c": "attachment handle id is a placeholder",
     "sk_types_mutators_a83cc87e": "attachment :new_handle is a placeholder"

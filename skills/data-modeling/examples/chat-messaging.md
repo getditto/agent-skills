@@ -1,6 +1,6 @@
 # Cookbook: chat with media
 
-Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. Chat is the canonical case where "put it all in one doc" collapses: messages are unbounded, multi-writer, and include binaries.
+Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Chat is the canonical case where "put it all in one doc" collapses: messages are unbounded, multi-writer, and include binaries.
 
 ## The input JSON
 
@@ -32,7 +32,7 @@ Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. Chat is the canoni
 | blocker | `ARRAY_LWW` | `readBy` | Two readers marking read concurrently lose one receipt |
 | blocker | `COUNTER_CANDIDATE` | `messageCount` | Incremented by many writers as a plain number — lost increments on merge; must be `COUNTER` (4.14+) or dropped |
 | warn | `ARRAY_LWW` | `members` | Membership changes from multiple admins + LWW array = lost invites. OK only if membership changes are rare and human-resolved — still recommend keyed MAP |
-| info | `DECLARE_TYPES` | nested objects | 5.1.x-only fleet: lenient defaults already infer MAP — no declaration needed. Would only matter if 4.14.x strict peers joined later (then: flip them to `false`, or declare during the transition) |
+| info | `DECLARE_TYPES` | nested objects | 5.1.x-only fleet: lenient defaults infer MAP — no declarations on writes or reads. Would matter only if un-migrated 4.14.x strict peers joined later (then: migrate them to `dql_strict_mode = false`; declare MAP explicitly only on statements those peers execute during the transition) |
 | warn | `OBSERVER_SCOPE` | implied "latest messages" screen | Must observe a bounded window (`WHERE sentAt >= … ORDER BY sentAt DESC LIMIT 50`), never the whole collection |
 
 ## Recommended model
@@ -40,8 +40,8 @@ Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. Chat is the canoni
 One document per message; channel doc holds only metadata. Binary to ATTACHMENT.
 
 ```sql
--- channel: small, warm
-INSERT INTO COLLECTION channels (members MAP)
+-- channel: small, warm; members infers MAP — no declaration
+INSERT INTO channels
 DOCUMENTS ({
   '_id': 'channel-7',
   'name': 'field-ops',
@@ -49,10 +49,8 @@ DOCUMENTS ({
 });
 
 -- message: immutable body, append-friendly receipts
-INSERT INTO COLLECTION messages (
-  readers MAP,
-  image   ATTACHMENT
-)
+-- readers infers MAP; ATTACHMENT is declared (inference can't guess it)
+INSERT INTO COLLECTION messages (image ATTACHMENT)
 DOCUMENTS ({
   '_id': 'm-9001',
   'channel_id': 'channel-7',

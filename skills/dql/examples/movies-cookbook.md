@@ -8,6 +8,8 @@ description: 18 end-to-end DQL tasks against a sample movies dataset. Every stat
 A practical walkthrough of every major DQL capability the v5.0.0 SDK supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
 > **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`, structured `PROFILE` output, `INSERT ... ON ID CONFLICT DO MERGE`, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+>
+> **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`types-mutators.md`](../references/types-mutators.md) §7.
 
 ## Dataset
 
@@ -53,7 +55,7 @@ The cookbook uses two collections: `movies` and `reviews`.
 **Query:**
 
 ```sql
-INSERT INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)
+INSERT INTO COLLECTION movies (watch_count COUNTER)
 DOCUMENTS
   ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,
      'runtime_minutes': 142, 'genres': ['Drama'],
@@ -74,7 +76,7 @@ DOCUMENTS
 ON ID CONFLICT DO UPDATE;
 ```
 
-**Notes:** The `INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)` clause is what makes the statement portable across SDK 4.14.x (strict default) and 5.0.x (lenient default) — without it, v4 would store `director` and `ratings` as `REGISTER` and concurrent edits would clobber each other. `COUNTER` requires SDK 4.14+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
+**Notes:** Only `watch_count` is declared — inference can't guess a `COUNTER` from a plain integer, and seeding one without the declaration would create a REGISTER that never merges increments. `director` and `ratings` carry **no** `MAP` keyword: with `dql_strict_mode = false` (assumed everywhere) bare objects infer MAP automatically, so the declaration would be boilerplate. The one peer population that still needs explicit MAP declarations is un-migrated 4.14.x strict-mode peers — migrate them to `false` rather than declaring for them. `COUNTER` requires SDK 4.14+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
 
 ### Task 2 — Seed reviews with auto-generated ids
 
@@ -318,12 +320,12 @@ WHERE _id = :id;
 **Query:**
 
 ```sql
-UPDATE COLLECTION movies (ratings MAP)
+UPDATE movies
 SET ratings.rotten_tomatoes = 95
 WHERE _id = :id;
 ```
 
-**Notes on `dql_strict_mode`:** On **SDK 5.0.x** the lenient default (`dql_strict_mode = false`) means the engine treats `ratings` as a MAP even without the explicit declaration — `UPDATE movies SET ratings.rotten_tomatoes = 95 WHERE _id = :id` would also work. On **SDK 4.14.x** the strict default requires the `INTO COLLECTION movies (ratings MAP)` clause; without it, the engine stores `ratings.rotten_tomatoes` as a sub-`REGISTER` path that does not merge with sibling sub-fields. For cross-version code, always declare `ratings MAP` explicitly. See [`types-mutators.md`](../references/types-mutators.md) §§2 and 7 for the strict-mode flip and MAP merge semantics.
+**Notes on `dql_strict_mode`:** No declaration on the statement — with `dql_strict_mode = false` (the assumed baseline: 5.x default, 4.14.x migration target) the engine treats `ratings` as a MAP automatically, on reads and writes. The `UPDATE COLLECTION movies (ratings MAP) ...` form is only for un-migrated 4.14.x strict peers: there, a nested-field `SET` without the declaration is rejected (or stored as a non-merging sub-`REGISTER` path), and plain reads omit the field entirely. Migrate those peers to `false` — don't write declarations for them. See [`types-mutators.md`](../references/types-mutators.md) §§2 and 7 for the strict-mode behaviors and MAP merge semantics.
 
 ### Task 13 — Flag pre-1980 films as classics with RETURNING
 

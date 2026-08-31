@@ -10,7 +10,7 @@ document size budgets, and version-tagged guidance.
 
 | Ditto SDK | Status | Covered |
 |---|---|---|
-| 4.14.x | LTS | ✓ (strict-mode `true` default; no JOINs) |
+| 4.14.x | LTS | ✓ (strict-mode `true` factory default — guidance assumes migration to `false`; no JOINs) |
 | 5.0.x | Supported | ✓ |
 | 5.1.x | Current | ✓ (JOINs, composite indexes — headlining target) |
 

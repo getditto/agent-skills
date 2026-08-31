@@ -6,11 +6,13 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 
 | SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION |
 |---|---|---|---|---|
-| `@dittolive/ditto@4.14.4` | 193 | 55 | 0 | 0 |
-| `@dittolive/ditto@5.0.0`  | 210 | 38 | 0 | 0 |
-| `@dittolive/ditto@5.1.0`  | 239 | 9  | 0 | 0 |
+| `@dittolive/ditto@4.14.4` | 196 | 54 | 0 | 0 |
+| `@dittolive/ditto@5.0.0`  | 213 | 37 | 0 | 0 |
+| `@dittolive/ditto@5.1.0`  | 242 | 8  | 0 | 0 |
 
-Catalog size: **247 entries** (plus 21 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+Catalog size: **250 entries** (plus 26 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+
+**Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.4 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
 ## How it works
 

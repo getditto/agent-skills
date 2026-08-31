@@ -123,6 +123,16 @@ if (!store) {
   process.exit(1);
 }
 
+// Normalize to the documented baseline: dql_strict_mode = false on every peer.
+// The skill's examples assume lenient mode (the 5.x default and the 4.x
+// migration target). On 4.14.4 this flips the peer off the strict factory
+// default; on 5.x it is a no-op. Runtime-only setting — applied per process.
+try {
+  await store.execute("ALTER SYSTEM SET dql_strict_mode = false");
+} catch (e) {
+  console.warn("ALTER SYSTEM dql_strict_mode = false failed:", e.message);
+}
+
 console.log("Seeding movies dataset...");
 const seedStart = Date.now();
 let seeded = 0;
@@ -181,6 +191,15 @@ for (const entry of catalog) {
       console.warn(`Reseed failed before ${entry.id}:`, e.message);
     }
     needsReseed = false;
+  }
+
+  // Re-assert the documented baseline before every entry: catalog entries that
+  // flip dql_strict_mode (the ALTER SYSTEM examples) must not leak that state
+  // into the next entry. Runtime-only setting; a no-op on 5.x.
+  try {
+    await store.execute("ALTER SYSTEM SET dql_strict_mode = false");
+  } catch {
+    // intentionally ignored
   }
 
   try {

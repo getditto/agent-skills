@@ -19,5 +19,10 @@
   "sk_best_practices_02c22829": "advisory example in an UNSAFE/WRONG context; query itself is syntactically valid",
   "sk_best_practices_d46a5323": "JS snippet embedded in a sql block (extractor false positive)",
   "sk_best_practices_7ecc7bc6": "strict-mode illustration; needs collection type declaration context the snippet omits",
-  "sk_best_practices_b6874103": "generic placeholder (collection name 'collection', inline comments inside document literal)"
+  "sk_best_practices_b6874103": "generic placeholder (collection name 'collection', inline comments inside document literal)",
+  "sk_best_practices_7f3ff267": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_9e82fa46": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_5007adb7": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_be1465d5": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
+  "sk_best_practices_abc707d7": "JS snippet embedded in a sql block (extractor false positive)"
 }

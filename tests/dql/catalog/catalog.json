@@ -440,10 +440,10 @@
     }
   },
   {
-    "id": "sk_best_practices_abb2048f",
+    "id": "sk_best_practices_01b4f536",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 641,
+      "line": 644,
       "heading": "### Configuration"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -461,10 +461,10 @@
     }
   },
   {
-    "id": "sk_best_practices_5e84a36e",
+    "id": "sk_best_practices_151a85df",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 647,
+      "line": 650,
       "heading": "### Configuration"
     },
     "query": "ALTER SYSTEM SET dql_strict_mode = true",
@@ -482,10 +482,10 @@
     }
   },
   {
-    "id": "sk_best_practices_2ba14e9b",
+    "id": "sk_best_practices_72a7e8a3",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 652,
+      "line": 655,
       "heading": "### Configuration"
     },
     "query": "SHOW dql_strict_mode",
@@ -500,10 +500,10 @@
     }
   },
   {
-    "id": "sk_best_practices_fbb003d2",
+    "id": "sk_best_practices_ca79273f",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 659,
+      "line": 662,
       "heading": "### Example: Object Merge Behavior"
     },
     "query": "\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'",
@@ -518,6 +518,31 @@
     ],
     "postQueries": [
       "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'",
+      "EVICT FROM users WHERE _id = 'user-1'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_807fdbc3",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 676,
+      "heading": "### Example: Object Merge Behavior"
+    },
+    "query": "\nUPDATE users SET profile.bio = 'Designer', profile.location = 'NYC' WHERE _id = 'user-1'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user-1'",
       "EVICT FROM users WHERE _id = 'user-1'"
     ],
     "expect": {
@@ -653,13 +678,13 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_67c25134",
+    "id": "sk_movies_cookbook_5b1200c4",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 55,
+      "line": 57,
       "heading": "### Task 1 — Load movies with conflict-tolerant upserts"
     },
-    "query": "INSERT INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)\nDOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,\n     'runtime_minutes': 142, 'genres': ['Drama'],\n     'director': { 'name': 'Frank Darabont', 'born': 1959 },\n     'cast': [\n       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },\n       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n     ],\n     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,\n     'released': '1994-09-23' }),\n  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,\n     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],\n     'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },\n     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,\n     'released': '2010-07-16' })\nON ID CONFLICT DO UPDATE",
+    "query": "INSERT INTO COLLECTION movies (watch_count COUNTER)\nDOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,\n     'runtime_minutes': 142, 'genres': ['Drama'],\n     'director': { 'name': 'Frank Darabont', 'born': 1959 },\n     'cast': [\n       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },\n       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n     ],\n     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,\n     'released': '1994-09-23' }),\n  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,\n     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],\n     'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },\n     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,\n     'released': '2010-07-16' })\nON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -677,10 +702,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_fc265026",
+    "id": "sk_movies_cookbook_5302ae3c",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 85,
+      "line": 87,
       "heading": "### Task 2 — Seed reviews with auto-generated ids"
     },
     "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-42',\n     'score': 5, 'comment': 'Hope is a good thing.',\n     'created_at': '2024-03-15T10:00:00Z' }),\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-7',\n     'score': 4, 'comment': 'A slow burn that pays off.',\n     'created_at': '2024-03-18T09:15:00Z' }),\n  ({ 'movie_id': 'tt1375666', 'user_id': 'u-7',\n     'score': 4, 'comment': 'Everyone should watch it twice.',\n     'created_at': '2024-04-02T22:31:00Z' })",
@@ -695,10 +720,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_bb4f91f7",
+    "id": "sk_movies_cookbook_36c81677",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 110,
+      "line": 112,
       "heading": "### Task 3 — Top-rated movies in a decade with pagination"
     },
     "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN 1990 AND 1999\n  AND ratings.imdb >= 7.0\nORDER BY imdb DESC, title ASC\nLIMIT 25 OFFSET 0",
@@ -718,10 +743,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_1ea4288f",
+    "id": "sk_movies_cookbook_505a22f5",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 127,
+      "line": 129,
       "heading": "### Task 4 — Single-document lookup (fastest path)"
     },
     "query": "SELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
@@ -736,10 +761,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_4f596cb8",
+    "id": "sk_movies_cookbook_9222b21b",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 141,
+      "line": 143,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
     "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\nORDER BY year ASC",
@@ -758,10 +783,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_4079a59d",
+    "id": "sk_movies_cookbook_b682d6f7",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 150,
+      "line": 152,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
     "query": "\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC",
@@ -776,10 +801,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_acf7179b",
+    "id": "sk_movies_cookbook_321f7db3",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 168,
+      "line": 170,
       "heading": "### Task 6 — Films in any of N genres"
     },
     "query": "SELECT _id, title, genres\nFROM movies\nWHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END",
@@ -793,10 +818,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_5a351308",
+    "id": "sk_movies_cookbook_be6f4bc0",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 176,
+      "line": 178,
       "heading": "### Task 6 — Films in any of N genres"
     },
     "query": "SELECT _id, title, genres\nFROM movies\nWHERE array_contains(genres, 'Drama')\n   OR array_contains(genres, 'Crime')",
@@ -811,10 +836,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_93f6901f",
+    "id": "sk_movies_cookbook_2124e19b",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 191,
+      "line": 193,
       "heading": "### Task 7 — Flat view with computed fields"
     },
     "query": "SELECT\n  _id,\n  title,\n  year,\n  ratings.imdb AS imdb,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict,\n  year < 1980 AS is_pre_1980\nFROM movies\nORDER BY year DESC",
@@ -835,10 +860,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_b58f96e2",
+    "id": "sk_movies_cookbook_2e241eef",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 216,
+      "line": 218,
       "heading": "### Task 8 — Director leaderboard"
     },
     "query": "SELECT\n  director.name            AS director,\n  count(*)                 AS films,\n  avg(ratings.imdb)        AS avg_imdb,\n  max(box_office_millions) AS top_grossing\nFROM movies\nWHERE director IS NOT MISSING\nGROUP BY director.name\nHAVING count(*) >= 3\nORDER BY avg_imdb DESC\nLIMIT 25",
@@ -853,10 +878,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_6d3f6531",
+    "id": "sk_movies_cookbook_e7ec64b4",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 238,
+      "line": 240,
       "heading": "### Task 9 — Per-movie review statistics"
     },
     "query": "SELECT\n  movie_id,\n  count(*)   AS review_count,\n  avg(score) AS avg_score,\n  min(score) AS min_score,\n  max(score) AS max_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 10\nORDER BY avg_score DESC",
@@ -871,10 +896,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_c24d7057",
+    "id": "sk_movies_cookbook_34246569",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 259,
+      "line": 261,
       "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
     },
     "query": "SELECT movie_id, avg(score) AS avg_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 50 AND avg(score) >= 4.5\nORDER BY avg_score DESC\nLIMIT 10",
@@ -889,10 +914,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_5b9fcc9c",
+    "id": "sk_movies_cookbook_e395b70c",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 270,
+      "line": 272,
       "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
     },
     "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN (('573a1390f29313caabcd4135'))",
@@ -907,10 +932,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_7d37a327",
+    "id": "sk_movies_cookbook_97cd3b70",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 298,
+      "line": 300,
       "heading": "### Task 11 — Increment the watch counter"
     },
     "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
@@ -931,10 +956,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_3a5a0563",
+    "id": "sk_movies_cookbook_42a0dd79",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 306,
+      "line": 308,
       "heading": "### Task 11 — Increment the watch counter"
     },
     "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
@@ -955,13 +980,13 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_c2a52a9a",
+    "id": "sk_movies_cookbook_09d9e565",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 320,
+      "line": 322,
       "heading": "### Task 12 — Update a nested MAP field without clobbering siblings"
     },
-    "query": "UPDATE COLLECTION movies (ratings MAP)\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id'",
+    "query": "UPDATE movies\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -979,10 +1004,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_3fe09002",
+    "id": "sk_movies_cookbook_d589b393",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 336,
+      "line": 338,
       "heading": "### Task 13 — Flag pre-1980 films as classics with RETURNING"
     },
     "query": "UPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title",
@@ -995,10 +1020,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_86aa4674",
+    "id": "sk_movies_cookbook_126de978",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 351,
+      "line": 353,
       "heading": "### Task 14 — Remove a derived field post-backfill (UNSET)"
     },
     "query": "UPDATE movies\nUNSET legacy_field\nWHERE legacy_field IS NOT MISSING",
@@ -1013,10 +1038,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_215100f8",
+    "id": "sk_movies_cookbook_5d743303",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 367,
+      "line": 369,
       "heading": "### Task 15 — Reset the watch counter on a re-release (RESTART)"
     },
     "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE _id = 'test_seed_id'",
@@ -1037,10 +1062,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_3c1d2e82",
+    "id": "sk_movies_cookbook_34ef09ed",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 381,
+      "line": 383,
       "heading": "### Task 16 — Local cleanup of pre-1950 films (EVICT)"
     },
     "query": "EVICT FROM movies\nWHERE year < 1950",
@@ -1055,10 +1080,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_be3461e2",
+    "id": "sk_movies_cookbook_02bd55e9",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 394,
+      "line": 396,
       "heading": "### Task 17 — Mesh-wide retraction of a withdrawn film (TOMBSTONE)"
     },
     "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title",
@@ -1072,10 +1097,10 @@
     ]
   },
   {
-    "id": "sk_movies_cookbook_1f11c879",
+    "id": "sk_movies_cookbook_7948f13d",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 408,
+      "line": 410,
       "heading": "### Task 18 — Bulk delete with an id list"
     },
     "query": "DELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
@@ -1090,10 +1115,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_763b9bf6",
+    "id": "sk_movies_cookbook_5d1ad71a",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 431,
+      "line": 433,
       "heading": "### Task 19 — Reviews joined to their movie (INNER JOIN)"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.created_at DESC\nLIMIT 10",
@@ -1106,10 +1131,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_f0c67c84",
+    "id": "sk_movies_cookbook_1490a9a7",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 445,
+      "line": 447,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -1124,10 +1149,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_fe50edb0",
+    "id": "sk_movies_cookbook_145ea7ca",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 455,
+      "line": 457,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "SELECT m._id, m.title,\n       COUNT(r._id)      AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC, m.title ASC\nLIMIT 10",
@@ -1146,10 +1171,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_b9853e8f",
+    "id": "sk_movies_cookbook_b30b9551",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 476,
+      "line": 478,
       "heading": "### Task 21 — Only well-reviewed movies (JOIN + HAVING)"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC\nLIMIT 10",
@@ -1162,10 +1187,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_c751b1fd",
+    "id": "sk_movies_cookbook_30fb831e",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 494,
+      "line": 496,
       "heading": "### Task 22 — Movies with no reviews (anti-join)"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
@@ -1183,10 +1208,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_f4fc40f6",
+    "id": "sk_movies_cookbook_acfa005c",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 513,
+      "line": 515,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_created\n  ON reviews (movie_id ASC, created_at DESC)",
@@ -1199,10 +1224,10 @@
     }
   },
   {
-    "id": "sk_movies_cookbook_dc3e7c5a",
+    "id": "sk_movies_cookbook_55f4023c",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 518,
+      "line": 520,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nWHERE r.movie_id = 'tt0111161'\nORDER BY r.created_at DESC\nLIMIT 20",
@@ -2675,7 +2700,12 @@
     ],
     "expectError": false,
     "expect": {
-      "rowCount": 41
+      "rowCount": 41,
+      "firstRow": {
+        "avg_rating": 6.22,
+        "n": 5,
+        "year": 2000
+      }
     }
   },
   {
@@ -3023,7 +3053,9 @@
       "5.1.x"
     ],
     "expectError": false,
-    "expect": {}
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
     "id": "sk_indexing_670b9079",
@@ -3179,7 +3211,9 @@
       "5.1.x"
     ],
     "expectError": false,
-    "expect": {}
+    "expect": {
+      "rowCount": 7
+    }
   },
   {
     "id": "sk_operators_b061c17b",
@@ -3195,7 +3229,9 @@
       "5.1.x"
     ],
     "expectError": false,
-    "expect": {}
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
     "id": "sk_operators_5a0fc377",
@@ -3452,13 +3488,13 @@
     "expectError": false
   },
   {
-    "id": "sk_schema_5595752b",
+    "id": "sk_schema_335e5269",
     "source": {
       "file": "skills/dql/references/schema.md",
       "line": 82,
       "heading": "## Seeding the dataset"
     },
-    "query": "INSERT INTO COLLECTION movies (\n  director MAP,\n  ratings MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
+    "query": "INSERT INTO COLLECTION movies (\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3787,7 +3823,11 @@
     ],
     "expectError": false,
     "expect": {
-      "rowCount": 10
+      "rowCount": 10,
+      "firstRow": {
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna"
+      }
     }
   },
   {
@@ -3908,7 +3948,11 @@
     ],
     "expectError": false,
     "expect": {
-      "rowCount": 50
+      "rowCount": 50,
+      "firstRow": {
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna"
+      }
     }
   },
   {
@@ -3925,7 +3969,14 @@
       "5.1.x"
     ],
     "expectError": false,
-    "expect": {}
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a1399f29313caabcee345",
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna"
+      }
+    }
   },
   {
     "id": "sk_select_37a89cf7",
@@ -4208,7 +4259,7 @@
     }
   },
   {
-    "id": "sk_statements_154af192",
+    "id": "sk_statements_36ace5d1",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 221,
@@ -4332,13 +4383,13 @@
     }
   },
   {
-    "id": "sk_statements_067a2a80",
+    "id": "sk_statements_78170a65",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 415,
       "heading": "## 7. ALTER SYSTEM"
     },
-    "query": "\nALTER SYSTEM SET DQL_STRICT_MODE = false",
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -4346,14 +4397,14 @@
     ],
     "expectError": false,
     "postQueries": [
-      "ALTER SYSTEM RESET DQL_STRICT_MODE"
+      "ALTER SYSTEM RESET dql_strict_mode"
     ],
     "expect": {
       "rowCount": 1
     }
   },
   {
-    "id": "sk_statements_e7378508",
+    "id": "sk_statements_49496b40",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 443,
@@ -4371,7 +4422,7 @@
     }
   },
   {
-    "id": "sk_statements_780a8c87",
+    "id": "sk_statements_eea4dfb9",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 468,
@@ -4656,10 +4707,10 @@
     }
   },
   {
-    "id": "sk_types_mutators_cf2bc68c",
+    "id": "sk_types_mutators_44bf754a",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 354,
+      "line": 351,
       "heading": "### Worked example: same statement, different results"
     },
     "query": "\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
@@ -4680,11 +4731,11 @@
     }
   },
   {
-    "id": "sk_types_mutators_dcbe053b",
+    "id": "sk_types_mutators_0ceb6893",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 380,
-      "heading": "### Cross-version recommendation"
+      "line": 373,
+      "heading": "### Recommendation: lenient everywhere, migrate strict peers off"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
@@ -4701,7 +4752,7 @@
     }
   },
   {
-    "id": "sk_versions_4c45dff1",
+    "id": "sk_versions_fce46ae8",
     "source": {
       "file": "skills/dql/references/versions.md",
       "line": 210,

@@ -9,16 +9,18 @@
 **Denormalize related data into a single document, with sub-entities stored as MAPs keyed by ID.**
 
 ```sql
-INSERT INTO COLLECTION orders (customer MAP, items MAP)
+INSERT INTO orders
 DOCUMENTS ({
   '_id': 'order-42',
-  'customer': { 'name': 'Ada Lovelace', 'tier': 'gold' },
-  'items': {
+  'customer': { 'name': 'Ada Lovelace', 'tier': 'gold' },   -- infers MAP
+  'items': {                                                -- infers MAP; each entry infers MAP
     'sku-100': { 'name': 'Widget',  'qty': 2, 'price_cents': 1999 },
     'sku-205': { 'name': 'Gadget',  'qty': 1, 'price_cents':  499 }
   }
 });
 ```
+
+No `MAP`/`REGISTER` keywords anywhere: under the assumed lenient baseline (`dql_strict_mode = false`) bare objects infer MAP at any depth, on writes **and** reads. Keywords remain only for overrides (`REGISTER` on an atomic object) and types inference can't guess (`COUNTER`, `ATTACHMENT`).
 
 Why this is the default: one write is atomic, the doc syncs as a unit over delta sync, and add-wins maps merge concurrent edits to *different* items cleanly at any nesting depth — there is no extra CRDT cost for nesting a MAP.
 
@@ -38,11 +40,11 @@ Reads across split collections: **5.1+** `JOIN` (right-side key must be `_id` or
 ### Audit log (status history overwrites the old value)
 
 ```sql
--- status_log is a MAP keyed by ISO-8601 timestamp; add-wins keeps every transition
-INSERT INTO COLLECTION orders (status_log MAP)
+-- status_log infers MAP under the lenient default; keyed by ISO-8601 timestamp, add-wins keeps every transition
+INSERT INTO orders
 DOCUMENTS ({ '_id': 'order-77', 'status': 'placed', 'status_log': { '2026-08-25T10:30:45.891Z': 'placed' } });
 
-UPDATE COLLECTION orders (status_log MAP)
+UPDATE orders
 SET status = 'shipped',
     status_log.`2026-08-26T09:12:03.112Z` = 'shipped'
 WHERE _id = 'order-77';
@@ -63,7 +65,7 @@ Arrays are acceptable when **exactly one device writes** and others only read: p
 When re-syncing server data into Ditto, `DO UPDATE` replicates every field you pass even if unchanged; `DO UPDATE_LOCAL_DIFF` (4.12+) diffs and writes only what changed:
 
 ```sql
-INSERT INTO COLLECTION products (details MAP)
+INSERT INTO products
 DOCUMENTS (:doc)
 ON ID CONFLICT DO UPDATE_LOCAL_DIFF;
 ```
@@ -90,7 +92,7 @@ SELECT * FROM tasks WHERE NOT coalesce(deleted, false);
 |---|---|---|
 | Embedding an ever-growing array (messages, log lines) in a doc | array = whole-value LWW; concurrent appends silently lost; doc eventually hits hard limit | one doc per item in a child collection |
 | `SET views = views + 1` on a REGISTER | one increment silently wins on merge | `COUNTER` + `APPLY … INCREMENT BY` |
-| Flipping `dql_strict_mode` ad hoc, per peer | mismatched peers store and read the same field differently — strict peers silently drop undeclared MAP/COUNTER fields | keep 5.x at the default `false`, always; migrate 4.x peers to `false` (mesh-wide, before upgrading to v5) |
+| Flipping `dql_strict_mode` ad hoc, per peer — or leaving 4.x peers at the strict `true` default | mismatched peers store and read the same field differently — strict peers silently drop undeclared MAP/COUNTER fields from query results entirely | `false` everywhere: the 5.x default, and the 4.x migration target (mesh-wide, before upgrading to v5) |
 | base64 image inline in a document | blows the size budget; every edit re-syncs the blob's register | `ATTACHMENT`, lazy fetch |
 | JSON-string-encoding a sub-object into one field "to keep it simple" | unqueryable, unindexable, unmergeable | real MAP |
 | Watching the whole collection with a live observer | observers re-emit the full result set per change; held state is substantially larger than the raw bytes (directionally an order of magnitude) | narrow observer + LIMIT |
@@ -101,11 +103,11 @@ SELECT * FROM tasks WHERE NOT coalesce(deleted, false);
 
 The golden rule in a live mesh: **never change a field's type, never remove a field** — add new fields (with defaults), bump a `schema_version` discriminator, and keep old app versions reading cleanly. The full treatment (backward/forward compatibility strategies, migration statements, version-window queries) is in the `write-dql` skill's [`../dql/best-practices.md`](../dql/best-practices.md) — same rules, this skill doesn't repeat them.
 
-## Cross-version mesh discipline
+## Strict mode: the mesh discipline
 
-The target end-state for every mesh is **`dql_strict_mode = false` everywhere** — it's the 5.x default, and its MAP-by-default behavior emulates JSON the way developers expect. If 4.14.x and 5.x peers share a mesh:
+**`dql_strict_mode = false` on every peer is the assumed baseline** — the 5.x default, and the state every 4.14.x mesh migrates to. In this world you write no `MAP`/`REGISTER` keywords on reads or writes: objects infer MAP (duck-typed from the JSON), and reads return the most recent value of any type. If 4.14.x and 5.x peers share a mesh:
 
-1. **Flip the 4.x peers to `false` as the first step of the upgrade**, not after — behavior then stays identical across the version jump.
-2. **Never change the flag on 5.x.** Use per-field type keywords to override the defaults where needed (`REGISTER` for atomic objects, `COUNTER` seeds on INSERT).
-3. While any strict 4.x peer remains, declare MAP/COUNTER explicitly on the statements that peer executes — writes *and* reads (it silently can't see undeclared non-REGISTER fields) — and model reads to the 4.14 surface (no JOIN-dependent screens).
-4. Prefer `COUNTER` to `PN_COUNTER` for anything new. Full matrix: [`references/versions.md`](references/versions.md).
+1. **Flip the 4.x peers to `false` as the first step of the upgrade**, not after — behavior then stays identical across the version jump. The flag is runtime-only: set it at every app start, before sync and queries.
+2. **Never set the flag to `true` on 5.x**, and never flip peers ad hoc — mismatched peers store and read the same field differently, and strict peers silently drop undeclared MAP/COUNTER fields from results.
+3. While any strict 4.x peer remains, declare MAP/COUNTER explicitly on the statements that peer executes — writes *and* reads — and model reads to the 4.14 surface (no JOIN-dependent screens).
+4. Keywords that survive the lenient world: `COUNTER` and `ATTACHMENT` declarations (inference can't infer them) and deliberate `REGISTER` overrides on atomic objects. Prefer `COUNTER` to `PN_COUNTER` for anything new. Full matrix: [`references/versions.md`](references/versions.md).
