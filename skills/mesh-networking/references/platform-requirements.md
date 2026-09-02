@@ -69,7 +69,7 @@ platforms rather than rejecting it.
 
 - **BLE** runs via BlueZ. The Bluetooth service must be running and the adapter powered.
 - **LAN** works with the system mDNS responder or Ditto's internal one.
-- Default outgoing BLE connection cap is 3 rather than 2.
+- The default outgoing BLE connection budget is slightly more generous than on mobile.
 
 ---
 

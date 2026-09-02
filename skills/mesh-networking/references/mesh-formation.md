@@ -95,20 +95,22 @@ newcomers), then settles into a bounded, deliberately churning topology.
 
 ### Connection caps
 
-Each transport caps how many direct neighbours a peer maintains. Defaults:
+Each transport caps how many direct neighbours a peer maintains, and **the caps differ by
+transport because the power cost differs by transport**:
 
-| Transport | Default cap | Scope |
+| Transport | Relative budget | Why |
 |---|---|---|
-| Bluetooth LE | 2 outbound (3 on Linux, iOS, tvOS) | Android additionally caps **inbound** GATT connections at 5, keeping 5 in + ~2 out inside the controller's ~7-connection budget. |
-| LAN (TCP) | 6 | Inbound + outbound combined. |
-| AWDL | 4 | Inbound + outbound combined. |
-| Wi-Fi Aware | 4 | Inbound + outbound combined (shares the AWDL budget). |
-| WebSocket → Ditto Server | no SDK-side cap | The server applies its own limits. |
+| **LAN** (TCP over Wi-Fi or Ethernet) | Most generous | The radio is already associated with the access point and the AP does the work. Extra connections are close to free, so a peer maintains more of them. |
+| **P2P Wi-Fi** (AWDL, Wi-Fi Aware) | Fewer than LAN | Drives the Wi-Fi radio directly, with no infrastructure to offload to. Each connection costs real battery, so the budget is tighter. AWDL and Wi-Fi Aware share one budget — they are two implementations of the same idea and never run against each other. |
+| **Bluetooth LE** | Fewest | Lowest power *per byte*, but connection slots are scarce: the OS Bluetooth controller has a small total connection budget that Ditto shares with every other BLE app on the device. Inbound and outbound are budgeted separately. |
+| **WebSocket → Ditto Server** | No SDK-side cap | The server applies its own limits. |
 
-**These are current defaults, not a supported API.** They can change between releases, and
-apart from the two BLE parameters below they are not part of Ditto's public documentation.
-Use them for capacity planning as orders of magnitude; do not architect against an exact
-number. Two are publicly documented and intended for tuning:
+The exact numbers are internal defaults that change between releases, so they are not
+documented here — design for the *ordering*, not for a count. The practical consequence is
+the one that matters: **on BLE a peer holds only a handful of direct neighbours**, so which
+peers occupy those slots matters far more than it does on LAN.
+
+Two BLE parameters are publicly documented and intended for tuning:
 
 ```sql
 -- Cap outgoing BLE client connections
@@ -135,9 +137,9 @@ peer. The effect is that the mesh spreads toward its edges instead of clumping.
 
 ### Churn
 
-Periodically — on the order of every couple of minutes per transport, and only for
-connections that have been up for a while — a peer deliberately **drops an established
-connection** so a peer that has been waiting can take the slot.
+Periodically — per transport, and only for connections that have already been up for a
+while — a peer deliberately **drops an established connection** so a peer that has been
+waiting can take the slot.
 
 Churn is not a bug and not instability. It is the primary defence against **islanding**:
 without it, the first N peers to connect would hold the caps forever and late arrivals
@@ -145,10 +147,11 @@ would never get in, splitting the mesh into permanently isolated clusters.
 
 ### When a peer is at capacity
 
-By default a peer at its cap **rejects** new inbound connections, and the rejected peer
-backs off exponentially (starting around 10 seconds, growing to a ceiling of around 10
-minutes) before retrying. Some deployments can be configured to evict an existing
-connection instead; an evicted peer gets a short flat cooldown before it may reconnect.
+By default a peer at its budget **rejects** new inbound connections, and the rejected peer
+backs off exponentially before retrying — seconds at first, rising to a ceiling of several
+minutes. Some deployments can instead be configured to evict an existing connection to make
+room; an evicted peer gets a short flat cooldown before it may reconnect. Both the backoff
+curve and the eviction policy are internal defaults, not a supported contract.
 
 ---
 

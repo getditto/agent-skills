@@ -51,10 +51,12 @@ bridges iOS and Android**. It is also the transport that survives when Wi-Fi is 
 off, the AP is down, or the venue's network isolates clients. A mesh that keeps BLE enabled
 degrades; a mesh that doesn't, disconnects.
 
-**Connection shape.** Outgoing BLE client connections default to **2** (**3** on Linux, iOS
-and tvOS). On Android the SDK also caps *inbound* GATT connections at **5**, chosen so that
-5 inbound + ~2 outbound stays inside the controller's ~7-connection budget and avoids
-stack-wide `GATT_NO_RESOURCES` errors. One peripheral serving several centrals at once is
+**Connection shape.** A peer holds only a **handful** of simultaneous BLE connections —
+fewer than on any other transport — and inbound and outbound are budgeted separately. The
+constraint is the OS Bluetooth controller, whose small total connection budget Ditto shares
+with every other BLE app on the device; exceeding it produces stack-level resource errors.
+Cap outgoing connections lower still with `mesh_chooser_max_active_ble_clients` if your app
+coexists with other BLE peripherals. One peripheral serving several centrals at once is
 normal and useful — one phone can feed several tablets.
 
 **Failure modes to recognize.**

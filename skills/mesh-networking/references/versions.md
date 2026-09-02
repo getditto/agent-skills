@@ -30,15 +30,15 @@ targets the same lines as the rest of this repo: **Ditto SDK 4.14.x (LTS), 5.0.x
 
 ## Defaults that are not a contract
 
-The per-transport connection caps, churn interval, and at-capacity backoff figures in
-[`mesh-formation.md`](mesh-formation.md#connection-caps) are **current defaults, not a
-supported API**. They can change between releases. Only two are publicly documented and
-intended for tuning:
+The per-transport connection budgets, churn interval, and at-capacity backoff behavior
+described in [`mesh-formation.md`](mesh-formation.md#connection-caps) rest on **internal
+defaults that change between releases**. Exact values are deliberately not documented here —
+design for the relative ordering (LAN > P2P Wi-Fi > BLE), not for a count. Only two
+parameters are publicly documented and intended for tuning:
 
 - `mesh_chooser_max_active_ble_clients`
 - `mesh_chooser_avoid_redundant_bluetooth`
 
 Both are snapshotted when the mesh chooser is constructed — set them before `startSync()`.
 
-Treat every other figure in that section as an order-of-magnitude guide for capacity
-planning, and do not architect against an exact number.
+Do not architect against an exact connection count; it is not a supported contract.

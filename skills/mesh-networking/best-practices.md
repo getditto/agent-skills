@@ -125,8 +125,8 @@ This costs nothing on LAN and is decisive on BLE.
 ### Use sync groups to keep irrelevant peers out of the radio budget
 
 If two sets of devices never need each other's data, putting them in different sync groups
-stops them spending discovery and connection budget on each other. On BLE, where a peer has
-only 2–3 outgoing connection slots, keeping the wrong peers out of those slots directly
+stops them spending discovery and connection budget on each other. On BLE, where a peer holds
+only a handful of connection slots, keeping the wrong peers out of those slots directly
 improves convergence for the right ones.
 
 Sync groups are an optimization, not a security control — see

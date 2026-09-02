@@ -80,8 +80,8 @@ every byte is paid for repeatedly along the path.
 
 **Also worth considering:**
 `ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` stops BLE slots being spent
-on peers that already have a good Wi-Fi Aware route — with only 2 outgoing BLE slots per
-Android peer, slot allocation is the scarce resource.
+on peers that already have a good Wi-Fi Aware route — BLE slots per peer are few, so slot
+allocation is the scarce resource.
 
 **But understand the trade.** This disables the redundant BLE link that makes Wi-Fi→BLE
 failover instant. A peer whose Wi-Fi Aware link drops must then establish BLE from scratch.

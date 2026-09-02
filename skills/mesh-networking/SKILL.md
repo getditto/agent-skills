@@ -178,9 +178,14 @@ tools: [`best-practices.md`](best-practices.md).
 ## How many peers will each device connect to?
 
 Ditto deliberately does **not** connect every peer to every other peer — that would not
-scale and would saturate the radios. Each transport has a connection cap, and the mesh
-chooser picks *which* peers to connect to, favoring peers that are far away in the graph,
-poorly connected, or not otherwise reachable. It also performs periodic **churn**:
+scale and would saturate the radios. Each transport has its own connection budget, sized by
+how much power that transport costs: **LAN is the most generous** (the radio is already
+associated with the access point, so extra connections are near-free), **peer-to-peer Wi-Fi
+is tighter** (it drives the radio directly, with no infrastructure to offload to), and
+**BLE is the tightest** (the OS Bluetooth controller has a small total connection budget
+that every BLE app on the device shares). The mesh chooser then picks *which* peers to
+connect to, favoring peers that are far away in the graph, poorly connected, or not
+otherwise reachable. It also performs periodic **churn**:
 deliberately dropping a long-established connection so a peer that has been waiting can
 take the slot. Churn is what prevents the mesh from fragmenting into isolated islands.
 

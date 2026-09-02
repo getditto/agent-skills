@@ -60,8 +60,10 @@ Version- and SDK-specific behavior is tabulated in
 ## Verification status
 
 Content is drawn from Ditto's public documentation and the Ditto core transport
-implementation. Connection caps, defaults, and platform gates reflect current SDK behavior
-and may change between releases — the skill flags them as defaults rather than contracts.
+implementation. Per-transport connection budgets are described by their relative ordering
+rather than exact counts, because those are internal defaults that change between releases.
+Platform gates and configuration defaults reflect current SDK behavior; version-sensitive
+behavior is tabulated in [`references/versions.md`](references/versions.md).
 
 This skill documents a handful of executable statements (`ALTER SYSTEM SET
 TRANSPORTS_DISCOVERED_PEERS`, `mesh_chooser_*`, `document_size_*_limit_bytes`,
