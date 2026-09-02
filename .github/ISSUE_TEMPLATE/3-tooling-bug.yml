@@ -1,0 +1,67 @@
+name: Tooling or packaging bug
+description: The test harness, CI, plugin packaging, or a skill's structure is broken.
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the **machinery** is broken — the harness, CI, marketplace packaging,
+        or a skill that won't load in an agent tool.
+
+        If a skill's *content* is wrong, use **Incorrect or outdated skill content** instead.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: What's broken?
+      options:
+        - Test harness (tests/)
+        - CI workflow
+        - Plugin packaging / marketplace
+        - Skill won't load in an agent tool
+        - Repo structure or docs
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: |
+        The exact commands. If a skill fails to load in an agent tool, name the tool and
+        its version — loaders differ, and a skill that works in one can fail in another.
+      placeholder: |
+        cd tests/dql
+        set -a && . ../../.env && set +a
+        npm run test:v51
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The actual error or failure. Paste it rather than describing it.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version, and the agent tool if relevant.
+      placeholder: "macOS 15.6, Node 24.4.0, Claude Code 2.1.x"
+    validations:
+      required: false
