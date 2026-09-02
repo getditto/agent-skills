@@ -201,19 +201,30 @@ infrastructure peers, containers.
 **Connecting.** Two routes:
 
 - `connect.tcpServers` in the transport config — a set of addresses to attempt.
-- The `TRANSPORTS_DISCOVERED_PEERS` system parameter, set with DQL (SDK 4.12.0+), which
-  takes a list of peers with an `address` and a `type`:
-  - `candidate` — attempt the connection; may persist if the entry is later removed.
-  - `force` — always attempt; the connection drops immediately when the entry is removed.
+- The `TRANSPORTS_DISCOVERED_PEERS` system parameter, set with DQL (SDK 4.12.0+). Each
+  entry is an object with three fields:
 
-  Addresses accept IPv4, IPv6, or a domain name with the `tcp://` scheme.
+  | Field | Required | Meaning |
+  |---|---|---|
+  | `address` | yes | A URL: `tcp://10.0.0.1:1234`, `tcp://[::1]:1234`, `tcp://my-device.local:1234`, `ws://192.168.1.100:8080`, `wss://my-server.example.com:443` |
+  | `type` | no (default `candidate`) | `candidate` — attempt the connection; may persist if the entry is later removed. `force` — always attempt; drops immediately when the entry is removed. |
+  | `discovery_hint` | no | The hint value read from the **remote** peer's `system:transports_info`. Supply it when replacing mDNS discovery (below). |
 
 **Replacing mDNS discovery entirely.** Where mDNS is unusable, the supported pattern is:
 disable LAN, enable TCP listening, read this peer's `discovery_hint` from the
 `system:transports_info` virtual collection, distribute IP + port + hint over your own
 channel (your backend, a QR code, a config service), and have peers write each other into
-`TRANSPORTS_DISCOVERED_PEERS`. The `discovery_hint` is an optional opaque identifier that
-changes on every `startSync()` and carries no long-term tracking data.
+`TRANSPORTS_DISCOVERED_PEERS` — putting the *remote* peer's hint in that entry's
+`discovery_hint` field:
+
+```sql
+ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [
+  {'address': 'tcp://10.0.0.3:12346', 'type': 'candidate', 'discovery_hint': '<remote peer hint>'}
+]
+```
+
+The `discovery_hint` is an optional opaque identifier that changes on every `startSync()`
+and carries no long-term tracking data.
 
 An HTTP listener also exists for specialized deployments (including acting as an identity
 provider in fully offline environments). It is not part of ordinary sync configuration; see

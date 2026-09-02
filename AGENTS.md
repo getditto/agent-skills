@@ -27,7 +27,8 @@ skills/                        # Canonical skills — the portable unit
 └── mesh-networking/
 
 agents/                        # Portable agent definitions (markdown)
-└── dql-expert.md
+└── ditto-dql/                 # Namespaced by the plugin that ships them
+    └── dql-expert.md
 
 tests/                         # Per-skill test harnesses
 └── dql/                       # Skill: name-matched subdirectory
@@ -37,11 +38,11 @@ tests/                         # Per-skill test harnesses
 plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-dql/                 # One plugin per skill it ships
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/dql -> ../../../skills/dql              (symlink)
-│   └── agents/dql-expert.md -> ../../../agents/...    (symlink)
+│   ├── skills/dql -> ../../../skills/dql        (symlinked dir)
+│   └── agents -> ../../agents/ditto-dql         (symlinked dir)
 └── ditto-mesh/
     ├── .claude-plugin/plugin.json
-    └── skills/mesh-networking -> ../../../skills/...  (symlink)
+    └── skills/mesh-networking -> ../../../skills/mesh-networking
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -67,8 +68,14 @@ docs/                          # Contributor-facing docs
 `.claude-plugin/marketplace.json` stays at the repo root (required by
 `/plugin marketplace add`). Each entry's `source` points at a thin wrapper
 under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
-`skills/` (and optional `agents/`) directory holding **one symlink per item
-that plugin ships**. Skill content is never duplicated in the wrapper.
+`skills/` directory holding **one symlink per skill that plugin ships**, plus
+— if it ships agents — an `agents` symlink pointing at that plugin's namespaced
+subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
+
+**Agents must be linked as a directory, not as individual files.** Claude Code
+follows a symlinked *directory* but not a symlinked *file*: an
+`agents/foo.md -> ../../../agents/foo.md` link is silently dropped and the
+agent never loads. Hence `agents/<plugin>/` namespacing.
 
 **Plugins are scoped — never symlink the whole `skills/` or `agents/` tree
 into a wrapper.** Users install only the skills they ask for: `ditto-dql`

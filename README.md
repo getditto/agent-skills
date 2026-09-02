@@ -20,7 +20,7 @@ customer use.**
 
 ```
 skills/          Canonical skills (the portable unit: SKILL.md + references/ + examples/)
-agents/          Portable agent definitions (markdown)
+agents/<plugin>/ Portable agent definitions (markdown), namespaced per plugin
 tests/<skill>/   Executable verification for each skill's documented examples
 plugins/         Thin per-tool packaging (Claude Code plugin wrappers w/ symlinks)
 docs/            Contributor docs (SKILLS-TEMPLATE.md, plans)
@@ -45,9 +45,9 @@ you want:
 ```
 
 `.claude-plugin/marketplace.json` → `plugins/<plugin>/.claude-plugin/plugin.json`
-→ per-item symlinks into `skills/` and `agents/`. A wrapper never symlinks the
-whole `skills/` tree, so adding a skill to the repo does not change what an
-already-installed plugin provides.
+→ per-item symlinks into `skills/` and `agents/<plugin>/`. A wrapper never
+symlinks the whole `skills/` tree, so adding a skill to the repo does not
+change what an already-installed plugin provides.
 
 ### opencode
 

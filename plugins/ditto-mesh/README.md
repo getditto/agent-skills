@@ -9,8 +9,8 @@ The wrapper symlinks **only the skills this plugin ships**, so installing
 
 | Item | Where |
 |---|---|
-| Skill (mesh-networking) | [`skills/mesh-networking/SKILL.md`](skills/mesh-networking/SKILL.md) |
-| Human-facing docs | [`skills/mesh-networking/README.md`](skills/mesh-networking/README.md) |
+| Skill (mesh-networking) | [`skills/mesh-networking/SKILL.md`](../../skills/mesh-networking/SKILL.md) |
+| Human-facing docs | [`skills/mesh-networking/README.md`](../../skills/mesh-networking/README.md) |
 
 Do not add skill content here. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
 for how skills are packaged per tool.

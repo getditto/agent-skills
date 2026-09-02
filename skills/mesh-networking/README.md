@@ -56,9 +56,12 @@ Content is drawn from Ditto's public documentation and the Ditto core transport
 implementation. Connection caps, defaults, and platform gates reflect current SDK behavior
 and may change between releases — the skill flags them as defaults rather than contracts.
 
-Unlike `write-dql`, this skill documents no executable statements beyond a handful of
-`ALTER SYSTEM` / `SELECT ... FROM system:` forms, so it has no dedicated test harness. Those
-statements are covered by the DQL harness under `tests/dql/`.
+This skill documents a handful of executable statements (`ALTER SYSTEM SET
+TRANSPORTS_DISCOVERED_PEERS`, `mesh_chooser_*`, `document_size_*_limit_bytes`,
+`SELECT ... FROM system:transports_info`). **They are not currently exercised by any test
+harness** — the `tests/dql/` extractor only walks `skills/dql/`. Treat them as
+documentation-verified, not execution-verified, and see the tracking note in
+`CONTRIBUTING.md` before relying on exact syntax.
 
 ## Installation
 

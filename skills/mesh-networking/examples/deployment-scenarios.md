@@ -100,7 +100,8 @@ blocked or the peers are on different subnets. Addresses are known and stable.
 Where the peer set is dynamic, use the discovery-hint pattern: read
 `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` on each peer,
 distribute IP + port + hint through your own service, and write peers into
-`TRANSPORTS_DISCOVERED_PEERS` with `type: 'force'` for links that must always exist.
+`TRANSPORTS_DISCOVERED_PEERS` — carrying the remote peer's hint in the entry's
+`discovery_hint` field — with `type: 'force'` for links that must always exist.
 
 **Data-model implication.** TCP over a wired/enterprise network is high-bandwidth. Standard
 Ditto modeling applies — embed related data, use maps keyed by ID, split only for permission

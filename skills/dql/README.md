@@ -24,7 +24,7 @@ A routing entry point that detects your project's Ditto SDK version, then direct
 
 ### `dql-expert` agent
 
-A subagent (`agents/dql-expert.md`) that uses the `write-dql` skill to answer DQL questions and produce production-ready queries with the correct SDK-version gating.
+A subagent (`agents/ditto-dql/dql-expert.md`) that uses the `write-dql` skill to answer DQL questions and produce production-ready queries with the correct SDK-version gating.
 
 ### Reference catalog
 

@@ -327,13 +327,27 @@ often only partially read files reached through a chain of links.
 
 - Add a row to the skills table in [README.md](README.md).
 - Add a thin wrapper under `plugins/<plugin>/`: a `.claude-plugin/plugin.json`
-  plus a **real** `skills/` directory (and `agents/`, if the plugin ships one)
-  containing **one symlink per item the plugin ships**:
+  plus a **real** `skills/` directory containing **one symlink per skill the
+  plugin ships**:
 
   ```bash
   mkdir -p plugins/ditto-<name>/skills
   ln -s ../../../skills/<skill-name> plugins/ditto-<name>/skills/<skill-name>
   ```
+
+  If the plugin also ships agents, namespace them under `agents/<plugin>/` and
+  symlink the **directory**:
+
+  ```bash
+  mkdir -p agents/ditto-<name>
+  ln -s ../../agents/ditto-<name> plugins/ditto-<name>/agents
+  ```
+
+  **Agents must be linked as a directory, never as individual files.** Claude
+  Code follows a symlinked directory but not a symlinked file — an
+  `agents/foo.md -> ../../../agents/foo.md` link is silently dropped and the
+  agent never loads, with no error from `claude plugin validate`. Verify with
+  `claude plugin details <plugin>` and check the agent count is what you expect.
 
   Then add a `.claude-plugin/marketplace.json` entry whose `source` points at
   the wrapper. **Never duplicate skill content inside `plugins/`.**

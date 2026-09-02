@@ -24,8 +24,10 @@ Use it for:
 Do **not** use it for:
 
 - **Exact API syntax** — property names, builder shapes, and permission calls differ per
-  SDK. Route to the language-specific Ditto SDK skill. This skill deliberately keeps code
-  to a minimum and describes the *configuration model* that every SDK exposes.
+  SDK. Route to the language-specific Ditto SDK skill if one is installed; otherwise send
+  the user to <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>,
+  which carries the per-language snippets. This skill deliberately keeps code to a minimum
+  and describes the *configuration model* that every SDK exposes.
 - **Query syntax** — route to the DQL skill (`write-dql`). The exception: this skill does
   cover the handful of `ALTER SYSTEM` / `system:` statements that configure transports,
   because those are language-agnostic.
@@ -48,7 +50,7 @@ link.
 |---|---|---|---|
 | **Bluetooth LE** | Nearby devices, no infrastructure | **Yes** — the only P2P radio that bridges iOS ↔ Android | Low-bandwidth fallback; keeps the mesh alive when Wi-Fi is gone |
 | **LAN** (mDNS/multicast discovery + TCP) | Devices on the same Wi-Fi AP or Ethernet | Yes | High-bandwidth workhorse when infrastructure exists |
-| **AWDL** (Apple Wireless Direct Link) | Nearby Apple devices, no AP needed | **No** — Apple ↔ Apple only | Fast infrastructure-free P2P between iOS/macOS |
+| **AWDL** (Apple Wireless Direct Link) | Nearby Apple devices, no AP needed | **No** — Apple ↔ Apple only | Fast infrastructure-free P2P between iOS/macOS/tvOS |
 | **Wi-Fi Aware** | Nearby Android devices, no AP needed | **No** — Android ↔ Android only (API 29+) | Fast infrastructure-free P2P between Android devices |
 | **WebSocket** | Ditto Server (the "Big Peer"), over the internet | Yes (only transport in browsers/Wasm) | Cloud sync, store-and-forward, backend integrations |
 | **TCP connect/listen** | A peer at a known address/port | Yes | Fixed infrastructure, servers, mDNS-hostile networks |
@@ -203,11 +205,14 @@ Caps, churn intervals, and the two publicly supported tuning parameters are in
 
 | If you're doing this... | Read |
 |---|---|
+| **Debugging "no sync" / "peers won't connect"** — start here | [`references/platform-requirements.md`](references/platform-requirements.md#8-diagnosis-order), then [`references/mesh-formation.md`](references/mesh-formation.md#1-the-six-stages-of-a-sync) |
+| Localizing *which* stage is failing (discovery vs connection vs replication) | [`references/mesh-formation.md`](references/mesh-formation.md#1-the-six-stages-of-a-sync) |
 | Choosing transports; per-transport range, bandwidth, platform support, failure modes | [`references/transports.md`](references/transports.md) |
 | Looking up a config field, its default, or what a runtime change does | [`references/transport-config.md`](references/transport-config.md) |
 | Understanding discovery, presence graph, multihop, connection caps, churn, sync groups | [`references/mesh-formation.md`](references/mesh-formation.md) |
 | Permissions, entitlements, manifest entries, OS-level prerequisites per platform | [`references/platform-requirements.md`](references/platform-requirements.md) |
 | Sizing documents, attachments, and subscriptions for your transport mix | [`best-practices.md`](best-practices.md) |
 | Matching a real deployment to a transport configuration | [`examples/deployment-scenarios.md`](examples/deployment-scenarios.md) |
-| Writing the actual configuration code | The Ditto SDK skill for your language |
-| Writing queries, subscriptions, or `ALTER SYSTEM` statements | The `write-dql` skill |
+| Writing the actual configuration code | The Ditto SDK skill for your language, else <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
+| Transport `ALTER SYSTEM` / `system:` statements | [`references/transport-config.md`](references/transport-config.md#7-transport-settings-that-live-in-dql-not-in-the-config-object) |
+| Writing queries or subscriptions | The `write-dql` skill (ships in the separate `ditto-dql` plugin) |

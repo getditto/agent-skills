@@ -9,9 +9,9 @@ installing `ditto-dql` gives you DQL assistance and nothing else.
 
 | Item | Where |
 |---|---|
-| Skill (write-dql) | [`skills/dql/SKILL.md`](skills/dql/SKILL.md) |
-| Agent (dql-expert) | [`agents/dql-expert.md`](agents/dql-expert.md) |
-| Human-facing docs | [`skills/dql/README.md`](skills/dql/README.md) |
+| Skill (write-dql) | [`skills/dql/SKILL.md`](../../skills/dql/SKILL.md) |
+| Agent (dql-expert) | [`agents/ditto-dql/dql-expert.md`](../../agents/ditto-dql/dql-expert.md) |
+| Human-facing docs | [`skills/dql/README.md`](../../skills/dql/README.md) |
 | Test harness | [`tests/dql/`](../../tests/dql/) |
 
 Do not add skill content here. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md)

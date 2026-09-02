@@ -198,7 +198,7 @@ fields on the config object. They are the same on every SDK.
 
 | Statement | Purpose |
 |---|---|
-| `ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [{'address': 'tcp://10.0.0.143:12345', 'type': 'force'}]` | Point this peer at TCP peers by address, bypassing mDNS. `type` is `candidate` (attempt; may persist after removal) or `force` (always attempt; drops on removal). SDK 4.12.0+. |
+| `ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [{'address': 'tcp://10.0.0.143:12345', 'type': 'force'}]` | Point this peer at peers by address, bypassing mDNS. `address` is a URL (`tcp://`, `ws://`, `wss://`); `type` is `candidate` (default — attempt; may persist after removal) or `force` (always attempt; drops on removal); optional `discovery_hint` carries the remote peer's hint. SDK 4.12.0+. |
 | `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. Changes on every `startSync()`. |
 | `ALTER SYSTEM SET mesh_chooser_max_active_ble_clients = <n>` | Cap outgoing BLE client connections. |
 | `ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` | Suppress BLE connections to peers already well connected by a faster transport. |
