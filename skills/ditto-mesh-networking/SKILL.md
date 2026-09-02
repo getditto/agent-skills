@@ -1,6 +1,6 @@
 ---
-name: mesh-networking
-description: Use when working with Ditto's peer-to-peer mesh — choosing or configuring transports (Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket to Ditto Server, explicit TCP), understanding peer discovery and multihop routing, deciding what changes when transport config is updated at runtime, or sizing documents and attachments for a slow transport like BLE. Conceptual and config-model guidance; per-language API syntax lives in that language's SDK skill, query syntax in the DQL skill.
+name: ditto-mesh-networking
+description: Use ONLY for Ditto's peer-to-peer mesh (not Zigbee, Thread, BLE Mesh, Wi-Fi mesh routers, or service mesh) — choosing and configuring Ditto transports (Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket to Ditto Server, TCP), Ditto peer discovery and multihop sync, what changes when Ditto's transport config is updated at runtime, and sizing Ditto documents for slow transports like BLE. Concept and config-model guidance; per-language API syntax lives in that language's Ditto SDK skill.
 ---
 
 # Ditto Mesh Networking and Transports

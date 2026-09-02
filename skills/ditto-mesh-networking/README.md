@@ -1,4 +1,4 @@
-# mesh-networking skill
+# ditto-mesh-networking skill
 
 AI agent skill covering [Ditto](https://ditto.com)'s peer-to-peer mesh: the network
 transports, how peers discover each other and route updates, how the transport

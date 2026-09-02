@@ -24,7 +24,7 @@ skills/                        # Canonical skills — the portable unit
 │   ├── examples/              # Worked examples
 │   ├── best-practices.md
 │   └── README.md              # Human-facing docs for the skill
-└── mesh-networking/
+└── ditto-mesh-networking/
 
 agents/                        # Portable agent definitions (markdown)
 └── ditto-dql/                 # Namespaced by the plugin that ships them
@@ -42,7 +42,7 @@ plugins/                       # Claude Code plugin wrappers (thin)
 │   └── agents -> ../../agents/ditto-dql         (symlinked dir)
 └── ditto-mesh/
     ├── .claude-plugin/plugin.json
-    └── skills/mesh-networking -> ../../../skills/mesh-networking
+    └── skills/ditto-mesh-networking -> ../../../skills/ditto-mesh-networking
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -79,8 +79,8 @@ agent never loads. Hence `agents/<plugin>/` namespacing.
 
 **Plugins are scoped — never symlink the whole `skills/` or `agents/` tree
 into a wrapper.** Users install only the skills they ask for: `ditto-dql`
-ships the DQL skill and its agent; `ditto-mesh` ships the mesh-networking
-skill. A new skill gets its own plugin unless it genuinely belongs to an
+ships the DQL skill and its agent; `ditto-mesh` ships the
+ditto-mesh-networking skill. A new skill gets its own plugin unless it genuinely belongs to an
 existing one, because adding it to an existing wrapper changes what that
 plugin installs for everyone who already has it. CI enforces the scoping.
 
