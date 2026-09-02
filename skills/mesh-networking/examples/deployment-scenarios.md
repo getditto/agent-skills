@@ -28,8 +28,11 @@ are a mix of iOS and Android, so no single P2P Wi-Fi technology covers the fleet
 
 **Mesh shape.** Every peer a gateway: local convergence over LAN/AWDL/Wi-Fi Aware at local
 latency, plus cloud store-and-forward. When the AP fails, LAN drops out and the multiplexer
-switches those peer links to BLE with no application involvement — same-platform pairs keep
-their P2P Wi-Fi link, cross-platform pairs fall back to BLE.
+switches those peer links to BLE with no application involvement.
+
+**Why the failover is instant:** Ditto *maintains* a redundant BLE link alongside Wi-Fi by
+default — it does **not** establish a new BLE connection on demand when the AP dies. That
+redundancy is the failover. Keep it; see the warning in scenario 2.
 
 **Data-model implication — this is the point.** The *worst case* here is BLE-only, so the
 schema must be sized for 20 KB/s even though the common case is LAN.
@@ -75,10 +78,15 @@ every byte is paid for repeatedly along the path.
   measured in minutes.
 - Peer metadata: a device ID and a zone. Nothing more.
 
-**Also worth setting:** consider
-`ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` so BLE slots aren't spent
-on peers that already have a good Wi-Fi Aware route into the mesh — with only 2 outgoing BLE
-slots per Android peer, slot allocation is the scarce resource.
+**Also worth considering:**
+`ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` stops BLE slots being spent
+on peers that already have a good Wi-Fi Aware route — with only 2 outgoing BLE slots per
+Android peer, slot allocation is the scarce resource.
+
+**But understand the trade.** This disables the redundant BLE link that makes Wi-Fi→BLE
+failover instant. A peer whose Wi-Fi Aware link drops must then establish BLE from scratch.
+Do **not** set it where fast failover matters (scenario 1's point-of-sale case is exactly
+where you would leave it off). Set it before `startSync()`.
 
 ---
 

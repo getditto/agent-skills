@@ -80,7 +80,9 @@ Two rules for peer metadata:
 
 - **Keep it small.** Peer metadata syncs across the mesh on *every new connection*. Large
   metadata over BLE slows or disrupts connection establishment for everybody. The hard
-  limit is **128 KB**; exceeding it fails the operation with an error.
+  limit is **4 KB when JSON-encoded**; exceeding it throws a size-limit error. (Do not
+  confuse this with the *Small Peer Info* metadata API, a different surface with a 128 KB
+  limit.)
 - **Keep it non-sensitive.** It is visible to every connected peer.
 
 ---
@@ -97,14 +99,16 @@ Each transport caps how many direct neighbours a peer maintains. Defaults:
 
 | Transport | Default cap | Scope |
 |---|---|---|
-| Bluetooth LE | 2 (Android), 3 (Linux, iOS) | **Outbound only.** Inbound is bounded by the OS GATT server (~7 on Android). |
+| Bluetooth LE | 2 outbound (3 on Linux, iOS, tvOS) | Android additionally caps **inbound** GATT connections at 5, keeping 5 in + ~2 out inside the controller's ~7-connection budget. |
 | LAN (TCP) | 6 | Inbound + outbound combined. |
 | AWDL | 4 | Inbound + outbound combined. |
 | Wi-Fi Aware | 4 | Inbound + outbound combined (shares the AWDL budget). |
 | WebSocket → Ditto Server | no SDK-side cap | The server applies its own limits. |
 
-These are internal defaults and can change between releases; treat them as the right order
-of magnitude rather than a contract. Two are publicly tunable:
+**These are current defaults, not a supported API.** They can change between releases, and
+apart from the two BLE parameters below they are not part of Ditto's public documentation.
+Use them for capacity planning as orders of magnitude; do not architect against an exact
+number. Two are publicly documented and intended for tuning:
 
 ```sql
 -- Cap outgoing BLE client connections
@@ -116,6 +120,10 @@ ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true
 
 Lower BLE caps leave more radio capacity for non-Ditto BLE peripherals and reduce overhead,
 at the cost of slower convergence in dense meshes.
+
+**Set these before `startSync()`.** Per-transport connection limits are snapshotted when the
+mesh chooser is constructed, so an `ALTER SYSTEM` issued after sync has started does not take
+effect. Run them immediately after initializing the Ditto object.
 
 ### Which peers get chosen
 

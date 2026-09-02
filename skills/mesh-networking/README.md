@@ -29,6 +29,7 @@ to a minimum:
 | [`references/transport-config.md`](references/transport-config.md) | Every configuration field, its default, and the exact semantics of updating the config while sync is running |
 | [`references/mesh-formation.md`](references/mesh-formation.md) | The six-stage sync lifecycle, the multiplexer and rainbow connection, presence graph and multihop routing, connection caps, churn, sync groups |
 | [`references/platform-requirements.md`](references/platform-requirements.md) | Permissions, entitlements, manifest entries, and OS prerequisites per platform, plus a diagnosis order |
+| [`references/versions.md`](references/versions.md) | Which SDK version or which SDK each version-gated claim applies to |
 | [`best-practices.md`](best-practices.md) | Designing data and transports together — document sizing, attachments, subscription scoping, and the checklist |
 | [`examples/deployment-scenarios.md`](examples/deployment-scenarios.md) | Six worked deployments, each mapping a constraint to a transport config *and* a data model |
 
@@ -49,6 +50,12 @@ to a minimum:
   both merge cost and document visibility are whole-document properties. If BLE is a
   transport you depend on, prefer many small documents; if it isn't, Ditto's default advice
   (embed related data) stands.
+
+## Supported versions
+
+Written against **Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x**. **Last verified: 2026-09-02.**
+Version- and SDK-specific behavior is tabulated in
+[`references/versions.md`](references/versions.md).
 
 ## Verification status
 

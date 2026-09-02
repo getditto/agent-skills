@@ -9,7 +9,10 @@ config but produces no connections, this file is where to look before suspecting
 ## 1. The first question: config or platform?
 
 Every SDK exposes a **transport-condition** callback that reports platform-level transport
-states — for example `BLEDisabled`, `NoBLECentralPermission`, `NoBLEPeripheralPermission`.
+states — for example `BleDisabled`, `NoBleCentralPermission`, `NoBlePeripheralPermission`
+(the JS SDK spells these `BLEDisabled` / `NoBLECentralPermission` / `NoBLEPeripheralPermission`).
+The full set also includes `AppInBackground`, `MdnsFailure`, `TcpListenFailure`,
+`NoBleHardware`, `WifiDisabled`, `CannotEstablishConnection` and `TemporarilyUnavailable`.
 Wire it up early; it is the fastest way to distinguish:
 
 - *"I disabled this transport"* — a configuration problem, fix the config.
@@ -30,7 +33,9 @@ isn't available, fall back on the SDK's logs.
 | **`NSBonjourServices` in `Info.plist`** | LAN, AWDL | iOS silently filters Ditto's mDNS records out. Nothing appears in logs — this is the quietest failure on the platform. Both the LAN and AWDL service entries must be present for AWDL to be visible. |
 | Background modes | BLE, AWDL | In background, iOS moves the BLE service UUID to the manufacturer-data overflow area and suppresses the device name; cross-platform discovery degrades. AWDL and mDNS activity is curtailed. |
 
-AWDL runs on Apple platforms only. Enabling it elsewhere is a configuration error.
+AWDL runs on Apple platforms only (iOS, macOS, tvOS). Native SDKs accept `awdl.isEnabled = true`
+on other platforms **silently** — it just never starts, logging a warning. Only Wasm/browser
+builds reject it as a validation error.
 
 ---
 
@@ -43,7 +48,7 @@ AWDL runs on Apple platforms only. Enabling it elsewhere is a configuration erro
 | `CHANGE_WIFI_MULTICAST_STATE` **and** an acquired `MulticastLock` | LAN multicast discovery | Multicast discovery *starts* and never sees a peer. The startup log line still appears — absence of peers is the only signal. |
 | `NEARBY_WIFI_DEVICES` (API 33+), with `neverForLocation` asserted | Wi-Fi Aware | Platform silently filters Wi-Fi Aware peers out. |
 | `ACCESS_FINE_LOCATION` (API 29–32) **and** location services *switched on* | Wi-Fi Aware | Android reports Wi-Fi Aware unavailable; discovery stays silent. Note this is the system location **toggle**, not just the permission. |
-| Android 10 (API 29) or newer **and** hardware Wi-Fi Aware support | Wi-Fi Aware | SDK refuses to start it and says so. Many low-end and older devices lack the hardware feature regardless of OS version. |
+| Android 10 (API 29) or newer **and** hardware Wi-Fi Aware support | Wi-Fi Aware | The SDK logs an error and continues without it — `startSync()` still succeeds, so watch the log, not the return value. Many low-end and older devices lack the hardware feature regardless of OS version. |
 | Wi-Fi radio switched on | Wi-Fi Aware | Wi-Fi Aware rides the Wi-Fi radio even though no access point is involved. Wi-Fi off ⇒ transport offline. |
 
 **Wi-Fi Aware and background.** By default the Wi-Fi Aware client stops searching when the
@@ -55,7 +60,8 @@ behavior explicitly — check the SDK skill for the setting.
 contention, or firmware quirks. First mitigations: toggle Bluetooth off and on, relaunch
 the app, and keep both peers foregrounded while testing.
 
-Wi-Fi Aware runs on Android only. Enabling it elsewhere is a configuration error.
+Wi-Fi Aware runs on Android only. As with AWDL, native SDKs accept it silently on other
+platforms rather than rejecting it.
 
 ---
 

@@ -32,6 +32,14 @@ Do **not** use it for:
   cover the handful of `ALTER SYSTEM` / `system:` statements that configure transports,
   because those are language-agnostic.
 
+## Version awareness
+
+Most of this skill is version-independent, but a few claims are not — notably whether the
+document hard limit **rejects a write** or only logs, and the availability of
+`TRANSPORTS_DISCOVERED_PEERS` (4.12.0+). Where a question turns on one of those, confirm the
+user's SDK line and check [`references/versions.md`](references/versions.md). Note that
+Ditto's public docs currently lag the code on the hard-limit behavior.
+
 ## The one-paragraph model
 
 Every Ditto peer runs several **transports** at once. Each transport independently
@@ -60,7 +68,9 @@ Key consequences:
 1. **A mixed iOS/Android fleet with no Wi-Fi has only Bluetooth LE.** AWDL and Wi-Fi Aware
    never talk to each other. Design for BLE bandwidth in that case.
 2. **Browsers and Wasm builds are WebSocket-only.** Enabling any P2P transport in a Wasm
-   build is a configuration error, not a silent no-op.
+   build is a validation error. **On native SDKs the opposite is true** — an unsupported
+   transport (AWDL on Android, Wi-Fi Aware on iOS) is accepted silently and simply never
+   starts. Do not rely on config validation to catch a platform mismatch.
 3. **Having no Ditto Server is fine.** A pure small-peer mesh converges perfectly well;
    it just has no cloud store-and-forward for peers that are never co-located.
 
@@ -69,7 +79,7 @@ modes — is in [`references/transports.md`](references/transports.md).
 
 ## The configuration model
 
-Every SDK exposes the same four-part transport configuration object:
+Every SDK exposes the same core four-part transport configuration object:
 
 ```
 transportConfig
@@ -78,6 +88,8 @@ transportConfig
 ├── listen       # tcp, http  → accept inbound connections at a known address
 └── global       # syncGroup, routingHint  → mesh-wide behavior, not tied to one transport
 ```
+
+Some SDKs expose extra platform- or preview-specific sections beyond these four.
 
 **The trap that bites everyone:** a `TransportConfig` you construct yourself starts with
 **every transport disabled**. The SDK's *default* config enables the platform-appropriate
@@ -100,7 +112,7 @@ transport.** You do not need to stop and restart sync.
 | Transport `false` → `true` | That transport starts. Discovery begins; connections form over the next seconds. |
 | Transport `true` → `false` | That transport stops and its connections drop immediately. |
 | Transport unchanged | **Untouched.** Its live connections are not disturbed. |
-| Add a WebSocket URL | Connection attempts begin, retried on `connect.retryInterval` (default 5s). |
+| Add a WebSocket URL | Connection attempts begin, retried on `connect.retryInterval` (default 5s — a mesh-wide per-peer cooldown, not WebSocket-specific). |
 | Remove all WebSocket URLs | Ditto Server sync stops immediately. |
 | Change `global.syncGroup` **while sync is active** | Sync is torn down and restarted internally. **Stop sync, change the group, start sync** — do not change it live. |
 
@@ -128,9 +140,9 @@ The mechanism: Bluetooth LE delivers roughly **20 KB/s** of effective throughput
 tens of megabits per second for LAN or peer-to-peer Wi-Fi — three orders of magnitude. And
 two costs scale with **document size**, not with edit size:
 
-- **Merge cost.** Reconciling divergent versions of a document processes the whole
-  document, not just the changed field. A one-byte edit to a 5 MiB document pays 5 MiB of
-  merge work on every peer that receives it.
+- **Merge cost.** Reconciling a document *costs* the whole document: Ditto clones, merges,
+  re-serializes and re-indexes all of it on every update, even a one-field change. A
+  one-byte edit to a 5 MiB document pays 5 MiB of work on every peer that receives it.
 - **Arrival is all-or-nothing.** A document is invisible to queries on the receiving peer
   until every part of it has arrived. At 20 KB/s a 250 KiB document takes 10+ seconds
   before it appears at all; a 5 MiB document takes minutes.
@@ -151,7 +163,9 @@ buys you cross-document consistency problems for nothing.
 Size thresholds to design against (defaults; identical on every peer in the mesh):
 
 - **256 KiB** — soft limit. Write succeeds, logs a warning. Treat as your real ceiling on BLE.
-- **5 MiB** — hard limit. Logs an error; documents this large are slated to stop syncing.
+- **5 MiB** — hard limit. On current SDKs the **local write is rejected with an error**;
+  older builds logged an error and accepted it. The limit gates *local writes only* — an
+  oversized document that already exists elsewhere in the mesh still replicates in.
 
 Binary payloads do not belong in documents at all. The `ATTACHMENT` type stores blobs
 out-of-band, excludes them from document size, and — critically for BLE — **peers fetch
@@ -211,6 +225,7 @@ Caps, churn intervals, and the two publicly supported tuning parameters are in
 | Looking up a config field, its default, or what a runtime change does | [`references/transport-config.md`](references/transport-config.md) |
 | Understanding discovery, presence graph, multihop, connection caps, churn, sync groups | [`references/mesh-formation.md`](references/mesh-formation.md) |
 | Permissions, entitlements, manifest entries, OS-level prerequisites per platform | [`references/platform-requirements.md`](references/platform-requirements.md) |
+| Which SDK version / which SDK a claim applies to | [`references/versions.md`](references/versions.md) |
 | Sizing documents, attachments, and subscriptions for your transport mix | [`best-practices.md`](best-practices.md) |
 | Matching a real deployment to a transport configuration | [`examples/deployment-scenarios.md`](examples/deployment-scenarios.md) |
 | Writing the actual configuration code | The Ditto SDK skill for your language, else <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |

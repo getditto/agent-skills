@@ -21,14 +21,17 @@ category of link.
 **Fact 2 — Sync is delta-based, but merge and arrival are whole-document.** Ditto sends
 only the fields that changed, so a small edit produces a small update on the wire. But:
 
-- **Merging** divergent versions processes the **entire document**, not just the changed
-  part. A one-byte edit to a 5 MiB document costs 5 MiB of merge work on every peer that
-  reconciles it.
+- **Merging costs the whole document.** Ditto clones, merges, re-serializes and re-indexes
+  the full document on every update, even a one-field change. (The CRDT merge itself
+  descends only into changed keys; it is the surrounding write path that pays full size.) A
+  one-byte edit to a 5 MiB document costs 5 MiB of work on every peer that reconciles it.
 - **Arrival is all-or-nothing.** A document does not appear in query results on the
   receiving peer until every part of it has arrived. Partial documents are never visible.
-- **A peer that has never seen a document receives all of it.** Delta sync only helps for
-  documents the receiver already has a version of. Every new peer, every new subscription,
-  every re-subscription pays full size.
+- **A peer that has never seen a document receives all of it.** Delta sync is computed
+  against the *receiver's* known version, so it only helps peers that already hold one.
+  Every new peer, and every peer subscribing to a document for the first time, pays full
+  size. (Re-subscribing does not: a peer that already holds the document does not re-receive
+  it.)
 
 **Fact 3 — Documents have size thresholds.** Defaults, and they must match on every peer in
 the mesh, cloud peers included:
@@ -36,10 +39,10 @@ the mesh, cloud peers included:
 | Threshold | Size | Behavior | Set with |
 |---|---|---|---|
 | Soft | **256 KiB** | Write succeeds; logs a `warn` | `document_size_soft_limit_bytes` |
-| Hard | **5 MiB** | Logs an `error`; documents this large are slated to stop syncing in a future release | `document_size_hard_limit_bytes` |
+| Hard | **5 MiB** | **Local write rejected with an error** on current SDKs (older builds logged and accepted). Gates local writes only — oversized documents already in the mesh still replicate in | `document_size_hard_limit_bytes` |
 
-Put those together and the cost of a large document is paid on **every merge, every new
-peer, and every re-subscription** — and on BLE it is paid at 20 KB/s.
+Put those together and the cost of a large document is paid on **every merge and every peer
+seeing it for the first time** — and on BLE it is paid at 20 KB/s.
 
 ---
 
@@ -133,7 +136,8 @@ Sync groups are an optimization, not a security control — see
 
 Peer metadata syncs across the mesh **on every new connection**. Large metadata slows or
 disrupts connection establishment for everybody, and does so worst on BLE. The hard limit is
-128 KB, but the target should be *bytes to low kilobytes*. It is also visible to every peer
+**4 KB** when JSON-encoded, but the target should be *bytes to low kilobytes*. (The 128 KB
+figure sometimes quoted belongs to the separate *Small Peer Info* metadata API.) It is also visible to every peer
 in the mesh — keep it non-sensitive.
 
 ### Prefer counters and maps over rewrite-everything patterns

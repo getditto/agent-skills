@@ -57,10 +57,12 @@ transportConfig
 > the one field you care about, apply it back. Constructing a fresh config to "just turn on
 > Bluetooth" silently disables LAN, AWDL, and Wi-Fi Aware.
 
-**Platform validation is strict, not silent.** Enabling AWDL on a non-Apple platform, Wi-Fi
-Aware on non-Android, or any P2P transport in a Wasm/browser build produces an error naming
-the offending transports rather than quietly ignoring them. In a Wasm build, `connect`
-TCP servers and the TCP/HTTP listeners are rejected the same way.
+**Platform validation is strict only in the browser.** In a **Wasm/browser** build,
+enabling any P2P transport, `connect.tcpServers`, or a TCP/HTTP listener is a validation
+error naming the offending transports. On **native** SDKs the config is accepted
+silently — setting `awdl.isEnabled = true` on Android is not rejected; the transport simply
+never starts, surfacing only as a warning in the SDK log. **Do not rely on config
+validation to catch a platform mismatch on native.**
 
 **Bluetooth LE tuning.** Some SDKs expose advertisement power and advertisement interval
 hints on the BLE config. The `maxOutgoing` field on the Java/Kotlin BLE config is
@@ -73,9 +75,9 @@ parameter instead (see [`mesh-formation.md`](mesh-formation.md)).
 
 | Field | Default | Notes |
 |---|---|---|
-| `websocketUrls` | empty | `wss://…` endpoints for Ditto Server. |
+| `websocketUrls` | empty | `wss://…` (or `ws://…` for local/on-prem) endpoints for Ditto Server, or for a peer serving sync over its HTTP listener. |
 | `tcpServers` | empty | `host:port` strings for raw TCP sync with a known peer. |
-| `retryInterval` | 5 seconds | Retry cadence for failed connection attempts. |
+| `retryInterval` | 5 seconds | **Mesh-wide**, not WebSocket-specific: the minimum interval between connection attempts to the same peer on a given transport. Changing it re-paces BLE, LAN and TCP retries too. |
 
 **Cloud sync.** SDKs that offer an `enableDittoCloudSync` / cloud-sync flag manage the
 Ditto Server URL for you. Set it to `false` when you supply your own `websocketUrls` —
@@ -156,6 +158,15 @@ transport independently**. You do not stop and start sync.
 Because unchanged transports are untouched, a well-scoped update is genuinely surgical:
 turning Bluetooth off does not interrupt an in-flight LAN transfer.
 
+**Three exceptions**, because the diff runs on the *resolved* config rather than the raw one:
+
+1. Changing `global.syncGroup` while sync is active tears down and restarts **every**
+   transport, not just sync.
+2. Adding or removing `connect.tcpServers` can re-bind the TCP listener and start/stop LAN
+   discovery, dropping inbound TCP connections — even though you never touched `listen` or
+   `lan`.
+3. `connect.retryInterval` is re-applied on every update, changed or not.
+
 ### Other fields
 
 | Change | What happens |
@@ -165,7 +176,7 @@ turning Bluetooth off does not interrupt an in-flight LAN transfer.
 | Add / remove `tcpServers` | Connection attempts start / stop for those addresses. |
 | Change `listen.tcp` fields | Listeners are re-bound with the new address and port. |
 | Change `global.syncGroup` while sync is active | Sync is torn down and restarted internally, with a warning. Prefer stopping sync first. |
-| Change `global.routingHint` | Takes effect for subsequent cloud interactions; no connection churn. |
+| Change `global.routingHint` | **No effect on existing Ditto Server connections.** The hint is attached only to WebSocket URLs added *after* the change, or after a stop/start sync cycle. Set it before starting sync. |
 
 ### What an update does *not* do
 
@@ -199,7 +210,7 @@ fields on the config object. They are the same on every SDK.
 | Statement | Purpose |
 |---|---|
 | `ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [{'address': 'tcp://10.0.0.143:12345', 'type': 'force'}]` | Point this peer at peers by address, bypassing mDNS. `address` is a URL (`tcp://`, `ws://`, `wss://`); `type` is `candidate` (default — attempt; may persist after removal) or `force` (always attempt; drops on removal); optional `discovery_hint` carries the remote peer's hint. SDK 4.12.0+. |
-| `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. Changes on every `startSync()`. |
+| `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. May change on `startSync()`; in practice regenerated per Ditto instance (app restart) — re-read rather than cache. |
 | `ALTER SYSTEM SET mesh_chooser_max_active_ble_clients = <n>` | Cap outgoing BLE client connections. |
 | `ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` | Suppress BLE connections to peers already well connected by a faster transport. |
 | `ALTER SYSTEM SET document_size_soft_limit_bytes = <n>` / `document_size_hard_limit_bytes = <n>` | Document size thresholds. **Must be identical on every peer in the mesh, cloud peers included.** |

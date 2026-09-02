@@ -23,10 +23,14 @@ pairing step.
 peers scanning see it and connect over GATT.
 
 **Bandwidth — the number that drives your data model.** Effective throughput in Ditto's
-mesh is roughly **20 KB/s**. The BLE radio's theoretical ceiling is higher (2 Mbps on the
-Bluetooth 5 high-speed PHY, and Ditto uses Bluetooth 5 when both peers support it), but
-GATT framing, connection intervals, and mesh overhead dominate in practice. Two peers
-where one is Bluetooth 4.x negotiate down to 4.x rates.
+mesh is roughly **20 KB/s**. The radio's ceiling is far higher — Ditto requests the
+Bluetooth 5 2M PHY on Android where the adapter supports it, and Bluetooth-5-to-Bluetooth-5
+links measure around 1.8 Mbit/s — but GATT framing, connection intervals, and mesh overhead
+dominate in practice. If either peer is Bluetooth 4.x the link negotiates down.
+
+Devices below Android 10 fall back to plain BLE GATT at roughly **4 KB/s**, five times
+worse. If your fleet includes them, size against 4 KB/s — the same low-end devices also tend
+to lack Wi-Fi Aware, so BLE is their only peer-to-peer path.
 
 Plan against 20 KB/s. Concretely:
 
@@ -37,25 +41,28 @@ Plan against 20 KB/s. Concretely:
 | 256 KiB document (soft limit) | 10+ seconds, invisible to queries the whole time |
 | 5 MiB document (hard limit) | minutes |
 
-**Range.** Tens of metres indoors, materially further outdoors and on Bluetooth 5 hardware
-(100+ m line-of-sight is achievable). Real range depends on firmware, antenna, body
-blocking, and interference — treat published figures as approximations.
+**Range.** **Plan indoor deployments against ~10 m.** Roughly 100 m is achievable in the
+open with modern hardware and line of sight, but that is a best case — real range depends on
+firmware, antenna, body blocking, and interference. Sizing a warehouse off the 100 m figure
+is a common and expensive mistake.
 
 **Why it matters even when it's slow.** BLE is the **only peer-to-peer transport that
 bridges iOS and Android**. It is also the transport that survives when Wi-Fi is switched
 off, the AP is down, or the venue's network isolates clients. A mesh that keeps BLE enabled
 degrades; a mesh that doesn't, disconnects.
 
-**Connection shape.** A peer caps its *outgoing* BLE client connections (2 on Android, 3 on
-Linux and iOS by default). Inbound connections are bounded by the OS GATT server rather
-than by Ditto (roughly 7 on Android). One peripheral serving several centrals at once is
+**Connection shape.** Outgoing BLE client connections default to **2** (**3** on Linux, iOS
+and tvOS). On Android the SDK also caps *inbound* GATT connections at **5**, chosen so that
+5 inbound + ~2 outbound stays inside the controller's ~7-connection budget and avoids
+stack-wide `GATT_NO_RESOURCES` errors. One peripheral serving several centrals at once is
 normal and useful — one phone can feed several tablets.
 
 **Failure modes to recognize.**
 
 - **Bluetooth off at the OS level, or permission not granted.** Config changes are inert;
-  the SDK surfaces this through its transport-condition callback (`BLEDisabled`,
-  `NoBLECentralPermission`, `NoBLEPeripheralPermission`).
+  the SDK surfaces this through its transport-condition callback (`BleDisabled`,
+  `NoBleCentralPermission`, `NoBlePeripheralPermission` — the JS SDK renders these as
+  `BLEDisabled` / `NoBLECentralPermission` / `NoBLEPeripheralPermission`).
 - **Android GATT error 133.** A catch-all "connection failed" from the Android BLE stack,
   visible in `logcat` rather than Ditto's logs. Triggered by rapid reconnect cycles, OS BLE
   state contention, or firmware quirks. Mitigation: toggle Bluetooth off/on and relaunch;
@@ -115,7 +122,8 @@ access point. The same technology underneath AirDrop. Ditto layers a customized 
 over it to raise frequency, speed, and efficiency of transfer.
 
 **Where it runs.** iOS, macOS, tvOS. **Apple devices only** — an AWDL peer never connects
-to an Android peer. On non-Apple platforms, enabling AWDL is a configuration error.
+to an Android peer. Enabling AWDL on a non-Apple platform is *not* rejected by native SDKs —
+it is accepted silently and simply never starts, logging a warning.
 
 **Discovery.** Shares the LAN mDNS service type; distinguished by Bonjour's
 "include AWDL / include P2P" browse flags rather than by a separate service name. That
@@ -137,7 +145,9 @@ Direct device-to-device Wi-Fi, no access point.
 
 **Where it runs.** **Android only, API 29 (Android 10) and above**, and only on hardware
 that reports the Wi-Fi Aware feature. Many low-end and older devices do not, regardless of
-OS version. Below API 29 the SDK refuses to start it and says so.
+OS version. Below API 29 the SDK logs an error (`WiFi Aware requires Android API level 29 or
+higher`) and continues without it — `startSync()` still succeeds, so watch the log rather
+than the return value.
 
 **Discovery.** Each peer publishes a Wi-Fi Aware service and subscribes to others
 simultaneously.
@@ -163,14 +173,16 @@ Android ↔ Android only.
 
 ## 5. WebSocket (Ditto Server / Big Peer)
 
-**What it is.** A client-initiated WebSocket Secure (`wss://`) connection to Ditto Server —
-cloud or on-prem. Bidirectional, real-time, and the path for cloud store-and-forward and
-backend integrations such as MongoDB Atlas.
+**What it is.** A client-initiated WebSocket connection — `wss://`, or `ws://` for
+local/on-prem — to Ditto Server, or to another Ditto peer running the HTTP listener with
+`websocketSync` enabled. Bidirectional, real-time, and the path for cloud store-and-forward
+and backend integrations such as MongoDB Atlas.
 
 **Where it runs.** Every SDK target, including browsers and Wasm — where it is the **only**
 available transport.
 
-**Role.** Client only. Peers connect *to* the server; the server does not initiate.
+**Role.** Client only *on this side*. This peer connects out; it never accepts inbound
+WebSockets unless you enable the HTTP listener with `websocketSync`.
 
 **Bandwidth.** The highest-capacity link in most deployments, but the only one that depends
 on internet reachability. Latency is WAN latency, so a pure star-through-the-cloud topology
@@ -223,8 +235,9 @@ ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [
 ]
 ```
 
-The `discovery_hint` is an optional opaque identifier that changes on every `startSync()`
-and carries no long-term tracking data.
+The `discovery_hint` is an optional opaque identifier carrying no long-term tracking data.
+It may change whenever `startSync()` is called; in practice it is regenerated per `Ditto`
+instance (app restart), so re-read it rather than caching it across restarts.
 
 An HTTP listener also exists for specialized deployments (including acting as an identity
 provider in fully offline environments). It is not part of ordinary sync configuration; see
