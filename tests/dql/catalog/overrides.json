@@ -2,15 +2,11 @@
   "$comment": "Manual curation applied by scripts/curate-catalog.mjs after its mechanical rules. Keys are entry ids (stable: hash of repo-relative file + line + query). availableIn: corrects the version tag when the tested SDKs disagree with doc inference ([] = fails on every tested version). ignore: drops the entry with a reason. setup: extra preQueries/postQueries.",
   "availableIn": {
     "sk_movies_cookbook_be3461e2": [],
-    "sk_statements_d1a85ca0": [],
-    "sk_statements_780a8c87": [],
-    "sk_indexing_b35874bc": [],
-    "sk_indexing_3ee66db0": [],
-    "sk_types_mutators_466cf90f": [],
-    "sk_functions_9dfbb020": [
-      "5.1.x"
-    ],
-    "sk_best_practices_78708f96": [
+    "sk_statements_f1949f8d": [],
+    "sk_statements_6d68f83e": [],
+    "sk_indexing_79cbb7ae": [],
+    "sk_types_mutators_c49a0921": [],
+    "sk_best_practices_522406fc": [
       "5.0.x",
       "5.1.x"
     ],
@@ -48,19 +44,28 @@
       "5.0.x",
       "5.1.x"
     ],
-    "sk_operators_52080c2a": []
+    "sk_operators_f565e8e0": []
   },
   "ignore": {
-    "sk_best_practices_b6874103": "generic placeholder (collection name 'collection', inline comments inside document literal)",
-    "sk_best_practices_7ecc7bc6": "strict-mode illustration; needs collection type declaration context the snippet omits",
-    "sk_best_practices_d46a5323": "JS snippet embedded in a sql block (extractor false positive)",
-    "sk_best_practices_02c22829": "advisory example in an UNSAFE/WRONG context; query itself is syntactically valid",
-    "sk_best_practices_e70d4b7c": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
+    "sk_best_practices_0ac58896": "generic placeholder (collection name 'collection', inline comments inside document literal)",
+    "sk_best_practices_aa75609f": "strict-mode illustration; needs collection type declaration context the snippet omits",
+    "sk_best_practices_b837c482": "JS snippet embedded in a sql block (extractor false positive)",
+    "sk_best_practices_2d6a592e": "advisory example in an UNSAFE/WRONG context; query itself is syntactically valid",
+    "sk_best_practices_5bf6132e": "annotated WHERE-only fragments appended after a complete SELECT; block is illustrative, not runnable",
     "sk_operators_f5b07555": "advisory example near WRONG marker; query itself is syntactically valid",
-    "sk_types_mutators_c470932c": "attachment handle id is a placeholder",
-    "sk_types_mutators_a83cc87e": "attachment :new_handle is a placeholder"
+    "sk_types_mutators_43cb7d19": "attachment handle id is a placeholder",
+    "sk_types_mutators_74974627": "attachment :new_handle is a placeholder"
   },
   "skipGoldens": {
-    "sk_select_13b1bfc3": "ORDER BY on an aggregate with many ties — firstRow is not reproducible"
+    "sk_select_61a37df2": "ORDER BY on an aggregate with many ties — firstRow is not reproducible"
+  },
+  "unavailableReason": {
+    "$comment": "Justifies an entry whose availableIn is []. Without a reason here the runner reports BROKEN-EVERYWHERE and fails the run, so a documented example that works on no supported SDK cannot hide as PASS-AS-EXPECTED-FAIL.",
+    "sk_statements_f1949f8d": "TOMBSTONE is a deprecated Big-Peer-only statement; every Small Peer SDK returns 'Tombstone is not supported'. Documented deliberately, with that restriction stated in statements.md §4.",
+    "sk_movies_cookbook_be3461e2": "Same TOMBSTONE Big-Peer-only restriction as sk_statements_f1949f8d.",
+    "sk_statements_6d68f83e": "SYNC CONTEXT is a Big-Peer-only remote-query wrapper and cannot execute on a Small Peer.",
+    "sk_types_mutators_c49a0921": "Negative example: types-mutators.md §4 shows this INSERT precisely to document that a PN_COUNTER cannot be declared inline on any supported line.",
+    "sk_operators_f565e8e0": "Negative example: operators.md §11 shows XOR to document that it is rejected on every supported line.",
+    "sk_indexing_79cbb7ae": "Planner-directive illustration that pins two named indexes the pedagogical fixture does not create; the directive form, not the result, is what the doc teaches."
   }
 }

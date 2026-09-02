@@ -1,15 +1,15 @@
 ---
 title: DQL SELECT reference
-description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET) plus subscription constraints. Covers Ditto SDK 4.14.x and 5.0.x.
+description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET) plus subscription constraints. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
 ---
 
 # DQL SELECT reference
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative reference for the `SELECT` statement on **Ditto SDK 4.14.x and 5.0.x**. All other top-level statements (`INSERT`, `UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `PROFILE`) live in [`statements.md`](statements.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md).
+Authoritative reference for the `SELECT` statement on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. All other top-level statements (`INSERT`, `UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `PROFILE`) live in [`statements.md`](statements.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md).
 
-Unless a section carries an "Available in:" note, the clause works identically on 4.14.x and 5.0.x.
+Unless a section carries an "Available in:" note, the clause works identically on 4.14.x, 5.0.x, and 5.1.x.
 
 Cross-references:
 
@@ -125,7 +125,7 @@ SELECT m.title, m.year FROM movies m WHERE m.year >= 2000;
 
 ## 3. USE IDS
 
-> **SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. It is **not** supported on `UPDATE`, `EVICT`, `TOMBSTONE`, or `DELETE`. For mutations targeting a known id set, use `WHERE _id IN (...)` — see [`statements.md`](statements.md).
+> **Effectively SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x. On 5.1.x it parses on `UPDATE` (before `SET` only, and it applies correctly) and on `DELETE` / `EVICT` — but there it **reports success and removes nothing** unless a `RETURNING` clause is present, so it must not be used. `TOMBSTONE` is unavailable on every line. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
 
 ```
 USE IDS ( <id_expr> [, <id_expr> ...] )
@@ -184,7 +184,7 @@ Binding an *array* of ids (`USE IDS (:id_list)`) is the parser-rejected list for
 
 ### 3.4 Why USE IDS is SELECT-only
 
-The 4.14.x and 5.0.x parsers carry the same TODO on the mutation paths (`UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`): the syntax is accepted only on `SELECT`. On mutations you have two portable options:
+On 4.14.x and 5.0.x the syntax is accepted only on `SELECT`; on 5.1.x it reaches the mutation paths but is only trustworthy on `UPDATE` (see §3 above). On mutations you have two portable options:
 
 ```sql
 -- 1. Filter by IN-list
@@ -371,7 +371,7 @@ GROUP BY director.name, year - (year % 10)
 ORDER BY director, decade;
 ```
 
-See [`functions.md`](functions.md) for the aggregate function set (`count`, `sum`, `avg`, `min`, `max`, `mid`, `median`) available in both 4.14.x and 5.0.x.
+See [`functions.md`](functions.md) for the aggregate function set (`count`, `sum`, `avg`, `min`, `max`, `mid`, `median`) available on all three supported lines.
 
 ---
 
@@ -533,12 +533,14 @@ DQL `SELECT` statements can be used as **subscriptions** — long-lived queries 
 
 ### 12.1 Feature flags that restrict subscription syntax
 
-| Flag                              | Available on    | Effect on subscription `SELECT`                                                                                                       |
-| --------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `DQL_RESTRICT_LIMIT_ORDER_BY`     | **SDK 5.0+**    | `ORDER BY` and `LIMIT` are rejected in subscription queries. Use a one-shot store query for paginated or sorted reads.                    |
-| `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` | SDK 4.x and 5.x | Subscription queries are limited to the original V1 surface: `SELECT *` only (no expression projection), a single collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. |
+> **These are internal engine bitflags, not settable parameters.** `DQL_RESTRICT_TO_ORIGINAL_SYNTAX` and `DQL_RESTRICT_LIMIT_ORDER_BY` are Rust `FeatureFlags` constants (`crates/ditto-dql/src/engine/mod.rs`) that the subscription code path sets for you. `SHOW` and `ALTER SYSTEM SET` reject both names on **every** version with `unknown parameter` — you cannot inspect or override them from DQL. They are named here only because they appear in engine error paths.
 
-`DQL_RESTRICT_TO_ORIGINAL_SYNTAX` is always on for `registerSubscription` — on every SDK line (4.14.x, 5.0.x, 5.1.x); there is no unrestricted subscription path. `DQL_RESTRICT_LIMIT_ORDER_BY` tracks the `dql_restrict_subscriptions` system parameter: default `true` on 5.0+, so `LIMIT`/`ORDER BY` are rejected unless it is explicitly set to `false`. The parameter does not exist on 4.14.x, which accepts `LIMIT`/`ORDER BY` subscriptions and evaluates them statefully. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
+| Restriction                       | Applies on      | Effect on subscription `SELECT`                                                                                                       |
+| --------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| V1 surface only<br>(`DQL_RESTRICT_TO_ORIGINAL_SYNTAX`) | 4.14.x, 5.0.x, 5.1.x | `SELECT *` only (no expression projection), a single collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. |
+| `ORDER BY` / `LIMIT` rejected<br>(`DQL_RESTRICT_LIMIT_ORDER_BY`) | **SDK 5.0+** | `ORDER BY` and `LIMIT` are rejected in subscription queries. `OFFSET` on its own stays legal. Use a one-shot store query for paginated or sorted reads. |
+
+The V1-surface restriction is always on for `registerSubscription` on every SDK line — there is no unrestricted subscription path. The `ORDER BY`/`LIMIT` rejection is driven by the system parameter **`dql_restrict_subscriptions`** (default `true`), which exists on 5.0.x and 5.1.x and **not** on 4.14.x — that one *is* readable with `SHOW dql_restrict_subscriptions`. SDK 4.14.x accepts both clauses; queries using `LIMIT` maintain boundary state and should avoid mutable filter or sort fields. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
 
 ### 12.2 What is — and isn't — allowed in a subscription
 
@@ -570,19 +572,19 @@ SELECT * FROM reviews WHERE movie_id = :movie_id;
 SELECT * FROM movies WHERE array_contains(genres, 'Drama');
 ```
 
-Expression projections are never available in a subscription, on any supported SDK line — model partial documents as a separate collection or an attachment instead. `ORDER BY` / `LIMIT` subscriptions work only on 4.14.x, or on 5.0+ via the escape hatch:
+Expression projections are never available in a subscription, on any supported SDK line — model partial documents as a separate collection or an attachment instead. `ORDER BY` / `LIMIT` subscriptions work only on 4.14.x:
 
 ```sql
--- First: ALTER SYSTEM SET dql_restrict_subscriptions = false  (5.0+ only;
--- 4.14.x accepts this query as-is). Stateful: every boundary change
--- invalidates and re-evaluates — never filter/sort on mutable fields.
+-- SDK 4.14.x only. LIMIT makes this stateful: boundary changes invalidate
+-- and re-evaluate the query, so never filter or sort on mutable fields.
+-- On SDK 5.0.x and 5.1.x, use a one-shot local query instead.
 SELECT * FROM movies
 WHERE year >= 1990
 ORDER BY title ASC
 LIMIT 50;
 ```
 
-Treat the escape hatch as a migration aid, not a recommendation.
+On SDK 5.x, subscribe to the unsorted set and apply presentation constraints locally.
 
 For sorting and pagination across a subscription stream, do the sort/limit **in the host application** over the unsorted subscription result, rather than relying on the engine to maintain a sorted projection.
 
@@ -590,7 +592,7 @@ For sorting and pagination across a subscription stream, do the sort/limit **in 
 
 ## 13. Worked examples (movies dataset)
 
-End-to-end SELECTs covering the typical reporting patterns. Every statement runs on both 4.14.x and 5.0.x.
+End-to-end SELECTs covering the typical reporting patterns. Every statement runs on 4.14.x, 5.0.x, and 5.1.x unless tagged otherwise.
 
 ```sql
 -- 1. Top 10 highest-rated movies
@@ -669,7 +671,7 @@ SELECT title FROM movies USE INDEX '' WHERE year = 2010;
 ```
 SELECT <projection>
 FROM <collection> [AS] <alias>
-  [ INNER | LEFT [OUTER] ] JOIN <collection> [AS] <alias> ON <expr>
+  [ INNER | LEFT [OUTER] | RIGHT [OUTER] ] JOIN <collection> [AS] <alias> ON <expr>
   ...more joins...
 [ WHERE / GROUP BY / HAVING / ORDER BY / LIMIT / OFFSET ... ]
 ```
@@ -680,6 +682,8 @@ Rules and behavior (all verified against SDK 5.1.0):
 - **Aliases** — every joined collection should have one (`reviews r`), and qualified paths (`r.movie_id`) disambiguate columns. Unqualified projections like `SELECT *` across a join are allowed but ambiguous fields collide.
 - **`ON` is a boolean expression** — equality on the FK (`r.movie_id = m._id`), compound `AND` terms, and even function predicates such as `array_contains(object_keys(m.members), u._id)` for MAP-based many-to-many relations.
 - **Outer joins surface `MISSING`** on unmatched rows — filter with `<alias>.<pk> IS MISSING` for anti-joins, and wrap projected outer fields with `coalesce(...)` for defaults.
+- **Supported join types** on 5.1.x: `INNER JOIN`, bare `JOIN` (an inner join), `LEFT [OUTER] JOIN`, and `RIGHT [OUTER] JOIN`. `FULL [OUTER] JOIN` and `CROSS JOIN` are **not** in the grammar and raise `Unexpected token FULL` / `Unexpected token CROSS`.
+- **Self-joins** work when each side has a distinct alias (`FROM movies m1 INNER JOIN movies m2 ON …`), as do multi-join chains.
 
 ### 14.1 Inner join — projection from both sides
 

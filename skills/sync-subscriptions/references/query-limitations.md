@@ -26,9 +26,13 @@ SELECT * FROM cars WHERE color = 'blue' AND mileage < 50000
 SELECT make, model FROM cars
 -- Unsupported feature: A projection other than wildcard (*)
 
-SELECT * FROM cars, drivers
+SELECT * FROM cars JOIN drivers ON cars.driver_id = drivers._id
 -- 5.1+: Unsupported feature: Joining
--- 4.14.x / 5.0.x: parse error (multi-collection FROM predates JOIN syntax)
+-- 4.14.x / 5.0.x: parse error (JOIN syntax does not exist before 5.1)
+
+SELECT * FROM cars, drivers
+-- all lines: parse error — comma-separated FROM is not DQL grammar on any
+-- version, in subscriptions or in store queries
 
 SELECT * FROM cars USE IDS ['abc123']
 -- 5.1+: Unsupported feature: USE IDS
@@ -72,14 +76,11 @@ This is the one rule that differs by SDK line:
 | SDK | Behavior |
 |---|---|
 | 4.14.x (LTS) | `LIMIT` / `ORDER BY` **accepted**, evaluated statefully |
-| 5.0.x, 5.1.x | **Rejected by default**: `Unsupported feature: Limit or Order by` |
+| 5.0.x, 5.1.x | **Rejected**: `Unsupported feature: Limit or Order by` |
 
-The rejection on 5.x is controlled by the `dql_restrict_subscriptions` system
-parameter (default `true`). Setting it to `false` restores 4.14 behavior —
-acceptance with the same stateful performance cost. Treat that as a migration
-escape hatch, not a recommendation. Note the restriction does not cover
-`OFFSET` alone (`SELECT * FROM cars OFFSET 10` is accepted on 5.x) — unusual
-in practice, and still discouraged.
+The restriction does not cover `OFFSET` alone (`SELECT * FROM cars OFFSET 10`
+is accepted on 5.x), though that shape is unusual in practice and still
+discouraged.
 
 > Public docs pages predate this change and may still describe
 > accept-with-a-warning behavior for `LIMIT`/`ORDER BY` subscriptions on 5.x.

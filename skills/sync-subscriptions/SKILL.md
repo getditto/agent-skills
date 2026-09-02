@@ -88,9 +88,9 @@ sync only some fields of a document.
 | Non-`SELECT` statements | No | `Unsupported feature: non-SELECT statement in sync subscription` |
 
 The `LIMIT`/`ORDER BY` row is the version-sensitive one: SDK 4.14.x accepts
-them (with a stateful-subscription performance cost); SDK 5.0+ rejects them
-unless the `dql_restrict_subscriptions` system parameter is set to `false`
-(default `true`). (`OFFSET` alone is not covered by that restriction.)
+them, while SDK 5.0+ rejects them. A subscription using `LIMIT` maintains
+boundary state and can be expensive; `ORDER BY` makes that cost worse when
+combined with `LIMIT`. (`OFFSET` alone is accepted on every supported line.)
 Details, exact error strings, and the reasons behind the restrictions:
 [`references/query-limitations.md`](references/query-limitations.md).
 

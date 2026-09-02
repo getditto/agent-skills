@@ -45,11 +45,12 @@ documents. Matching documents arrive whole.
 Steady-state sync sends **changes, not documents**. Ditto tracks causal
 history with per-document version vectors (summaries of which peer changed
 what, and when). Before sending, a peer compares its version of a document
-against what the recipient is known to have, and transmits only the fields
-that changed. A 20-field document with one edited field syncs as that one
-field. (Granularity is per top-level field, and a changed field ships its
-whole value — so under 4.14.x's default strict mode, where a nested object
-is a single register, editing one nested property syncs the whole object.)
+against what the recipient is known to have, and transmits only the changed
+CRDT state. Delta granularity follows the document's CRDT structure: entries
+in a `MAP`, including nested `MAP` entries, can sync independently, while a
+`REGISTER` is atomic and its whole value ships when it changes. Under 4.14.x's
+default strict mode, a nested object without an explicit `MAP` declaration is
+a single register, so editing one nested property syncs the whole object.
 
 Consequences:
 

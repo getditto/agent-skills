@@ -53,10 +53,10 @@ keeps replicating until the Ditto instance is destroyed. Always call
 
 ## Avoid stateful subscriptions
 
-`LIMIT` / `ORDER BY` subscriptions maintain boundary state that invalidates
-on every relevant change — the reason SDK 5.x rejects them by default. On
-4.14.x (or 5.x with `dql_restrict_subscriptions` disabled): never filter or
-sort on mutable fields when `LIMIT` is used. Details:
+Subscriptions using `LIMIT` maintain boundary state that invalidates on every
+relevant change; combining `LIMIT` with `ORDER BY` adds sort-position
+invalidations. SDK 5.x rejects both clauses in subscriptions. On 4.14.x, never
+filter or sort on mutable fields when `LIMIT` is used. Details:
 [references/query-limitations.md](references/query-limitations.md).
 
 ## Work with the model

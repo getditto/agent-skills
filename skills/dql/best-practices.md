@@ -15,10 +15,21 @@
 
 ### Document Size Limits
 
-**Hard Limits:**
-- Documents > **5 MB** don't sync with connected peers
-- Documents > **250 KB** trigger console warnings
-- Bluetooth LE: ~20 KB/second (large docs slow to replicate)
+**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; verified identical on 4.14.4, 5.0.0 and 5.1.0):
+
+| Parameter | Default | Behaviour when exceeded |
+| --- | --- | --- |
+| `document_size_soft_limit_bytes` | `262144` (**256 KiB**) | Warn-level log entry. The write succeeds. |
+| `document_size_hard_limit_bytes` | `5242880` (**5 MiB**) | Error-level log entry. The write **still succeeds and the document still syncs.** |
+
+```sql
+SHOW document_size_soft_limit_bytes;   -- 262144
+SHOW document_size_hard_limit_bytes;   -- 5242880
+```
+
+> **These are not yet enforced.** Ditto's documentation is explicit that oversized documents currently replicate normally and that the limits are a forward signal: a future release will reject writes above the hard limit and skip such documents during replication. Treat them as budgets to design against, not as guarantees the engine gives you today. Both values must be set to the **same** number on every peer in the mesh — mismatched limits cause replication sessions to be disabled once enforcement lands.
+
+Large documents are also slow on constrained transports — Bluetooth LE in particular — so the practical ceiling is usually well below the soft limit.
 
 **Recommendation:** Keep documents small and focused.
 
@@ -467,7 +478,7 @@ EXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'
 
 **1. Create Indexes for Frequently Queried Fields**
 
-`CREATE INDEX` is user-facing DQL on both 4.14.x and 5.0.x. Prioritize:
+`CREATE INDEX` is user-facing DQL on all three supported lines. Prioritize:
 - Fields used in WHERE clauses
 - Fields used in ORDER BY
 - High cardinality fields (many unique values)
@@ -682,7 +693,7 @@ UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user
 -- Last write wins per field, not per object
 ```
 
-> Dotted path syntax (`profile.bio`, `features.seats`, etc.) is a **path expression** — supported in `SET`, `WHERE`, projections, and `ORDER BY` on both 4.14.x and 5.0.x. See [`references/expressions.md`](references/expressions.md) §4 for the full path-expression grammar including array indexing (`tags[0]`) and parameter-driven keys.
+> Dotted path syntax (`profile.bio`, `features.seats`, etc.) is a **path expression** — supported in `SET`, `WHERE`, projections, and `ORDER BY` on all three supported lines. See [`references/expressions.md`](references/expressions.md) §4 for the full path-expression grammar including array indexing (`tags[0]`) and parameter-driven keys.
 
 ### Cross-Peer Compatibility
 
@@ -780,10 +791,11 @@ INSERT INTO tasks DOCUMENTS ({
 
 When deleting documents you need mesh-wide (`TOMBSTONE`, or `DELETE` from a Big Peer), the replicated tombstone is **not** kept forever:
 
-- **7 days** on Small Peer / Edge SDKs.
-- **30 days** on Big Peer / Cloud.
+An offline peer that comes back online after the retention window has expired can re-introduce the document, because no peer still holds a tombstone to suppress it.
 
-An offline peer that comes back online after the TTL has expired can re-introduce the document, because no peer still holds a tombstone to suppress it. Design for the TTL window — e.g. keep a soft-deleted marker until you're past 30 days, then issue `TOMBSTONE`. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
+> **Confirm the retention period for your deployment with Ditto support.** It differs between Small Peer / Edge and Big Peer / Cloud and is not stated in the public documentation, so it should not be hard-coded from memory. Design for the existence of a window rather than a specific number of days.
+
+Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.0 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE`, which resolves to `EVICT` locally and `TOMBSTONE` on a Big Peer. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
 
 ### Soft Delete Pattern
 
@@ -796,7 +808,7 @@ UPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = :id
 -- Reads filter out deleted documents
 SELECT * FROM tasks WHERE NOT coalesce(deleted, false)
 
--- Periodic cleanup: hard-delete once safely past the TTL window
+-- Periodic cleanup: hard-delete once safely past your retention window
 DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')
 ```
 

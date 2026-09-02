@@ -1,15 +1,15 @@
 ---
 title: DQL indexing and query optimization
-description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directives (full key catalog), EXPLAIN, and the #profile directive (5.0+). Covers Ditto SDK 4.14.x and 5.0.x.
+description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directives (full key catalog), EXPLAIN, and the #profile directive (5.0+). Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
 ---
 
 # DQL indexing and query optimization
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Deep reference for index DDL, the planner-directive surface, and query-plan inspection on **Ditto SDK 4.14.x and 5.0.x**. Indexing in DQL is currently a **Small-Peer-only** feature; `CREATE INDEX` against a Big-Peer collection returns an error.
+Deep reference for index DDL, the planner-directive surface, and query-plan inspection on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Indexing in DQL is currently a **Small-Peer-only** feature; `CREATE INDEX` against a Big-Peer collection returns an error.
 
-Unless a section carries an "Available in:" note, everything below works identically on 4.14.x and 5.0.x.
+Unless a section carries an "Available in:" note, everything below works identically on 4.14.x, 5.0.x, and 5.1.x.
 
 Cross-references:
 
@@ -37,14 +37,14 @@ CREATE INDEX [ IF NOT EXISTS ] <index_ref> ( <key> [, <key> ...] )
 
 <key> ::= <path>
            [ ASC | DESC ]
-           [ INCLUDE MISSING | EXCLUDE MISSING ]
+           [ INCLUDE MISSING | EXCLUDE MISSING ]   -- parses, but NOT IMPLEMENTED on any line
 
 <path>       ::= <ident> [ '.' <ident> ... ]   -- nested paths use dot syntax
 <collection> ::= [ <datasource> ':' ] <ident>
 ```
 
 - `ASC` is the default sort direction.
-- `INCLUDE MISSING` / `EXCLUDE MISSING` controls whether documents that lack the indexed key still get an index entry (with a `MISSING` sentinel). When omitted, the system-level default applies — supply it explicitly when correctness on `IS MISSING` predicates matters.
+- `INCLUDE MISSING` / `EXCLUDE MISSING` is **in the grammar but not implemented on any supported line.** 4.14.4 and 5.0.0 reject it with `not implemented yet : index key not including missing`; 5.1.0 with `not implemented yet : index with include_missing=false`. Omit the modifier and take the system default — documents lacking the key get an index entry against a `MISSING` sentinel.
 - Index names must be unique **per collection**. Two collections may each have an index named `by_year`.
 - Without `IF NOT EXISTS`, creating an index that already exists raises an error.
 - The two written forms are equivalent. Pick one and stick with it codebase-wide.
@@ -72,13 +72,12 @@ CREATE INDEX IF NOT EXISTS movies_year_desc ON movies (year DESC);
 CREATE INDEX IF NOT EXISTS movies_director_name
   ON movies (director.name);
 
--- Explicit INCLUDE / EXCLUDE MISSING
-CREATE INDEX movies_first_genre
-  ON movies (genres ASC INCLUDE MISSING);
-
+-- Composite (multi-column) — SDK 5.1+ only
 CREATE INDEX reviews_score_recent
-  ON reviews (score DESC, created_at DESC EXCLUDE MISSING);
+  ON reviews (score DESC, created_at DESC);
 ```
+
+> `INCLUDE MISSING` / `EXCLUDE MISSING` is deliberately absent from these examples — the modifier parses but is not implemented on any supported SDK line. See §1.1.
 
 
 ### 1.3 Form B — `collection.name`
@@ -95,7 +94,7 @@ CREATE INDEX reviews.by_movie_recent
 
 ### 1.4 Indexing nested paths
 
-Either dot syntax or backticked path syntax works on both 4.14.x and 5.0.x. Both forms below are valid and address the same field:
+Either dot syntax or backticked path syntax works on all three lines. Both forms below are valid and address the same field:
 
 ```sql
 CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC);
@@ -259,12 +258,18 @@ The directive key matches the alias `m` rather than `movies` because the alias i
 `USE IDS (id1, id2, …)` on a `SELECT` skips the collection scan and goes directly to the indexed-by-id retrieval path. It is the fastest possible query when you already know the `_id` values.
 
 ```sql
-SELECT * FROM movies USE IDS ('tt0111161', 'tt0468569');
+-- Multi-id: a comma-separated list. Works on 4.14.x, 5.0.x and 5.1.x.
+SELECT * FROM movies USE IDS 'tt0111161', 'tt0468569';
+
+-- Single id
+SELECT * FROM movies USE IDS 'tt0111161';
 ```
+
+> **Do not use the parenthesised-tuple spelling** `USE IDS ('tt0111161', 'tt0468569')` — it is rejected on **every** supported line with `('tt0111161', 'tt0468569') is not supported`, because the parser reads it as one tuple expression rather than a list. The comma form above is the portable spelling. `USE IDS LIST ['a', 'b']` also works, but only on SDK 5.0+.
 
 ### 4.1 USE IDS is SELECT-only
 
-Both 4.14.x and 5.0.x parsers carry a TODO on `UPDATE`, `EVICT`, `TOMBSTONE`, and `DELETE` — `USE IDS` is **not** accepted there. For mutations, use `WHERE _id IN (…)` instead — see [`statements.md`](statements.md).
+On 4.14.x and 5.0.x, `USE IDS` is a parse error on `UPDATE`, `EVICT`, `TOMBSTONE` and `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only, and works), and on `DELETE`/`EVICT` where it **silently removes nothing** without `RETURNING`. **For mutations, use `WHERE _id IN (…)` on every line** — see [`statements.md`](statements.md).
 
 ### 4.2 Interaction with `#auto_use_ids`
 
@@ -549,7 +554,7 @@ Skip the index when:
 
 - The collection is small enough that a full scan is already fast. Indexes pay off on collections where the scan cost noticeably exceeds the index lookup cost — typically thousands of documents and up.
 - The query is rare. Indexes are paid for on every write to the collection; a once-a-day report query is almost never worth the steady-state cost.
-- The indexed field is missing on a large fraction of documents. With `INCLUDE MISSING`, every such document gets an index entry pointing at a MISSING sentinel — large but useless. Either filter those documents out with `EXCLUDE MISSING`, or skip the index entirely.
+- The indexed field is missing on a large fraction of documents. Every such document still gets an index entry pointing at a MISSING sentinel — large but useless. `EXCLUDE MISSING` would be the fix, but it is not implemented on any supported line (§1.1), so the practical options today are to narrow the collection or skip the index entirely.
 - The predicate cannot use an index. `LIKE '%pattern%'` (leading wildcard), `regexp_like`, and most function-call predicates degrade to a scan no matter what index exists. Verify with `EXPLAIN` before paying the index cost.
 - The collection is write-heavy and the query is read-rare. Index maintenance lands on the write path and is replicated to every Small Peer that holds the collection.
 
@@ -568,7 +573,7 @@ Skip the index when:
 
 `ADVISE <statement>` returns the `CREATE INDEX` statements the planner believes would speed up the inner statement, without modifying the database. `ADVISE AND PROVISION <statement>` performs the same analysis and then executes the recommended `CREATE INDEX` statements. 5.1+ also uses ADVISE to report missing indexes for JOIN keys — a JOIN whose right-side key is not indexed fails with `Joining to "<alias>" disallowed without appropriate index support. Please run ADVISE for recommendations.`
 
-What to do **on 4.14.x and 5.0.x** when you would otherwise reach for `ADVISE`:
+`ADVISE` is **SDK 5.1+**. What to do on 4.14.x and 5.0.x when you would otherwise reach for it:
 
 1. `EXPLAIN` the query and confirm whether the current plan uses an index (§6).
 2. If it scans, identify the equality / sort / range columns the predicate touches (§8.1).

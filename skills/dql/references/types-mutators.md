@@ -1,15 +1,15 @@
 ---
 title: DQL CRDT types and mutators
-description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip. Covers Ditto SDK 4.14.x and 5.0.x.
+description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
 ---
 
 # DQL CRDT types and mutators
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x and 5.0.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
+Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-Both versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference between the two SDK versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.x default) or `MAP` (5.0 default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+All three lines ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.14.x default) or `MAP` (5.0.x and 5.1.x default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 
@@ -234,12 +234,32 @@ Counters can be combined with other mutation clauses in one statement; see [`sta
 
 - New code on SDK 4.13+. Prefer `COUNTER` for everything new — it has the same merge semantics plus `RESTART WITH`.
 
-**Declaration syntax:** identical shape to `COUNTER`, different keyword.
+**Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported line — 4.14.4, 5.0.0 and 5.1.0 all reject it:
 
 ```sql
+-- ✗ REJECTED on 4.14.x, 5.0.x and 5.1.x:
+--   "Documents with counter CRDT fields are not supported
+--    when inserting with inline expressions"
 INSERT INTO COLLECTION movies (legacy_views PN_COUNTER)
 DOCUMENTS ({ '_id': 'tt0111161', 'legacy_views': 0 });
 ```
+
+Insert the document without the counter field, then create the counter with an `UPDATE ... APPLY`:
+
+```sql
+-- ✓ Insert the document first, with no counter field…
+INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })
+ON ID CONFLICT DO NOTHING;
+
+-- …then establish the PN_COUNTER via APPLY
+UPDATE COLLECTION movies (legacy_views PN_COUNTER)
+APPLY  legacy_views PN_INCREMENT BY 1
+WHERE  _id = 'tt0111161';
+```
+
+> **⚠ On 4.14.x this only works in lenient mode.** Under 4.14.x's default `dql_strict_mode = true`, `APPLY … PN_INCREMENT BY` against a field that does not yet exist **reports success and silently does nothing** — the field never materialises. Seeding the field first as a plain value (`'legacy_views': 0`) makes it worse, not better: strict mode stores it as a `REGISTER` and every subsequent increment is silently discarded. Run `ALTER SYSTEM SET dql_strict_mode = false` before creating counters on 4.14.x, or create them on a 5.x peer. On 5.0.x and 5.1.x the default is already lenient and the `APPLY` above works as written. The same caveat applies to `COUNTER` created via `APPLY`.
+
+> The equivalent inline `INSERT` for a plain `COUNTER` **does** work (see §3) — the restriction on inline document expressions is specific to `PN_COUNTER`, which has no inline insert path at all.
 
 **Mutation pattern:** `APPLY <field> PN_INCREMENT BY <expr>`. **No `RESTART`** clause.
 
@@ -331,7 +351,7 @@ See [`select.md`](select.md) for the rest of the `SELECT` grammar.
 
 ## 7. Strict mode and the `dql_strict_mode` system parameter
 
-This is the single most important cross-version behaviour change between SDK 4.14.x and 5.0.x.
+This is the single most important cross-version behaviour change between SDK 4.14.x and the 5.x lines (5.0.x and 5.1.x share the lenient default).
 
 When the engine encounters an **object literal** in `INSERT`/`UPDATE` and no type definition tells it what to do, it picks one of two CRDT types:
 

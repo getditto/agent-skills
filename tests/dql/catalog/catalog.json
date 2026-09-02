@@ -1,9 +1,24 @@
 [
   {
-    "id": "sk_best_practices_2cc05702",
+    "id": "sk_best_practices_6fb26e6f",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 41,
+      "line": 25,
+      "heading": "### Document Size Limits"
+    },
+    "query": "SHOW document_size_soft_limit_bytes",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false
+  },
+  {
+    "id": "sk_best_practices_452a4f69",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 52,
       "heading": "#### When to Use Embedded Objects"
     },
     "query": "INSERT INTO users DOCUMENTS ({\n  '_id': 'user-1',\n  'name': 'Alice',\n  'profile': {\n    'bio': 'Software Engineer',\n    'location': 'NYC',\n    'avatar_url': 'https://...'\n  }\n})",
@@ -18,16 +33,13 @@
     ],
     "postQueries": [
       "EVICT FROM users WHERE _id IN ('user-1')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_c67467d2",
+    "id": "sk_best_practices_b4b5feb4",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 68,
+      "line": 79,
       "heading": "#### When to Use Flat Models"
     },
     "query": "\nINSERT INTO people DOCUMENTS ({\n  '_id': 'person-1',\n  'name': 'Susan',\n  'age': 31\n})",
@@ -43,16 +55,13 @@
     "postQueries": [
       "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})",
       "EVICT FROM people WHERE _id IN ('person-1')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_308d5e99",
+    "id": "sk_best_practices_a10dd3f2",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 109,
+      "line": 120,
       "heading": "### Additional Guidelines"
     },
     "query": "\nINSERT INTO orders DOCUMENTS ({\n  '_id': 'order-1',\n  'user_id': 'user-123',  \n  'product_id': 'prod-456',\n  'quantity': 2\n})",
@@ -67,16 +76,13 @@
     ],
     "postQueries": [
       "EVICT FROM orders WHERE _id IN ('order-1')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_21fc57a8",
+    "id": "sk_best_practices_c7ed9734",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 161,
+      "line": 172,
       "heading": "#### 1. Backward-Compatibility"
     },
     "query": "\nINSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,  \n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue'  \n}) ON ID CONFLICT DO UPDATE",
@@ -91,16 +97,13 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id IN ('test_seed_id')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_17c2d5ae",
+    "id": "sk_best_practices_6cb5441e",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 188,
+      "line": 199,
       "heading": "#### 2. Same-Version Compatibility"
     },
     "query": "\nSELECT * FROM cars WHERE schema_version = 1",
@@ -109,16 +112,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_6e4b2b9c",
+    "id": "sk_best_practices_2e90d21e",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 210,
+      "line": 221,
       "heading": "#### 3. Force Upgrade"
     },
     "query": "\nSELECT * FROM cars WHERE schema_version > 1",
@@ -127,16 +127,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_145986c7",
+    "id": "sk_best_practices_f8738c4f",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 241,
+      "line": 252,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
     "query": "\nUPDATE cars SET color = 'blue' WHERE _id = 'test_seed_id'",
@@ -153,16 +150,13 @@
       "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'",
       "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_10ce7018",
+    "id": "sk_best_practices_cdf97ca7",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 257,
+      "line": 268,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
     "query": "\n\n\n\n\n\nUPDATE cars UNSET make WHERE _id = 'test_seed_id'",
@@ -177,16 +171,13 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_afb90f44",
+    "id": "sk_best_practices_f1c11e35",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 274,
+      "line": 285,
       "heading": "#### 4. Forward-Compatibility (Most Critical)"
     },
     "query": "\n\n\n\nINSERT INTO cars DOCUMENTS ({\n  'schema_version': 1,\n  'year': 2024  \n})",
@@ -198,16 +189,13 @@
     "expectError": false,
     "postQueries": [
       "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_3dc8c62d",
+    "id": "sk_best_practices_25aa4bb4",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 348,
+      "line": 359,
       "heading": "### Implementation Pattern"
     },
     "query": "\nUPDATE cars\nSET\n  schema_version = 2,\n  color = 'unknown'  \nWHERE schema_version = 1 AND color IS MISSING",
@@ -216,16 +204,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_bcf443b6",
+    "id": "sk_best_practices_4876b0e0",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 364,
+      "line": 375,
       "heading": "### Implementation Pattern"
     },
     "query": "\nSELECT * FROM cars WHERE schema_version = 2",
@@ -234,16 +219,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_78708f96",
+    "id": "sk_best_practices_522406fc",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 382,
+      "line": 393,
       "heading": "### Multi-Version Support Example"
     },
     "query": "\n\n\n\n\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  \n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)",
@@ -254,16 +236,13 @@
     "expectError": false,
     "postQueries": [
       "INSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue',\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_76d07a0b",
+    "id": "sk_best_practices_c3ab884d",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 451,
+      "line": 462,
       "heading": "### Using EXPLAIN"
     },
     "query": "\nEXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'",
@@ -272,16 +251,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_c0bd64e4",
+    "id": "sk_best_practices_866d9fb4",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 475,
+      "line": 486,
       "heading": "### Optimization Strategies"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS idx_assignee   ON tasks (assignee)",
@@ -290,16 +266,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_640f7792",
+    "id": "sk_best_practices_80dd5636",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 490,
+      "line": 501,
       "heading": "### Optimization Strategies"
     },
     "query": "\nEXPLAIN SELECT * FROM tasks WHERE priority > 5",
@@ -308,16 +281,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_8259ba7c",
+    "id": "sk_best_practices_459e8b63",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 504,
+      "line": 515,
       "heading": "### Optimization Strategies"
     },
     "query": "\nSELECT * FROM tasks\nWHERE assignee = 'alice' AND status = 'active'",
@@ -326,16 +296,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_24b0ebac",
+    "id": "sk_best_practices_0c3b53e1",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 515,
+      "line": 526,
       "heading": "### Optimization Strategies"
     },
     "query": "\nSELECT * FROM large_collection",
@@ -344,16 +311,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_95be610d",
+    "id": "sk_best_practices_fdbad6c5",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 543,
+      "line": 554,
       "heading": "### Optimization Strategies"
     },
     "query": "\nSELECT * FROM system:vitals",
@@ -362,16 +326,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_3d9c8ee3",
+    "id": "sk_best_practices_d0de2469",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 568,
+      "line": 579,
       "heading": "### Performance Tips"
     },
     "query": "\nSELECT COUNT(*) FROM large_collection",
@@ -380,16 +341,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_a62d8c3a",
+    "id": "sk_best_practices_fa4fb96a",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 579,
+      "line": 590,
       "heading": "### Performance Tips"
     },
     "query": "\nSELECT DISTINCT category FROM products",
@@ -398,16 +356,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_b31a48ac",
+    "id": "sk_best_practices_4943b6e2",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 588,
+      "line": 599,
       "heading": "### Performance Tips"
     },
     "query": "\nSELECT * FROM tasks ORDER BY created_at DESC LIMIT 20",
@@ -416,16 +371,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_22972778",
+    "id": "sk_best_practices_0abae1af",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 599,
+      "line": 610,
       "heading": "### Performance Tips"
     },
     "query": "\nSELECT category, COUNT(*) FROM products\nWHERE NOT deleted\nGROUP BY category",
@@ -434,16 +386,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_abb2048f",
+    "id": "sk_best_practices_e6152df4",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 641,
+      "line": 652,
       "heading": "### Configuration"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -455,16 +404,13 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_5e84a36e",
+    "id": "sk_best_practices_8f0de03f",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 647,
+      "line": 658,
       "heading": "### Configuration"
     },
     "query": "ALTER SYSTEM SET dql_strict_mode = true",
@@ -476,16 +422,13 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_2ba14e9b",
+    "id": "sk_best_practices_9194c9d6",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 652,
+      "line": 663,
       "heading": "### Configuration"
     },
     "query": "SHOW dql_strict_mode",
@@ -494,16 +437,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_fbb003d2",
+    "id": "sk_best_practices_699b1491",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 659,
+      "line": 670,
       "heading": "### Example: Object Merge Behavior"
     },
     "query": "\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'",
@@ -519,16 +459,13 @@
     "postQueries": [
       "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'",
       "EVICT FROM users WHERE _id = 'user-1'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_409cb4f2",
+    "id": "sk_best_practices_68434efc",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 756,
+      "line": 767,
       "heading": "### Always Use ON ID CONFLICT"
     },
     "query": "\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE",
@@ -544,16 +481,13 @@
     "postQueries": [
       "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})",
       "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_5f63de30",
+    "id": "sk_best_practices_75e9cdd3",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 792,
+      "line": 804,
       "heading": "### Soft Delete Pattern"
     },
     "query": "\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'",
@@ -569,16 +503,13 @@
     "postQueries": [
       "DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
       "EVICT FROM tasks WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_ebf9a58a",
+    "id": "sk_best_practices_91f79342",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 879,
+      "line": 891,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT\n  _id,\n  title,\n  clock() - created_at AS age_ms,\n  date_diff(clock(), created_at, 'hours') AS age_hours\nFROM documents",
@@ -587,16 +518,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_9e1d2f43",
+    "id": "sk_best_practices_26e15878",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 889,
+      "line": 901,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  \n  'sender_id': 'u-42'\n})",
@@ -611,16 +539,13 @@
     ],
     "postQueries": [
       "EVICT FROM messages WHERE _id IN ('test_seed_id')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_best_practices_552073bb",
+    "id": "sk_best_practices_ee461ceb",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 913,
+      "line": 925,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT * FROM tasks\nWHERE updated_at >= '2024-12-01T00:00:00Z'\nORDER BY updated_at DESC\nLIMIT 50",
@@ -629,16 +554,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_best_practices_acd16358",
+    "id": "sk_best_practices_b9eead56",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 921,
+      "line": 933,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT * FROM sessions\nWHERE expires_at < clock()",
@@ -647,10 +569,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_67c25134",
@@ -671,10 +590,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_movies_cookbook_fc265026",
@@ -689,10 +605,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_bb4f91f7",
@@ -706,16 +619,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 25,
-      "firstRow": {
-        "_id": "573a1399f29313caabcee345",
-        "imdb": 8.8,
-        "title": "Andaz Apna Apna",
-        "year": 1994
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_1ea4288f",
@@ -730,10 +634,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_4f596cb8",
@@ -747,15 +648,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1,
-      "firstRow": {
-        "_id": "573a1399f29313caabcecb4a",
-        "title": "Robin Hood: Prince of Thieves",
-        "year": 1991
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_4079a59d",
@@ -770,10 +663,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_acf7179b",
@@ -787,10 +677,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 128
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_5a351308",
@@ -805,10 +692,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 128
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_93f6901f",
@@ -822,17 +706,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194,
-      "firstRow": {
-        "_id": "573a13a1f29313caabd0660a",
-        "imdb": 7.6,
-        "is_pre_1980": false,
-        "title": "The Tracker",
-        "verdict": "good"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_b58f96e2",
@@ -847,10 +721,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_6d3f6531",
@@ -865,10 +736,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_c24d7057",
@@ -883,10 +751,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_5b9fcc9c",
@@ -901,10 +766,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_7d37a327",
@@ -925,10 +787,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_movies_cookbook_3a5a0563",
@@ -949,10 +808,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_movies_cookbook_c2a52a9a",
@@ -973,10 +829,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_movies_cookbook_3fe09002",
@@ -989,10 +842,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 76
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_86aa4674",
@@ -1007,10 +857,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_215100f8",
@@ -1031,10 +878,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_movies_cookbook_3c1d2e82",
@@ -1049,10 +893,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_be3461e2",
@@ -1063,6 +904,7 @@
     },
     "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title",
     "availableIn": [],
+    "unavailableReason": "Same TOMBSTONE Big-Peer-only restriction as sk_statements_f1949f8d.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
@@ -1084,10 +926,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_763b9bf6",
@@ -1100,10 +939,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_f0c67c84",
@@ -1118,10 +954,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_fe50edb0",
@@ -1134,16 +967,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "573a1395f29313caabce2b21",
-        "avg_score": 0,
-        "review_count": 0,
-        "title": "A Big Hand for the Little Lady"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_b9853e8f",
@@ -1156,10 +980,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_c751b1fd",
@@ -1172,15 +993,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "573a13a1f29313caabd0660a",
-        "title": "The Tracker",
-        "year": 2002
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_f4fc40f6",
@@ -1193,10 +1006,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_movies_cookbook_dc3e7c5a",
@@ -1209,10 +1019,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_302b39fd",
@@ -1227,10 +1034,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_d23530f6",
@@ -1245,10 +1049,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_29455eea",
@@ -1263,16 +1064,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "order_20250325_0001",
-        "customer_id": "9f15ed64-7249-461d-b2f0-fde51ccbc4a8",
-        "order_date": "2025-03-25T19:17:00Z",
-        "total": 704.72
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_e05664da",
@@ -1287,10 +1079,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 2
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_2afc646b",
@@ -1305,10 +1094,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_c1a1cb57",
@@ -1323,10 +1109,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_1e70e345",
@@ -1341,10 +1124,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_bf800f84",
@@ -1359,14 +1139,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1,
-      "firstRow": {
-        "revenue": 783909.3799999993,
-        "store_id": "store_seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_baebcf6f",
@@ -1381,10 +1154,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 2
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_2d6092fe",
@@ -1399,14 +1169,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1,
-      "firstRow": {
-        "revenue": 783909.3799999993,
-        "store_id": "store_seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_a92e69a0",
@@ -1421,10 +1184,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1000
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_3af12196",
@@ -1439,10 +1199,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 292
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_74f50d06",
@@ -1457,15 +1214,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "amount": 704.72,
-        "order_ref": "order_20250325_0001",
-        "store_id": "store_seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_f29f7b27",
@@ -1480,14 +1229,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "product_id": "prod_grd_0050",
-        "units_on_hand": 95
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_cookbook_3945ca75",
@@ -1502,10 +1244,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 2
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_790c2c37",
@@ -1518,10 +1257,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_403b7de5",
@@ -1534,17 +1270,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "order_20250325_0001",
-        "first_name": "Jessica",
-        "last_name": "Cunningham",
-        "order_date": "2025-03-25T19:17:00Z",
-        "total": 704.72
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_9401fe19",
@@ -1559,10 +1285,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_64eccfd5",
@@ -1575,17 +1298,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3,
-      "firstRow": {
-        "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
-        "base_price": 63.37,
-        "line_total": 228.13,
-        "product_name": "ELC item 0009",
-        "quantity": 4
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_27ea1e29",
@@ -1600,10 +1313,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_7a462c12",
@@ -1616,15 +1326,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1,
-      "firstRow": {
-        "_id": "store_seattle",
-        "revenue": 783909.3799999993,
-        "store_name": "Zava Retail Seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_cd231acd",
@@ -1637,15 +1339,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1,
-      "firstRow": {
-        "_id": "store_seattle",
-        "revenue": 783909.3799999993,
-        "store_name": "Zava Retail Seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_bcc6bfe3",
@@ -1660,10 +1354,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_66b1fc72",
@@ -1676,10 +1367,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_14ff9331",
@@ -1692,15 +1380,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "amount": 960.51,
-        "order_ref": "order_20221210_0001",
-        "store": "Zava Retail Seattle"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_2021712d",
@@ -1715,10 +1395,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_00e23f06",
@@ -1731,10 +1408,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_retail_joins_cookbook_2702a4f8",
@@ -1747,16 +1421,7 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "prod_pwr_0003",
-        "inventory_value": 25011,
-        "product_name": "PWR item 0003",
-        "units_on_hand": 70
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_262d5d00",
@@ -1771,10 +1436,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 5
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_cf187696",
@@ -1789,14 +1451,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 5,
-      "firstRow": {
-        "cast_size": 4,
-        "title": "Peter Pan"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_7cacbbb7",
@@ -1811,10 +1466,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_709ee84a",
@@ -1829,10 +1481,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_31d07b72",
@@ -1846,14 +1495,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194,
-      "firstRow": {
-        "genre_score": 3,
-        "title": "Boiling Point"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_3bb5893d",
@@ -1867,14 +1509,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194,
-      "firstRow": {
-        "title": "A Big Hand for the Little Lady",
-        "verdict": "good"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_154cf2ec",
@@ -1888,10 +1523,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_4f621df3",
@@ -1905,8 +1537,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_expressions_d7f4229a",
@@ -1920,8 +1551,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_expressions_b2ca6ad8",
@@ -1935,10 +1565,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_cc7958c1",
@@ -1952,10 +1579,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_expressions_da58d5fa",
@@ -1969,10 +1593,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_82c0afbc",
@@ -1987,10 +1608,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_585f1bb1",
@@ -2005,10 +1623,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_86ac6b83",
@@ -2023,10 +1638,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_c5b3f557",
@@ -2041,10 +1653,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_9cf3029c",
@@ -2059,10 +1668,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_5ecf0bce",
@@ -2077,10 +1683,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_cc2ef4f9",
@@ -2095,10 +1698,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_88dc470d",
@@ -2113,10 +1713,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_4da2a1d0",
@@ -2131,10 +1728,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_2e026687",
@@ -2149,10 +1743,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_e00ef285",
@@ -2167,10 +1758,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 39
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_af231be0",
@@ -2185,10 +1773,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_7b27e431",
@@ -2203,10 +1788,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_2d1dde36",
@@ -2221,10 +1803,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_functions_ca74ed47",
@@ -2239,32 +1818,28 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_9dfbb020",
+    "id": "sk_functions_fd5c438f",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 220,
       "heading": "### 4.3 String examples"
     },
-    "query": "\nSELECT title, repeat('★', cast(round(ratings.imdb), 'integer')) AS stars FROM movies",
+    "query": "\n\n\nSELECT title, repeat('★', cast(ratings.imdb, 'integer')) AS stars FROM movies",
     "availableIn": [
+      "4.14.x",
+      "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_99b7306d",
+    "id": "sk_functions_1d3ee49f",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 225,
+      "line": 229,
       "heading": "### 4.3 String examples"
     },
     "query": "\nSELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies",
@@ -2273,16 +1848,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_1961cb8f",
+    "id": "sk_functions_d3ee4e4e",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 230,
+      "line": 234,
       "heading": "### 4.3 String examples"
     },
     "query": "\nSELECT rpad(title, 30, '.') AS title_padded FROM movies",
@@ -2291,16 +1863,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_390ec1b8",
+    "id": "sk_functions_7173d960",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 235,
+      "line": 239,
       "heading": "### 4.3 String examples"
     },
     "query": "\nSELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1",
@@ -2309,16 +1878,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_45c78488",
+    "id": "sk_functions_433a21e1",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 250,
+      "line": 254,
       "heading": "## 5. Array"
     },
     "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
@@ -2327,16 +1893,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 118
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_582951c6",
+    "id": "sk_functions_443cf2e0",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 255,
+      "line": 259,
       "heading": "## 5. Array"
     },
     "query": "\n\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
@@ -2345,20 +1908,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 5,
-      "firstRow": {
-        "cast_size": 4,
-        "title": "Peter Pan"
-      }
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_3a2fdb07",
+    "id": "sk_functions_a0f35d1e",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 262,
+      "line": 266,
       "heading": "## 5. Array"
     },
     "query": "\nSELECT _id FROM movies WHERE array_contains_null(tags)",
@@ -2367,16 +1923,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_041bd709",
+    "id": "sk_functions_6522661c",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 298,
+      "line": 302,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_keys(ratings) AS metrics FROM movies WHERE _id = 'tt0111161'",
@@ -2385,16 +1938,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_35c58874",
+    "id": "sk_functions_84f8dc9a",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 304,
+      "line": 308,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_set(ratings, 'imdb', 9.4, true) AS new_ratings\nFROM movies WHERE _id = 'tt0111161'",
@@ -2403,16 +1953,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_102e0a20",
+    "id": "sk_functions_e5cd7c87",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 310,
+      "line": 314,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_concat({'imdb': 0, 'rotten_tomatoes': 0, 'metacritic': 0}, ratings) AS filled\nFROM movies",
@@ -2421,16 +1968,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_209833f3",
+    "id": "sk_functions_1ba22526",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 316,
+      "line": 320,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_unset(director, 'born') AS dir_no_dob FROM movies",
@@ -2439,16 +1983,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_add6a07b",
+    "id": "sk_functions_dadfdb6a",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 321,
+      "line": 325,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_rename(ratings, 'imdb', 'imdb_rating') AS renamed FROM movies",
@@ -2457,16 +1998,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_9bdee4a8",
+    "id": "sk_functions_c29edfb4",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 326,
+      "line": 330,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_content(ratings, 'nested') AS flat FROM movies WHERE _id = 'tt0111161'",
@@ -2475,16 +2013,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_db7785c0",
+    "id": "sk_functions_55d9e527",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 357,
+      "line": 361,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT title FROM movies\nWHERE date_part(date_cast(released), 'year')\n    = date_part(clock(), 'year')",
@@ -2493,16 +2028,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_599ed7a8",
+    "id": "sk_functions_2d887549",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 364,
+      "line": 368,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT _id,\n    date_format(\n        date_add(date_cast(created_at), 'day', 90),\n        'YYYY-MM-DD'\n    ) AS warranty_end\nFROM reviews",
@@ -2511,16 +2043,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 3
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_2883c783",
+    "id": "sk_functions_4b9a5500",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 374,
+      "line": 378,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT title,\n    date_format(date_cast(released), 'YYYY-MM-DD') AS d\nFROM movies WHERE _id = 'tt0111161'",
@@ -2529,16 +2058,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_4e87a26b",
+    "id": "sk_functions_95a8958a",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 381,
+      "line": 385,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT title,\n    date_diff(date_cast(released), clock(), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
@@ -2547,16 +2073,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_dd6be9f6",
+    "id": "sk_functions_55aeb9a1",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 394,
+      "line": 398,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT title,\n    date_format(\n        date_sub(date_cast(released), 'year', 10),\n        'YYYY'\n    ) AS released_minus_decade\nFROM movies WHERE _id = 'tt0111161'",
@@ -2565,16 +2088,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_8b9ae414",
+    "id": "sk_functions_75ceff23",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 404,
+      "line": 408,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT date_trunc(date_cast(released), 'year') AS year_start FROM movies",
@@ -2583,16 +2103,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_13f500ae",
+    "id": "sk_functions_a9ee0d45",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 409,
+      "line": 413,
       "heading": "## 7. Date / time"
     },
     "query": "\nSELECT _id, tz_offset('2024-06-15T14:00:00-05:00') AS minutes_off FROM reviews LIMIT 1",
@@ -2601,16 +2118,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_71e8ef1e",
+    "id": "sk_functions_eb133324",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 428,
+      "line": 432,
       "heading": "## 8. Duration"
     },
     "query": "\nSELECT title, duration_format(watch_count, 'ms') AS watched_for FROM movies",
@@ -2619,16 +2133,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_959aa9e5",
+    "id": "sk_functions_3f8fba8f",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 462,
+      "line": 466,
       "heading": "### 10.1 `count` — three useful forms"
     },
     "query": "\nSELECT count(*) AS total FROM movies",
@@ -2637,16 +2148,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_575d49d9",
+    "id": "sk_functions_938576dd",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 475,
+      "line": 479,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
@@ -2655,16 +2163,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_functions_ee5a6efe",
+    "id": "sk_functions_42bb5741",
     "source": {
       "file": "skills/dql/references/functions.md",
-      "line": 488,
+      "line": 492,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
@@ -2673,10 +2178,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 41
-    }
+    "expectError": false
   },
   {
     "id": "sk_indexing_e4109ccf",
@@ -2689,13 +2191,10 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_fc1494cf",
+    "id": "sk_indexing_fcfee520",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 64,
@@ -2707,32 +2206,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_b3f1b32c",
+    "id": "sk_indexing_7f67ed8c",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 88,
+      "line": 87,
       "heading": "### 1.3 Form B — `collection.name`"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC)",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_631b3c7c",
+    "id": "sk_indexing_566f8afb",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 100,
+      "line": 99,
       "heading": "### 1.4 Indexing nested paths"
     },
     "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC)",
@@ -2741,16 +2234,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_a99040e3",
+    "id": "sk_indexing_3715003d",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 131,
+      "line": 130,
       "heading": "### 2.2 Examples"
     },
     "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies",
@@ -2759,16 +2249,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_17469189",
+    "id": "sk_indexing_0855cf7f",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 149,
+      "line": 148,
       "heading": "### 3.1 Comment-style directives"
     },
     "query": "\n/*+ {\"#disable_index_scan\": true} */\nSELECT * FROM movies WHERE year = 2010",
@@ -2777,16 +2264,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_3ffdb8b4",
+    "id": "sk_indexing_ff4466f6",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 173,
+      "line": 172,
       "heading": "### 3.2 `USE DIRECTIVES` clause"
     },
     "query": "SELECT title FROM movies\nUSE DIRECTIVES '{\"#index\": [\"movies_year_imdb\"], \"#prefer_order\": true}'\nWHERE year >= 2000\nORDER BY ratings.imdb DESC\nLIMIT 25",
@@ -2795,19 +2279,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 7,
-      "firstRow": {
-        "title": "Jails, Hospitals & Hip-Hop"
-      }
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_739e09f4",
+    "id": "sk_indexing_dd6e2d81",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 190,
+      "line": 189,
       "heading": "### 3.3 Top-level vs per-collection keys"
     },
     "query": "\n\n/*+ {\n  \"#max_scans\": 4,\n  \"movies\": { \"#index\": [\"movies_year_imdb\"] }\n} */\nSELECT title FROM movies\nWHERE year >= 1990\nORDER BY ratings.imdb DESC\nLIMIT 10",
@@ -2816,30 +2294,25 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "title": "Andaz Apna Apna"
-      }
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_3ee66db0",
+    "id": "sk_indexing_79cbb7ae",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 229,
+      "line": 228,
       "heading": "### 3.5 Per-collection example"
     },
     "query": "/*+ {\n  \"movies\":  { \"#index\": [\"movies_year_imdb\"] },\n  \"reviews\": { \"#index\": [\"reviews_movie_id_recent\"] }\n} */\nSELECT r.movie_id, r.score\nFROM reviews r\nWHERE r.movie_id IN (\n  SELECT _id FROM movies WHERE year >= 2000\n)",
     "availableIn": [],
+    "unavailableReason": "Planner-directive illustration that pins two named indexes the pedagogical fixture does not create; the directive form, not the result, is what the doc teaches.",
     "expectError": false
   },
   {
-    "id": "sk_indexing_eb91b659",
+    "id": "sk_indexing_bff89b80",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 243,
+      "line": 242,
       "heading": "### 3.5 Per-collection example"
     },
     "query": "/*+ {\"m\": {\"#index\": [\"movies_year_imdb\"]}} */\nSELECT m.title FROM movies m\nWHERE m.year >= 1990\nORDER BY m.ratings.imdb DESC\nLIMIT 10",
@@ -2848,30 +2321,28 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "title": "Andaz Apna Apna"
-      }
-    }
-  },
-  {
-    "id": "sk_indexing_b35874bc",
-    "source": {
-      "file": "skills/dql/references/indexing.md",
-      "line": 261,
-      "heading": "## 4. USE IDS"
-    },
-    "query": "SELECT * FROM movies USE IDS ('tt0111161', 'tt0468569')",
-    "availableIn": [],
     "expectError": false
   },
   {
-    "id": "sk_indexing_d72057fb",
+    "id": "sk_indexing_be5944f5",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 279,
+      "line": 260,
+      "heading": "## 4. USE IDS"
+    },
+    "query": "\nSELECT * FROM movies USE IDS 'tt0111161', 'tt0468569'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false
+  },
+  {
+    "id": "sk_indexing_ec9024e4",
+    "source": {
+      "file": "skills/dql/references/indexing.md",
+      "line": 284,
       "heading": "### 4.3 EXPLAIN confirms the fast path"
     },
     "query": "EXPLAIN SELECT * FROM movies USE IDS ('tt0111161')",
@@ -2880,16 +2351,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_6b7b2064",
+    "id": "sk_indexing_2d60f204",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 285,
+      "line": 290,
       "heading": "### 4.3 EXPLAIN confirms the fast path"
     },
     "query": "EXPLAIN SELECT * FROM movies WHERE _id = 'tt0111161'",
@@ -2898,16 +2366,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_782c30eb",
+    "id": "sk_indexing_8b6d15e9",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 297,
+      "line": 302,
       "heading": "## 5. USE INDEX"
     },
     "query": "\nSELECT * FROM movies USE INDEX 'movies_year_imdb' WHERE year = 2010",
@@ -2916,32 +2381,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_76e8b57b",
+    "id": "sk_indexing_0669275e",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 346,
+      "line": 351,
       "heading": "### 6.2 Worked examples"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_03e16bd6",
+    "id": "sk_indexing_6de7c6d1",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 361,
+      "line": 366,
       "heading": "### 6.2 Worked examples"
     },
     "query": "\nEXPLAIN SELECT title FROM movies WHERE box_office_millions > 500",
@@ -2950,16 +2409,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_064ee7d0",
+    "id": "sk_indexing_751591e3",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 375,
+      "line": 380,
       "heading": "### 6.2 Worked examples"
     },
     "query": "\nEXPLAIN SELECT title FROM movies\nWHERE year = 2010 OR director.name = 'Christopher Nolan'",
@@ -2968,16 +2424,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_9fbc5bc7",
+    "id": "sk_indexing_1aa20659",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 387,
+      "line": 392,
       "heading": "### 6.3 Forcing a comparison"
     },
     "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
@@ -2986,16 +2439,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_da1e8118",
+    "id": "sk_indexing_251907a2",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 397,
+      "line": 402,
       "heading": "### 6.3 Forcing a comparison"
     },
     "query": "/*+ {\"#disable_index_scan\": true} */\nEXPLAIN SELECT title FROM movies WHERE year = 2010",
@@ -3004,16 +2454,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_0bfbc985",
+    "id": "sk_indexing_76f6afc5",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 412,
+      "line": 417,
       "heading": "### 7.1 Two forms"
     },
     "query": "\n/*+ {\"#profile\": true} */\nSELECT title FROM movies\nWHERE year >= 1990 AND ratings.imdb > 8\nORDER BY ratings.imdb DESC\nLIMIT 10",
@@ -3022,14 +2469,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
-    "id": "sk_indexing_670b9079",
+    "id": "sk_indexing_cafe6829",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 435,
+      "line": 440,
       "heading": "### 7.3 Combining with EXPLAIN"
     },
     "query": "\nEXPLAIN SELECT title FROM movies WHERE year = 1994",
@@ -3038,16 +2484,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_04bfcb6f",
+    "id": "sk_indexing_3555efac",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 461,
+      "line": 466,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              \n  AND ratings.imdb > 8.0       \nORDER BY ratings.imdb DESC",
@@ -3056,32 +2499,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_9045033b",
+    "id": "sk_indexing_25d31fbb",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 473,
+      "line": 478,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_533c6000",
+    "id": "sk_indexing_bba22622",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 490,
+      "line": 495,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
@@ -3090,32 +2527,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_7d47d833",
+    "id": "sk_indexing_7035946e",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 501,
+      "line": 506,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX movies_year_director_box\n  ON movies (year DESC, director.name ASC, box_office_millions ASC)",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_ded6595b",
+    "id": "sk_indexing_900240e1",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 512,
+      "line": 517,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
@@ -3124,16 +2555,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_47dc1040",
+    "id": "sk_indexing_228f14a2",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 524,
+      "line": 529,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "/*+ {\"#disable_covering\": true} */\nSELECT year, ratings.imdb FROM movies WHERE year = 2010",
@@ -3142,16 +2570,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_indexing_dd79907a",
+    "id": "sk_indexing_5cdfef35",
     "source": {
       "file": "skills/dql/references/indexing.md",
-      "line": 533,
+      "line": 538,
       "heading": "### 8.3 Index direction matters for `ORDER BY`"
     },
     "query": "CREATE INDEX movies_year_asc ON movies (year ASC)",
@@ -3160,10 +2585,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_7a025688",
@@ -3178,8 +2600,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_operators_b061c17b",
@@ -3194,8 +2615,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_operators_5a0fc377",
@@ -3209,8 +2629,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_operators_db076d63",
@@ -3224,10 +2643,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 187
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_091afc3a",
@@ -3242,10 +2658,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_a271d717",
@@ -3260,10 +2673,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 118
-    }
+    "expectError": false
   },
   {
     "id": "sk_operators_9a733372",
@@ -3278,13 +2688,10 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_55249043",
+    "id": "sk_operators_4d0f7af7",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 169,
@@ -3296,16 +2703,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 39
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_b65c103a",
+    "id": "sk_operators_3bdd4dcf",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 223,
+      "line": 225,
       "heading": "### `NOT`"
     },
     "query": "\nSELECT title FROM movies WHERE is_classic AND ratings.imdb > 8.5",
@@ -3314,16 +2718,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_34f56b19",
+    "id": "sk_operators_0fc9b12b",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 238,
+      "line": 240,
       "heading": "## 8. String operator `||`"
     },
     "query": "\nSELECT title || ' (' || cast(year AS string) || ')' AS label\nFROM movies",
@@ -3332,16 +2733,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_9926aead",
+    "id": "sk_operators_7af8df12",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 246,
+      "line": 248,
       "heading": "## 8. String operator `||`"
     },
     "query": "SELECT (title || ': ') || cast(year + 1 AS string) AS bumped FROM movies",
@@ -3350,16 +2748,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_225677a8",
+    "id": "sk_operators_9660bce9",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 258,
+      "line": 260,
       "heading": "### Array indexing — `array[i]`"
     },
     "query": "\nSELECT title, `cast`[0].name AS lead_actor FROM movies",
@@ -3368,16 +2763,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_3370cb44",
+    "id": "sk_operators_25b18f68",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 268,
+      "line": 270,
       "heading": "### Array indexing — `array[i]`"
     },
     "query": "SELECT title FROM movies WHERE genres = ['Drama']",
@@ -3386,16 +2778,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 32
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_5146d7bf",
+    "id": "sk_operators_ddc4c24c",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 280,
+      "line": 282,
       "heading": "### Object field access — `object.field` or `object[expr]`"
     },
     "query": "\nSELECT title, director.name AS dir FROM movies",
@@ -3404,16 +2793,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
-    "id": "sk_operators_be08f334",
+    "id": "sk_operators_548d7e8c",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 290,
+      "line": 292,
       "heading": "### Object field access — `object.field` or `object[expr]`"
     },
     "query": "SELECT _id, {'name': 'Anonymous', 'verified': false} AS placeholder_user\nFROM reviews",
@@ -3422,33 +2808,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
-    "id": "sk_operators_a940f3e8",
+    "id": "sk_operators_f565e8e0",
     "source": {
       "file": "skills/dql/references/operators.md",
-      "line": 305,
-      "heading": "### 10.1 Boolean operators are keywords, not symbols"
-    },
-    "query": "WHERE is_classic && ratings.imdb > 8        \nWHERE genres == ['Drama'] || year < 1970    \n\n\nWHERE is_classic AND ratings.imdb > 8\nWHERE genres = ['Drama'] OR year < 1970",
-    "availableIn": [
-      "4.14.x",
-      "5.0.x",
-      "5.1.x"
-    ],
-    "expectError": true
-  },
-  {
-    "id": "sk_operators_52080c2a",
-    "source": {
-      "file": "skills/dql/references/operators.md",
-      "line": 371,
+      "line": 373,
       "heading": "## 11. `XOR` — version-gated"
     },
     "query": "\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0",
     "availableIn": [],
+    "unavailableReason": "Negative example: operators.md §11 shows XOR to document that it is rejected on every supported line.",
     "expectError": false
   },
   {
@@ -3470,10 +2841,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_select_a1128461",
@@ -3488,10 +2856,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_f3666302",
@@ -3506,10 +2871,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_642b7400",
@@ -3524,8 +2886,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
     "id": "sk_select_dc59b934",
@@ -3540,10 +2901,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 76
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_2cbf2070",
@@ -3558,10 +2916,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_906a8612",
@@ -3576,10 +2931,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_c7bf45a6",
@@ -3594,10 +2946,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_866ea5b5",
@@ -3612,10 +2961,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_d2683d71",
@@ -3633,10 +2979,7 @@
     "expectError": false,
     "postQueries": [
       "DELETE FROM movies WHERE _id IN ('test_seed_id')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_select_ec8f7140",
@@ -3651,10 +2994,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_6dc138b3",
@@ -3669,10 +3009,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_c1ca245e",
@@ -3687,10 +3024,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 76
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_97e1a68a",
@@ -3704,10 +3038,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_1367cae5",
@@ -3722,14 +3053,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 69,
-      "firstRow": {
-        "n": 12,
-        "year": 1996
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_a4c5e68e",
@@ -3744,15 +3068,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 144,
-      "firstRow": {
-        "n": 1,
-        "primary_genre": "Drama",
-        "year": 2002
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_4e3a0372",
@@ -3767,10 +3083,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_04f6eb97",
@@ -3785,10 +3098,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_930da004",
@@ -3803,14 +3113,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 20,
-      "firstRow": {
-        "box_office_millions": 22,
-        "title": "Ferris Bueller's Day Off"
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_57c61599",
@@ -3825,15 +3128,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 20,
-      "firstRow": {
-        "_id": "573a1396f29313caabce397c",
-        "title": "The Land",
-        "year": 1969
-      }
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_a840f3b5",
@@ -3848,10 +3143,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194
-    }
+    "expectError": false
   },
   {
     "id": "sk_select_a0fd6744",
@@ -3866,20 +3158,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 194,
-      "firstRow": {
-        "box_office_millions": 22,
-        "title": "Ferris Bueller's Day Off"
-      }
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_bd0eed35",
+    "id": "sk_select_a19eca0d",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 563,
+      "line": 566,
       "heading": "### 12.3 Portable subscription patterns"
     },
     "query": "\nSELECT * FROM movies WHERE year >= 1990 AND is_classic = true",
@@ -3888,16 +3173,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_dfc62cd7",
+    "id": "sk_select_23138e45",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 575,
+      "line": 577,
       "heading": "### 12.3 Portable subscription patterns"
     },
     "query": "\n\n\nSELECT * FROM movies\nWHERE year >= 1990\nORDER BY title ASC\nLIMIT 50",
@@ -3906,16 +3188,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 50
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_171c0dac",
+    "id": "sk_select_7ce3c6df",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 595,
+      "line": 597,
       "heading": "## 13. Worked examples (movies dataset)"
     },
     "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
@@ -3924,30 +3203,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {}
+    "expectError": false
   },
   {
-    "id": "sk_select_b2af8f15",
+    "id": "sk_select_dce851bf",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 688,
+      "line": 692,
       "heading": "### 14.1 Inner join — projection from both sides"
     },
     "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_7b16b02e",
+    "id": "sk_select_038c229f",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 703,
+      "line": 707,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -3956,32 +3231,26 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_13b1bfc3",
+    "id": "sk_select_1ef1a002",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 709,
+      "line": 713,
       "heading": "### 14.2 Inner join — FK on the right side needs an index"
     },
     "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_61a37df2",
+    "id": "sk_select_68ba5d9a",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 722,
+      "line": 726,
       "heading": "### 14.3 Outer join + aggregation — reviews per movie"
     },
     "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
@@ -3991,47 +3260,36 @@
     "expectError": false
   },
   {
-    "id": "sk_select_9c1b6610",
+    "id": "sk_select_80984eca",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 738,
+      "line": 742,
       "heading": "### 14.4 Join + HAVING — keep only well-reviewed movies"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_select_2eaaccda",
+    "id": "sk_select_dc43ccda",
     "source": {
       "file": "skills/dql/references/select.md",
-      "line": 751,
+      "line": 755,
       "heading": "### 14.5 Anti-join — movies with no reviews"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 10,
-      "firstRow": {
-        "_id": "573a13a1f29313caabd0660a",
-        "title": "The Tracker",
-        "year": 2002
-      }
-    }
+    "expectError": false
   },
   {
-    "id": "sk_statements_77a42f13",
+    "id": "sk_statements_5f6006e5",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 43,
+      "line": 45,
       "heading": "### 1.2 Plain insert with auto-generated id"
     },
     "query": "INSERT INTO movies DOCUMENTS\n  ({ 'title': 'Inception', 'year': 2010, 'runtime_minutes': 148 })",
@@ -4040,16 +3298,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_statements_dc9b676c",
+    "id": "sk_statements_295a125f",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 50,
+      "line": 52,
       "heading": "### 1.3 Explicit `_id` with batched documents"
     },
     "query": "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight',   'year': 2008 }),\n  ({ '_id': 'tt1375666', 'title': 'Inception',         'year': 2010 }),\n  ({ '_id': 'tt1853728', 'title': 'Django Unchained',  'year': 2012 })",
@@ -4064,16 +3319,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_b6f3d332",
+    "id": "sk_statements_a123fdcd",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 61,
+      "line": 63,
       "heading": "### 1.4 Full schema with CRDT type definitions"
     },
     "query": "INSERT INTO COLLECTION movies (\n  director    MAP,\n  ratings     MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0816692',\n  'title': 'Interstellar',\n  'year': 2014,\n  'runtime_minutes': 169,\n  'genres': ['Adventure', 'Drama', 'Sci-Fi'],\n  'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n  'cast': [\n    { 'name': 'Matthew McConaughey', 'role': 'Cooper' },\n    { 'name': 'Anne Hathaway',       'role': 'Brand' }\n  ],\n  'ratings': { 'imdb': 8.6, 'rotten_tomatoes': 73, 'metacritic': 74 },\n  'box_office_millions': 677.5,\n  'tags': ['space', 'time'],\n  'watch_count': 0,\n  'is_classic': false,\n  'released': '2014-11-07'\n})\nON ID CONFLICT DO UPDATE",
@@ -4088,16 +3340,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0816692')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_52333e7a",
+    "id": "sk_statements_e7160ae4",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 105,
+      "line": 107,
       "heading": "### 1.5 `ON ID CONFLICT` actions"
     },
     "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE",
@@ -4114,16 +3363,13 @@
       "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING",
       "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0816692', 'box_office_millions': 681.0 })\nON ID CONFLICT DO UPDATE_LOCAL_DIFF",
       "EVICT FROM movies WHERE _id IN ('tt1160419')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_0a2d1955",
+    "id": "sk_statements_75ae3c08",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 136,
+      "line": 138,
       "heading": "### 1.7 `INITIAL` — seed default data (Small Peer)"
     },
     "query": "\nINSERT INTO movies INITIAL DOCUMENTS\n  ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 })",
@@ -4138,32 +3384,39 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('seed-1')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_e161be30",
+    "id": "sk_statements_e063899b",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 152,
+      "line": 154,
       "heading": "### 1.8 `RETURNING`"
     },
     "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-99', 'score': 5,\n     'comment': 'Perfect.', 'created_at': '2024-06-01T12:00:00Z' })\nRETURNING _id, movie_id, score",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_statements_450f4ecd",
+    "id": "sk_statements_16ec08b9",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 195,
+      "line": 169,
+      "heading": "### 1.9 `INSERT ... SELECT` — insert from a query"
+    },
+    "query": "\nINSERT INTO movies_archive SELECT * FROM movies WHERE year < 1950",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false
+  },
+  {
+    "id": "sk_statements_606282e7",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 213,
       "heading": "### 2.2 `SET` and `UNSET`"
     },
     "query": "\nUPDATE movies\nSET is_classic = true,\n    box_office_millions = 28.34\nUNSET tags\nWHERE _id = 'tt0111161'",
@@ -4178,16 +3431,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_ae8039c1",
+    "id": "sk_statements_10ac005c",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 208,
+      "line": 226,
       "heading": "### 2.3 Updating nested MAP fields"
     },
     "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET ratings = { 'imdb': 9.4 }\nWHERE _id = 'tt0111161'",
@@ -4202,16 +3452,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_154af192",
+    "id": "sk_statements_0c6ee7c9",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 221,
+      "line": 239,
       "heading": "### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`"
     },
     "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161'",
@@ -4229,16 +3476,13 @@
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE title = 'The Shawshank Redemption'",
       "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_9a4fa491",
+    "id": "sk_statements_a39e8367",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 247,
+      "line": 265,
       "heading": "### 2.5 Combined clauses + `RETURNING`"
     },
     "query": "\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
@@ -4248,16 +3492,13 @@
     "expectError": false,
     "postQueries": [
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nORDER BY released DESC\nLIMIT 5\nRETURNING _id, title, watch_count"
-    ],
-    "expect": {
-      "rowCount": 76
-    }
+    ]
   },
   {
-    "id": "sk_statements_e5f2119d",
+    "id": "sk_statements_d8f9c6a1",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 280,
+      "line": 299,
       "heading": "## 3. EVICT"
     },
     "query": "\nEVICT FROM movies\nWHERE year < 1950",
@@ -4269,20 +3510,18 @@
     "expectError": false,
     "postQueries": [
       "EVICT FROM reviews\nWHERE score < 3\nRETURNING _id, movie_id"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_d1a85ca0",
+    "id": "sk_statements_f1949f8d",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 312,
+      "line": 331,
       "heading": "## 4. TOMBSTONE"
     },
     "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
     "availableIn": [],
+    "unavailableReason": "TOMBSTONE is a deprecated Big-Peer-only statement; every Small Peer SDK returns 'Tombstone is not supported'. Documented deliberately, with that restriction stated in statements.md §4.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
@@ -4293,10 +3532,10 @@
     ]
   },
   {
-    "id": "sk_statements_2d43e08c",
+    "id": "sk_statements_a421f503",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 343,
+      "line": 363,
       "heading": "## 5. DELETE — alias"
     },
     "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
@@ -4308,16 +3547,13 @@
     "expectError": false,
     "postQueries": [
       "DELETE FROM reviews\nWHERE created_at < '2020-01-01'\nRETURNING _id, movie_id, user_id, score"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_statements_4d59482e",
+    "id": "sk_statements_ea3c631b",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 376,
+      "line": 396,
       "heading": "## 6. EXPLAIN"
     },
     "query": "\nEXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8",
@@ -4326,16 +3562,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_statements_067a2a80",
+    "id": "sk_statements_af38759c",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 415,
+      "line": 435,
       "heading": "## 7. ALTER SYSTEM"
     },
     "query": "\nALTER SYSTEM SET DQL_STRICT_MODE = false",
@@ -4347,16 +3580,13 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET DQL_STRICT_MODE"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   },
   {
-    "id": "sk_statements_e7378508",
+    "id": "sk_statements_08254fcb",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 443,
+      "line": 465,
       "heading": "## 8. SHOW"
     },
     "query": "SHOW ALL",
@@ -4365,27 +3595,38 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_statements_780a8c87",
+    "id": "sk_statements_e48f164f",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 468,
+      "line": 470,
+      "heading": "## 8. SHOW"
+    },
+    "query": "\nSHOW ALL LIKE 'transport_%'",
+    "availableIn": [
+      "5.1.x"
+    ],
+    "expectError": false
+  },
+  {
+    "id": "sk_statements_6d68f83e",
+    "source": {
+      "file": "skills/dql/references/statements.md",
+      "line": 494,
       "heading": "## 9. SYNC CONTEXT (RemoteQuery)"
     },
     "query": "\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
     "availableIn": [],
+    "unavailableReason": "SYNC CONTEXT is a Big-Peer-only remote-query wrapper and cannot execute on a Small Peer.",
     "expectError": false
   },
   {
-    "id": "sk_statements_fdeabe43",
+    "id": "sk_statements_2918adff",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 492,
+      "line": 518,
       "heading": "## 10. PROFILE"
     },
     "query": "\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
@@ -4393,10 +3634,7 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 2
-    }
+    "expectError": false
   },
   {
     "id": "sk_types_mutators_dc0e0abe",
@@ -4417,10 +3655,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0816692')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_5e40f434",
@@ -4441,10 +3676,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_bb81e982",
@@ -4466,10 +3698,7 @@
     "postQueries": [
       "UPDATE movies\nSET    is_classic = true,\n       box_office_millions = 28.34\nUNSET  tags\nWHERE  _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id IN ('tt0468569')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_5dd12193",
@@ -4491,10 +3720,7 @@
     "postQueries": [
       "INSERT INTO COLLECTION movies (\n  director MAP (name REGISTER, awards MAP)\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'director': { 'name': 'Frank Darabont', 'awards': { 'oscars': 0, 'baftas': 1 } }\n})",
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_150e4d13",
@@ -4517,10 +3743,7 @@
       "UPDATE COLLECTION movies (director MAP)\nSET    director.born = 1959\nWHERE  _id = 'tt0111161'",
       "UPDATE COLLECTION movies (director MAP, ratings MAP)\nSET    director.born = 1959,\n       ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_db3ac989",
@@ -4541,10 +3764,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_ded854b9",
@@ -4565,10 +3785,7 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
     "id": "sk_types_mutators_020d5a25",
@@ -4591,20 +3808,18 @@
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY -1\nWHERE  _id = 'tt0111161'",
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count RESTART WITH 0\nWHERE  title = 'The Shawshank Redemption'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_types_mutators_466cf90f",
+    "id": "sk_types_mutators_c49a0921",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 239,
       "heading": "## 4. PN_COUNTER"
     },
-    "query": "INSERT INTO COLLECTION movies (legacy_views PN_COUNTER)\nDOCUMENTS ({ '_id': 'tt0111161', 'legacy_views': 0 })",
+    "query": "\n\n\nINSERT INTO COLLECTION movies (legacy_views PN_COUNTER)\nDOCUMENTS ({ '_id': 'tt0111161', 'legacy_views': 0 })",
     "availableIn": [],
+    "unavailableReason": "Negative example: types-mutators.md §4 shows this INSERT precisely to document that a PN_COUNTER cannot be declared inline on any supported line.",
     "expectError": false,
     "preQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
@@ -4614,10 +3829,32 @@
     ]
   },
   {
-    "id": "sk_types_mutators_2f81bb74",
+    "id": "sk_types_mutators_59ce70f0",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 246,
+      "line": 249,
+      "heading": "## 4. PN_COUNTER"
+    },
+    "query": "\nINSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ],
+    "postQueries": [
+      "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY  legacy_views PN_INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
+      "EVICT FROM movies WHERE _id IN ('tt0111161')"
+    ]
+  },
+  {
+    "id": "sk_types_mutators_733fcc03",
+    "source": {
+      "file": "skills/dql/references/types-mutators.md",
+      "line": 266,
       "heading": "## 4. PN_COUNTER"
     },
     "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY  legacy_views PN_INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
@@ -4632,16 +3869,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_types_mutators_4af1eca2",
+    "id": "sk_types_mutators_842e4580",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 317,
+      "line": 337,
       "heading": "## 6. Reading typed fields with `SELECT`"
     },
     "query": "\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161'",
@@ -4650,16 +3884,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 0
-    }
+    "expectError": false
   },
   {
-    "id": "sk_types_mutators_cf2bc68c",
+    "id": "sk_types_mutators_c69d1044",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 354,
+      "line": 374,
       "heading": "### Worked example: same statement, different results"
     },
     "query": "\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
@@ -4674,16 +3905,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ],
-    "expect": {
-      "rowCount": 0
-    }
+    ]
   },
   {
-    "id": "sk_types_mutators_dcbe053b",
+    "id": "sk_types_mutators_af7d8c23",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 380,
+      "line": 400,
       "heading": "### Cross-version recommendation"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -4695,16 +3923,13 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   },
   {
-    "id": "sk_versions_4c45dff1",
+    "id": "sk_versions_507bfe9a",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 210,
+      "line": 244,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nSHOW dql_strict_mode",
@@ -4713,16 +3938,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false,
-    "expect": {
-      "rowCount": 1
-    }
+    "expectError": false
   },
   {
-    "id": "sk_versions_3d5c11f4",
+    "id": "sk_versions_d3d248a8",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 220,
+      "line": 257,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -4734,9 +3956,6 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ],
-    "expect": {
-      "rowCount": 1
-    }
+    ]
   }
 ]

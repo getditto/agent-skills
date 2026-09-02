@@ -25,8 +25,8 @@ meantime).
 ## Supported versions
 
 Ditto SDK **4.14.x (LTS)**, **5.0.x**, **5.1.x**. Version differences — the
-headline one being default rejection of `LIMIT`/`ORDER BY` in subscription
-queries (5.0+, via the `dql_restrict_subscriptions` system parameter) — are
+headline one being rejection of `LIMIT`/`ORDER BY` in subscription queries on
+5.0+ — are
 tagged inline wherever they appear.
 
 Content verified against the Ditto source tree (main and the 4.14/5.0/5.1
