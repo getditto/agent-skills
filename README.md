@@ -11,9 +11,10 @@ customer use.**
 
 ## Available skills
 
-| Skill | Description |
-|-------|-------------|
-| [dql](skills/dql) (`write-dql`) | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
+| Skill | Claude Code plugin | Description |
+|-------|--------------------|-------------|
+| [dql](skills/dql) (`write-dql`) | `ditto-dql` | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
+| [mesh-networking](skills/mesh-networking) | `ditto-mesh` | Peer-to-peer mesh and transports — Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket, explicit TCP. Peer discovery and multihop routing, the transport configuration model and its runtime-update semantics, and how transport choice shapes your data model. |
 
 ## Repository layout
 
@@ -33,15 +34,20 @@ or points at it.
 ### Claude Code
 
 Install via the bundled plugin marketplace (backed by thin wrappers in
-`plugins/`):
+`plugins/`). **Each plugin ships only its own skill** — install just the ones
+you want:
 
 ```bash
 /plugin marketplace add getditto/claude-code-plugins
-/plugin install ditto-dql
+
+/plugin install ditto-dql     # DQL skill + dql-expert agent
+/plugin install ditto-mesh    # mesh-networking skill
 ```
 
-`.claude-plugin/marketplace.json` → `plugins/ditto-dql/.claude-plugin/plugin.json`
-→ symlinks into `skills/` and `agents/`.
+`.claude-plugin/marketplace.json` → `plugins/<plugin>/.claude-plugin/plugin.json`
+→ per-item symlinks into `skills/` and `agents/`. A wrapper never symlinks the
+whole `skills/` tree, so adding a skill to the repo does not change what an
+already-installed plugin provides.
 
 ### opencode
 
@@ -52,7 +58,9 @@ For global use, copy or symlink the skill into `~/.agents/skills/` or set
 `skills.paths` in `~/.config/opencode/opencode.jsonc`:
 
 ```bash
+# link only the skills you want
 ln -s "$(pwd)/skills/dql" ~/.agents/skills/dql
+ln -s "$(pwd)/skills/mesh-networking" ~/.agents/skills/mesh-networking
 ```
 
 ### Codex / Gemini / other tools
@@ -63,8 +71,9 @@ skills directory at this repo's `skills/` folder, or copy/symlink the
 individual skill directory into the tool's expected location, e.g.:
 
 ```bash
-# Codex
+# Codex — link only the skills you want
 ln -s "$(pwd)/skills/dql" ~/.codex/skills/dql
+ln -s "$(pwd)/skills/mesh-networking" ~/.codex/skills/mesh-networking
 ```
 
 Consult your tool's documentation for its skills directory location.

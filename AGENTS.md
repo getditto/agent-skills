@@ -18,12 +18,13 @@ skills or content that are not appropriate for customer use.**
 
 ```
 skills/                        # Canonical skills — the portable unit
-└── dql/
-    ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
-    ├── references/            # Detailed reference docs loaded on demand
-    ├── examples/              # Worked examples
-    ├── best-practices.md
-    └── README.md              # Human-facing docs for the skill
+├── dql/
+│   ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
+│   ├── references/            # Detailed reference docs loaded on demand
+│   ├── examples/              # Worked examples
+│   ├── best-practices.md
+│   └── README.md              # Human-facing docs for the skill
+└── mesh-networking/
 
 agents/                        # Portable agent definitions (markdown)
 └── dql-expert.md
@@ -34,10 +35,13 @@ tests/                         # Per-skill test harnesses
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
-└── ditto-dql/
+├── ditto-dql/                 # One plugin per skill it ships
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/dql -> ../../../skills/dql              (symlink)
+│   └── agents/dql-expert.md -> ../../../agents/...    (symlink)
+└── ditto-mesh/
     ├── .claude-plugin/plugin.json
-    ├── skills -> ../../skills   (symlink)
-    └── agents -> ../../agents   (symlink)
+    └── skills/mesh-networking -> ../../../skills/...  (symlink)
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -62,9 +66,16 @@ docs/                          # Contributor-facing docs
 
 `.claude-plugin/marketplace.json` stays at the repo root (required by
 `/plugin marketplace add`). Each entry's `source` points at a thin wrapper
-under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` and
-symlinks into the canonical `skills/` and `agents/` dirs. Skill content is
-never duplicated in the wrapper.
+under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
+`skills/` (and optional `agents/`) directory holding **one symlink per item
+that plugin ships**. Skill content is never duplicated in the wrapper.
+
+**Plugins are scoped — never symlink the whole `skills/` or `agents/` tree
+into a wrapper.** Users install only the skills they ask for: `ditto-dql`
+ships the DQL skill and its agent; `ditto-mesh` ships the mesh-networking
+skill. A new skill gets its own plugin unless it genuinely belongs to an
+existing one, because adding it to an existing wrapper changes what that
+plugin installs for everyone who already has it. CI enforces the scoping.
 
 ## Tests
 
@@ -73,7 +84,8 @@ examples. For DQL: `tests/dql` runs every ```sql block in `skills/dql/`
 against real Ditto SDK versions (see `tests/dql/README.md`). CI workflows:
 
 - `.github/workflows/ci.yml` — validates JSON manifests and SKILL.md
-  frontmatter, checks marketplace `source` targets exist.
+  frontmatter, checks marketplace `source` targets exist, and enforces that
+  each plugin wrapper only symlinks the skills/agents it declares.
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
   harness; triggers on changes to `skills/dql/**` or `tests/dql/**`.
 

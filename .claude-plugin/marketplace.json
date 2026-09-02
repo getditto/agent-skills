@@ -18,6 +18,17 @@
       },
       "source": "./plugins/ditto-dql",
       "category": "development"
+    },
+    {
+      "name": "ditto-mesh",
+      "description": "Ditto mesh networking and transport configuration — transports, peer discovery, runtime config updates, and transport-aware data modeling",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-mesh",
+      "category": "development"
     }
   ]
 }

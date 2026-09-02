@@ -326,10 +326,26 @@ often only partially read files reached through a chain of links.
 ### Wire up packaging
 
 - Add a row to the skills table in [README.md](README.md).
-- Add or extend a thin wrapper under `plugins/<plugin>/` (a
-  `.claude-plugin/plugin.json` plus symlinks into `skills/` and `agents/`), and
-  add a `.claude-plugin/marketplace.json` entry whose `source` points at it.
-  **Never duplicate skill content inside `plugins/`.**
+- Add a thin wrapper under `plugins/<plugin>/`: a `.claude-plugin/plugin.json`
+  plus a **real** `skills/` directory (and `agents/`, if the plugin ships one)
+  containing **one symlink per item the plugin ships**:
+
+  ```bash
+  mkdir -p plugins/ditto-<name>/skills
+  ln -s ../../../skills/<skill-name> plugins/ditto-<name>/skills/<skill-name>
+  ```
+
+  Then add a `.claude-plugin/marketplace.json` entry whose `source` points at
+  the wrapper. **Never duplicate skill content inside `plugins/`.**
+
+  **Do not symlink the whole `skills/` or `agents/` tree into a wrapper.** That
+  makes every plugin ship every skill in the repo, so a user who installs
+  `ditto-dql` silently gets unrelated skills too. Each plugin ships only what it
+  declares — CI enforces this.
+
+- **A new skill needs its own plugin unless it genuinely belongs to an existing
+  one.** Adding a symlink to an existing wrapper changes what that plugin
+  installs for everyone who already has it.
 
 ### Add tests
 

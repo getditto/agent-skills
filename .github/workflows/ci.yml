@@ -74,3 +74,67 @@ jobs:
 
           print("All plugin references valid")
           EOF
+
+      - name: Check plugin wrappers are scoped
+        run: |
+          echo "Checking each plugin only ships its own skills/agents..."
+          python3 << 'EOF'
+          import os
+          import sys
+
+          errors = []
+
+          for plugin in sorted(os.listdir('plugins')):
+              root = os.path.join('plugins', plugin)
+              if not os.path.isdir(root):
+                  continue
+
+              for kind, canonical, suffix in (
+                  ('skills', 'skills', 'SKILL.md'),
+                  ('agents', 'agents', None),
+              ):
+                  wrapper = os.path.join(root, kind)
+                  # lexists, not exists: a broken symlink here must be reported,
+                  # not silently skipped.
+                  if not os.path.lexists(wrapper):
+                      continue
+
+                  # A symlinked wrapper dir points at the whole canonical tree,
+                  # which silently ships every skill in the repo. Each entry must
+                  # be linked individually instead.
+                  if os.path.islink(wrapper):
+                      errors.append(
+                          f"{wrapper} is a symlink to the whole {canonical}/ tree; "
+                          f"link each {kind[:-1]} individually so the plugin only "
+                          f"ships what it declares"
+                      )
+                      continue
+
+                  entries = [e for e in sorted(os.listdir(wrapper))
+                             if not e.startswith('.')]
+                  if not entries:
+                      errors.append(f"{wrapper} is empty")
+
+                  for entry in entries:
+                      path = os.path.join(wrapper, entry)
+                      target = os.path.realpath(path)
+                      expected_root = os.path.realpath(canonical)
+
+                      if os.path.commonpath([target, expected_root]) != expected_root:
+                          errors.append(
+                              f"{path} resolves outside {canonical}/: {target}"
+                          )
+                          continue
+                      if not os.path.exists(target):
+                          errors.append(f"{path} is a broken symlink")
+                          continue
+                      if suffix and not os.path.exists(os.path.join(target, suffix)):
+                          errors.append(f"{path} has no {suffix}")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}")
+              sys.exit(1)
+
+          print("All plugin wrappers are correctly scoped")
+          EOF
