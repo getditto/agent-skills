@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ditto product support
+    url: https://support.ditto.live
+    about: Questions about Ditto itself — SDK behaviour, your app, or your deployment. This repo only covers the agent skills that document Ditto.
+  - name: Ditto documentation
+    url: https://docs.ditto.live
+    about: The official Ditto docs. If the docs and a skill disagree, please open an "Incorrect or outdated skill content" issue here.
+  - name: How to contribute
+    url: https://github.com/getditto/agent-skills/blob/main/CONTRIBUTING.md
+    about: Evidence standards, SDK-version rules, and what a good PR looks like before you start work.

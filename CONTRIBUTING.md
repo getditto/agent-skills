@@ -24,6 +24,7 @@ So the bar for a claim in this repo is **verified**, not **plausible**.
 
 ## Contents
 
+- [Reporting a problem](#reporting-a-problem)
 - [The four requirements](#the-four-requirements)
 - [Quick start](#quick-start)
 - [1. Write a clear PR](#1-write-a-clear-pr)
@@ -36,6 +37,24 @@ So the bar for a claim in this repo is **verified**, not **plausible**.
 - [Running the tests](#running-the-tests)
 - [Style](#style)
 - [Review](#review)
+
+---
+
+## Reporting a problem
+
+You don't need to open a PR to be useful. Three issue templates cover the
+common cases:
+
+| Template | Use it when |
+|---|---|
+| [Incorrect or outdated skill content](.github/ISSUE_TEMPLATE/1-incorrect-content.yml) | A skill states something wrong, or wrong for a specific SDK version |
+| [Propose a new skill](.github/ISSUE_TEMPLATE/2-new-skill.yml) | Agents get something about Ditto wrong and no skill covers it |
+| [Tooling or packaging bug](.github/ISSUE_TEMPLATE/3-tooling-bug.yml) | The harness, CI, or packaging is broken |
+
+The content template asks the same four questions as the PR template, scaled
+down: where it is, what's actually true, which versions you checked, and how
+you know. **An unverified report is still worth filing** — just pick
+"Inference / not verified" so a reviewer knows what they're looking at.
 
 ---
 
@@ -105,7 +124,9 @@ Other PR hygiene:
 - **One logical change per PR.** A version-tag correction and a new cookbook
   section are two PRs. Large mixed PRs get reviewed slowly and badly.
 - **Open an issue first** for structural changes — new skills, directory
-  moves, changes to `AGENTS.md` conventions.
+  moves, changes to `AGENTS.md` conventions. There are
+  [issue templates](.github/ISSUE_TEMPLATE) for reporting wrong content,
+  proposing a skill, and tooling bugs.
 - **Minimal diffs.** Don't reformat, rewrap, or re-order files you didn't
   otherwise need to touch; it buries the real change.
 
@@ -289,7 +310,8 @@ with no skill loaded and keep the transcript. "The model already handles this
 well" is a good reason not to add a skill; every skill's name and description
 are injected into every session, so an unnecessary one costs everyone context.
 
-Open an issue with that evidence before writing the skill.
+Open a [**Propose a new skill**](.github/ISSUE_TEMPLATE/2-new-skill.yml) issue
+with that evidence before writing the skill.
 
 ### Scaffold
 

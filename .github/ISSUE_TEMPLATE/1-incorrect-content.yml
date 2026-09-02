@@ -1,0 +1,113 @@
+name: Incorrect or outdated skill content
+description: A skill told an agent something that is wrong, out of date, or wrong for a specific SDK version.
+title: "[Content] "
+labels: ["content", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the **information in a skill is wrong** — a version claim that
+        doesn't hold, an example that doesn't run, or guidance that produces a bad result.
+
+        This is the highest-value report for this repo. Skills are read by agents and
+        answered from directly, so a wrong line here becomes a wrong answer in someone's
+        editor with no visible signal about where it came from.
+
+        For a broken harness, CI, or packaging problem, use **Tooling or packaging bug** instead.
+
+  - type: input
+    id: location
+    attributes:
+      label: Where is it?
+      description: File path, and section or line number if you have it.
+      placeholder: skills/dql/references/versions.md §4.5, line 126
+    validations:
+      required: true
+
+  - type: textarea
+    id: claim
+    attributes:
+      label: What does it currently say?
+      description: Quote or paste it. Don't paraphrase — the exact wording is what an agent reads.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: reality
+    attributes:
+      label: What is actually true?
+      description: |
+        Be specific about which SDK versions your correction applies to. If a statement
+        errors, include the real error text — that string is how an agent recognises the
+        problem in a user's terminal.
+      placeholder: |
+        XOR is rejected on all three supported lines, not just 5.0.x:
+          4.14.4  ->  XOR is not supported
+          5.0.0   ->  No infix parser for token Word(XOR)
+          5.1.0   ->  No infix parser for token Word(XOR)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: versions
+    attributes:
+      label: Which SDK versions did you check?
+      description: Tick only the ones you actually ran against. Leave the rest blank.
+      options:
+        - label: "4.14.x (LTS)"
+        - label: "5.0.x"
+        - label: "5.1.x"
+        - label: "None — I have not run this against an SDK"
+
+  - type: input
+    id: exact-versions
+    attributes:
+      label: Exact patch versions tested
+      description: The builds you actually ran. Say "not tested" if you didn't run anything.
+      placeholder: "@dittolive/ditto 4.14.4, 5.0.0, 5.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: evidence-tier
+    attributes:
+      label: How do you know?
+      description: |
+        The strongest source you actually used. See the evidence hierarchy in CONTRIBUTING.md.
+        "Inference" is a completely acceptable answer — an unverified report is still useful,
+        as long as it's labelled.
+      options:
+        - I ran it against a real SDK
+        - I read the Ditto source
+        - Official Ditto documentation
+        - Inference / reasoning — not verified
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: |
+        Paste what backs up the correction — the statement you ran and the real output,
+        a source path with a branch ref, or a docs URL. Actual output beats a summary of it.
+      placeholder: |
+        DITTO_SDK_VERSION=5.1.0 node probe.mjs -e "SELECT * FROM movies WHERE true XOR false"
+        -> Invalid query: `DQL parser error: No infix parser for token Word(XOR)`
+
+        Source: crates/ditto-dql/src/engine/mod.rs:463 on origin/releases/stable/sdk-5.1
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: agent-context
+    attributes:
+      label: How did you hit this?
+      description: |
+        Optional but useful. If an agent gave you a wrong answer from this skill, include
+        the model and the prompt — it helps us see whether the wording is misleading as
+        well as factually wrong.
+    validations:
+      required: false
