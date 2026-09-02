@@ -7,8 +7,10 @@ of changing it while sync is running.
 idiomatically (`peerToPeer` / `peer_to_peer`, `bluetoothLE` / `bluetooth_le`,
 `isEnabled` / `enabled`), and the *update* entry point differs too — a mutable
 `transportConfig` property on some SDKs, an `updateTransportConfig { … }` closure on
-others, a `setTransportConfig(config)` call on others. **The structure is identical
-everywhere.** For the literal syntax, use the SDK skill for your language.
+others, a `setTransportConfig(config)` call on others. **The structure is the same
+everywhere, except that SDKs omit sections their platform cannot use** — Swift has no
+`wifiAware`, Kotlin has no `awdl`. For the literal syntax, use the SDK skill for your
+language.
 
 ---
 
@@ -27,6 +29,7 @@ transportConfig
 │   └── retryInterval  Duration                # default 5s
 ├── listen
 │   ├── tcp   { isEnabled, interfaceIP, port }
+│   ├── udp   { isEnabled }
 │   └── http  { isEnabled, interfaceIP, port, websocketSync, TLS/identity options }
 └── global
     ├── syncGroup    UInt32                    # default 0
@@ -57,17 +60,27 @@ transportConfig
 > the one field you care about, apply it back. Constructing a fresh config to "just turn on
 > Bluetooth" silently disables LAN, AWDL, and Wi-Fi Aware.
 
-**Platform validation is strict only in the browser.** In a **Wasm/browser** build,
-enabling any P2P transport, `connect.tcpServers`, or a TCP/HTTP listener is a validation
-error naming the offending transports. On **native** SDKs the config is accepted
-silently — setting `awdl.isEnabled = true` on Android is not rejected; the transport simply
-never starts, surfacing only as a warning in the SDK log. **Do not rely on config
-validation to catch a platform mismatch on native.**
+**Whether a platform mismatch is rejected depends on the SDK, not the platform.** Core
+*can* reject AWDL on non-Apple and Wi-Fi Aware on non-Android, but each SDK chooses whether
+to run that validation:
+
+| SDK | Platform mismatch on native |
+|---|---|
+| **JavaScript / React Native, Go** | **Throws**, naming the offending transports |
+| Swift, Kotlin/Java, .NET, C++, Rust, Python | Accepted silently — the transport never starts and no log line is emitted |
+
+Wasm/browser builds always reject any P2P transport, `connect.tcpServers`, or a TCP/HTTP
+listener. **Do not rely on config validation to catch a platform mismatch** unless you are
+on JS or Go.
 
 **Bluetooth LE tuning.** Some SDKs expose advertisement power and advertisement interval
-hints on the BLE config. The `maxOutgoing` field on the Java/Kotlin BLE config is
-**deprecated as of SDK 4.9.0** — use the `mesh_chooser_max_active_ble_clients` system
-parameter instead (see [`mesh-formation.md`](mesh-formation.md)).
+hints on the BLE config. Note that changing them while BLE is already enabled is a **silent
+no-op** — the runtime diff looks only at `isEnabled`; stop and re-enable the transport to
+apply them.
+
+The `maxOutgoing` field on the Java/Kotlin BLE config has been **removed** from current SDKs
+and is inert in core. Use the `mesh_chooser_max_active_ble_clients` system parameter instead
+(see [`mesh-formation.md`](mesh-formation.md)).
 
 ---
 
@@ -77,14 +90,16 @@ parameter instead (see [`mesh-formation.md`](mesh-formation.md)).
 |---|---|---|
 | `websocketUrls` | empty | `wss://…` (or `ws://…` for local/on-prem) endpoints for Ditto Server, or for a peer serving sync over its HTTP listener. |
 | `tcpServers` | empty | `host:port` strings for raw TCP sync with a known peer. |
-| `retryInterval` | 5 seconds | **Mesh-wide**, not WebSocket-specific: the minimum interval between connection attempts to the same peer on a given transport. Changing it re-paces BLE, LAN and TCP retries too. |
+| `retryInterval` | 5 seconds | **Mesh-wide**, not WebSocket-specific: the minimum interval between connection attempts to the same peer on a given transport. Changing it re-paces BLE, LAN and TCP retries too. WebSocket skips the cooldown on its *first* attempt. |
 
 **Cloud sync.** SDKs that offer an `enableDittoCloudSync` / cloud-sync flag manage the
 Ditto Server URL for you. Set it to `false` when you supply your own `websocketUrls` —
 otherwise you can end up with both the managed URL and yours.
 
-**Removing all WebSocket URLs disables Ditto Server sync instantly.** It does not touch
-peer-to-peer transports.
+**Removing all WebSocket URLs disables Ditto Server sync instantly** — *unless* cloud sync
+is enabled via `enableDittoCloudSync` / `cloud.enabled`, in which case the managed URL is
+re-added behind your back and sync continues. Turn cloud sync off first. Clearing the URLs
+never touches peer-to-peer transports.
 
 If your app is configured for a Ditto Server but `websocketUrls` ends up empty, the SDK
 logs a warning that the transport configuration is incomplete. Treat that warning as an
@@ -102,7 +117,7 @@ error in your own config validation — it is the usual symptom of a fresh-confi
 | `http.isEnabled` | `false` | Specialized deployments only. |
 | `http.interfaceIP` | `[::]` | |
 | `http.port` | `80` | |
-| `http.websocketSync` | `false` | Serve sync over the HTTP listener. |
+| `http.websocketSync` | `false` in core (**`true`** in the Rust and .NET SDK builders) | Serve sync over the HTTP listener. Check your SDK rather than assuming the core default. |
 | `http` TLS / identity-provider options | unset | Key/cert paths, identity-provider signing and verifying keys, CA key — for offline identity provisioning. |
 
 The listeners are for less common data-sync scenarios. An incorrectly configured listener
@@ -213,6 +228,10 @@ fields on the config object. They are the same on every SDK.
 | `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. May change on `startSync()`; in practice regenerated per Ditto instance (app restart) — re-read rather than cache. |
 | `ALTER SYSTEM SET mesh_chooser_max_active_ble_clients = <n>` | Cap outgoing BLE client connections. |
 | `ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` | Suppress BLE connections to peers already well connected by a faster transport. |
-| `ALTER SYSTEM SET document_size_soft_limit_bytes = <n>` / `document_size_hard_limit_bytes = <n>` | Document size thresholds. **Must be identical on every peer in the mesh, cloud peers included.** |
+| `ALTER SYSTEM SET document_size_soft_limit_bytes = <n>` / `document_size_hard_limit_bytes = <n>` | Document size thresholds. **Keep identical across your small peers.** Ditto Server has no such parameter and applies its own limit. |
 
 For the syntax and semantics of `ALTER SYSTEM` / `SHOW`, use the `write-dql` skill.
+
+> **Before relying on these in production**, confirm with Ditto which system parameters are
+> supported for your SDK line — the set exposed via `ALTER SYSTEM` is not a stable public API
+> in its entirety, and Ditto's documentation directs users to check with the team.

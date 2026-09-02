@@ -67,10 +67,10 @@ Key consequences:
 
 1. **A mixed iOS/Android fleet with no Wi-Fi has only Bluetooth LE.** AWDL and Wi-Fi Aware
    never talk to each other. Design for BLE bandwidth in that case.
-2. **Browsers and Wasm builds are WebSocket-only.** Enabling any P2P transport in a Wasm
-   build is a validation error. **On native SDKs the opposite is true** — an unsupported
-   transport (AWDL on Android, Wi-Fi Aware on iOS) is accepted silently and simply never
-   starts. Do not rely on config validation to catch a platform mismatch.
+2. **Browsers and Wasm builds are WebSocket-only**, and always reject P2P transports. On
+   native, whether a platform mismatch (AWDL on Android, Wi-Fi Aware on iOS) throws or is
+   silently ignored **depends on the SDK** — JS and Go throw, most others accept it and the
+   transport simply never starts. Don't rely on config validation to catch this.
 3. **Having no Ditto Server is fine.** A pure small-peer mesh converges perfectly well;
    it just has no cloud store-and-forward for peers that are never co-located.
 
@@ -140,18 +140,19 @@ The mechanism: Bluetooth LE delivers roughly **20 KB/s** of effective throughput
 tens of megabits per second for LAN or peer-to-peer Wi-Fi — three orders of magnitude. And
 two costs scale with **document size**, not with edit size:
 
-- **Merge cost.** Reconciling a document *costs* the whole document: Ditto clones, merges,
-  re-serializes and re-indexes all of it on every update, even a one-field change. A
-  one-byte edit to a 5 MiB document pays 5 MiB of work on every peer that receives it.
+- **Merge cost.** Reconciling a document *costs* the whole document: Ditto deep-copies the
+  CRDT, merges into the copy, then re-serializes and re-writes all of it — even for a
+  one-field change. A one-byte edit to a 5 MiB document pays 5 MiB of work on every peer
+  that receives it.
 - **Arrival is all-or-nothing.** A document is invisible to queries on the receiving peer
-  until every part of it has arrived. At 20 KB/s a 250 KiB document takes 10+ seconds
+  until every part of it has arrived. At 20 KB/s a 256 KiB document takes 10+ seconds
   before it appears at all; a 5 MiB document takes minutes.
 
 So the rule the user's intuition suggests is exactly right, and it is a *transport-driven*
 rule:
 
 > **If Bluetooth LE is a transport you actually depend on, prefer many small documents over
-> few large ones.** Ten 25 KB documents each become visible as they land; one 250 KB
+> few large ones.** Ten 25 KB documents each become visible as they land; one 256 KiB
 > document appears only after the whole transfer completes. On LAN the difference is
 > imperceptible; on BLE it is the difference between a responsive app and a frozen one.
 
@@ -160,12 +161,13 @@ The corollary matters too: on a LAN-only or cloud-only deployment, Ditto's norma
 semantics — stands unchanged. Splitting documents to chase BLE performance you don't need
 buys you cross-document consistency problems for nothing.
 
-Size thresholds to design against (defaults; identical on every peer in the mesh):
+Size thresholds to design against (defaults; keep identical across your small peers):
 
 - **256 KiB** — soft limit. Write succeeds, logs a warning. Treat as your real ceiling on BLE.
-- **5 MiB** — hard limit. On current SDKs the **local write is rejected with an error**;
-  older builds logged an error and accepted it. The limit gates *local writes only* — an
-  oversized document that already exists elsewhere in the mesh still replicates in.
+- **5 MiB** — hard limit. The **local write is rejected with an error**. The limit gates
+  *local writes only* — an oversized document that already exists elsewhere in the mesh
+  still replicates in. (Ditto's public docs currently lag the code here, still describing
+  the write as succeeding.)
 
 Binary payloads do not belong in documents at all. The `ATTACHMENT` type stores blobs
 out-of-band, excludes them from document size, and — critically for BLE — **peers fetch
@@ -179,12 +181,11 @@ tools: [`best-practices.md`](best-practices.md).
 
 Ditto deliberately does **not** connect every peer to every other peer — that would not
 scale and would saturate the radios. Each transport has its own connection budget, sized by
-how much power that transport costs: **LAN is the most generous** (the radio is already
-associated with the access point, so extra connections are near-free), **peer-to-peer Wi-Fi
-is tighter** (it drives the radio directly, with no infrastructure to offload to), and
-**BLE is the tightest** (the OS Bluetooth controller has a small total connection budget
-that every BLE app on the device shares). The mesh chooser then picks *which* peers to
-connect to, favoring peers that are far away in the graph, poorly connected, or not
+that radio's constraints: **LAN is the most generous** (ordinary TCP over infrastructure the
+device is already on), **peer-to-peer Wi-Fi is tighter** (AWDL and Wi-Fi Aware share one
+budget because they contend for the same radio), and **BLE is tightest** (few controller
+slots, shared with every other BLE app on the device). The mesh chooser then picks *which*
+peers to connect to, favoring peers that are far away in the graph, poorly connected, or not
 otherwise reachable. It also performs periodic **churn**:
 deliberately dropping a long-established connection so a peer that has been waiting can
 take the slot. Churn is what prevents the mesh from fragmenting into isolated islands.
@@ -197,8 +198,11 @@ Two operational consequences:
 - **Not being directly connected is not a sync failure.** Multihop routing carries updates
   through intermediate peers.
 
-Caps, churn intervals, and the two publicly supported tuning parameters are in
-[`references/mesh-formation.md`](references/mesh-formation.md).
+How the budgets compare across transports, how churn works, and the two publicly supported
+tuning parameters are in [`references/mesh-formation.md`](references/mesh-formation.md).
+The exact counts are release-dependent internal defaults and are deliberately not documented
+— design for the ordering (LAN > P2P Wi-Fi > BLE), and use
+`mesh_chooser_max_active_ble_clients` if you need to lower the BLE budget.
 
 ## Anti-patterns
 
@@ -227,6 +231,7 @@ Caps, churn intervals, and the two publicly supported tuning parameters are in
 | **Debugging "no sync" / "peers won't connect"** — start here | [`references/platform-requirements.md`](references/platform-requirements.md#8-diagnosis-order), then [`references/mesh-formation.md`](references/mesh-formation.md#1-the-six-stages-of-a-sync) |
 | Localizing *which* stage is failing (discovery vs connection vs replication) | [`references/mesh-formation.md`](references/mesh-formation.md#1-the-six-stages-of-a-sync) |
 | Choosing transports; per-transport range, bandwidth, platform support, failure modes | [`references/transports.md`](references/transports.md) |
+| Peers on different subnets, or a network where mDNS/multicast is blocked | [`references/transports.md` §6](references/transports.md#6-explicit-tcp-connect-and-listen) |
 | Looking up a config field, its default, or what a runtime change does | [`references/transport-config.md`](references/transport-config.md) |
 | Understanding discovery, presence graph, multihop, connection caps, churn, sync groups | [`references/mesh-formation.md`](references/mesh-formation.md) |
 | Permissions, entitlements, manifest entries, OS-level prerequisites per platform | [`references/platform-requirements.md`](references/platform-requirements.md) |

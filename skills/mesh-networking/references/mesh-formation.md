@@ -90,19 +90,21 @@ Two rules for peer metadata:
 ## 4. Why peers don't all connect to each other
 
 A fully connected mesh would not scale — radios saturate, discovery storms, batteries
-drain. Ditto instead runs an aggressive connection burst at startup (existing peers welcome
-newcomers), then settles into a bounded, deliberately churning topology.
+drain. Ditto instead fills each transport's connection budget as candidates appear, then
+holds a bounded, deliberately churning topology. (BLE outbound connects are deliberately
+rate-limited rather than bursted, so the controller isn't hit with many simultaneous
+connection attempts.)
 
 ### Connection caps
 
-Each transport caps how many direct neighbours a peer maintains, and **the caps differ by
-transport because the power cost differs by transport**:
+Each transport budgets how many direct neighbours a peer maintains, and the budgets differ
+by transport because the underlying radio constraints differ:
 
-| Transport | Relative budget | Why |
+| Transport | Relative budget | Constraint |
 |---|---|---|
-| **LAN** (TCP over Wi-Fi or Ethernet) | Most generous | The radio is already associated with the access point and the AP does the work. Extra connections are close to free, so a peer maintains more of them. |
-| **P2P Wi-Fi** (AWDL, Wi-Fi Aware) | Fewer than LAN | Drives the Wi-Fi radio directly, with no infrastructure to offload to. Each connection costs real battery, so the budget is tighter. AWDL and Wi-Fi Aware share one budget — they are two implementations of the same idea and never run against each other. |
-| **Bluetooth LE** | Fewest | Lowest power *per byte*, but connection slots are scarce: the OS Bluetooth controller has a small total connection budget that Ditto shares with every other BLE app on the device. Inbound and outbound are budgeted separately. |
+| **LAN** (TCP over Wi-Fi or Ethernet) | Most generous | Ordinary TCP over infrastructure the device is already associated with. Counts inbound + outbound together. |
+| **P2P Wi-Fi** (AWDL, Wi-Fi Aware) | Tighter than LAN | AWDL and Wi-Fi Aware **share a single budget because they contend for the same radio** — they are the Apple and Android implementations of the same idea and never interoperate. Counts inbound + outbound together. |
+| **Bluetooth LE** | Tightest | The OS Bluetooth controller has few connection slots, and Ditto shares them with every other BLE app on the device — hence the advice to lower the cap if your app coexists with non-Ditto peripherals. Ditto budgets only the connections it **initiates**; inbound is bounded by the OS Bluetooth stack, not by Ditto. |
 | **WebSocket → Ditto Server** | No SDK-side cap | The server applies its own limits. |
 
 The exact numbers are internal defaults that change between releases, so they are not
@@ -123,9 +125,14 @@ ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true
 Lower BLE caps leave more radio capacity for non-Ditto BLE peripherals and reduce overhead,
 at the cost of slower convergence in dense meshes.
 
-**Set these before `startSync()`.** Per-transport connection limits are snapshotted when the
-mesh chooser is constructed, so an `ALTER SYSTEM` issued after sync has started does not take
-effect. Run them immediately after initializing the Ditto object.
+**These two behave differently, and the difference is easy to get wrong:**
+
+- `mesh_chooser_avoid_redundant_bluetooth` is read on **every** mesh-chooser pass, so
+  `ALTER SYSTEM` takes effect immediately, whenever you set it.
+- `mesh_chooser_max_active_ble_clients` is **snapshotted when the Ditto instance is
+  constructed**. Setting it afterwards — even before `startSync()` — silently does nothing.
+  Supply it through your SDK's pre-construction configuration layer (environment variable or
+  config file), not via `ALTER SYSTEM` at runtime.
 
 ### Which peers get chosen
 
@@ -148,8 +155,8 @@ would never get in, splitting the mesh into permanently isolated clusters.
 ### When a peer is at capacity
 
 By default a peer at its budget **rejects** new inbound connections, and the rejected peer
-backs off exponentially before retrying — seconds at first, rising to a ceiling of several
-minutes. Some deployments can instead be configured to evict an existing connection to make
+backs off exponentially before retrying — seconds at first, rising to a ceiling on the order
+of ten minutes. Some deployments can instead be configured to evict an existing connection to make
 room; an evicted peer gets a short flat cooldown before it may reconnect. Both the backoff
 curve and the eviction policy are internal defaults, not a supported contract.
 

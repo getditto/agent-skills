@@ -9,10 +9,20 @@ config but produces no connections, this file is where to look before suspecting
 ## 1. The first question: config or platform?
 
 Every SDK exposes a **transport-condition** callback that reports platform-level transport
-states — for example `BleDisabled`, `NoBleCentralPermission`, `NoBlePeripheralPermission`
-(the JS SDK spells these `BLEDisabled` / `NoBLECentralPermission` / `NoBLEPeripheralPermission`).
-The full set also includes `AppInBackground`, `MdnsFailure`, `TcpListenFailure`,
-`NoBleHardware`, `WifiDisabled`, `CannotEstablishConnection` and `TemporarilyUnavailable`.
+states. The callback receives a **source and a condition**, not a condition alone.
+
+The full condition set is: `Unknown`, `Ok` (no known problems — the healthy state),
+`GenericFailure`, `AppInBackground`, `MdnsFailure`, `TcpListenFailure`,
+`NoBleCentralPermission`, `NoBlePeripheralPermission`, `CannotEstablishConnection`,
+`BleDisabled`, `NoBleHardware`, `WifiDisabled`, `TemporarilyUnavailable`.
+
+**The JS SDK renames several of these**, so do not copy identifiers across languages:
+`Ok`→`OK`, `MdnsFailure`→`MDNSFailure`, `TcpListenFailure`→`TCPListenFailure`,
+`NoBleHardware`→`NoBLEHardware`, `WifiDisabled`→`WiFiDisabled`, `BleDisabled`→`BLEDisabled`,
+`NoBleCentralPermission`→`NoBLECentralPermission`,
+`NoBlePeripheralPermission`→`NoBLEPeripheralPermission`. The source enum is renamed too
+(`Bluetooth`→`BLE`, `Tcp`→`TCP`, `Mdns`→`MDNS`, `WifiAware`→`WiFiAware`).
+
 Wire it up early; it is the fastest way to distinguish:
 
 - *"I disabled this transport"* — a configuration problem, fix the config.
@@ -33,9 +43,9 @@ isn't available, fall back on the SDK's logs.
 | **`NSBonjourServices` in `Info.plist`** | LAN, AWDL | iOS silently filters Ditto's mDNS records out. Nothing appears in logs — this is the quietest failure on the platform. Both the LAN and AWDL service entries must be present for AWDL to be visible. |
 | Background modes | BLE, AWDL | In background, iOS moves the BLE service UUID to the manufacturer-data overflow area and suppresses the device name; cross-platform discovery degrades. AWDL and mDNS activity is curtailed. |
 
-AWDL runs on Apple platforms only (iOS, macOS, tvOS). Native SDKs accept `awdl.isEnabled = true`
-on other platforms **silently** — it just never starts, logging a warning. Only Wasm/browser
-builds reject it as a validation error.
+AWDL runs on Apple platforms only (iOS, macOS, tvOS). Enabling it elsewhere throws on the
+JS and Go SDKs; most other SDKs accept it silently and it simply never starts. See
+[`transport-config.md` §2](transport-config.md#2-peertopeer--discovery-based-transports).
 
 ---
 
@@ -60,8 +70,8 @@ behavior explicitly — check the SDK skill for the setting.
 contention, or firmware quirks. First mitigations: toggle Bluetooth off and on, relaunch
 the app, and keep both peers foregrounded while testing.
 
-Wi-Fi Aware runs on Android only. As with AWDL, native SDKs accept it silently on other
-platforms rather than rejecting it.
+Wi-Fi Aware runs on Android only. As with AWDL, whether enabling it elsewhere throws
+depends on the SDK.
 
 ---
 
@@ -69,7 +79,7 @@ platforms rather than rejecting it.
 
 - **BLE** runs via BlueZ. The Bluetooth service must be running and the adapter powered.
 - **LAN** works with the system mDNS responder or Ditto's internal one.
-- The default outgoing BLE connection budget is slightly more generous than on mobile.
+- Android uses a lower default outgoing BLE budget than Linux, iOS and tvOS.
 
 ---
 
@@ -125,5 +135,11 @@ When a transport produces no connections, work down this list. Stop at the first
    subnet routing.
 7. **Is the peer within range and foregrounded?** BLE and P2P Wi-Fi are proximity
    transports, and backgrounded apps advertise less.
-8. **Do both peers agree?** Collect evidence from **both** sides. Transport problems are
+8. **Is the peer's identity valid?** If the peer's certificate is missing, expired or
+   otherwise invalid, Ditto **silently zeroes every peer-to-peer transport, both listeners,
+   and `connect.tcpServers`** regardless of what your config says — and an invalid web
+   identity likewise empties `websocketUrls`. This is the classic "everything is configured
+   and nothing connects" case, and no amount of transport debugging will find it. Check
+   authentication state before concluding the transport layer is at fault.
+9. **Do both peers agree?** Collect evidence from **both** sides. Transport problems are
    frequently asymmetric, and one peer's logs are only half the picture.

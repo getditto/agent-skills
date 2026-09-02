@@ -21,10 +21,12 @@ category of link.
 **Fact 2 — Sync is delta-based, but merge and arrival are whole-document.** Ditto sends
 only the fields that changed, so a small edit produces a small update on the wire. But:
 
-- **Merging costs the whole document.** Ditto clones, merges, re-serializes and re-indexes
-  the full document on every update, even a one-field change. (The CRDT merge itself
-  descends only into changed keys; it is the surrounding write path that pays full size.) A
-  one-byte edit to a 5 MiB document costs 5 MiB of work on every peer that reconciles it.
+- **Merging costs the whole document.** Ditto deep-copies the document's CRDT, merges the
+  diff into the copy, and re-serializes and re-writes the whole document on every update,
+  even a one-field change. (The CRDT merge itself descends only into changed keys, and index
+  postings are skipped when their key values are unchanged — it is the copy, re-serialize and
+  store-write that pay full size.) A one-byte edit to a 5 MiB document costs 5 MiB of work on
+  every peer that reconciles it.
 - **Arrival is all-or-nothing.** A document does not appear in query results on the
   receiving peer until every part of it has arrived. Partial documents are never visible.
 - **A peer that has never seen a document receives all of it.** Delta sync is computed
@@ -33,13 +35,14 @@ only the fields that changed, so a small edit produces a small update on the wir
   size. (Re-subscribing does not: a peer that already holds the document does not re-receive
   it.)
 
-**Fact 3 — Documents have size thresholds.** Defaults, and they must match on every peer in
-the mesh, cloud peers included:
+**Fact 3 — Documents have size thresholds.** These measure the **serialized CRDT state** —
+including CRDT metadata and tombstones — not the user-visible JSON. A document whose JSON
+reads 200 KB can still trip the 256 KiB threshold. Defaults:
 
 | Threshold | Size | Behavior | Set with |
 |---|---|---|---|
 | Soft | **256 KiB** | Write succeeds; logs a `warn` | `document_size_soft_limit_bytes` |
-| Hard | **5 MiB** | **Local write rejected with an error** on current SDKs (older builds logged and accepted). Gates local writes only — oversized documents already in the mesh still replicate in | `document_size_hard_limit_bytes` |
+| Hard | **5 MiB** | **Local write rejected with an error.** Gates local writes only — oversized documents already in the mesh still replicate in | `document_size_hard_limit_bytes` |
 
 Put those together and the cost of a large document is paid on **every merge and every peer
 seeing it for the first time** — and on BLE it is paid at 20 KB/s.
@@ -60,7 +63,7 @@ Concretely, replication time over BLE:
 | 5 MiB (hard limit) | minutes | **only after minutes** |
 
 The middle column is bandwidth; the right column is user experience. Ten 25 KB documents
-and one 250 KB document move the same bytes, but the ten become individually useful as they
+and one 256 KiB document move the same bytes, but the ten become individually useful as they
 land, while the one shows nothing until the whole transfer completes. On a warehouse floor
 with only BLE, that's the difference between a list that fills in progressively and a screen
 that appears frozen.
@@ -156,9 +159,10 @@ the earliest signal that a document is growing unbounded. Treat it as a defect, 
 by the time you see the 5 MiB `error`, the document is already causing minutes-long BLE
 transfers and expensive merges.
 
-**Keep the limits identical across the fleet.** Both size parameters must be the same on
-every peer, including cloud peers. Mismatched limits mean peers disagree about what is
-acceptable.
+**Keep the limits identical across your small peers.** Mismatched limits mean peers
+disagree about what is acceptable. (Ditto's public docs add "including any cloud peers",
+but there is no such parameter on Ditto Server — the cloud applies its own independent size
+limit, so there is nothing to match there.)
 
 **Remediating a document that is already too large:**
 

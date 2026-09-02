@@ -30,9 +30,11 @@ are a mix of iOS and Android, so no single P2P Wi-Fi technology covers the fleet
 latency, plus cloud store-and-forward. When the AP fails, LAN drops out and the multiplexer
 switches those peer links to BLE with no application involvement.
 
-**Why the failover is instant:** Ditto *maintains* a redundant BLE link alongside Wi-Fi by
-default — it does **not** establish a new BLE connection on demand when the AP dies. That
-redundancy is the failover. Keep it; see the warning in scenario 2.
+**Why the failover is usually seamless:** by default Ditto still forms BLE connections to
+peers it can already reach over Wi-Fi, so the BLE link is often *already there* when the AP
+dies. It is a preference, not a guarantee — redundant peers are deprioritized behind peers
+that add new reach, and BLE slots are few, so a given pair may or may not hold a live BLE
+link at that moment. Keep the default; see the warning in scenario 2.
 
 **Data-model implication — this is the point.** The *worst case* here is BLE-only, so the
 schema must be sized for 20 KB/s even though the common case is LAN.
@@ -83,10 +85,12 @@ every byte is paid for repeatedly along the path.
 on peers that already have a good Wi-Fi Aware route — BLE slots per peer are few, so slot
 allocation is the scarce resource.
 
-**But understand the trade.** This disables the redundant BLE link that makes Wi-Fi→BLE
-failover instant. A peer whose Wi-Fi Aware link drops must then establish BLE from scratch.
+**But understand the trade.** It turns the default *preference* against redundant BLE into a
+hard block for any peer that already has a non-Bluetooth path into the mesh — including a
+multihop path, not just a direct Wi-Fi link. Those peers then have no standing BLE link to
+fall back on, and it only blocks *forming* connections; existing BLE links are not torn down.
 Do **not** set it where fast failover matters (scenario 1's point-of-sale case is exactly
-where you would leave it off). Set it before `startSync()`.
+where you would leave it off). This one *is* live — it takes effect as soon as you set it.
 
 ---
 

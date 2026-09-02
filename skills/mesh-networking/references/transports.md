@@ -23,10 +23,10 @@ pairing step.
 peers scanning see it and connect over GATT.
 
 **Bandwidth — the number that drives your data model.** Effective throughput in Ditto's
-mesh is roughly **20 KB/s**. The radio's ceiling is far higher — Ditto requests the
-Bluetooth 5 2M PHY on Android where the adapter supports it, and Bluetooth-5-to-Bluetooth-5
-links measure around 1.8 Mbit/s — but GATT framing, connection intervals, and mesh overhead
-dominate in practice. If either peer is Bluetooth 4.x the link negotiates down.
+mesh is roughly **20 KB/s**. The radio's raw ceiling is far higher — Ditto requests the
+Bluetooth 5 2M PHY on Android where the adapter supports it — but GATT framing, connection
+intervals, and mesh overhead dominate in practice. **Design against 20 KB/s, not against the
+radio's rated speed.**
 
 Devices below Android 10 fall back to plain BLE GATT at roughly **4 KB/s**, five times
 worse. If your fleet includes them, size against 4 KB/s — the same low-end devices also tend
@@ -52,9 +52,10 @@ off, the AP is down, or the venue's network isolates clients. A mesh that keeps 
 degrades; a mesh that doesn't, disconnects.
 
 **Connection shape.** A peer holds only a **handful** of simultaneous BLE connections —
-fewer than on any other transport — and inbound and outbound are budgeted separately. The
-constraint is the OS Bluetooth controller, whose small total connection budget Ditto shares
-with every other BLE app on the device; exceeding it produces stack-level resource errors.
+fewer than on any other transport. Ditto budgets the connections it **initiates**; inbound
+connections are bounded by the OS Bluetooth stack rather than by Ditto. The constraint is
+the controller's small slot count, which Ditto shares with every other BLE app on the
+device; exceeding it produces stack-level resource errors.
 Cap outgoing connections lower still with `mesh_chooser_max_active_ble_clients` if your app
 coexists with other BLE peripherals. One peripheral serving several centrals at once is
 normal and useful — one phone can feed several tablets.
@@ -63,8 +64,8 @@ normal and useful — one phone can feed several tablets.
 
 - **Bluetooth off at the OS level, or permission not granted.** Config changes are inert;
   the SDK surfaces this through its transport-condition callback (`BleDisabled`,
-  `NoBleCentralPermission`, `NoBlePeripheralPermission` — the JS SDK renders these as
-  `BLEDisabled` / `NoBLECentralPermission` / `NoBLEPeripheralPermission`).
+  `NoBleCentralPermission`, `NoBlePeripheralPermission`; the JS SDK spells these with `BLE`).
+  See [`platform-requirements.md` §1](platform-requirements.md#1-the-first-question-config-or-platform).
 - **Android GATT error 133.** A catch-all "connection failed" from the Android BLE stack,
   visible in `logcat` rather than Ditto's logs. Triggered by rapid reconnect cycles, OS BLE
   state contention, or firmware quirks. Mitigation: toggle Bluetooth off/on and relaunch;
@@ -124,8 +125,8 @@ access point. The same technology underneath AirDrop. Ditto layers a customized 
 over it to raise frequency, speed, and efficiency of transfer.
 
 **Where it runs.** iOS, macOS, tvOS. **Apple devices only** — an AWDL peer never connects
-to an Android peer. Enabling AWDL on a non-Apple platform is *not* rejected by native SDKs —
-it is accepted silently and simply never starts, logging a warning.
+to an Android peer. Enabling AWDL on a non-Apple platform throws on the JS and Go SDKs; on
+Swift, Kotlin, .NET, C++, Rust and Python it is accepted silently and simply never starts.
 
 **Discovery.** Shares the LAN mDNS service type; distinguished by Bonjour's
 "include AWDL / include P2P" browse flags rather than by a separate service name. That
