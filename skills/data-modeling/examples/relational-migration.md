@@ -50,11 +50,11 @@ Covers SDK **4.14.x and 5.1.x** — the join question is where these versions di
 ```sql
 -- comments: one document each. The composite _id carries the same team scope
 -- as its parent ticket, so one per-team permission rule covers both collections.
+-- ticket_id is the back-reference to the parent (a real field, indexed below);
+-- the _id subfields are NOT restated in the body.
 INSERT INTO comments
 DOCUMENTS ({
   '_id': { 'team_id': 't-9', 'comment_id': 'c-7001' },
-  'team_id': 't-9',
-  'comment_id': 'c-7001',
   'ticket_id': 'k-100',
   'by': 'u-2',
   'at': '2026-08-25T09:00:00.000Z',
@@ -66,8 +66,6 @@ DOCUMENTS ({
 INSERT INTO tickets
 DOCUMENTS ({
   '_id': { 'team_id': 't-9', 'ticket_id': 'k-100' },   -- permission scope lives in _id
-  'ticket_id': 'k-100',                                -- _id parts duplicated into the
-  'team_id': 't-9',                                    -- body for DTO mapping + joins
   'assignee_id': 'u-1',
   'title': 'Replace gate sensor',
   'state': 'open',
@@ -96,17 +94,17 @@ Two shapes to convert:
 
 | Source shape | Don't | Do |
 |---|---|---|
-| Surrogate key + scoping column (`_id: ObjectId`, `team_id: "t-9"`) | Keep the flat `_id` and leave `team_id` in the body only | Composite object `_id`: `{ 'team_id': 't-9', 'ticket_id': 'k-100' }`, with both parts *also* duplicated into the body |
+| Surrogate key + scoping column (`_id: ObjectId`, `team_id: "t-9"`) | Keep the flat `_id` and leave `team_id` in the body only | Move the scope in: `_id` becomes `{ 'team_id': 't-9', 'ticket_id': 'k-100' }`, and the standalone `team_id` body column goes away |
 | Composite primary key `(order_id, sku)` | Flatten to a delimiter string: `'k-100:c-7001'` | Composite object `_id`: `{ 'order_id': …, 'sku': … }` |
 
 Delimiter-joined string `_id`s are the specific smell here — they exist because the source system only accepted scalar keys, and Ditto does not have that constraint. They break when a component contains the delimiter, need parsing at every read, can't be indexed per component, and hide the scope from permissions. Object `_id`s have none of those problems and read correctly in the portal and HTTP API.
 
 Two practical consequences visible in the model above:
 
-- **Duplicate the `_id` subfields into the body.** They serve two different consumers: `_id` for permissions and identity, the body copies for DTO/POJO mapping, ordinary predicates, and join keys.
-- **Join on the body copy, not on `_id`.** Once `tickets._id` is an object, `c.ticket_id = t._id` no longer matches — join `c.ticket_id = t.ticket_id` and index it.
+- **Don't restate the `_id` subfields in the body.** The migration reflex is to keep `team_id` as a column *and* put it in `_id`. Unnecessary: `_id.team_id` is an ordinary path, so `WHERE _id.team_id = 't-9'`, `CREATE INDEX … ON tickets (_id.team_id)`, and composite indexes over `(_id.team_id, state)` (5.1+) all work against it. A duplicate is per-document CRDT metadata plus two values that can drift apart. **A child's back-reference to its parent is different and stays** — `comments.ticket_id` is the split pattern, not a duplicate.
+- **Adjust the join to reach into `_id`.** Once `tickets._id` is an object, `c.ticket_id = t._id` no longer matches. Join `c.ticket_id = t._id.ticket_id` — left side into the parent's `_id`, right side the child's indexed back-reference (5.1+, verified).
 
-**MongoDB Connector note:** MongoDB `_id`s are usually `ObjectId`s and are rarely used as scoped composite keys, so the two systems' ID schemes will not line up by themselves. The connector's ID mapping has to be configured deliberately for each collection — plan it as part of this decision, not after.
+**MongoDB Connector note:** MongoDB `_id`s are usually `ObjectId`s and are rarely used as scoped composite keys, so the two systems' ID schemes will not line up by themselves. The connector's ID mapping has to be configured deliberately for each collection — plan it as part of this decision, not after. Connector-oriented examples sometimes show the `_id` subfields duplicated into the document body; treat that as an accommodation for that ID mapping, not as a Ditto modeling pattern to copy into collections the connector doesn't touch.
 
 Full rule: [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
 
@@ -119,13 +117,13 @@ CREATE INDEX IF NOT EXISTS idx_comments_ticket ON comments (ticket_id);
 
 SELECT t.title, c.body, c.at
 FROM tickets AS t
-LEFT JOIN comments AS c ON c.ticket_id = t.ticket_id   -- join the body copy, not the
-WHERE t._id = { 'team_id': 't-9', 'ticket_id': 'k-100' };   -- composite object _id
+LEFT JOIN comments AS c ON c.ticket_id = t._id.ticket_id   -- reach into the composite _id
+WHERE t._id = { 'team_id': 't-9', 'ticket_id': 'k-100' };
 ```
 
 **On 4.14.x** there are no joins. Two patterns:
 
-1. **Two fetches in app code** — fine for detail screens: `SELECT * FROM tickets WHERE _id = { 'team_id': …, 'ticket_id': … }`, then `SELECT * FROM comments WHERE ticket_id = …`.
+1. **Two fetches in app code** — fine for detail screens: `SELECT * FROM tickets WHERE _id = { 'team_id': …, 'ticket_id': … }`, then `SELECT * FROM comments WHERE ticket_id = …` (the child's back-reference, indexed).
 2. **Denormalize read-time fields** into the hot document — ticket cards carry `assignee_name` and `team_name` duplicated from the source docs. Keep duplicated writes cheap and idempotent with `INSERT … ON ID CONFLICT DO UPDATE_LOCAL_DIFF` (4.12+), and treat the source collection as the system of record.
 
 Also decide **before** launch whether 4.14.x peers will ever join the mesh: a screen built on JOINs has no fallback on LTS devices. Mixed-mesh rule: build reads to the 4.14 surface (two-fetch or denormalized) even if writers are 5.1.
@@ -133,12 +131,12 @@ Also decide **before** launch whether 4.14.x peers will ever join the mesh: a sc
 ## Index plan (both versions)
 
 ```sql
-CREATE INDEX IF NOT EXISTS idx_tickets_team_state ON tickets (team_id, state);  -- composite: 5.1+
-CREATE INDEX IF NOT EXISTS idx_tickets_team      ON tickets (team_id);            -- 4.14 fallback
-CREATE INDEX IF NOT EXISTS idx_comments_ticket   ON comments (ticket_id);
-CREATE INDEX IF NOT EXISTS idx_tickets_id_team   ON tickets (_id.team_id);      -- _id subfields index like any path
+-- team_id lives only in _id, and _id subfields index like any other path
+CREATE INDEX IF NOT EXISTS idx_tickets_team_state ON tickets (_id.team_id, state);  -- composite: 5.1+
+CREATE INDEX IF NOT EXISTS idx_tickets_team       ON tickets (_id.team_id);         -- 4.14 fallback
+CREATE INDEX IF NOT EXISTS idx_comments_ticket    ON comments (ticket_id);          -- back-reference / join key
 ```
 
 ## Budget
 
-Ticket doc ≈ 400–800 B with comments/history externalized — fine over BLE. Comment docs ≈ 200 B each. The kanban observer watches `team_id + state` (indexed, bounded in practice) instead of the full tickets collection.
+Ticket doc ≈ 400–800 B with comments/history externalized — fine over BLE. Comment docs ≈ 200 B each. The kanban observer watches `_id.team_id + state` (indexed, bounded in practice) instead of the full tickets collection.

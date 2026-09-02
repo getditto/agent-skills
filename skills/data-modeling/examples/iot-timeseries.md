@@ -52,15 +52,13 @@ DOCUMENTS ({
 INSERT INTO readings
 DOCUMENTS ({
   '_id': { 'site': 'warehouse-3', 'device_id': 'sensor-4471', 't': '2026-08-25T10:30:10.000Z' },
-  'device_id': 'sensor-4471',
-  'site': 'warehouse-3',
-  't': '2026-08-25T10:30:10.000Z',
+  'device_id': 'sensor-4471',   -- back-reference to the device doc: the join/index key
   'temp_c': 21.5,
-  'humidity': 44
+  'humidity': 44                -- site and t live in _id only; no body copies
 })
 ON ID CONFLICT DO NOTHING;                       -- re-transmitted readings no-op
 
-CREATE INDEX IF NOT EXISTS idx_readings_device_t ON readings (device_id, t);  -- composite: 5.1+
+CREATE INDEX IF NOT EXISTS idx_readings_device_t ON readings (device_id, _id.t);  -- composite: 5.1+
 
 INSERT INTO COLLECTION devices (connection_count COUNTER)
 VALUES ({ '_id': 'sensor-4471', 'connection_count': 1340 })
@@ -80,8 +78,8 @@ The rule generalizes: **when a collection is written far more often than it is r
 
 Notes on the rest of the model:
 
-- The composite `_id` makes re-transmitted readings idempotent (`ON ID CONFLICT DO NOTHING` or `DO UPDATE_LOCAL_DIFF`, 4.12+) — the same sample re-sent lands on the same ID. Use an object, not a delimiter-joined string like `'sensor-4471:2026-08-25T…'`: the components stay queryable (`WHERE _id.site = 'warehouse-3'`) and indexable, and the site scope stays visible to permissions. See [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
-- On **4.14.x/5.0.x** the composite index above is not available — index `(device_id)` alone and range-filter on `t`, or index `(t)` if queries are mostly time-windowed across devices.
+- The composite `_id` makes re-transmitted readings idempotent (`ON ID CONFLICT DO NOTHING` or `DO UPDATE_LOCAL_DIFF`, 4.12+) — the same sample re-sent lands on the same ID. Use an object, not a delimiter-joined string like `'sensor-4471:2026-08-25T…'`: the components stay queryable (`WHERE _id.site = 'warehouse-3'`) and indexable, and the site scope stays visible to permissions. Because `_id` subfields are ordinary paths, `site` and `t` are not repeated in the body; `device_id` is, because it is the back-reference the device-scoped queries and indexes hang off. See [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
+- On **4.14.x/5.0.x** the composite index above is not available — index `(device_id)` alone and range-filter on `_id.t`, or index `(_id.t)` if queries are mostly time-windowed across devices.
 - Rollups (hourly avg per device) are documents of their own (`rollups` collection, `_id` `{device_id, hour}`), computed by whichever node has the mandate — never accumulated into the device doc.
 
 ## Retention

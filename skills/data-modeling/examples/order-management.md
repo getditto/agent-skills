@@ -55,8 +55,6 @@ DOCUMENTS ({
   -- inside _id — that is the only field permission rules and the auth webhook
   -- can see. Immutable, so this is decided now or never.
   '_id':      { 'store_id': 42, 'order_id': 'order-2026-00042' },
-  'store_id': 42,                    -- duplicated into the body for app-side
-  'order_id': 'order-2026-00042',    -- mapping and everyday queries
   'store':    { 'name': 'Portland Pearl', 'region': 'us-west' },
   'cashier':  'emp-991',
   'customer': { 'name': 'Ada Lovelace', 'email': 'ada@example.com', 'tier': 'gold' },
@@ -79,7 +77,7 @@ SELECT * FROM orders WHERE _id.store_id = 42;
 CREATE INDEX IF NOT EXISTS idx_orders_store ON orders (_id.store_id);
 ```
 
-`store_id` is duplicated into the document body on purpose — the `_id` copy serves permissions and identity, the body copy serves DTO mapping and ordinary predicates. The remaining `store` map keeps only the descriptive fields (name, region), which no rule needs to filter on. Both forms verified on 4.14.4, 5.0.0, and 5.1.0. Full rule: [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
+`store_id` lives in `_id` and nowhere else — there is no second copy in the body. `_id.store_id` is an ordinary path, so predicates, indexes, and JOIN keys all work against it directly; a body copy would only add per-document CRDT metadata and a second value that can drift from the first. The remaining `store` map keeps just the descriptive fields (name, region), which no rule needs to filter on. Verified on 4.14.4, 5.0.0, and 5.1.0. Full rule: [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
 
 Inventory side (the actual counter):
 
@@ -112,9 +110,8 @@ DOCUMENTS ({
   -- store scope as the parent order, so the same per-store permission rule
   -- covers both collections.
   '_id': { 'store_id': 42, 'order_id': 'order-2026-00042', 'sku': 'SKU-100' },
-  'store_id': 42,
-  'order_id': 'order-2026-00042',
-  'sku': 'SKU-100', 'qty': 2, 'price_cents': 1999
+  'order_id': 'order-2026-00042',   -- back-reference to the parent: a real field,
+  'qty': 2, 'price_cents': 1999     -- indexed below and used as the join key
 });
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
@@ -124,8 +121,8 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
 
 Reads across the split:
 
-- **5.1+**: `SELECT * FROM orders INNER JOIN order_items ON orders.order_id = order_items.order_id` — join on the duplicated body field with the index above, which is exactly why the `_id` subfields are also stored in the body. (The JOIN right side must be `_id` or indexed, and `_id` here is the three-part object, not the order id.)
-- **4.14.x**: two fetches — `SELECT * FROM orders WHERE _id.store_id = 42 AND order_id = …` plus `SELECT * FROM order_items WHERE order_id = …`.
+- **5.1+**: `SELECT * FROM orders INNER JOIN order_items ON order_items.order_id = orders._id.order_id` — the left side reaches straight into the parent's composite `_id`; the right side is the child's back-reference, which is why that field carries the index above. (The JOIN right side must be `_id` or indexed, and the child's `_id` here is the three-part object, not the order id.)
+- **4.14.x**: two fetches — `SELECT * FROM orders WHERE _id = { 'store_id': 42, 'order_id': 'order-2026-00042' }` plus `SELECT * FROM order_items WHERE order_id = …`.
 
 ## Budget
 

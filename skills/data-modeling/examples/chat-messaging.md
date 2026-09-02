@@ -80,11 +80,9 @@ So the counter is a **materialized badge**: one small document per (user, channe
 -- see _id, and a user's read state should sync to that user's devices only.
 INSERT INTO COLLECTION channel_state (unread COUNTER)
 VALUES ({
-  '_id':        { 'user_id': 'u-2', 'channel_id': 'channel-7' },
-  'user_id':    'u-2',
-  'channel_id': 'channel-7',
-  'unread':     0,
-  'last_read':  '2026-08-25T10:40:11.112Z'
+  '_id':       { 'user_id': 'u-2', 'channel_id': 'channel-7' },
+  'unread':    0,
+  'last_read': '2026-08-25T10:40:11.112Z'
 })
 ON ID CONFLICT DO NOTHING;          -- seeding is an assignment; never replay it live
 
@@ -101,7 +99,9 @@ SET   last_read = '2026-08-25T10:41:00.000Z'   -- rejects the other order
 WHERE _id = { 'user_id': 'u-2', 'channel_id': 'channel-7' };
 
 -- The channel list: one observer, one narrow collection, no message rows.
-SELECT * FROM channel_state WHERE user_id = 'u-2' AND unread > 0;
+-- _id subfields are ordinary queryable paths — no body copies needed.
+SELECT * FROM channel_state WHERE _id.user_id = 'u-2' AND unread > 0;
+CREATE INDEX IF NOT EXISTS idx_channel_state_user ON channel_state (_id.user_id);
 ```
 
 Why each piece is what it is:
