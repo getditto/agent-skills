@@ -168,9 +168,9 @@ Modify documents in place. Three mutation clauses — `SET`, `UNSET`, `APPLY` �
 
 ```
 UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
-  [ SET   <field> = <expr> [, <field> = <expr> ...] ]
-  [ UNSET <field> [, <field> ...] ]
-  [ APPLY <field> <counter_mutator> [, <field> <counter_mutator> ...] ]
+  [ APPLY <field> <counter_mutator> [, ...] ]   -- clause order below is MANDATORY:
+  [ SET   <field> = <expr> [, <field> = <expr> ...] ]  -- APPLY, then SET, then UNSET;
+  [ UNSET <field> [, <field> ...] ]                    -- any other order is a syntax error
   [ WHERE   <expr> ]
   [ ORDER BY <expr> [ASC|DESC] [, ...] ]
   [ LIMIT   <int> ]
@@ -185,7 +185,7 @@ UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
 
 Notes:
 
-- `SET`, `UNSET`, and `APPLY` clauses can be combined in one statement.
+- `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.4, 5.0.0, and 5.1.0.
 - `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select.md`](select.md).
 - `UPDATE COLLECTION coll (col_defs…)` is required when any mutation touches a non-register CRDT field. The type def applies to that statement only; it does not redefine the schema globally.
 - **`USE IDS` is not supported on `UPDATE`** in either 4.14.x or 5.0.x (parser TODO). To target specific docs, use `WHERE _id IN (...)`.

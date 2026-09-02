@@ -45,20 +45,21 @@ A recommendation made without these facts is a guess. Ask the ones the user hasn
 5. **Document size & growth** — and whether any sub-structure is unbounded (logs, readings, messages).
 6. **Binary payloads** — anything over ~250 KB belongs in an `ATTACHMENT`, not inline.
 7. **Query patterns** — which fields are filtered/sorted (indexes), and whether queries would need JOINs (5.1+ only).
-8. **Permission scopes** — Big Peer sync permissions are enforced at query granularity, which can force collection boundaries.
-9. **Delete/retention expectations** — tombstones expire (7 days on Small Peers); plan soft deletes.
+8. **Permission scopes — and what they're scoped *by*** (store, site, tenant, region, user). Permissions are enforced at query granularity, so scopes force collection boundaries; and rules can only see `_id`, so the scoping value has to be a subfield of a composite `_id`. `_id` is immutable, so this is decided at design time.
+9. **Delete/retention expectations** — tombstones expire (7 days on Small Peers by default, tunable); plan soft deletes.
 
 If the user just drops raw JSON and says "make this work", still ask at minimum about SDK version and concurrency (items 1–2); derive the rest from the JSON with the review rubric.
 
-## Reviewing raw JSON: the five flags that matter most
+## Reviewing raw JSON: the flags that matter most
 
 Walk every field with the full rubric in [`references/workflow.md`](references/workflow.md) §2. In priority order:
 
 1. **Arrays are the sharp edge.** There is no per-element merge — an array is one last-write-wins `REGISTER` (even in v5 lenient mode). Two peers appending to the same array offline lose one append, silently. Model multi-writer or growable collections as a `MAP` keyed by ID, or as separate documents.
 2. **Counter-shaped numbers.** Anything incremented/decremented by multiple peers (stock, likes, views, votes) must be `COUNTER` (4.14+) — `SET`-style arithmetic on a `REGISTER` loses updates on merge.
-3. **Inline binary / large strings.** Base64 blobs, images, PDFs → `ATTACHMENT` (out-of-band, content-addressed, lazy-fetched, exempt from document size limits).
+3. **Inline binary / large strings.** Base64 blobs, images, PDFs → `ATTACHMENT` (out-of-band, content-addressed, lazy-fetched, exempt from document size limits). **Exception:** the MongoDB Connector does not carry attachments, so on connector-synced collections inline base64 is currently the recommended approach — with the size budget then doing all the work. See [`best-practices.md`](best-practices.md).
 4. **Nested objects need no type declarations.** Under the lenient baseline they infer as MAPs (per-field merge) at any depth — that's the correct behavior, keyword-free. Declare only to *override* (force `REGISTER` on an object that must stay atomic). The one exception: un-migrated 4.14.x strict peers silently store bare objects as whole-object `REGISTER`s and drop undeclared MAP/COUNTER fields from reads — migrate them to `false`; declare only on statements strict peers still execute.
-5. **Size & bandwidth budget.** Soft warning at 256 KiB serialized (includes CRDT metadata); hard limit at 5 MiB — **5.1+ rejects oversized local writes** (4.14.x/5.0.x only log), while replicated oversized docs are still accepted today. Over BLE, even 250 KiB is 10+ seconds of one peer's airtime. Budget math and hardware context: [`references/performance.md`](references/performance.md).
+5. **`_id` shape.** Ditto `_id`s can be objects, and permission rules can see *only* `_id`. If the document is scoped by anything (store, site, tenant, region, org), that value belongs inside a composite object `_id` — `{ 'store_id': 42, 'order_id': 'o-1' }`, with the parts duplicated into the body for app-side mapping. Subfields are queryable and indexable (`WHERE _id.store_id = 42`). Delimiter-joined string `_id`s (`'store42:order-77'`) are a migration smell, not a composite key. `_id` is immutable, so this is expensive to fix later. Full rule: `COMPOSITE_ID` in [`references/workflow.md`](references/workflow.md) §2.
+6. **Size & bandwidth budget.** Soft warning at 256 KiB serialized (includes CRDT metadata); hard limit at 5 MiB — **5.1+ rejects oversized local writes** (4.14.x/5.0.x only log), while replicated oversized docs are still accepted today. Over BLE, even 250 KiB is 10+ seconds of one peer's airtime. Budget math and hardware context: [`references/performance.md`](references/performance.md).
 
 ## Embedded vs split collections
 
@@ -89,19 +90,19 @@ On 5.1+, reassemble with `JOIN` (requires the right-side key to be `_id` or inde
 
 When delivering a design, produce (format detail: [`references/workflow.md`](references/workflow.md) §3):
 
-1. **Findings** — every flagged field/shape with its rubric ID (e.g. `ARRAY_LWW`, `COUNTER_CANDIDATE`, `ATTACHMENT_CANDIDATE`, `SIZE_SOFT`, `SPLIT_UNBOUNDED`, `DECLARE_TYPES`), severity, and one-line reason.
+1. **Findings** — every flagged field/shape with its rubric ID (e.g. `ARRAY_LWW`, `COUNTER_CANDIDATE`, `ATTACHMENT_CANDIDATE`, `COMPOSITE_ID`, `SIZE_SOFT`, `SPLIT_UNBOUNDED`, `DECLARE_TYPES`), severity, and one-line reason.
 2. **Recommended model** — collections with per-field CRDT types and a pasteable `INSERT` statement (type declarations only where inference can't help: `COUNTER`, `ATTACHMENT`, deliberate `REGISTER` overrides).
 3. **Split decisions** — what moved out, the back-reference key, and how reads reassemble (`JOIN` on 5.1+, two fetches on 4.14.x).
 4. **Budget notes** — estimated serialized size, BLE implication, observer scope.
 
 ## Things that bite people
 
-- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``) — each removal writes a per-key tombstone, so for mass clearing `UNSET` the parent field instead.
+- **Omitting a key from a MAP write means "no change"**, not "delete". Remove one entry with dotted-path `UNSET` (`` UNSET items.`SKU-100` ``) — each removal writes a per-key tombstone. Needing to clear *thousands* of keys is a modeling smell, not a tuning problem: the entries should have been documents in a child collection. `UNSET` the parent field to buy time, then re-model ([`references/performance.md`](references/performance.md)).
 - **A MAP overwrite merges; a REGISTER overwrite replaces.** `SET profile = {...}` on a MAP keeps untouched sub-fields; on a REGISTER the whole old object is gone.
 - **Inserting a plain integer without declaring `COUNTER` creates a `REGISTER`** that can never merge increments. (Lenient mode auto-creates a counter from `APPLY … INCREMENT BY` on an undeclared field — don't rely on it: seeding an initial value on INSERT still needs the declaration, and un-migrated strict peers can't see undeclared counters. Always declare `COUNTER`; same trap for PN_COUNTER + plain doubles.)
-- **`_id` is immutable and never a CRDT** — you cannot declare a type for it or update it. Composite-object `_id`s are supported and useful as permission partition keys.
+- **`_id` is immutable and never a CRDT** — you cannot declare a type for it or update it. Prefer a composite **object** `_id` wherever a permission scope exists: rules see nothing but `_id`, and subfields stay queryable and indexable. Composite *string* `_id`s (`'store42:order-77'`) are the anti-pattern.
 - **Nested arrays inside MAPs are still whole-array LWW registers** — the array rule applies at every depth.
-- **Tombstone TTL** — mesh deletes propagate via tombstones that expire after 7 days on Small Peers (30 on Big Peer). A peer offline longer than that can resurrect a deleted document. Prefer soft deletes for anything with a compliance/retention story.
+- **Tombstone TTL** — mesh deletes propagate via tombstones that expire after 7 days on Small Peers, 30 on Big Peer. Those are defaults and are tunable (`TOMBSTONE_TTL_HOURS` on a peer; Big Peer via Ditto support). A peer offline longer than that can resurrect a deleted document. Prefer soft deletes for anything with a compliance/retention story.
 - **Strict mode (`true`) silently drops fields from reads** — on a strict peer, a MAP or COUNTER field written *with* a declaration is stored correctly but omitted from plain `SELECT` results unless the query repeats the declaration (`SELECT ... FROM COLLECTION c (field MAP)`). No error — the field is gone as if it never existed. Lenient peers never need read declarations; this trap is why every 4.14.x mesh migrates to `dql_strict_mode = false`.
 - **One statement per `execute()` call** — DQL rejects multi-statement strings (`;`-separated); run cookbook blocks statement by statement. `--` comments are tolerated.
 

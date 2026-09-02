@@ -59,14 +59,67 @@ Use the intake question "what's the slowest device class and OS in your fleet?" 
 - Wide observers (whole-collection, big unbounded result sets) over large collections are the most common "my app is slow / grows in memory" cause.
 - **Model so that the screens that observe are narrow:** small hot collections ("today's open orders") rather than one mega-collection filtered in-app.
 
+### Getting the delta: use the Differ, don't diff by hand
+
+The observer hands you a whole result set, but the SDK will tell you *what changed* in it. `DittoDiffer` (`Differ` in JavaScript) compares one emission's `items` against the previous one and returns a `DittoDiff` with four index sets — `insertions`, `deletions`, `updates`, `moves` — into the new array (`deletions`/`moves` index the previous one). That is the supported way to drive incremental UI updates and to avoid re-processing every row on every fire.
+
+```js
+const differ = new Differ();
+let previousIds = [];                       // keep your own copy: only extracted data, never live items
+
+const observer = ditto.store.registerObserver(
+  "SELECT * FROM orders WHERE status = 'open'",
+  (queryResult) => {
+    const diff = differ.diff(queryResult.items);
+    const currentIds = queryResult.items.map((item) => {
+      const id = item.value._id;
+      item.dematerialize();                 // release the materialized value
+      return id;
+    });
+    diff.insertions.forEach((i) => addRow(currentIds[i]));
+    diff.updates.forEach((i) => refreshRow(currentIds[i]));
+    diff.deletions.forEach((i) => removeRow(previousIds[i]));   // indexes the PREVIOUS array
+    previousIds = currentIds;
+  },
+);
+```
+
+Three things that bite people:
+
+- **Kotlin v5 owns the differ for you** — `DittoDiffer`'s constructor is internal there; use the `registerObserver` overload whose lambda takes `(result, diff)`. Every other SDK still constructs one explicitly and reuses it across callbacks.
+- **`deletions` and `moves` index the previous emission**, which the differ does not keep for you. Store your own array of extracted values (IDs, not `QueryResultItem`s — those are cursors, and holding one across emissions is a use-after-free).
+- **The first fire reports everything as an insertion**, because the differ starts empty. There is no separate "initial event" flag. Metadata-only changes are ignored, so `updates` means the value actually changed.
+
+The Differ reduces the *work you do per fire*. It does not shrink the result set the engine materializes — a whole-collection observer still costs a whole collection every fire. Narrow the query first, then diff it.
+
 ## Counters and actor growth
 
 A COUNTER/PN_COUNTER stores one contribution entry per **distinct peer (actor)** that has ever incremented it. Value size grows with active writer count, not operation count — fine for a store's 20 devices, worth a thought for a public like-button with thousands of writers on one counter. There is no per-actor pruning: nothing removes a dead peer's entry short of evicting the whole document (which removes the counter's state with it). Heavily-shared single counters on very large meshes are a reason to shard counters (e.g. per-region counters summed at read).
 
 ## Tombstones and churn
 
-- Clearing thousands of dynamic map keys with per-key `UNSET` (`UNSET map.key`) accumulates tombstone metadata inside the document — one tombstone per removed key. `UNSET` the **parent** field instead, or delete/rewrite the document.
-- Tombstone TTL: 7 days on Small Peers, 30 days on Big Peer. Too-low TTLs on long-offline peers → document resurrection; too-high → storage bloat. See [`../best-practices.md`](../best-practices.md).
+### Mass per-key `UNSET` is a modeling failure, not a tuning problem
+
+If you find yourself clearing thousands of dynamic map keys with per-key `UNSET map.key`, **stop and re-model — do not reach for a workaround.** Each removed key leaves a tombstone inside the document forever-ish, so the document grows as you delete from it, and the merge cost of every subsequent write grows with it. Getting here means the model is wrong in one of three specific ways:
+
+| What you have | Why it fails | The actual fix |
+|---|---|---|
+| A map used as an unbounded, churning collection (per-message, per-reading, per-event keys) | Keys are entities with their own lifecycle; the document is a container that can only grow | One document per entity in a child collection. Deleting an entity then deletes a document, not a key — see `SPLIT_UNBOUNDED` in [`workflow.md`](workflow.md) |
+| A map used as a work queue / scratch buffer that is filled and drained | Drain-to-empty means every key you ever wrote is now a tombstone | Child collection + `EVICT`, or rewrite the document under a fresh `_id` each cycle |
+| A map mixing dynamic keys with fixed schema fields | The dynamic half's churn taxes reads and writes of the stable half | Split the dynamic keys into their own field or collection — `MIXED_KEYED_MAP` in [`workflow.md`](workflow.md) |
+
+The mechanical mitigations exist and are worth knowing — `UNSET` the **parent** field to clear a whole subtree in one tombstone rather than N, or rewrite the document under a new `_id` (tombstones don't travel to a new ID) — but treat reaching for either as the signal that triggered this section. They buy time to re-model; they are not the model. Removing a handful of keys from a bounded, slow-changing map is fine and always was.
+
+### Tombstone TTL (deletes, not map keys)
+
+Document tombstones from hard deletes expire. **These are the defaults, and they are tunable:**
+
+| | Default | How to change it |
+|---|---|---|
+| Small Peer / Edge SDK | 7 days (`TOMBSTONE_TTL_HOURS = 168`) | `ALTER SYSTEM SET` on the peer, alongside `TOMBSTONE_TTL_ENABLED` (default `true`) and the reaper schedule (`DAYS_BETWEEN_REAPING`, default 1 day) |
+| Big Peer / Ditto Cloud | 30 days, reaped hourly | Not a client setting — contact Ditto support |
+
+Too short, and a peer offline past the window resurrects the document it never learned was deleted; too long, and tombstone storage accumulates. **Never set the Small Peer TTL higher than the Big Peer's** — the peer will re-send tombstones the server has already reaped. Where resurrection is unacceptable, don't tune the TTL: soft delete and purge past the window ([`../best-practices.md`](../best-practices.md)).
 
 ## Quick budget table for reviews
 

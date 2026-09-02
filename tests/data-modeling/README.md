@@ -29,12 +29,12 @@ tests/data-modeling/
 
 | Case | What it must catch |
 |---|---|
-| `pos-order` | arrays that must become keyed MAPs, inline PDF → ATTACHMENT, 4.14.x strict-mode migration, size limits |
+| `pos-order` | arrays that must become keyed MAPs, inline PDF → ATTACHMENT, 4.14.x strict-mode migration, size limits, composite object `_id` for the per-store permission scope |
 | `chat-channel` | unbounded embedded messages → split, readBy/members arrays, messageCount → COUNTER, inline image, observer scoping |
 | `iot-sensor` | telemetry stream → one doc per reading, 256 KiB / 5 MiB limits, counter, whole-array LWW |
-| `team-portal` | comments/history splits, counter-or-count-at-read, JOIN (5.1+) vs denormalize (4.14.x), observer scoping |
+| `team-portal` | comments/history splits, counter-or-count-at-read, JOIN (5.1+) vs denormalize (4.14.x), observer scoping, composite object `_id` for the per-team permission scope |
 | `inventory` | stock/soldToday → COUNTER with INCREMENT/RESTART, attrs on 4.14.x, money as integer cents |
-| `user-profile` | **negative control** — a healthy model must not invent splits or unbounded-growth alarms |
+| `user-profile` | **negative control** — a healthy model must not invent splits or unbounded-growth alarms, and must not demand a composite `_id` where nothing scopes the document |
 
 Expected findings use the stable rubric IDs from the skill
 (`skills/data-modeling/references/workflow.md` §2). Each finding lists

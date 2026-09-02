@@ -1,7 +1,7 @@
 {
   "id": "team-portal",
   "title": "Support ticket migrating from MongoDB, with comments/history/labels",
-  "context": "Migrating from MongoDB. Fleet is all on Ditto SDK 5.1.x, but the team asks whether they could add 4.14.x LTS devices later. Kanban screens list tickets per team; a detail screen shows one ticket with its comments and history.",
+  "context": "Migrating from MongoDB. Fleet is all on Ditto SDK 5.1.x, but the team asks whether they could add 4.14.x LTS devices later. Kanban screens list tickets per team; a detail screen shows one ticket with its comments and history. Each team's devices must only sync that team's tickets.",
   "findings": [
     {
       "id": "SPLIT_UNBOUNDED",
@@ -32,6 +32,12 @@
       "path": "kanban screen",
       "severity": "warn",
       "groups": [["observer|live.?query|subscribe|watch"], ["team|state|scope|narrow|filter|limit"]]
+    },
+    {
+      "id": "COMPOSITE_ID",
+      "path": "_id",
+      "severity": "warn",
+      "groups": [["composite|object.?_id|_id.*object|structured.?_id"], ["team_?id|team"], ["permission|auth|scope|sync rule|access"]]
     }
   ],
   "antiFindings": []

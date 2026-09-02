@@ -12,6 +12,10 @@
   ],
   "antiFindings": [
     {
+      "desc": "demands a composite object _id when the document has no permission scope to partition by",
+      "groups": [["(should|recommend(?:s|ed|ing)?|must|suggest(?:s|ed|ing)?|advises?|needs? to|change)[^\\n.]{0,60}(composite|object)[^\\n.]{0,30}_id"]]
+    },
+    {
       "desc": "does not demand splitting the profile into multiple collections",
       "groups": [["(should|recommend(?:s|ed|ing)?|must|suggest(?:s|ed|ing)?|advises?|needs? to)[^\\n.]{0,50}(split|move)[^\\n.]{0,50}(collection|document)"]]
     }

@@ -215,7 +215,7 @@ APPLY  watch_count RESTART WITH 0
 WHERE  title = 'The Shawshank Redemption';
 ```
 
-Counters can be combined with other mutation clauses in one statement; see [`statements.md`](statements.md) §2.5.
+Counters can be combined with other mutation clauses in one statement — but `APPLY` must come **first**, before `SET` and `UNSET`; the parser rejects any other order. See [`statements.md`](statements.md) §2.1 and §2.5.
 
 ---
 

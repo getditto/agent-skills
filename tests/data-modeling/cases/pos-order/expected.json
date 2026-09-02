@@ -1,7 +1,7 @@
 {
   "id": "pos-order",
   "title": "POS order with line items, status history, and inline PDF",
-  "context": "Mixed mesh: some registers on Ditto SDK 4.14.x (LTS), back-office tablets on 5.1.x. Bluetooth LE is one of the transports between registers. Cashiers on different devices may add items to the same order before checkout.",
+  "context": "Mixed mesh: some registers on Ditto SDK 4.14.x (LTS), back-office tablets on 5.1.x. Bluetooth LE is one of the transports between registers. Cashiers on different devices may add items to the same order before checkout. Each store's registers must only sync that store's orders \u2014 enforced by Big Peer sync permissions.",
   "findings": [
     {
       "id": "ARRAY_LWW",
@@ -20,6 +20,12 @@
       "path": "receiptPdfBase64",
       "severity": "blocker",
       "groups": [["receipt|pdf|base64|binary"], ["attachment"]]
+    },
+    {
+      "id": "COMPOSITE_ID",
+      "path": "_id",
+      "severity": "warn",
+      "groups": [["composite|object.?_id|_id.*object|structured.?_id"], ["store_id|store.?id|store"], ["permission|auth|scope|sync rule|access"]]
     },
     {
       "id": "DECLARE_TYPES",
