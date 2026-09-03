@@ -68,4 +68,8 @@ filter or sort on mutable fields when `LIMIT` is used. Details:
 - **Transports:** leave all relevant transports (LAN/Wi-Fi, BLE, WebSocket)
   enabled and let Ditto switch as devices move.
 - **Attachments:** keep binaries out of subscribed documents; fetch them on
-  demand via their tokens.
+  demand via their tokens. If every matching attachment really is needed on
+  the device, `ALTER SYSTEM SET attachments_auto_fetch = true` makes them
+  flow with the documents — at the cost of unbounded storage and transport
+  use. See
+  [references/how-subscriptions-work.md](references/how-subscriptions-work.md).

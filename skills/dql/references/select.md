@@ -125,7 +125,7 @@ SELECT m.title, m.year FROM movies m WHERE m.year >= 2000;
 
 ## 3. USE IDS
 
-> **Effectively SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x. On 5.1.x it parses on `UPDATE` (before `SET` only, and it applies correctly) and on `DELETE` / `EVICT` — but there it **reports success and removes nothing** unless a `RETURNING` clause is present, so it must not be used. `TOMBSTONE` is unavailable on every line. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
+> **Effectively SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x. On 5.1.x it parses on `UPDATE` (before `SET` only, and it applies correctly) and on `DELETE` / `EVICT` — but there it **reports success and removes nothing** unless a `RETURNING` clause is present, so it must not be used. `TOMBSTONE` is unavailable on every SDK version. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
 
 ```
 USE IDS ( <id_expr> [, <id_expr> ...] )
@@ -371,7 +371,7 @@ GROUP BY director.name, year - (year % 10)
 ORDER BY director, decade;
 ```
 
-See [`functions.md`](functions.md) for the aggregate function set (`count`, `sum`, `avg`, `min`, `max`, `mid`, `median`) available on all three supported lines.
+See [`functions.md`](functions.md) for the aggregate function set (`count`, `sum`, `avg`, `min`, `max`, `mid`, `median`) available on all three supported SDK versions.
 
 ---
 
@@ -540,7 +540,7 @@ DQL `SELECT` statements can be used as **subscriptions** — long-lived queries 
 | V1 surface only<br>(`DQL_RESTRICT_TO_ORIGINAL_SYNTAX`) | 4.14.x, 5.0.x, 5.1.x | `SELECT *` only (no expression projection), a single collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. |
 | `ORDER BY` / `LIMIT` rejected<br>(`DQL_RESTRICT_LIMIT_ORDER_BY`) | **SDK 5.0+** | `ORDER BY` and `LIMIT` are rejected in subscription queries. `OFFSET` on its own stays legal. Use a one-shot store query for paginated or sorted reads. |
 
-The V1-surface restriction is always on for `registerSubscription` on every SDK line — there is no unrestricted subscription path. The `ORDER BY`/`LIMIT` rejection is driven by the system parameter **`dql_restrict_subscriptions`** (default `true`), which exists on 5.0.x and 5.1.x and **not** on 4.14.x — that one *is* readable with `SHOW dql_restrict_subscriptions`. SDK 4.14.x accepts both clauses; queries using `LIMIT` maintain boundary state and should avoid mutable filter or sort fields. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
+The V1-surface restriction is always on for `registerSubscription` on every SDK version — there is no unrestricted subscription path. The `ORDER BY`/`LIMIT` rejection is driven by the system parameter **`dql_restrict_subscriptions`** (default `true`), which exists on 5.0.x and 5.1.x and **not** on 4.14.x — that one *is* readable with `SHOW dql_restrict_subscriptions`. SDK 4.14.x accepts both clauses; queries using `LIMIT` maintain boundary state and should avoid mutable filter or sort fields. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
 
 ### 12.2 What is — and isn't — allowed in a subscription
 
@@ -572,7 +572,7 @@ SELECT * FROM reviews WHERE movie_id = :movie_id;
 SELECT * FROM movies WHERE array_contains(genres, 'Drama');
 ```
 
-Expression projections are never available in a subscription, on any supported SDK line — model partial documents as a separate collection or an attachment instead. `ORDER BY` / `LIMIT` subscriptions work only on 4.14.x:
+Expression projections are never available in a subscription, on any supported SDK version — model partial documents as a separate collection or an attachment instead. `ORDER BY` / `LIMIT` subscriptions work only on 4.14.x:
 
 ```sql
 -- SDK 4.14.x only. LIMIT makes this stateful: boundary changes invalidate

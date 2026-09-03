@@ -9,7 +9,7 @@ description: Complete built-in function catalog for Ditto DQL (math, string, arr
 
 Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
 
-Every function in this catalog exists on **all three** supported lines — 4.14.x, 5.0.x and 5.1.x (harness-verified across all 74 names in §11). Functions that are **not** in this catalog because they are 5.1-only: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`versions.md`](versions.md) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
+Every function in this catalog exists on **all three** supported SDK versions — 4.14.x, 5.0.x and 5.1.x (harness-verified across all 74 names in §11). Functions that are **not** in this catalog because they are 5.1-only: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`versions.md`](versions.md) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
 
 Notation:
 
@@ -220,7 +220,7 @@ SELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies;
 ```sql
 -- repeat: build a star-rating indicator from the IMDb score.
 -- cast(... , 'integer') truncates, which is all this display needs and keeps
--- the example runnable on every supported line.
+-- the example runnable on every supported SDK version.
 SELECT title, repeat('★', cast(ratings.imdb, 'integer')) AS stars FROM movies;
 ```
 

@@ -1,6 +1,6 @@
 # dql skill ("write-dql")
 
-AI agent skill for Ditto Query Language (DQL) assistance — works with any agent tool that supports the `SKILL.md` convention (Claude Code, opencode, Codex, Gemini, etc.). It helps developers working with the [Ditto](https://ditto.com) peer-to-peer sync platform write correct, version-aware DQL for SELECT queries, mutations, subscriptions, and indexing — across both currently supported SDK lines.
+AI agent skill for Ditto Query Language (DQL) assistance — works with any agent tool that supports the `SKILL.md` convention (Claude Code, opencode, Codex, Gemini, etc.). It helps developers working with the [Ditto](https://ditto.com) peer-to-peer sync platform write correct, version-aware DQL for SELECT queries, mutations, subscriptions, and indexing — across all three currently supported SDK versions.
 
 ## Supported Ditto SDK versions
 
@@ -78,12 +78,12 @@ cd tests/dql
 (cd sdks/v5.1.0 && npm install)
 npm run transform               # produce pedagogical-schema test dataset (one-time)
 
-# Run against both SDK versions
+# Run against all three SDK versions
 DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm test
 npm run report
 ```
 
-Current status: **174 PASS / 46 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.4`; **191 PASS / 29 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.0`; **211 PASS / 9 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.1.0` (220 catalog entries). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0).
+Current status: **199 PASS / 53 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.4`; **216 PASS / 36 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.0`; **246 PASS / 6 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.1.0` (252 catalog entries, 0 FAIL). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0).
 
 See [`tests/dql/README.md`](../../tests/dql/README.md) for the harness internals.
 

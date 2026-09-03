@@ -27,7 +27,7 @@ Higher precedence binds tighter. When in doubt, parenthesize.
 | 17         | `IS [NOT] {NULL\|MISSING\|UNKNOWN\|TRUE\|FALSE}`, `IS [NOT] DISTINCT FROM` |
 | 15         | unary `NOT`                                                                |
 | 10         | `AND`                                                                      |
-| 7          | `XOR` *(reserved word; rejected on every supported line — see §11)*        |
+| 7          | `XOR` *(reserved word; rejected on every supported SDK version — see §11)*        |
 | 5          | `OR`                                                                       |
 
 Postfix member access (`a.b`, `arr[i]`) binds tighter than arithmetic, so `ratings.imdb * 10` is `(ratings.imdb) * 10`. `NOT` is unary and prefix; `NOT a LIKE b` parses as `NOT (a LIKE b)` because `LIKE` (19) outranks `NOT` (15) only when `NOT` appears as a separate prefix — when `NOT` follows the term (`a NOT LIKE b`) it is folded into the comparison.

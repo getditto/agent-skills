@@ -54,15 +54,19 @@ Consequences that follow directly from the model:
   not what the device keeps or can read. Local writes always land in the local
   store regardless of subscriptions, and local queries can read everything in
   the local store.
-- **Subscriptions are not persisted.** They live in memory and must be
-  re-registered every time the app starts (typically right after
-  `startSync`).
-- **Subscriptions and reading data are separate concerns.** To actually use
-  synced data, run a local query or register an observer against the local
-  store.
-- **Attachments are the exception.** Attachment *data* is not synced
-  automatically by a subscription — documents carry an attachment token and
-  the binary is fetched explicitly.
+- **The subscription is in memory; the data it syncs is on disk.** The
+  registration itself is not persisted and must be re-registered every time
+  the app starts (typically right after `startSync`) — but the documents it
+  already pulled in are in the local store and survive restarts.
+- **Subscriptions and reading data are separate concerns.** A subscription
+  copies matching documents into the local store; an **observer** runs a
+  query against that store and returns results in memory, with change
+  callbacks. Neither substitutes for the other — production apps use both.
+- **Attachments are the exception.** Attachment *data* is not synced by a
+  subscription under the default settings — documents carry an attachment
+  token and the binary is fetched explicitly. Set
+  `ALTER SYSTEM SET attachments_auto_fetch = true` if you want the bytes to
+  flow with matching documents automatically.
 
 Full lifecycle detail (delta sync, dedup/refcounting, cancel semantics):
 [`references/how-subscriptions-work.md`](references/how-subscriptions-work.md).
@@ -90,7 +94,8 @@ sync only some fields of a document.
 The `LIMIT`/`ORDER BY` row is the version-sensitive one: SDK 4.14.x accepts
 them, while SDK 5.0+ rejects them. A subscription using `LIMIT` maintains
 boundary state and can be expensive; `ORDER BY` makes that cost worse when
-combined with `LIMIT`. (`OFFSET` alone is accepted on every supported line.)
+combined with `LIMIT`. (`OFFSET` alone is accepted on every supported SDK
+version.)
 Details, exact error strings, and the reasons behind the restrictions:
 [`references/query-limitations.md`](references/query-limitations.md).
 
@@ -148,7 +153,7 @@ scenarios, and the loop-suppression mechanism:
    start, every time.
 5. **Expecting documents to disappear when they stop matching.** They don't —
    the peer gets one final update and keeps its copy. Removal is explicit
-   (`EVICT` local / `TOMBSTONE` mesh-wide).
+   (`EVICT` for local-only, `DELETE` for mesh-wide).
 6. **`LIMIT`/`ORDER BY` subscriptions on mutable fields** (4.14.x, or 5.x with
    the restriction disabled): every boundary change invalidates and
    re-evaluates. See

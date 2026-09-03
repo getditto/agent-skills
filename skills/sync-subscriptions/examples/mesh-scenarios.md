@@ -89,8 +89,8 @@ document can reach — repaints `abc` red:
 2. B's copy of `abc` becomes red. B's subscription is unaffected — the
    document is simply no longer in scope for *future* updates.
 3. Nothing is deleted. If B should forget `abc`, the app must `EVICT` it
-   (local; re-syncs if it ever matches again) or `TOMBSTONE` it (mesh-wide
-   delete).
+   (local; re-syncs if it ever matches again) or `DELETE` it (mesh-wide; the
+   tombstone replicates).
 
 ## Scenario 6 — same role, same subscription (flood-fill at full efficiency)
 

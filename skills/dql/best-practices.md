@@ -478,7 +478,7 @@ EXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'
 
 **1. Create Indexes for Frequently Queried Fields**
 
-`CREATE INDEX` is user-facing DQL on all three supported lines. Prioritize:
+`CREATE INDEX` is user-facing DQL on all three supported SDK versions. Prioritize:
 - Fields used in WHERE clauses
 - Fields used in ORDER BY
 - High cardinality fields (many unique values)
@@ -693,7 +693,7 @@ UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user
 -- Last write wins per field, not per object
 ```
 
-> Dotted path syntax (`profile.bio`, `features.seats`, etc.) is a **path expression** — supported in `SET`, `WHERE`, projections, and `ORDER BY` on all three supported lines. See [`references/expressions.md`](references/expressions.md) §4 for the full path-expression grammar including array indexing (`tags[0]`) and parameter-driven keys.
+> Dotted path syntax (`profile.bio`, `features.seats`, etc.) is a **path expression** — supported in `SET`, `WHERE`, projections, and `ORDER BY` on all three supported SDK versions. See [`references/expressions.md`](references/expressions.md) §4 for the full path-expression grammar including array indexing (`tags[0]`) and parameter-driven keys.
 
 ### Cross-Peer Compatibility
 
@@ -789,13 +789,13 @@ INSERT INTO tasks DOCUMENTS ({
 
 ### Deleting Documents — TTL Awareness
 
-When deleting documents you need mesh-wide (`TOMBSTONE`, or `DELETE` from a Big Peer), the replicated tombstone is **not** kept forever:
+When deleting documents you need mesh-wide (`DELETE`, or the deprecated `TOMBSTONE` on a Big Peer), the replicated tombstone is **not** kept forever:
 
 An offline peer that comes back online after the retention window has expired can re-introduce the document, because no peer still holds a tombstone to suppress it.
 
 > **Confirm the retention period for your deployment with Ditto support.** It differs between Small Peer / Edge and Big Peer / Cloud and is not stated in the public documentation, so it should not be hard-coded from memory. Design for the existence of a window rather than a specific number of days.
 
-Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.0 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE`, which resolves to `EVICT` locally and `TOMBSTONE` on a Big Peer. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
+Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.0 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE` — it writes a replicating tombstone, exactly like `TOMBSTONE` does on a Big Peer, and is not a local-only eviction. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
 
 ### Soft Delete Pattern
 

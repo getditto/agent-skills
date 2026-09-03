@@ -9,7 +9,7 @@ description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-All three lines ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.14.x default) or `MAP` (5.0.x and 5.1.x default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+All three SDK versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **default strict-mode setting**, which decides whether bare object values become `REGISTER` (4.14.x default) or `MAP` (5.0.x and 5.1.x default). See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 
@@ -234,7 +234,7 @@ Counters can be combined with other mutation clauses in one statement; see [`sta
 
 - New code on SDK 4.13+. Prefer `COUNTER` for everything new — it has the same merge semantics plus `RESTART WITH`.
 
-**Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported line — 4.14.4, 5.0.0 and 5.1.0 all reject it:
+**Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported SDK version — 4.14.4, 5.0.0 and 5.1.0 all reject it:
 
 ```sql
 -- ✗ REJECTED on 4.14.x, 5.0.x and 5.1.x:
@@ -351,7 +351,7 @@ See [`select.md`](select.md) for the rest of the `SELECT` grammar.
 
 ## 7. Strict mode and the `dql_strict_mode` system parameter
 
-This is the single most important cross-version behaviour change between SDK 4.14.x and the 5.x lines (5.0.x and 5.1.x share the lenient default).
+This is the single most important cross-version behaviour change between SDK 4.14.x and the 5.x versions (5.0.x and 5.1.x share the lenient default).
 
 When the engine encounters an **object literal** in `INSERT`/`UPDATE` and no type definition tells it what to do, it picks one of two CRDT types:
 

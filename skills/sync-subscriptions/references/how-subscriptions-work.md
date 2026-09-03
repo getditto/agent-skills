@@ -68,10 +68,13 @@ involved. See the `write-dql` skill for CRDT data types and
 
 ## In-memory, deduplicated, refcounted
 
-- **Not persisted.** Subscriptions live in memory on the running Ditto
-  instance. After an app restart, nothing is subscribed until the app
-  registers its subscriptions again — make registration part of startup,
-  right after starting sync.
+- **The subscription is in memory — the documents it syncs are not.** Only
+  the subscription *registration* lives in memory on the running Ditto
+  instance. Everything it pulls in is written to the local store and persists
+  on disk (in the persistence directory) across restarts. So after an app
+  restart the previously synced documents are still queryable, but nothing is
+  subscribed until the app registers its subscriptions again — make
+  registration part of startup, right after starting sync.
 - **Deduplicated.** Registering the exact same query twice shares one
   underlying subscription; the sync engine does not do the work twice.
 - **Cancelled explicitly.** A subscription stays active until cancelled (or
@@ -94,24 +97,50 @@ subscription (e.g. a subscribed-to `color = 'blue'` car is repainted red):
    flowing.
 3. **The document is not deleted.** Subscriptions never evict. Removal is
    always explicit: `EVICT` (local only — other peers will re-sync it if it
-   still matches) or `TOMBSTONE` (mesh-wide delete).
+   still matches) or `DELETE` (mesh-wide — it writes a tombstone that
+   replicates, so the document goes away everywhere).
 
 ## Attachments
 
-Subscriptions sync documents, not attachment payloads. A document containing
-an attachment arrives with an *attachment token*; the binary is fetched
-explicitly, on demand, and can come from any peer that has it. Design bulk
-data as attachments (or a separately-subscribed collection) rather than
+By default, subscriptions sync documents, not attachment payloads. A document
+containing an attachment arrives with an *attachment token*; the binary is
+fetched explicitly, on demand, and can come from any peer that has it. Design
+bulk data as attachments (or a separately-subscribed collection) rather than
 embedding it in subscribed documents.
+
+**Auto-fetch.** If you want attachment bytes to flow with the documents
+instead of waiting for an SDK request, set the `attachments_auto_fetch` system
+parameter. It is a boolean, defaults to `false`, and is settable via DQL on
+4.14.x, 5.0.x, and 5.1.x:
+
+```sql
+ALTER SYSTEM SET attachments_auto_fetch = true;
+SHOW attachments_auto_fetch;  -- { "attachments_auto_fetch": true }
+```
+
+When `true`, this peer automatically fetches attachments belonging to
+documents that match its own subscriptions, with no `fetchAttachment` call.
+That is convenient but unbounded: every attachment on every matching document
+is pulled to this device, so weigh it against device storage and transport
+budget (BLE especially) before enabling it fleet-wide. Leave it `false` and
+fetch on demand when only a subset of attachments is ever displayed.
 
 ## Observing vs subscribing
 
-Two APIs are easy to confuse:
+Two APIs are easy to confuse. The shortest way to keep them straight is where
+each one's results end up:
 
-- **Subscription** — controls what the mesh sends to this device. No callback
-  fires locally; there is nothing to "handle".
-- **Observer / local query** — controls what the app sees from the local
-  store, with change callbacks.
+- **Subscription → results on disk.** It controls what the mesh sends to this
+  device, and matching documents are written into the local store, where they
+  persist across restarts. No callback fires locally; there is nothing to
+  "handle".
+- **Observer → results in memory.** It runs a query against the local store
+  and hands the result set to a change callback. It stores nothing, persists
+  nothing, and syncs nothing.
+
+Corollary: an observer alone never causes data to arrive from other peers,
+and a subscription alone never gives the app anything to render. Production
+apps need both.
 
 Typical pattern: a broad, stable subscription brings the data in; observers
 with narrower, changing queries present slices of it to the user.

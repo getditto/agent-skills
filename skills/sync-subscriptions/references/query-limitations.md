@@ -10,8 +10,8 @@ happens **at registration time** — an unsupported query fails the
 
 (Error text below is from SDK 5.1.x. 4.14.x and 5.0.x wording is equivalent
 with two differences, called out inline: `use ids` is lowercase there, and
-multi-collection `FROM` fails at parse time because those versions predate
-the JOIN syntax.)
+`JOIN … ON` fails at parse time because those versions predate the JOIN
+syntax.)
 
 ## The rules
 
@@ -31,8 +31,8 @@ SELECT * FROM cars JOIN drivers ON cars.driver_id = drivers._id
 -- 4.14.x / 5.0.x: parse error (JOIN syntax does not exist before 5.1)
 
 SELECT * FROM cars, drivers
--- all lines: parse error — comma-separated FROM is not DQL grammar on any
--- version, in subscriptions or in store queries
+-- parse error — comma-separated FROM is not DQL grammar, in subscriptions
+-- or in store queries
 
 SELECT * FROM cars USE IDS ['abc123']
 -- 5.1+: Unsupported feature: USE IDS
@@ -57,7 +57,7 @@ Additional consequences:
   attachment instead.
 - **No JOINs** — including SDK 5.1.x, where JOINs exist for store queries.
   Subscription validation is stricter than store-query validation on every
-  version line. Non-collection `FROM` sources (5.1 expression sources) are
+  SDK version. Non-collection `FROM` sources (5.1 expression sources) are
   likewise rejected: `Unsupported feature: An expression source`.
 - `SELECT DISTINCT *` is rejected too — `DISTINCT` applies to the whole
   wildcard row, but the restriction still applies.
@@ -71,7 +71,7 @@ Additional consequences:
 
 ### `LIMIT` and `ORDER BY`: version-dependent
 
-This is the one rule that differs by SDK line:
+This is the one rule that differs by SDK version:
 
 | SDK | Behavior |
 |---|---|
