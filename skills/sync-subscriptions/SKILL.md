@@ -54,10 +54,12 @@ Consequences that follow directly from the model:
   not what the device keeps or can read. Local writes always land in the local
   store regardless of subscriptions, and local queries can read everything in
   the local store.
-- **The subscription is in memory; the data it syncs is on disk.** The
+- **The subscription is in memory; the data it syncs is in the store.** The
   registration itself is not persisted and must be re-registered every time
   the app starts (typically right after `startSync`) — but the documents it
-  already pulled in are in the local store and survive restarts.
+  already pulled in are in the local store and survive restarts. (Not in the
+  browser: the JS SDK's store is in-memory only, so a web peer re-syncs
+  everything each session.)
 - **Subscriptions and reading data are separate concerns.** A subscription
   copies matching documents into the local store; an **observer** runs a
   query against that store and returns results in memory, with change

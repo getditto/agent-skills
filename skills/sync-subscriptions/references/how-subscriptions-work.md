@@ -68,13 +68,20 @@ involved. See the `write-dql` skill for CRDT data types and
 
 ## In-memory, deduplicated, refcounted
 
-- **The subscription is in memory — the documents it syncs are not.** Only
-  the subscription *registration* lives in memory on the running Ditto
-  instance. Everything it pulls in is written to the local store and persists
-  on disk (in the persistence directory) across restarts. So after an app
-  restart the previously synced documents are still queryable, but nothing is
-  subscribed until the app registers its subscriptions again — make
-  registration part of startup, right after starting sync.
+- **The subscription is in memory — the documents it syncs usually are not.**
+  Only the subscription *registration* lives in memory on the running Ditto
+  instance. On the disk-backed SDKs everything it pulls in is written to the
+  local store and persists on disk (in the persistence directory) across
+  restarts. So after an app restart the previously synced documents are still
+  queryable, but nothing is subscribed until the app registers its
+  subscriptions again — make registration part of startup, right after
+  starting sync.
+  - **Browser exception.** In the browser, the JS SDK's store is
+    **in-memory only** — the persistence directory string is just a
+    namespace, nothing is written to IndexedDB / localStorage /
+    sessionStorage, and all synced data is gone on reload or tab close. A web
+    peer therefore re-syncs its whole subscription set from scratch every
+    session; size subscriptions accordingly.
 - **Deduplicated.** Registering the exact same query twice shares one
   underlying subscription; the sync engine does not do the work twice.
 - **Cancelled explicitly.** A subscription stays active until cancelled (or
@@ -130,10 +137,10 @@ fetch on demand when only a subset of attachments is ever displayed.
 Two APIs are easy to confuse. The shortest way to keep them straight is where
 each one's results end up:
 
-- **Subscription → results on disk.** It controls what the mesh sends to this
-  device, and matching documents are written into the local store, where they
-  persist across restarts. No callback fires locally; there is nothing to
-  "handle".
+- **Subscription → results in the store.** It controls what the mesh sends to
+  this device, and matching documents are written into the local store, where
+  they persist across restarts (except in the browser — see above). No
+  callback fires locally; there is nothing to "handle".
 - **Observer → results in memory.** It runs a query against the local store
   and hands the result set to a change callback. It stores nothing, persists
   nothing, and syncs nothing.
