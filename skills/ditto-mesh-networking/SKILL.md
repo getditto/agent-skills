@@ -138,7 +138,8 @@ transport-neutral. The same schema that is fine on LAN can be unusable on Blueto
 
 The mechanism: Bluetooth LE delivers roughly **20 KB/s** of effective throughput, against
 tens of megabits per second for LAN or peer-to-peer Wi-Fi — three orders of magnitude. And
-two costs scale with **document size**, not with edit size:
+two costs scale with **document size**, not with edit size (the wire is not one of them —
+sync sends only the changed fields):
 
 - **Merge cost.** Reconciling a document *costs* the whole document: Ditto deep-copies the
   CRDT, merges into the copy, then re-serializes and re-writes all of it — even for a
@@ -183,7 +184,7 @@ Ditto deliberately does **not** connect every peer to every other peer — that 
 scale and would saturate the radios. Each transport has its own connection budget, sized by
 that radio's constraints: **LAN is the most generous** (ordinary TCP over infrastructure the
 device is already on), **peer-to-peer Wi-Fi is tighter** (AWDL and Wi-Fi Aware share one
-budget because they contend for the same radio), and **BLE is tightest** (few controller
+budget), and **BLE is tightest** (few controller
 slots, shared with every other BLE app on the device). The mesh chooser then picks *which*
 peers to connect to, favoring peers that are far away in the graph, poorly connected, or not
 otherwise reachable. It also performs periodic **churn**:

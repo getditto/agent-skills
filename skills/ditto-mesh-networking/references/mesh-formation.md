@@ -14,7 +14,8 @@ the diagnosis.
 1. **Startup** — the app calls `startSync()` and the SDK initializes each enabled
    transport.
 2. **Transport configuration** — was each transport created with valid parameters? A
-   `wss://` URL that parses; at least one peer-to-peer transport enabled; platform
+   `wss://` URL that parses (however it was supplied — init config or a manual
+   `connect.websocketUrls` entry); at least one peer-to-peer transport enabled; platform
    supports what you asked for.
 3. **Discovery / reachability** — can this peer *see* another one? BLE advertise+scan,
    mDNS browse, multicast, Wi-Fi Aware publish/subscribe, or — for Ditto Server — the
@@ -48,9 +49,10 @@ all working in parallel.
 
 Two practical consequences:
 
-- **Enabling more transports is close to free and strictly increases resilience.** A peer
-  that has BLE and LAN keeps syncing when the access point dies; a peer with only LAN
-  stops. Leave transports on unless you have a measured reason not to.
+- **The platform-appropriate peer-to-peer transports are all enabled by default, and
+  keeping them on is close to free and strictly increases resilience.** A peer that has
+  BLE and LAN keeps syncing when the access point dies; a peer with only LAN stops. Keep
+  the defaults unless you have a measured reason not to.
 - **The transport carrying your data is not stable, and shouldn't be.** Do not build logic
   that assumes "this peer is a Bluetooth peer".
 
@@ -103,9 +105,9 @@ by transport because the underlying radio constraints differ:
 | Transport | Relative budget | Constraint |
 |---|---|---|
 | **LAN** (TCP over Wi-Fi or Ethernet) | Most generous | Ordinary TCP over infrastructure the device is already associated with. Counts inbound + outbound together. |
-| **P2P Wi-Fi** (AWDL, Wi-Fi Aware) | Tighter than LAN | AWDL and Wi-Fi Aware **share a single budget because they contend for the same radio** — they are the Apple and Android implementations of the same idea and never interoperate. Counts inbound + outbound together. |
+| **P2P Wi-Fi** (AWDL, Wi-Fi Aware) | Tighter than LAN | AWDL and Wi-Fi Aware **share a single budget** — they are the Apple and Android implementations of the same idea, a given device only ever runs one of them, and they never interoperate. Counts inbound + outbound together. |
 | **Bluetooth LE** | Tightest | The OS Bluetooth controller has few connection slots, and Ditto shares them with every other BLE app on the device — hence the advice to lower the cap if your app coexists with non-Ditto peripherals. Ditto budgets only the connections it **initiates**; inbound is bounded by the OS Bluetooth stack, not by Ditto. |
-| **WebSocket → Ditto Server** | No SDK-side cap | The server applies its own limits. |
+| **WebSocket → Ditto Server** | No SDK-side cap | No radio constraint — the connection set is exactly the URLs you configure. |
 
 The exact numbers are internal defaults that change between releases, so they are not
 documented here — design for the *ordering*, not for a count. The practical consequence is

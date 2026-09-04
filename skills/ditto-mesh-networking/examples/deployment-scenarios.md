@@ -107,7 +107,7 @@ blocked or the peers are on different subnets. Addresses are known and stable.
 | `listen.tcp.isEnabled` | `true` | Accept inbound sync. |
 | `listen.tcp.interfaceIP` / `port` | `[::]` / `4040` | Bind all interfaces — never the literal string `"localhost"`. |
 | `connect.tcpServers` *or* `TRANSPORTS_DISCOVERED_PEERS` | the known peer addresses | Explicit topology. |
-| `connect.websocketUrls` | Ditto Server URL | |
+| `connect.websocketUrls` | Ditto Server URL | Cloud store-and-forward. With SDK v5 the server URL normally comes from your init config/identity; a manual entry here is the v4 pattern — and in any version can instead point at a local `ws://` endpoint, e.g. a peer serving sync over its HTTP listener. |
 
 Where the peer set is dynamic, use the discovery-hint pattern: read
 `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` on each peer,
@@ -149,7 +149,10 @@ device fault.
 **Transports.**
 
 - All available P2P transports enabled.
-- `connect.websocketUrls` empty.
+- `connect.websocketUrls` is empty by default — nothing to configure. Just make sure no
+  *managed* Ditto Server URL is in play: with cloud sync enabled (`enableDittoCloudSync`
+  or a cloud-managed init config) the SDK re-adds its server URL for you — see
+  [`transport-config.md`](../references/transport-config.md#3-connect--outbound-to-known-addresses).
 - Optionally TCP listen/connect if there is a fixed local server peer.
 
 **Mesh shape.** Pure small-peer mesh. Fully functional and fully offline. The one thing it
@@ -166,7 +169,11 @@ hold.
 
 ## 6. Runtime reconfiguration: "battery saver turns off Bluetooth"
 
-**The requirement.** An app setting that disables BLE to save power.
+**The requirement.** An app setting that disables BLE, on the theory that it saves power.
+Treat that theory as unverified: whether it holds is device- and OS-dependent, and Ditto's
+documented BLE power lever is capping the number of BLE connections
+(`mesh_chooser_max_active_ble_clients`), not disabling the transport. If you ship the
+toggle anyway, here is the correct implementation.
 
 **The correct implementation.** Read the current transport config, set
 `peerToPeer.bluetoothLE.isEnabled = false`, apply. **Do not construct a fresh

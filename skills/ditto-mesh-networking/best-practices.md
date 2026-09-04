@@ -21,8 +21,9 @@ category of link.
 **Fact 2 — Sync is delta-based, but merge and arrival are whole-document.** Ditto sends
 only the fields that changed, so a small edit produces a small update on the wire. But:
 
-- **Merging costs the whole document.** Ditto deep-copies the document's CRDT, merges the
-  diff into the copy, and re-serializes and re-writes the whole document on every update,
+- **Merging costs the whole document** (a receiver-side CPU/storage cost, not a wire cost —
+  the wire carries only the changed fields). Ditto deep-copies the document's CRDT, merges
+  the diff into the copy, and re-serializes and re-writes the whole document on every update,
   even a one-field change. (The CRDT merge itself descends only into changed keys, and index
   postings are skipped when their key values are unchanged — it is the copy, re-serialize and
   store-write that pay full size.) A one-byte edit to a 5 MiB document costs 5 MiB of work on

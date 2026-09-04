@@ -251,7 +251,9 @@ insecure.
 
 ## Choosing a mix
 
-Work down this list; the first row that matches your deployment is your baseline.
+Work down this list; the first row that matches your deployment is your baseline. All P2P
+transports are on by default — the table says which ones matter in each situation, not a
+list to switch on one by one.
 
 | Situation | Enable |
 |---|---|

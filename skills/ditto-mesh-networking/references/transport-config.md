@@ -149,8 +149,9 @@ Two rules, both important:
 ### `routingHint` (default `0`, meaning no preference)
 
 A cloud-side performance hint, not a data partition. Devices that operate on much the same
-data should share a routing-hint value; Ditto makes a best effort to co-locate that data in
-Ditto Server, which improves responsiveness for large collections.
+data — in practice, devices running the same or overlapping subscriptions — should share a
+routing-hint value; Ditto makes a best effort to co-locate that data in Ditto Server, which
+improves responsiveness for large collections.
 
 **It does not affect query results** — it never filters or partitions data, only where the
 cloud keeps it.
