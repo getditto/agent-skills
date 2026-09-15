@@ -187,5 +187,5 @@ Before shipping a schema, confirm:
 - [ ] Subscriptions are scoped to what each device needs, not to everything.
 - [ ] Peer metadata is bytes-to-kilobytes and contains nothing sensitive.
 - [ ] `document_size_soft_limit_bytes` and `document_size_hard_limit_bytes` are identical
-      on every peer, cloud included.
+      on every small peer.
 - [ ] Soft-limit warnings are surfaced in monitoring, not swallowed.

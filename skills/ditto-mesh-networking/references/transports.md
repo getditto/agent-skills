@@ -240,8 +240,9 @@ ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [
 ```
 
 The `discovery_hint` is an optional opaque identifier carrying no long-term tracking data.
-It may change whenever `startSync()` is called; in practice it is regenerated per `Ditto`
-instance (app restart), so re-read it rather than caching it across restarts.
+It survives stop/start sync cycles; refresh it when the peer is recreated (new `Ditto`
+instance) or its local announce (listen address/port) changes — re-read it rather than
+caching it.
 
 An HTTP listener also exists for specialized deployments (including acting as an identity
 provider in fully offline environments). It is not part of ordinary sync configuration; see

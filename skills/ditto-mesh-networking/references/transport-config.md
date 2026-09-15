@@ -226,7 +226,7 @@ fields on the config object. They are the same on every SDK.
 | Statement | Purpose |
 |---|---|
 | `ALTER SYSTEM SET TRANSPORTS_DISCOVERED_PEERS = [{'address': 'tcp://10.0.0.143:12345', 'type': 'force'}]` | Point this peer at peers by address, bypassing mDNS. `address` is a URL (`tcp://`, `ws://`, `wss://`); `type` is `candidate` (default — attempt; may persist after removal) or `force` (always attempt; drops on removal); optional `discovery_hint` carries the remote peer's hint. SDK 4.12.0+. |
-| `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. May change on `startSync()`; in practice regenerated per Ditto instance (app restart) — re-read rather than cache. |
+| `SELECT * FROM system:transports_info WHERE _id = 'discovery_hint'` | Read this peer's opaque discovery hint, for out-of-band peer exchange. It survives stop/start sync cycles; refresh it when the peer is recreated (new `Ditto` instance) or its local announce (listen address/port) changes — re-read rather than cache. |
 | `ALTER SYSTEM SET mesh_chooser_max_active_ble_clients = <n>` | Cap outgoing BLE client connections. |
 | `ALTER SYSTEM SET mesh_chooser_avoid_redundant_bluetooth = true` | Suppress BLE connections to peers already well connected by a faster transport. |
 | `ALTER SYSTEM SET document_size_soft_limit_bytes = <n>` / `document_size_hard_limit_bytes = <n>` | Document size thresholds. **Keep identical across your small peers.** Ditto Server has no such parameter and applies its own limit. |

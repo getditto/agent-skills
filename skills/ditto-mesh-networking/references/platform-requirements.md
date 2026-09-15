@@ -114,7 +114,7 @@ These block transports regardless of any permission being correctly granted.
 
 | Condition | Blocks | How to confirm |
 |---|---|---|
-| **AP / client isolation** on guest and corporate Wi-Fi | LAN | Peers associate with the AP but never see each other. Test with any other LAN service — file sharing, AirDrop discovery. The most common "LAN doesn't work" cause. |
+| **AP / client isolation** on guest and corporate Wi-Fi | LAN | Peers associate with the AP but never see each other. Test with a LAN service that goes over the AP — an HTTP/TCP/SMB service between the two devices. (Don't use AirDrop as the test: it travels over Apple's peer-to-peer Wi-Fi rather than the AP LAN path, so it can succeed while client isolation remains.) The most common "LAN doesn't work" cause. |
 | **VPN** | LAN (mDNS and multicast) | Most tunnels carry neither. Startup looks healthy, no peer is ever discovered. Toggle the VPN off to confirm. |
 | **Captive portal** | WebSocket / Ditto Server | Local mDNS still succeeds; outbound traffic is intercepted. |
 | **Firewall / egress filtering** | WebSocket | `wss://` outbound blocked. |
