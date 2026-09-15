@@ -49,10 +49,11 @@ all working in parallel.
 
 Two practical consequences:
 
-- **The platform-appropriate peer-to-peer transports are all enabled by default, and
-  keeping them on is close to free and strictly increases resilience.** A peer that has
-  BLE and LAN keeps syncing when the access point dies; a peer with only LAN stops. Keep
-  the defaults unless you have a measured reason not to.
+- **The platform-appropriate peer-to-peer transports are all enabled by default, and the
+  default mix favors resilience — retain it unless measurements or platform constraints
+  justify disabling a transport.** A peer that has BLE and LAN keeps syncing when the
+  access point dies; a peer with only LAN stops. Keep the defaults unless you have a
+  measured reason not to.
 - **The transport carrying your data is not stable, and shouldn't be.** Do not build logic
   that assumes "this peer is a Bluetooth peer".
 

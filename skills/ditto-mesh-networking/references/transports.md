@@ -195,7 +195,8 @@ means every convergence costs a round trip to the server and offers no offline o
 peer is implicitly a gateway: peers converge locally over the mesh *and* the server provides
 store-and-forward for peers that are never co-located. There is no "gateway" flag — the role
 comes for free from having both configured. Removing all WebSocket URLs at runtime stops
-server sync immediately without touching P2P.
+server sync immediately without touching P2P — unless a managed Ditto Server URL is active
+(`enableDittoCloudSync` / a cloud-managed init config), in which case the SDK re-adds it.
 
 **Failure modes.** Malformed URL; auth webhook failure; captive portal or firewall blocking
 the outbound connection; expired credentials. Connection attempts retry on
@@ -265,6 +266,6 @@ list to switch on one by one.
 | Air-gapped, no server | All available P2P transports, no WebSocket |
 
 **Default to leaving transports on.** The multiplexer picks the best available link per
-peer and switches as conditions change; an enabled-but-unused transport costs little, while
-a disabled one removes a path through the mesh permanently. Disable a transport only for a
-measured reason.
+peer and switches as conditions change; the default mix favors resilience, while a disabled
+transport removes a path through the mesh permanently. Disable a transport only where
+measurements or platform constraints justify it.

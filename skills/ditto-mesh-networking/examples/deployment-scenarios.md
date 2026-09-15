@@ -8,6 +8,12 @@ Configuration is described in terms of the fields in
 [`references/transport-config.md`](../references/transport-config.md); for the literal
 syntax in your language, use that SDK's skill.
 
+> **These tables describe the *effective* transport state, not a manual setup checklist.**
+> With SDK v5, the Ditto Server (Big Peer) WebSocket endpoint is normally managed through
+> initialization/identity; a manual `connect.websocketUrls` entry is primarily the SDK v4
+> pattern, or the way to reach an explicit local endpoint. Rows naming the server describe
+> the resulting connection, however it was supplied.
+
 ---
 
 ## 1. Restaurant point-of-sale — mixed iPads and Android handhelds, venue Wi-Fi that sometimes dies
@@ -27,8 +33,8 @@ are a mix of iOS and Android, so no single P2P Wi-Fi technology covers the fleet
 | `global.syncGroup` | location ID | Two restaurants in the same app don't discover each other. |
 
 **Mesh shape.** Every peer a gateway: local convergence over LAN/AWDL/Wi-Fi Aware at local
-latency, plus cloud store-and-forward. When the AP fails, LAN drops out and the multiplexer
-switches those peer links to BLE with no application involvement.
+latency, plus cloud store-and-forward. When the AP fails, LAN drops out; traffic can
+continue over an existing or newly formed BLE path without application involvement.
 
 **Why the failover is usually seamless:** by default Ditto still forms BLE connections to
 peers it can already reach over Wi-Fi, so the BLE link is often *already there* when the AP
@@ -61,7 +67,7 @@ spread out; many pairs are never in direct range of each other.
 |---|---|---|
 | `peerToPeer.bluetoothLE.isEnabled` | `true` | Long-ish range, works with no infrastructure. |
 | `peerToPeer.wifiAware.isEnabled` | `true` | Much faster than BLE when two devices are close. All-Android fleet, so this covers every pair. |
-| `peerToPeer.lan.isEnabled` | `true` | Costs nothing; picks up any Wi-Fi that does exist. |
+| `peerToPeer.lan.isEnabled` | `true` | Keep enabled as the default; it picks up any usable Wi-Fi. |
 | `connect.websocketUrls` | Ditto Server URL, if reachable at all | May only connect when a device returns to an office. |
 
 **Mesh shape.** A sparse, multihop, constantly churning mesh. Most peer pairs are **not**
@@ -149,9 +155,12 @@ device fault.
 **Transports.**
 
 - All available P2P transports enabled.
-- `connect.websocketUrls` is empty by default — nothing to configure. Just make sure no
-  *managed* Ditto Server URL is in play: with cloud sync enabled (`enableDittoCloudSync`
-  or a cloud-managed init config) the SDK re-adds its server URL for you — see
+- No WebSocket endpoint active. **Initialize without a managed Big Peer / cloud
+  configuration** (`enableDittoCloudSync` off, no cloud-managed server URL in the
+  identity) — with SDK v5 the Big Peer WebSocket is auto-configured into
+  `connect.websocketUrls` by initialization, so configuring nothing is not enough if a
+  managed URL is in play. Verify no WebSocket endpoint is active before calling the
+  deployment air-gapped — see
   [`transport-config.md`](../references/transport-config.md#3-connect--outbound-to-known-addresses).
 - Optionally TCP listen/connect if there is a fixed local server peer.
 
@@ -167,13 +176,11 @@ hold.
 
 ---
 
-## 6. Runtime reconfiguration: "battery saver turns off Bluetooth"
+## 6. Runtime reconfiguration: disabling BLE while the app is running
 
-**The requirement.** An app setting that disables BLE, on the theory that it saves power.
-Treat that theory as unverified: whether it holds is device- and OS-dependent, and Ditto's
-documented BLE power lever is capping the number of BLE connections
-(`mesh_chooser_max_active_ble_clients`), not disabling the transport. If you ship the
-toggle anyway, here is the correct implementation.
+**The requirement.** An app needs to turn Ditto's BLE transport off at runtime — for
+example a venue- or policy-driven setting, or a temporary maintenance mode. Here is the
+correct implementation.
 
 **The correct implementation.** Read the current transport config, set
 `peerToPeer.bluetoothLE.isEnabled = false`, apply. **Do not construct a fresh
@@ -185,10 +192,10 @@ untouched — a LAN transfer in flight is not interrupted. Turning it back on re
 discovery; connections re-form over the following seconds.
 
 **What to tell the user.** On a mixed iOS/Android fleet with no Wi-Fi, disabling BLE
-disables *all* cross-platform sync. Verify the saving is real before shipping it: a peer
-that loses its BLE path may end up relaying everything over a longer route, spending *more*
-radio time, not less.
+disables *all* cross-platform sync. Note also that removing a transport removes paths
+through the mesh: a peer that loses its BLE path may end up relaying everything over a
+longer route.
 
-**Related trap.** If the setting also lets users switch sync group (site selection, say),
+**Related trap.** If the app also lets users switch sync group (site selection, say),
 **stop sync before changing `global.syncGroup` and start it after.** Changing it live forces
 an internal sync restart.

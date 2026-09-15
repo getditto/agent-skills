@@ -53,13 +53,18 @@ JS and Go SDKs; most other SDKs accept it silently and it simply never starts. S
 
 | Requirement | Applies to | Symptom if missing |
 |---|---|---|
-| `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` runtime permissions (API 31+) | BLE | BLE cannot scan or connect; transport condition reports the missing permission. |
+| `BLUETOOTH_SCAN`, `BLUETOOTH_ADVERTISE`, and `BLUETOOTH_CONNECT` runtime permissions (API 31+) | BLE | Ditto scans, connects, **and advertises** — all three are needed. A missing one surfaces through the transport-condition callback. |
 | Location permission (older API levels) | BLE scanning | Scanning returns nothing on API levels that tie BLE scan results to location. |
 | `CHANGE_WIFI_MULTICAST_STATE` **and** an acquired `MulticastLock` | LAN multicast discovery | Multicast discovery *starts* and never sees a peer. The startup log line still appears — absence of peers is the only signal. |
 | `NEARBY_WIFI_DEVICES` (API 33+), with `neverForLocation` asserted | Wi-Fi Aware | Platform silently filters Wi-Fi Aware peers out. |
 | `ACCESS_FINE_LOCATION` (API 29–32) **and** location services *switched on* | Wi-Fi Aware | Android reports Wi-Fi Aware unavailable; discovery stays silent. Note this is the system location **toggle**, not just the permission. |
 | Android 10 (API 29) or newer **and** hardware Wi-Fi Aware support | Wi-Fi Aware | The SDK logs an error and continues without it — `startSync()` still succeeds, so watch the log, not the return value. Many low-end and older devices lack the hardware feature regardless of OS version. |
 | Wi-Fi radio switched on | Wi-Fi Aware | Wi-Fi Aware rides the Wi-Fi radio even though no access point is involved. Wi-Fi off ⇒ transport offline. |
+
+**Wi-Fi Aware manifest permissions.** The rows above cover the Android-version-gated *runtime*
+requirements; Wi-Fi Aware also needs its baseline manifest permission set, which varies by
+Ditto SDK language and version. Check the SDK-specific required-permissions list for your SDK
+rather than this table for the complete manifest.
 
 **Wi-Fi Aware and background.** By default the Wi-Fi Aware client stops searching when the
 app goes to background. Apps that must keep meshing in background have to change that

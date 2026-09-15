@@ -113,7 +113,7 @@ transport.** You do not need to stop and restart sync.
 | Transport `true` → `false` | That transport stops and its connections drop immediately. |
 | Transport unchanged | **Untouched.** Its live connections are not disturbed. |
 | Add a WebSocket URL | Connection attempts begin, retried on `connect.retryInterval` (default 5s — a mesh-wide per-peer cooldown, not WebSocket-specific). |
-| Remove all WebSocket URLs | Ditto Server sync stops immediately. |
+| Remove all WebSocket URLs | Ditto Server sync stops immediately — **only if no managed URL is active**: with cloud sync enabled (`enableDittoCloudSync` / a cloud-managed init config) the SDK re-adds its server URL for you. |
 | Change `global.syncGroup` **while sync is active** | Sync is torn down and restarted internally. **Stop sync, change the group, start sync** — do not change it live. |
 
 Because updates are diffed, **read-modify-write is the safe pattern**: fetch the current
@@ -222,8 +222,10 @@ The exact counts are release-dependent internal defaults and are deliberately no
 7. **Disabling transports "to save battery" without measuring.** Removing a transport
    removes paths through the mesh; the peer may end up relaying everything over the slowest
    remaining link, which costs *more* radio time.
-8. **Expecting a WebSocket URL alone to give peer-to-peer sync.** WebSocket reaches Ditto
-   Server only. Peers on the same table sync directly only if a P2P transport is enabled.
+8. **Expecting a WebSocket URL alone to give peer-to-peer sync.** A WebSocket targets a
+   *known endpoint* — Ditto Server, or a local peer serving sync over its HTTP listener —
+   and does not discover nearby P2P peers. Peers on the same table sync directly only if a
+   P2P transport is enabled.
 
 ## Where to look
 

@@ -88,7 +88,7 @@ and is inert in core. Use the `mesh_chooser_max_active_ble_clients` system param
 
 | Field | Default | Notes |
 |---|---|---|
-| `websocketUrls` | empty | `wss://…` (or `ws://…` for local/on-prem) endpoints for Ditto Server, or for a peer serving sync over its HTTP listener. |
+| `websocketUrls` | empty (in a config you construct; see note) | `wss://…` (or `ws://…` for local/on-prem) endpoints for Ditto Server, or for a peer serving sync over its HTTP listener. Note: with SDK v5 the managed Big Peer WebSocket is auto-configured into this set by initialization, so the *effective* value is normally non-empty in a cloud deployment — the `empty` default describes a bare constructed config. |
 | `tcpServers` | empty | `host:port` strings for raw TCP sync with a known peer. |
 | `retryInterval` | 5 seconds | **Mesh-wide**, not WebSocket-specific: the minimum interval between connection attempts to the same peer on a given transport. Changing it re-paces BLE, LAN and TCP retries too. WebSocket skips the cooldown on its *first* attempt. |
 
