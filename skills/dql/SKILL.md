@@ -47,13 +47,17 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 2. **Single and double quotes both delimit strings**; backticks delimit identifiers. `WHERE title = "x"` and `WHERE title = 'x'` are equivalent. Prefer single quotes for consistency with JSON-style examples.
 3. **`= NULL` is always NULL**, not TRUE. Use `IS NULL` / `IS NOT NULL` / `IS MISSING`.
 4. **`INSERT` requires an explicit `ON ID CONFLICT`** for upserts. Default is FAIL.
-5. **`EVICT` is local-only and reversible** (other peers will re-sync). **`TOMBSTONE` is mesh-wide and permanent** (subject to TTL). Don't mix them up.
+5. **`EVICT` is local-only and reversible** (other peers will re-sync). **`DELETE` is mesh-wide and permanent** (subject to TTL) — it writes a replicating tombstone, and is the mesh-wide delete available from an Edge SDK. Don't mix them up.
 
 ## Compatibility
 
 This skill covers **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Every feature in the reference files is tagged with its minimum SDK version. See `references/versions.md` for the full matrix.
 
-Not in the tested SDK lines (verified against 4.14.4 / 5.0.0 / 5.1.0): `XOR` (parser-rejected everywhere), structured `PROFILE` output, `DO MERGE`, multi-id `USE IDS` lists, and `USE IDS` on mutations. See `references/versions.md` for details.
+Rejected on every tested SDK version (verified against 4.14.4 / 5.0.0 / 5.1.0): `XOR`, `TOMBSTONE` (Big-Peer-only), `EXCLUDE MISSING` index keys, the parenthesised `USE IDS ('a', 'b')` tuple, inline `PN_COUNTER` declarations on `INSERT`, and structured `PROFILE` output. Note that multi-id `USE IDS` **does** work everywhere in its comma form (`USE IDS 'a', 'b'`).
+
+On 4.14.x under its default strict mode, `APPLY ... INCREMENT BY` on a not-yet-existing field silently does nothing.
+
+`DO MERGE` is supported on every tested SDK version as an alias for `DO UPDATE`. See `references/versions.md` for the full matrix.
 
 ## Decision tree for query problems
 
@@ -67,7 +71,7 @@ Need to read documents?
 Need to write documents?
 ├── Adding new?       → INSERT (references/statements.md)
 ├── Modifying?        → UPDATE with SET / UNSET / APPLY (references/statements.md)
-└── Removing?         → EVICT (local) or TOMBSTONE (mesh) (references/statements.md)
+└── Removing?         → EVICT (local) or DELETE (mesh) (references/statements.md)
 
 Need to make it fast?
 ├── See the plan?     → EXPLAIN (references/indexing.md)

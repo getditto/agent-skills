@@ -15,6 +15,7 @@ customer use.**
 |-------|--------------------|-------------|
 | [dql](skills/dql) (`write-dql`) | `ditto-dql` | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
 | [ditto-mesh-networking](skills/ditto-mesh-networking) | `ditto-mesh` | Peer-to-peer mesh and transports — Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket, explicit TCP. Peer discovery and multihop routing, the transport configuration model and its runtime-update semantics, and how transport choice shapes your data model. |
+| [sync-subscriptions](skills/sync-subscriptions) (`sync-subscriptions`) | `ditto-subscriptions` | How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 
 ## Repository layout
 
@@ -40,8 +41,9 @@ you want:
 ```bash
 /plugin marketplace add getditto/claude-code-plugins
 
-/plugin install ditto-dql     # DQL skill + dql-expert agent
-/plugin install ditto-mesh    # ditto-mesh-networking skill
+/plugin install ditto-dql            # DQL skill + dql-expert agent
+/plugin install ditto-mesh           # ditto-mesh-networking skill
+/plugin install ditto-subscriptions  # sync-subscriptions skill
 ```
 
 `.claude-plugin/marketplace.json` → `plugins/<plugin>/.claude-plugin/plugin.json`

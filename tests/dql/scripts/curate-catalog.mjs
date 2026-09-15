@@ -379,6 +379,8 @@ for (const entry of RAW_CATALOG) {
         source: entry.source,
         query: stripTerminator(stripLeadingComments(entry.query)) || stripTerminator(entry.query),
         availableIn: entry.availableIn,
+    unavailableReason: entry.unavailableReason,
+        unavailableReason: entry.unavailableReason,
         expectError: true,
       });
       continue;
@@ -438,6 +440,7 @@ for (const entry of RAW_CATALOG) {
     source: entry.source,
     query: primary,
     availableIn: entry.availableIn,
+    unavailableReason: entry.unavailableReason,
     expectError: entry.expectError === true || isWrong,
   };
 
@@ -522,6 +525,7 @@ if (fs.existsSync(OVERRIDES_PATH)) {
   const ignoreMap = overrides.ignore || {};
   const availMap = overrides.availableIn || {};
   const setupMap = overrides.setup || {};
+  const unavailMap = overrides.unavailableReason || {};
   for (let i = curated.length - 1; i >= 0; i--) {
     const e = curated[i];
     if (ignoreMap[e.id] !== undefined) {
@@ -532,6 +536,11 @@ if (fs.existsSync(OVERRIDES_PATH)) {
     }
     if (availMap[e.id] !== undefined) {
       e.availableIn = availMap[e.id];
+    }
+    if (unavailMap[e.id] !== undefined) {
+      // Justification for an entry that runs on no supported SDK. Without one,
+      // the runner reports BROKEN-EVERYWHERE and fails the run.
+      e.unavailableReason = unavailMap[e.id];
     }
     if (setupMap[e.id]) {
       // Manual statement decorations, e.g. CREATE INDEX before a JOIN whose
