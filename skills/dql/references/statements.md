@@ -294,7 +294,6 @@ EVICT FROM <collection>
 
 - Small Peer only.
 - **`RETURNING` is SDK 5.1+.** On 4.14.x and 5.0.x it raises `RETURNING is not supported`.
-- **`USE IDS` on `EVICT` parses on SDK 5.1+ but is unsafe** — without a `RETURNING` clause it reports success and evicts nothing (the plan is `valueScan → remove` instead of `idScan → remove`). It is a parse error on 4.14.x / 5.0.x. **Use `WHERE _id IN (...)` on every SDK version** until this is fixed.
 
 ```sql
 -- Drop all pre-1950 movies from this device's local store
@@ -360,7 +359,6 @@ DELETE FROM <collection>
 
 - Available on both Small and Big Peer, and replicating on both.
 - **`RETURNING` is SDK 5.1+.** On 4.14.x and 5.0.x it raises `RETURNING is not supported`.
-- **`USE IDS` on `DELETE` parses on SDK 5.1+ but is unsafe** — without a `RETURNING` clause it reports success and deletes nothing (the plan is `valueScan → remove` instead of `idScan → remove`). It is a parse error on 4.14.x / 5.0.x. **Use `WHERE _id IN (...)` on every SDK version** until this is fixed.
 
 ```sql
 -- Bulk delete by id list (tombstones the documents mesh-wide, from either peer type)
@@ -533,6 +531,6 @@ Three statement-level features are excluded from this reference because they are
 
 - **`ADVISE` / `ADVISE AND PROVISION`** — index recommendation wrapper. Lands in SDK 5.1+. Not supported on either 4.14.x or 5.0.x; do not use.
 - **Structured `PROFILE` output** — see §10. Lands in 5.1+.
-- **`USE IDS` on mutations** — a parse error on 4.14.x and 5.0.x for all of `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only, and it works correctly), and on `DELETE` / `EVICT` where it **silently removes nothing** unless `RETURNING` is present. `TOMBSTONE` is unavailable everywhere. Prefer `WHERE _id IN (...)` for mutations on every SDK version.
+- **`USE IDS` on mutations** — a parse error on 4.14.x and 5.0.x for all of `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only); `USE IDS` remains a SELECT-only feature and should not be used on mutations. `TOMBSTONE` is unavailable everywhere. Use `WHERE _id IN (...)` for mutations on every SDK version.
 
 `SELECT` lives in [`select.md`](select.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md). CRDT type definitions (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`) and their mutators are documented in [`types-mutators.md`](types-mutators.md).

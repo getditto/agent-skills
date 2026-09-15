@@ -27,7 +27,7 @@ DQL literals match JSON for arrays and objects; identifiers and quoting follow S
 | Boolean      | `TRUE`, `FALSE` (case-insensitive)             |
 | Null marker  | `NULL` — value known to be absent              |
 | Absence      | `MISSING` — field is not present (see below)   |
-| String       | `'hello'`, `'O''Reilly'` — see the version note on escaping below |
+| String       | `'hello'`                                                        |
 | Array        | `[]`, `[1, 'a', { 'k': 1 }]`                   |
 | Object       | `{}`, `{ 'name': 'Alice', 'age': 30 }`         |
 
@@ -53,16 +53,6 @@ Case-sensitive. Two forms:
 - **Delimited identifier** — backtick-wrapped. Any characters allowed; escape an inner backtick with two backticks. Examples: `` `1abc` ``, `` `release year` ``, `` `ratings.imdb` `` (a field literally named `ratings.imdb`, not a path), `` `some ``person`` foo` ``.
 
 Single quotes and double quotes both delimit **string literals** in DQL — `'foo'` and `"foo"` are equivalent. Only backticks delimit identifiers. If you want an identifier with special characters, use backticks.
-
-> **String escaping varies by SDK version** (verified by the skill test harness):
->
-> | Form | 4.14.x | 5.0.x | 5.1.x |
-> |---|---|---|---|
-> | `'O''Reilly'` (doubled quote) | ✅ | ✅ | ❌ parse error |
-> | `'O\'Reilly'` (backslash) | ❌ | ❌ | ✅ |
-> | `"O'Reilly"` (double quotes) | ❌ inside document literals | ✅ | ✅ |
->
-> For examples that must run on every supported SDK, avoid embedding `'` in string literals.
 
 You must delimit an identifier when it:
 

@@ -125,7 +125,7 @@ SELECT m.title, m.year FROM movies m WHERE m.year >= 2000;
 
 ## 3. USE IDS
 
-> **Effectively SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x. On 5.1.x it parses on `UPDATE` (before `SET` only, and it applies correctly) and on `DELETE` / `EVICT` — but there it **reports success and removes nothing** unless a `RETURNING` clause is present, so it must not be used. `TOMBSTONE` is unavailable on every SDK version. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
+> **SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x, and on 5.1.x it parses on `UPDATE` (before `SET` only) but remains documented as a SELECT-only feature. `TOMBSTONE` is unavailable on every SDK version. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
 
 ```
 USE IDS ( <id_expr> [, <id_expr> ...] )

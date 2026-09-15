@@ -269,7 +269,7 @@ SELECT * FROM movies USE IDS 'tt0111161';
 
 ### 4.1 USE IDS is SELECT-only
 
-On 4.14.x and 5.0.x, `USE IDS` is a parse error on `UPDATE`, `EVICT`, `TOMBSTONE` and `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only, and works), and on `DELETE`/`EVICT` where it **silently removes nothing** without `RETURNING`. **For mutations, use `WHERE _id IN (…)` on every SDK version** — see [`statements.md`](statements.md).
+On 4.14.x and 5.0.x, `USE IDS` is a parse error on `UPDATE`, `EVICT`, `TOMBSTONE` and `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only); `USE IDS` remains documented as a SELECT-only feature and should not be used on mutations. **For mutations, use `WHERE _id IN (…)` on every SDK version** — see [`statements.md`](statements.md).
 
 ### 4.2 Interaction with `#auto_use_ids`
 

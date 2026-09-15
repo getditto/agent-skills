@@ -19,7 +19,7 @@ If you are debugging a parse error or a behavior change after upgrading, start h
 | -------- | --------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
 | 4.14.x   | LTS (long-term)       | `true` (strict)           | Bare object values store as `REGISTER` (last-write-wins on the whole object).          |
 | 5.0.x    | Supported             | `false` (lenient)         | Bare object values store as `MAP` (per-field merge). `DO MERGE` remains an alias for `DO UPDATE`; `XOR` is unavailable. |
-| 5.1.x    | Latest                | `false` (lenient)         | Adds `JOIN` (inner/left/right/multi/self), composite (multi-column) indexes, `RETURNING` on `INSERT`/`UPDATE`/`DELETE`/`EVICT`, `EXPLAIN` on DML, `INSERT … SELECT`, and `ADVISE` / `ADVISE AND PROVISION`. **Changes the string-literal escape convention** — see §4.3. |
+| 5.1.x    | Latest                | `false` (lenient)         | Adds `JOIN` (inner/left/right/multi/self), composite (multi-column) indexes, `RETURNING` on `INSERT`/`UPDATE`/`DELETE`/`EVICT`, `EXPLAIN` on DML, `INSERT … SELECT`, and `ADVISE` / `ADVISE AND PROVISION`. |
 
 5.1.x adds `JOIN` on top of the shared `Statement` enum (`SELECT`, `INSERT`, `RETURNING`-mutations, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `CREATE INDEX`, `DROP INDEX`, `ADVISE`). The differences are catalogued below.
 
@@ -38,7 +38,7 @@ Verified against `@dittolive/ditto@5.1.0` by the test harness (`tests/dql/`):
 - **`SHOW ALL LIKE / ILIKE … [ESCAPE]`** — the filter clause on `SHOW ALL`. See [`statements.md`](statements.md) §8.
 - **`RIGHT [OUTER] JOIN`** alongside `INNER` / `LEFT [OUTER]`. See [`select.md`](select.md) §14.
 - **`round()`, `array_sort()`, `serialize_json()`, `object_size()`** scalars. See [`functions.md`](functions.md).
-- **`USE IDS` on `UPDATE` / `DELETE` / `EVICT`** — parses, but see the correctness warning in §4.7.
+- **`USE IDS` on `UPDATE` / `DELETE` / `EVICT`** — parses on mutations in 5.1.x, but `USE IDS` remains documented as a SELECT-only feature; use `WHERE _id IN (…)` for mutations on every SDK version.
 
 Still **not** supported in 5.1.0 (verified): `XOR` (parse error on every SDK version — see §6), structured `PROFILE` output, the parenthesised-tuple `USE IDS ('a', 'b')` spelling (see §4.7), `EXCLUDE MISSING` index keys, `TOMBSTONE` in any form on a Small Peer, and `FULL OUTER` / `CROSS` joins.
 
@@ -103,8 +103,6 @@ When you see a tag like "SDK 4.13+" it means: works on 4.13 through 4.14.x **and
 | Construct                                  | 4.14.x | 5.0.x | 5.1.x | Notes                                                                       |
 | ------------------------------------------ | :----: | :---: | :---: | ----------------------------------------------------------------------------- |
 | Literals (string, number, bool, null)      |   ✓    |   ✓   |   ✓   |                                                                             |
-| `'O''Reilly'` (doubled-quote escape)       |   ✓    |   ✓   |   ✗   | **Breaking change in 5.1.x** — see [`expressions.md`](expressions.md) §1.    |
-| `'O\'Reilly'` (backslash escape)           |   ✗    |   ✗   |   ✓   | The 5.1.x spelling. Avoid `'` in literals if you must span all three SDK versions.  |
 | Hex integer literal `0xff`                 |   ✗    |   ✓   |   ✓   | **SDK 5.0+**. 4.14.x raises `X'ff' is not supported`.                        |
 | Array literal `[1, 2, …]`                  |   ✓    |   ✓   |   ✓   |                                                                             |
 | Object literal `{'k': v, …}`               |   ✓    |   ✓   |   ✓   |                                                                             |
@@ -177,13 +175,11 @@ All other operators (`+`, `-`, `*`, `/`, `%`, comparison family, `LIKE` / `ILIKE
 | `USE IDS LIST ['a', 'b']`                          |   ✗    |   ✓   |   ✓   | **SDK 5.0+**.                                                               |
 | Automatic `_id` equality rewrite                   |   ✗    |   ✓   |   ✓   | 5.0+: `WHERE _id = '…'` rewrites to `idScan`. 5.1.x also rewrites `WHERE _id IN (…)`. |
 | `USE IDS` on `UPDATE`                              |   ✗    |   ✗   |   ✓   | 5.1.x only, and **only before `SET`** (`UPDATE coll USE IDS 'x' SET …`). Applies correctly. |
-| `USE IDS` on `DELETE` / `EVICT`                    |   ✗    |   ✗   |   ⚠   | Parses on 5.1.x but **silently removes nothing** without `RETURNING` — see the warning below. |
+| `USE IDS` on `DELETE` / `EVICT`                    |   ✗    |   ✗   |   ✗   | Parse error on 4.14.x / 5.0.x; not supported on mutations. Use `WHERE _id IN (…)`. |
 | `USE IDS` on `TOMBSTONE`                           |   ✗    |   ✗   |   ✗   | `TOMBSTONE` itself is unavailable on every SDK version.                            |
 | `ADVISE` / `ADVISE AND PROVISION`                  |   ✗    |   ✗   |   ✓   | See [`indexing.md`](indexing.md) §9.                                        |
 
 > **Planner directives fail silently.** An unrecognised directive — including a misspelling, an unknown collection name, or a wrong-typed value — is **accepted without error and ignored** on every version. "It didn't error" therefore proves nothing about support. The only reliable check is to diff `EXPLAIN` plans against the same query without the directive: a honoured directive changes the plan shape, an ignored one leaves it byte-identical.
-
-> **⚠ `USE IDS` on `DELETE` / `EVICT` is unsafe on 5.1.x.** The statement parses, reports success, and removes **zero** documents unless a `RETURNING` clause is present. `EXPLAIN` shows why: the plan is `valueScan(literal id) → remove` instead of `idScan → remove`, so the removal targets a synthetic row set rather than storage. Until this is fixed, use `WHERE _id = '…'` or `WHERE _id IN (…)` for deletes and evictions — those work correctly on every SDK version.
 
 ### 4.8 Subscription-query restrictions
 
@@ -273,7 +269,6 @@ Three reasons portability is worth thinking about up front.
 1. **Mixed-version mesh.** Ditto peers sync directly. A document inserted by a 5.0.x peer (where a bare object becomes `MAP`) replicates to a 4.14.x peer (which would have stored it as `REGISTER` had it inserted the same document). The on-disk representation is decided by the peer that wrote it — so the same field can be `REGISTER` on one peer and `MAP` on another, even on the same network. **Always declare CRDT types explicitly** on writes that touch non-register fields.
 2. **Write to the lowest common denominator.** Use the older SDK's feature surface as the baseline. Avoid `ANY/EVERY ... SATISFIES`, comprehensions, `WITHIN`, `BETWEEN`, `PROFILE`, and `#profile` unless every peer that will execute the query is on 5.0+; avoid `JOIN`, `RETURNING`, composite indexes and `ADVISE` unless every peer is on 5.1+. Rewrite `XOR` using portable logical operators. `DO MERGE` is portable, but `DO UPDATE` is the canonical spelling.
 3. **Defaults are not contracts.** The flip from `dql_strict_mode = true` (v4) to `false` (v5.0) is the kind of silent behavior change that breaks code months after the upgrade, when the first concurrent write hits a field that's now a `MAP` instead of a `REGISTER`. The way to immunise your code is to declare types on every mutation — that way the default doesn't matter.
-4. **String literals are not portable across the 5.0 → 5.1 boundary.** 5.1.x swapped the escape convention: `'O''Reilly'` works on 4.14.x/5.0.x and parse-errors on 5.1.x, while `'O\'Reilly'` does the reverse. A query string with an apostrophe in it will break on upgrade. Where a literal must span all three SDK versions, keep `'` out of it or bind it as a `:parameter`.
 
 ---
 
@@ -281,7 +276,7 @@ Three reasons portability is worth thinking about up front.
 
 - [`operators.md`](operators.md) — operator precedence, comparison/logical semantics, the `XOR` cross-version note in §11.
 - [`functions.md`](functions.md) — every scalar function (all three SDK versions) and aggregate, plus the 5.1-only scalars.
-- [`expressions.md`](expressions.md) — string-escape versioning, quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN`.
+- [`expressions.md`](expressions.md) — literals, quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN`.
 - [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.13+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), `RETURNING` / `INSERT … SELECT` / DML `EXPLAIN` (5.1+), the `DO MERGE` cross-version note.
 - [`select.md`](select.md) — `JOIN` (5.1+) and the subscription restrictions.
 - [`types-mutators.md`](types-mutators.md) — the canonical writeup of the strict-mode flip.

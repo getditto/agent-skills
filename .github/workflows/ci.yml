@@ -74,3 +74,111 @@ jobs:
 
           print("All plugin references valid")
           EOF
+
+
+      - name: Check plugin wrappers are scoped
+        run: |
+          echo "Checking each plugin only ships what it declares..."
+          python3 << 'EOF'
+          import os
+          import sys
+
+          KINDS = (('skills', 'SKILL.md'), ('agents', None))
+
+          errors = []
+          shipped = {kind: set() for kind, _ in KINDS}
+
+          if not os.path.isdir('plugins'):
+              print("ERROR: no plugins/ directory (run from the repo root)")
+              sys.exit(1)
+
+          def check_target(path, target, root, canonical):
+              """Target must be a strict descendant of the canonical tree."""
+              if not os.path.exists(target):
+                  errors.append(f"{path} is a broken symlink")
+                  return None
+              if target == root:
+                  errors.append(
+                      f"{path} points at the whole {canonical}/ tree; a plugin must "
+                      f"link only the items it ships"
+                  )
+                  return None
+              if os.path.commonpath([target, root]) != root:
+                  errors.append(f"{path} resolves outside {canonical}/: {target}")
+                  return None
+              return target
+
+          for plugin in sorted(os.listdir('plugins')):
+              proot = os.path.join('plugins', plugin)
+              if not os.path.isdir(proot):
+                  continue
+
+              ships_anything = False
+
+              for canonical, suffix in KINDS:
+                  wrapper = os.path.join(proot, canonical)
+                  # lexists, not exists: a broken symlink must be reported, not skipped.
+                  if not os.path.lexists(wrapper):
+                      continue
+
+                  root = os.path.realpath(canonical)
+
+                  # Shape (a): the wrapper itself is a symlink to a scoped
+                  # subdirectory of the canonical tree, e.g.
+                  #   plugins/ditto-dql/agents -> ../../agents/ditto-dql
+                  # Claude Code follows a symlinked *directory* but not a
+                  # symlinked *file*, so agents must use this shape.
+                  if os.path.islink(wrapper):
+                      target = check_target(wrapper, os.path.realpath(wrapper), root, canonical)
+                      if target:
+                          entries = [e for e in os.listdir(target) if not e.startswith('.')]
+                          if not entries:
+                              errors.append(f"{wrapper} -> {target} is empty")
+                          else:
+                              ships_anything = True
+                              shipped[canonical].add(os.path.basename(target))
+                      continue
+
+                  # Shape (b): a real directory whose entries are symlinks into
+                  # the canonical tree, e.g.
+                  #   plugins/ditto-dql/skills/dql -> ../../../skills/dql
+                  entries = [e for e in sorted(os.listdir(wrapper)) if not e.startswith('.')]
+                  if not entries:
+                      errors.append(f"{wrapper} is empty")
+                      continue
+
+                  for entry in entries:
+                      path = os.path.join(wrapper, entry)
+                      if not os.path.islink(path):
+                          errors.append(
+                              f"{path} is a copy, not a symlink into {canonical}/; "
+                              f"skill and agent content must live once, in {canonical}/"
+                          )
+                          continue
+                      target = check_target(path, os.path.realpath(path), root, canonical)
+                      if not target:
+                          continue
+                      if suffix and not os.path.isfile(os.path.join(target, suffix)):
+                          errors.append(f"{path} has no {suffix}")
+                          continue
+                      ships_anything = True
+                      shipped[canonical].add(os.path.basename(target))
+
+              if not ships_anything:
+                  errors.append(f"plugins/{plugin} ships no skills or agents")
+
+          # Every canonical skill must be installable through some plugin,
+          # otherwise it is unreachable for users and the README goes stale.
+          if os.path.isdir('skills'):
+              orphans = {d for d in os.listdir('skills')
+                         if os.path.isfile(os.path.join('skills', d, 'SKILL.md'))} - shipped['skills']
+              for o in sorted(orphans):
+                  errors.append(f"skills/{o} is shipped by no plugin; add a wrapper for it")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}")
+              sys.exit(1)
+
+          print("All plugin wrappers are correctly scoped")
+          EOF
