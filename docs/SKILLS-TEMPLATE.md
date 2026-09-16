@@ -4,6 +4,12 @@ The canonical structure for every skill in this repo. A skill is the portable
 unit that all supported agent tools (Claude Code, opencode, Codex, Gemini, …)
 load.
 
+> **Writing a per-language SDK skill?** Read
+> [`SDK-SKILL-TEMPLATE.md`](SDK-SKILL-TEMPLATE.md) as well. It specializes this
+> template for `skills/<lang>-sdk/` and adds a twenty-item capability contract that
+> every language skill must satisfy, so that all nine SDK skills stay comparable. A
+> fillable skeleton lives at [`templates/sdk-skill/`](templates/sdk-skill).
+
 ## Directory layout
 
 ```

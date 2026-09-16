@@ -57,6 +57,9 @@ plugins/                       # Claude Code plugin wrappers (thin)
 .opencode/opencode.json          # opencode project config (skills.paths)
 
 docs/                          # Contributor-facing docs
+├── SKILLS-TEMPLATE.md         # Template for any skill
+├── SDK-SKILL-TEMPLATE.md      # Normative spec for per-language SDK skills
+└── templates/sdk-skill/       # Fillable skeleton; copy to skills/<lang>-sdk/
 ```
 
 ## The Skill Convention
@@ -71,6 +74,17 @@ docs/                          # Contributor-facing docs
   on demand, which keeps context/token budgets small.
 - See `docs/SKILLS-TEMPLATE.md` for the authoritative template and
   `CONTRIBUTING.md` for the end-to-end authoring workflow.
+- **Per-language SDK skills** (`skills/kotlin-sdk/`, `skills/swift-sdk/`, …) have a
+  stricter spec: `docs/SDK-SKILL-TEMPLATE.md`. It defines a twenty-item capability
+  contract (CAP-01 … CAP-20) that every language skill must address, in the same
+  order, so the nine SDK skills stay comparable and unsupported capabilities are
+  declared rather than silently absent. Copy `docs/templates/sdk-skill/` rather than
+  scaffolding by hand.
+- **Concept skills own semantics; SDK skills own syntax.** `dql`, `data-modeling`,
+  `sync-subscriptions` and `ditto-mesh-networking` explain how Ditto works once,
+  language-agnostically. An SDK skill explains how to express that in one language
+  and links back rather than restating — duplicated concept material drifts, and
+  `CONTRIBUTING.md` §4 forbids citing one file in this repo as the source for another.
 
 ## Claude Code Marketplace
 
