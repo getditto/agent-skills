@@ -89,7 +89,7 @@ ON ID CONFLICT DO UPDATE;
 
 A counter initialised to `0` here will accept `APPLY watch_count INCREMENT BY n` afterwards (see [§2 UPDATE](#2-update)).
 
-> **Available in:** `COUNTER` requires SDK 4.13+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
+> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
 
 ### 1.5 `ON ID CONFLICT` actions
 
@@ -464,7 +464,7 @@ SHOW <parameter_name>
 
 ```sql
 SHOW ALL;                                    -- every parameter (all SDK versions)
-SHOW DQL_STRICT_MODE;                        -- one parameter (all SDK versions)
+SHOW dql_strict_mode;                        -- one parameter (all SDK versions)
 ```
 
 ```sql

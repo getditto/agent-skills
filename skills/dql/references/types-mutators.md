@@ -1,6 +1,6 @@
 ---
 title: DQL CRDT types and mutators
-description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip (this skill assumes `dql_strict_mode = false`; `true` is the legacy 4.14.x default to migrate off). Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
+description: REGISTER, MAP, COUNTER (4.14+), PN_COUNTER (4.11+), and ATTACHMENT — semantics, declaration syntax, mutation patterns, and the cross-version strict-mode flip (this skill assumes `dql_strict_mode = false`; `true` is the legacy 4.14.x default to migrate off). Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
 ---
 
 # DQL CRDT types and mutators
@@ -9,7 +9,7 @@ description: REGISTER, MAP, COUNTER (4.13+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-All three SDK versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.13+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **factory default of `dql_strict_mode`** (`true` on 4.14.x, `false` on 5.x) — and this skill assumes `false` on every peer, the state every 4.14.x mesh migrates to. See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+All three SDK versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.14+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **factory default of `dql_strict_mode`** (`true` on 4.14.x, `false` on 5.x) — and this skill assumes `false` on every peer, the state every 4.14.x mesh migrates to. See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 

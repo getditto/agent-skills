@@ -49,12 +49,12 @@ Still **not** supported in 5.1.0 (verified): `XOR` (parse error on every SDK ver
 Four categories of version annotation appear throughout the reference files:
 
 1. **Always supported** — no tag. The feature works identically on 4.14.x, 5.0.x, and 5.1.x. Example: `LIKE`, `array_contains()`, almost every scalar in [`functions.md`](functions.md), every aggregate.
-2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.13+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
+2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
 3. **SDK 5.0+** — the feature landed in v5 and is **not** available in v4 at all. Example: quantifier expressions (`ANY/EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), recursive descent via `WITHIN`, `BETWEEN`, `IN UNNEST`, hex literals, the `PROFILE` leading keyword, the `#profile` directive.
 4. **SDK 5.1+** — the feature landed in 5.1.x. Example: `JOIN`, composite indexes, `RETURNING`, `ADVISE`, `EXPLAIN` on DML, `INSERT … SELECT`, `round()` / `array_sort()` / `serialize_json()` / `object_size()`.
 5. **Unavailable in the tested SDK versions** — the syntax may appear in older or forward-looking documentation but is rejected by 4.14.4, 5.0.0, and 5.1.0. `XOR`, `TOMBSTONE`, `EXCLUDE MISSING` and the `USE IDS ('a','b')` tuple spelling are all in this category.
 
-When you see a tag like "SDK 4.13+" it means: works on 4.13 through 4.14.x **and** on 5.0.x and 5.1.x. "SDK 5.0+" means 5.0.x and newer only — it will parse-error on any 4.x release. "SDK 5.1+" means 5.1.x only.
+When you see a tag like "SDK 4.12+" it means: works on 4.12 through 4.14.x **and** on 5.0.x and 5.1.x. "SDK 5.0+" means 5.0.x and newer only — it will parse-error on any 4.x release. "SDK 5.1+" means 5.1.x only.
 
 ---
 
@@ -131,7 +131,7 @@ When you see a tag like "SDK 4.13+" it means: works on 4.13 through 4.14.x **and
 | `REGISTER`    | 4.x     |   ✓    |   ✓   |   ✓   | Default for scalars; default for objects under `dql_strict_mode = true`.         |
 | `MAP`         | 4.x     |   ✓    |   ✓   |   ✓   | Default for objects under `dql_strict_mode = false` (5.x default).               |
 | `ATTACHMENT`  | 4.x     |   ✓    |   ✓   |   ✓   | Binary blob; handle merges as `REGISTER`, bytes content-addressed.               |
-| `COUNTER`     | 4.13+   |   ✓    |   ✓   |   ✓   | Mutators: `APPLY … INCREMENT BY` / `APPLY … RESTART [WITH]`. Declarable on `INSERT`. |
+| `COUNTER`     | 4.14+   |   ✓    |   ✓   |   ✓   | Mutators: `APPLY … INCREMENT BY` / `APPLY … RESTART [WITH]`. Declarable on `INSERT`. |
 | `PN_COUNTER`  | 4.11+   |   ✓    |   ✓   |   ✓   | Mutator: `APPLY … PN_INCREMENT BY`. No `RESTART`. **Cannot be declared on an inline `INSERT`** on any SDK version — see [`types-mutators.md`](types-mutators.md) §4. |
 
 See [`types-mutators.md`](types-mutators.md) for full semantics and the "COUNTER vs PN_COUNTER" decision table.
@@ -277,7 +277,7 @@ Three reasons portability is worth thinking about up front.
 - [`operators.md`](operators.md) — operator precedence, comparison/logical semantics, the `XOR` cross-version note in §11.
 - [`functions.md`](functions.md) — every scalar function (all three SDK versions) and aggregate, plus the 5.1-only scalars.
 - [`expressions.md`](expressions.md) — literals, quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN`.
-- [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.13+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), `RETURNING` / `INSERT … SELECT` / DML `EXPLAIN` (5.1+), the `DO MERGE` cross-version note.
+- [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), `RETURNING` / `INSERT … SELECT` / DML `EXPLAIN` (5.1+), the `DO MERGE` cross-version note.
 - [`select.md`](select.md) — `JOIN` (5.1+) and the subscription restrictions.
 - [`types-mutators.md`](types-mutators.md) — the canonical writeup of the strict-mode flip.
 - [`indexing.md`](indexing.md) — `#profile` (5.0+), composite indexes and `ADVISE` (5.1+).
