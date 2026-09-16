@@ -146,6 +146,8 @@ For dynamic key access (`ratings['rotten_tomatoes']`) and array literal containm
 
 ## 5. `CASE` — simple form
 
+> **Available in:** Ditto SDK 5.0+ (not supported in 4.14.x).
+
 Matches `expression` against each `value-expr` in order; first match wins. No match and no `ELSE` returns `NULL`.
 
 ```text
@@ -175,6 +177,8 @@ ORDER BY genre_score DESC, title
 ---
 
 ## 6. `CASE` — searched form
+
+> **Available in:** Ditto SDK 5.0+ (not supported in 4.14.x).
 
 Each `WHEN` is an independent boolean predicate. The first one that evaluates to `TRUE` wins. `NULL` / `MISSING` predicates skip to the next branch; no match and no `ELSE` returns `NULL`.
 

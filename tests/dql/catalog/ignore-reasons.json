@@ -38,5 +38,10 @@
   "sk_best_practices_b837c482": "JS snippet embedded in a sql block (extractor false positive)",
   "sk_best_practices_aa75609f": "strict-mode illustration; needs collection type declaration context the snippet omits",
   "sk_best_practices_0ac58896": "generic placeholder (collection name 'collection', inline comments inside document literal)",
-  "sk_expressions_52a39716": "no executable statement (pure comments / fragment)"
+  "sk_expressions_52a39716": "no executable statement (pure comments / fragment)",
+  "sk_expressions_4c29fe55": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_d0c23397": "JS string-concatenation snippet inside a sql block (extractor false positive)",
+  "sk_best_practices_3b0978b4": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_c87f3a4a": "no executable statement (pure comments / fragment)",
+  "sk_best_practices_e26475b3": "no executable statement (pure comments / fragment)"
 }

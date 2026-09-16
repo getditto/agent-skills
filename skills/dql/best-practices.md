@@ -747,8 +747,10 @@ When peers use different strict mode settings without explicit MAP definitions:
 -- ✅ SAFE: Parameterized
 SELECT * FROM tasks WHERE title = :search
 -- Pass arguments: {search: userInput}
+```
 
--- ❌ UNSAFE: String concatenation (SQL injection risk)
+```js
+// ❌ UNSAFE: String concatenation (SQL injection risk)
 const query = "SELECT * FROM tasks WHERE title = '" + userInput + "'";
 ```
 
@@ -912,13 +914,19 @@ INSERT INTO messages DOCUMENTS ({
 -- Documents in specific month
 SELECT * FROM logs
 WHERE timestamp >= '2024-12-01T00:00:00Z'
-  AND timestamp < '2025-01-01T00:00:00Z'
+  AND timestamp < '2025-01-01T00:00:00Z';
+```
 
+```sql
 -- Last 7 days
-WHERE created_at >= date_sub(clock(), 7, 'days')
+SELECT * FROM logs
+WHERE created_at >= date_sub(clock(), 7, 'days');
+```
 
+```sql
 -- Next 24 hours
-WHERE expires_at <= date_add(clock(), 24, 'hours')
+SELECT * FROM logs
+WHERE expires_at <= date_add(clock(), 24, 'hours');
 ```
 
 **Recent Documents:**

@@ -105,6 +105,8 @@ INSERT INTO reviews DOCUMENTS
 
 ### Task 3 — Top-rated movies in a decade with pagination
 
+> **Available in:** Ditto SDK 5.0+ (`BETWEEN`). On 4.14.x rewrite as `year >= :decade_start AND year <= :decade_end`.
+
 **Goal:** Page through highly-rated films released between two years, ordered by IMDb score.
 
 **Query:**
@@ -150,7 +152,7 @@ ORDER BY year ASC;
 **v4 fallback:** Quantifier expressions don't exist on 4.14.x. If you must support v4, denormalise an `actor_names` array of strings at write time and use `array_contains`:
 
 ```sql
--- v4-portable: maintain a parallel actor_names array
+-- Available in: SDK 4.14+ (all three lines) — array_contains is portable
 SELECT _id, title, year
 FROM movies
 WHERE array_contains(actor_names, :actor_name)
@@ -176,6 +178,7 @@ WHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END;
 **v4-portable form (also works on 5.0+):**
 
 ```sql
+-- Available in: SDK 4.14+ (all three lines)
 SELECT _id, title, genres
 FROM movies
 WHERE array_contains(genres, 'Drama')
@@ -185,6 +188,8 @@ WHERE array_contains(genres, 'Drama')
 **Notes:** The `OR`/`array_contains` form is portable across all three SDK versions and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §5 (array functions) and [`expressions.md`](../references/expressions.md) §7.
 
 ### Task 7 — Flat view with computed fields
+
+> **Available in:** Ditto SDK 5.0+ (`CASE`). On 4.14.x use `IF` / `coalesce` for the two-branch cases and drop the multi-branch column.
 
 **Goal:** Project a row per movie with one or two derived columns.
 
