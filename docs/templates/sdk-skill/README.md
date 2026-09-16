@@ -33,20 +33,46 @@ Deliberately **out of scope** — these have their own skills:
 | 5.0.x | TODO | TODO |
 | 4.14.x | TODO | LTS |
 
-## Capability coverage
+## Capability map
 
 <!--
-  Copy the status column from SKILL.md's capability map. This is what a reviewer and a
-  future maintainer read first. Every non-`supported` row needs one line of reason.
+  THE canonical capability map. SKILL.md carries only the non-`yes` rows.
+  Capability titles are VERBATIM from docs/SDK-SKILL-TEMPLATE.md §6 -- do not reword
+  them; cross-skill diffing and the CI anchor check depend on exact match.
+
+  Support:  yes | partial | preview | no          (what the SDK ships)
+  Evidence: executed | docs-sample | api-dump | source | inference
+  Targets:  declare this SDK's vocabulary on the line below and use it in every row.
+
+  Every non-`yes` Support and every api-dump/source/inference Evidence needs the extra
+  information required by spec §7 -- put it in the reference file and note it here.
 -->
 
-| Status | Capabilities |
-|---|---|
-| `supported` | TODO |
-| `preview` | TODO |
-| `partial` | TODO |
-| `not-available` | TODO |
-| `undocumented` | TODO |
+**Targets vocabulary for this SDK:** TODO (e.g. Kotlin `android | jvm | both`;
+JS `web | node | rn | all`; single-target SDKs use `all`).
+
+| ID | Capability | Support | Evidence | Targets |
+|----|-----------|---------|----------|---------|
+| CAP-01 | Prerequisites, toolchain, package install | TODO | TODO | TODO |
+| CAP-02 | Platform permissions, entitlements, build config | TODO | TODO | TODO |
+| CAP-03 | Connecting: config, opening, persistence directory | TODO | TODO | TODO |
+| CAP-04 | Authentication and identity | TODO | TODO | TODO |
+| CAP-05 | Lifecycle: start/stop sync, shutdown, ownership | TODO | TODO | TODO |
+| CAP-06 | Customizing transports | TODO | TODO | TODO |
+| CAP-07 | Sync subscriptions and sync scopes | TODO | TODO | TODO |
+| CAP-08 | Querying the store: executing DQL | TODO | TODO | TODO |
+| CAP-09 | Transactions | TODO | TODO | TODO |
+| CAP-10 | Indexing | TODO | TODO | TODO |
+| CAP-11 | Observers, diffing and back-pressure | TODO | TODO | TODO |
+| CAP-12 | Attachments | TODO | TODO | TODO |
+| CAP-13 | Presence graph and connection requests | TODO | TODO | TODO |
+| CAP-14 | Sync status and local commit tracking | TODO | TODO | TODO |
+| CAP-15 | Logging, diagnostics and stats | TODO | TODO | TODO |
+| CAP-16 | Error handling | TODO | TODO | TODO |
+| CAP-17 | Device storage management and eviction | TODO | TODO | TODO |
+| CAP-18 | Testing | TODO | TODO | TODO |
+| CAP-19 | v4 to v5 migration, API and on-disk store | TODO | TODO | TODO |
+| CAP-20 | Preview and platform-specific APIs | TODO | TODO | TODO |
 
 ## Verification
 

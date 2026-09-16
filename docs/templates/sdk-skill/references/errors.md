@@ -1,8 +1,11 @@
 # Error handling — TODO_LANGUAGE
 
-> **Sources for this file.** The ERROR HANDLING block and "Exception Hierarchy Changes"
-> in `sdk/latest/migration-guides/<lang>-v4.mdx`,
-> `sdk/latest/deployment/troubleshooting.mdx`, and the published API reference.
+> **Sources for this file.** The **published API reference and SDK source are primary
+> here**: the `ERROR HANDLING` and "Exception Hierarchy Changes" blocks exist in
+> `kotlin-v4.mdx` **only** (1 of 10 migration guides), so every other language must
+> enumerate its taxonomy from the API surface. Also
+> `sdk/latest/deployment/troubleshooting.mdx`.
+> Expect `Evidence: api-dump` or `source` here, with the path and ref inline.
 
 ## CAP-16 Error handling
 

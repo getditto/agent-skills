@@ -1,7 +1,8 @@
 # Connecting, authenticating and lifecycle — TODO_LANGUAGE
 
-> **Sources for this file.** `snippets/connect-examples-v5/playground/<lang>-playground.mdx`,
-> `snippets/connect-examples-v5/development/`, `sdk/latest/quickstarts/`,
+> **Sources for this file.** `snippets/connect-examples-v5/playground/<lang>-playground.mdx`
+> — note this directory uses `csharp`, not `c-sharp`. Also `sdk/latest/quickstarts/`,
+> and `snippets/connect-examples-v5/development/`, which holds only `go` and `java`,
 > `sdk/latest/auth-and-authorization/*.mdx`, `sdk/latest/sync/syncing-data.mdx`,
 > and the INITIALIZATION / AUTHENTICATION blocks in
 > `sdk/latest/migration-guides/<lang>-v4.mdx`.

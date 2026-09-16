@@ -1,7 +1,8 @@
 # Testing — TODO_LANGUAGE
 
-> **Sources for this file.** `sdk/latest/deployment/testing.mdx`, plus the test
-> harnesses in the SDK source tree for this language.
+> **Sources for this file.** `sdk/latest/deployment/testing.mdx` — which has samples for
+> C#, Go, Java, JS, Kotlin, Rust, Swift and C++, but **none for Dart/Flutter** — plus
+> the test harnesses in the SDK source tree for this language.
 
 ## CAP-18 Testing
 

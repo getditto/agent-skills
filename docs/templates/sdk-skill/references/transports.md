@@ -19,8 +19,11 @@
   - Global options (e.g. connection limits, advertisement tuning).
   - Whether config can change after sync has started, and what a change interrupts.
   - Which radios are unavailable on which platforms in this SDK, with the symptom.
-  - Transport conditions: the observable/event stream, the condition values, and what
-    a consumer should do about each.
+  - Transport conditions: YOUR type and observation API (e.g. an observe call returning
+    a stream). The condition VALUES and their cross-language renames are owned by
+    ditto-mesh-networking -- link, do not restate (spec §1 ownership table).
+    Documented for Kotlin, JS (5.0) and Flutter (observeTransportConditions, 5.1);
+    C++, Java, Rust and Go need source verification.
 -->
 
 TODO

@@ -42,11 +42,18 @@ TODO
 
 TODO
 
+## Sync handling
+
+<!-- Source: best-practices/sync-handling.mdx. When to start/stop sync, and why. -->
+
+TODO
+
 ## Performance
 
 <!--
-  Language-specific costs -- serialization boundaries, FFI crossings, allocation in hot
-  callbacks, main-thread work. Include measured numbers or say the claim is unmeasured.
+  Architectural performance choices only -- how to shape a query set, how many observers.
+  A specific hot-path footgun with a named symbol goes in SKILL.md §8 instead.
+  Include measured numbers or say the claim is unmeasured.
 -->
 
 TODO
@@ -54,8 +61,11 @@ TODO
 ## Common mistakes
 
 <!--
-  Distinct from SKILL.md's anti-patterns: those are code that compiles but is wrong;
-  these are choices that work but scale badly or hurt later.
+  The boundary with SKILL.md §8 is LOAD ORDER, not "wrong vs slow" (spec §5):
+  §8 holds anything that changes the code an agent emits BY DEFAULT and has a nameable
+  symptom -- performance footguns included. This file holds architectural judgement
+  with no single right answer. If it has a named symbol or a measured factor, it
+  belongs in §8, where it is always loaded.
 -->
 
 TODO

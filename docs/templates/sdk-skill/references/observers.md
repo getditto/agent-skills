@@ -1,8 +1,17 @@
 # Observers and live queries — TODO_LANGUAGE
 
 > **Sources for this file.** `sdk/latest/crud/observing-data-changes.mdx`,
-> `dql/replacing-live-queries.mdx`, and the OBSERVERS / BACK-PRESSURE blocks in
-> `sdk/latest/migration-guides/<lang>-v4.mdx`.
+> `dql/replacing-live-queries.mdx`, and the `OBSERVERS` block in
+> `sdk/latest/migration-guides/<lang>-v4.mdx` (present in 8 of 10 — not `java-v4`,
+> `rust-v4`).
+>
+> **Back-pressure has almost no prose coverage:** the `BACK-PRESSURE` heading exists in
+> `kotlin-v4.mdx` only, and the literal `signalNext` appears in 7 of 10 guides. Source
+> it from the API reference or SDK source for most languages.
+> **Slugs are not uniform.** Resolve `<lang>` per directory using the table in
+> `docs/SDK-SKILL-TEMPLATE.md` §8.1 — JS, Java, C# and Go do not follow the
+> obvious pattern, and Go has no migration guides at all.
+
 
 ## CAP-11 Observers and live queries
 

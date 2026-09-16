@@ -1,9 +1,10 @@
-# Subscriptions, sync status and storage — TODO_LANGUAGE
+# Subscriptions and sync status — TODO_LANGUAGE
 
 > **Sources for this file.** `sdk/latest/sync/syncing-data.mdx`,
 > `sdk/latest/sync/sync-scopes.mdx`, `sdk/latest/sync/monitoring-sync-status.mdx`,
 > `sdk/latest/sync/tracking-local-commits.mdx`, `sdk/latest/sync/cloud-sync-status.mdx`,
-> `sdk/latest/sync/device-storage-management.mdx`, `dql/alter-system.mdx`, `dql/evict.mdx`.
+> `sdk/latest/sync/using-alter-system.mdx` (the only page with host-language
+> `ALTER SYSTEM` samples — Java and Swift), `dql/alter-system.mdx`.
 >
 > **Do not restate what a subscription is or how flooding works** — that is the
 > `sync-subscriptions` skill.
@@ -30,18 +31,6 @@ TODO
   - Per-peer sync status, if the SDK exposes it.
   - What each of these is NOT: none of them is a delivery receipt for the whole mesh.
     State that explicitly -- it is a common misreading.
--->
-
-TODO
-
-## CAP-17 Device storage management
-
-<!--
-  - Executing EVICT from this language, and how it differs from DELETE.
-  - Interaction with subscriptions: evicting data a live subscription still matches.
-  - Reading current disk usage (cross-reference observability.md CAP-15).
-  - Any SDK-level storage configuration.
-  - If the docs have no sample for this language, say so and cite what you used.
 -->
 
 TODO

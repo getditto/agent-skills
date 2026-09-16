@@ -1,8 +1,17 @@
 # Versions and migration — TODO_LANGUAGE
 
+> **Slugs are not uniform.** Resolve `<lang>` per directory using the table in
+> `docs/SDK-SKILL-TEMPLATE.md` §8.1 — JS, Java, C# and Go do not follow the
+> obvious pattern, and Go has no migration guides at all.
+>
 > **Sources for this file.** `sdk/latest/migration-guides/<lang>-v4.mdx` and
-> `sdk/latest/migration-guides/<lang>-dql.mdx` (both — the API migration and the query
-> migration are separate), `sdk/latest/v5-whats-new.mdx`,
+> `<lang>-dql.mdx` (both — API migration and query migration are separate).
+> **Go has neither**: it is Preview with no v4, so CAP-19 is `Support: no` for `go-sdk`.
+> Also `snippets/common-release-notes/`, which carries per-version per-language
+> changelog snippets the release-notes pages import.
+>
+> This file also owns **package coordinates per version line** — `setup.md` shows only
+> the v5 form and links here. One fact, one home. Other sources: `sdk/latest/v5-whats-new.mdx`,
 > `sdk/latest/release-notes/<lang>.mdx`, `sdk/latest/compatibility/<lang>.mdx`.
 >
 > This file is the **single source of truth** for version claims in this skill. Any
@@ -55,6 +64,22 @@ TODO
 TODO
 
 ### Observers
+
+TODO
+
+### On-disk store migration
+
+<!--
+  REQUIRED, and not covered by the migration guides' API focus. For a shipped app
+  upgrading 4.14.x -> 5.x in place, over an EXISTING persistence directory:
+  - Is the on-disk store format migrated automatically on first open?
+  - Is it one-way? Can a user roll back to the v4 build afterwards?
+  - How long does it take with a large local store, and does it block?
+  - What happens on failure or on interruption mid-migration?
+  - Is there a supported wipe-and-resync path, and what does it cost the user?
+  This is the highest-risk production question in a fleet upgrade. If you cannot
+  verify it, say so explicitly rather than leaving it blank.
+-->
 
 TODO
 

@@ -1,11 +1,12 @@
 # Preview and platform-specific APIs — TODO_LANGUAGE
 
-> **Sources for this file.** `sdk/latest/sync/data-streams.mdx`,
-> `sdk/latest/deployment/vsc-es.mdx`, `sdk/v4/ditto-config.mdx`, and this SDK's release
-> notes.
+> **Sources for this file.** `sdk/latest/sync/data-streams.mdx`, `sdk/v4/ditto-config.mdx`,
+> this SDK's release notes, and `snippets/common-release-notes/`.
+> (Edge Studio for VS Code is a developer tool, not a preview API — it belongs to
+> CAP-15 in `observability.md`.)
 >
-> Delete this file only if CAP-20 is `not-available` for this SDK — and if you delete
-> it, the capability map row still stays, pointing at nothing with a stated reason.
+> Delete this file only if CAP-20 is `Support: no` for this SDK — and if you delete it,
+> the capability map row still stays, with the reason stated.
 
 ## CAP-20 Preview APIs
 

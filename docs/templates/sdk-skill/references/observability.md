@@ -4,12 +4,17 @@
 > `sdk/latest/deployment/device-observability-and-ditto-logs.mdx`,
 > `sdk/latest/deployment/getting-system-information.mdx`,
 > `sdk/latest/deployment/integrate-ditto-tools-for-kotlin-swift-and-c-net-in-15-minutes.mdx`,
-> and the LOGGING / DISK USAGE blocks in `sdk/latest/migration-guides/<lang>-v4.mdx`.
+> and the `LOGGING` / `DISK USAGE` blocks in `sdk/latest/migration-guides/<lang>-v4.mdx`
+> — which exist in **4 of 10** guides only (`c-sharp`, `cpp`, `kotlin`, `swift`).
 >
-> **Known gap:** `logging.mdx` documents rotation policy and contains **no code samples
-> in any language**, and disk usage has no standalone page at all. Expect to source the
-> APIs here from the published API reference or the SDK source, and mark the affected
-> rows `undocumented` with the path and ref you verified against.
+> **Known gap — the worst in the contract.** `logging.mdx` documents rotation policy and
+> contains **no code samples in any language**; `device-observability-and-ditto-logs.mdx`
+> and `integrate-ditto-tools-…-15-minutes.mdx` have **zero code fences**;
+> `getting-system-information.mdx` has only JSON and SQL. Disk usage has no standalone
+> page — it appears in `logging.mdx`, `vsc-es.mdx`, and 4 of 10 migration guides.
+>
+> Almost everything in this file will be `Evidence: api-dump` or `source`. That is
+> expected — cite the path and ref inline. `Support` stays `yes`: the APIs ship.
 
 ## CAP-15 Logging, diagnostics and stats
 
@@ -58,7 +63,8 @@ TODO
 
 <!--
   - Whether a Ditto Tools package exists for this language, how to add it, and which
-    tools it provides. Mark not-available where there is none.
+    tools it provides. Mark Support `no` where there is none.
+  - Edge Studio for VS Code (sdk/latest/deployment/vsc-es.mdx) if relevant.
   - Any OpenTelemetry / instrumentation hook the SDK exposes.
 -->
 

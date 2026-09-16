@@ -1,6 +1,11 @@
 # Setup — TODO_LANGUAGE
 
-> **Sources for this file.** `sdk/latest/install-guides/<lang>.mdx`,
+> **Slugs are not uniform.** Resolve `<lang>` per directory using the table in
+> `docs/SDK-SKILL-TEMPLATE.md` §8.1 — JS, Java, C# and Go do not follow the
+> obvious pattern, and Go has no migration guides at all.
+>
+> **Sources for this file.** `sdk/latest/install-guides/<lang>.mdx` — for Java this is
+> a directory: `install-guides/java/server.mdx` (v4 also has `java/android.mdx`),
 > `sdk/latest/compatibility/<lang>.mdx`, `sdk/v4/install-guides/<lang>.mdx`,
 > `sdk/latest/deployment/network-deployment.mdx`,
 > `sdk/latest/deployment/bluetooth-on-linux.mdx`.
@@ -11,7 +16,10 @@
 <!--
   - Minimum toolchain: compiler / runtime / SDK version, per supported version line.
   - Minimum target platform (OS version, API level, browser, .NET TFM, Rust edition).
-  - The exact dependency declaration, copy-pasteable, for 5.1.x AND for 4.14.x.
+  - The exact dependency declaration for 5.1.x, copy-pasteable, in the build-file fence
+    from spec §9 rule 2. ONE canonical form per build system.
+    Do NOT put the 4.14.x coordinate here -- references/versions.md owns every fact
+    that differs across version lines. Link to it.
   - Transitive/native artifacts that must be added separately.
   - Supported architectures, and any that are explicitly dropped in v5.
   - Anything required before the first Ditto call (e.g. an init() that must be awaited).
