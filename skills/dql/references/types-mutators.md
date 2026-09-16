@@ -39,7 +39,7 @@ Rules that apply to every CRDT type:
 
 - The declaration is **per-statement**. It does not create a global schema; it tells the engine how to interpret values in *this* statement.
 - A type definition is **required** only where inference can't help or a strict peer is involved. `COUNTER`, `PN_COUNTER`, and `ATTACHMENT` always need declaration. `MAP`/`REGISTER` need **none** under the lenient baseline (`dql_strict_mode = false`) — but on a strict-mode peer (legacy 4.14.x default) every non-`REGISTER` field must be declared or it silently stores as `REGISTER`; see [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
-- Fields omitted from the list default to `REGISTER`.
+- Fields omitted from the list are **inferred from the value under the lenient baseline** (`dql_strict_mode = false`): an object becomes a `MAP`, everything else — scalars and arrays — a `REGISTER`. Only under strict mode does an omitted field default to `REGISTER` whatever its shape. Verified on 4.14.6 and 5.1.0: with strict `false`, `INSERT INTO COLLECTION c (n COUNTER) DOCUMENTS ({'obj': {'a':1,'b':2}, …})` leaves `obj` a MAP — `SET obj.a = 99` keeps `b` — while the same statement under strict `true` stores a REGISTER and rejects the dotted `SET`.
 - `_id` may **never** appear in a type definition.
 - Duplicate field names in one definition raise a parse error.
 
@@ -125,7 +125,7 @@ WHERE  _id = 'tt0111161';
 - Objects whose semantics are atomic — a complete address record where the city must match the postcode. Use `REGISTER` for those, so a half-updated object can't appear post-merge.
 - Hot append-only logs. Use a separate collection of small documents; `MAP` is not a list.
 
-**Declaration syntax:** `MAP` with an optional nested type definition. Sub-fields you don't list default to `REGISTER`.
+**Declaration syntax:** `MAP` with an optional nested type definition. Sub-fields you don't list follow the same inference rule as top-level fields: under the lenient baseline a nested object becomes a `MAP` at any depth (verified on 4.14.6 and 5.1.0 — `SET d.sub.x = 99` on an undeclared `d.sub` leaves its siblings intact), scalars and arrays become `REGISTER`s. Under strict mode every unlisted sub-field is a `REGISTER`.
 
 ```sql
 -- Bare MAP — all sub-fields default to REGISTER

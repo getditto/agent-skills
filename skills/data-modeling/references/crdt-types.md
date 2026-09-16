@@ -37,7 +37,7 @@ WHERE _id = 'order-1';
 
 ## MAP
 
-**Semantics.** A recursive add-wins map: each key is an independent CRDT (defaulting to REGISTER, or whatever you declare), so two peers editing different keys of the same map both win. Nesting recurses — maps inside maps merge per level. Removes write an add-wins tombstone: a remove beats edits it has *seen*, but a concurrent re-add from a peer that hadn't seen the remove survives.
+**Semantics.** A recursive add-wins map: each key is an independent CRDT — inferred from its value under the lenient baseline (a nested object is itself a MAP, at any depth; scalars and arrays are REGISTERs), or whatever you declare — so two peers editing different keys of the same map both win. Nesting recurses — maps inside maps merge per level. Removes write an add-wins tombstone: a remove beats edits it has *seen*, but a concurrent re-add from a peer that hadn't seen the remove survives.
 
 **Model with MAP when:** different peers (or different features) touch different sub-fields — profiles, settings, per-item state. This is the workhorse for embedded sub-entities: a `lineItems MAP` keyed by item ID beats an array in almost every concurrent scenario.
 
