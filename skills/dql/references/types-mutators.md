@@ -234,7 +234,7 @@ Counters can be combined with other mutation clauses in one statement — but `A
 
 - New code on SDK 4.14+. Prefer `COUNTER` for everything new — increments merge identically, and it adds `RESTART WITH` (whose set-wins semantics are the one behavioural difference; see §3).
 
-**Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported SDK version — 4.14.4, 5.0.0 and 5.1.0 all reject it:
+**Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported SDK version — 4.14.4, 5.0.3 and 5.1.0 all reject it:
 
 ```sql
 -- ✗ REJECTED on 4.14.x, 5.0.x and 5.1.x:

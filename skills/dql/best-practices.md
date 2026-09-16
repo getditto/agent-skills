@@ -15,7 +15,7 @@
 
 ### Document Size Limits
 
-**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.4, 5.0.0 and 5.1.0 — the *behaviour* of the hard limit is not):
+**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.4, 5.0.3 and 5.1.0 — the *behaviour* of the hard limit is not):
 
 | Parameter | Default | Behaviour when exceeded |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ SHOW document_size_soft_limit_bytes;   -- 262144
 SHOW document_size_hard_limit_bytes;   -- 5242880
 ```
 
-> **Enforcement is version-dependent, and writer-side only.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.0 and 4.14.4 accept the same write and log). On **every** version the check applies only to user-originated writes — an oversized document arriving over replication is still stored, so a 5.1 peer can hold a document it would refuse to write itself. Note that docs.ditto.live still describes the pre-5.1 "logs but succeeds" behaviour for the hard limit; the engine changed in 5.1 and the page has not caught up. Both values must be set to the **same** number on every peer in the mesh — mismatched limits disable replication sessions where enforcement is live.
+> **Enforcement is version-dependent, and writer-side only.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.3 and 4.14.4 accept the same write and log). On **every** version the check applies only to user-originated writes — an oversized document arriving over replication is still stored, so a 5.1 peer can hold a document it would refuse to write itself. Note that docs.ditto.live still describes the pre-5.1 "logs but succeeds" behaviour for the hard limit; the engine changed in 5.1 and the page has not caught up. Both values must be set to the **same** number on every peer in the mesh — mismatched limits disable replication sessions where enforcement is live.
 
 Large documents are also slow on constrained transports — Bluetooth LE in particular (~20 KB/second effective) — so the practical ceiling is usually well below the soft limit.
 
@@ -797,7 +797,7 @@ An offline peer that comes back online after the retention window has expired ca
 
 > **Confirm the retention period for your deployment with Ditto support.** It differs between Small Peer / Edge and Big Peer / Cloud and is not stated in the public documentation, so it should not be hard-coded from memory. Design for the existence of a window rather than a specific number of days.
 
-Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.0 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE` — it writes a replicating tombstone, exactly like `TOMBSTONE` does on a Big Peer, and is not a local-only eviction. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
+Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.3 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE` — it writes a replicating tombstone, exactly like `TOMBSTONE` does on a Big Peer, and is not a local-only eviction. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
 
 ### Soft Delete Pattern
 

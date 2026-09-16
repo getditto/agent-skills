@@ -5,7 +5,7 @@ description: 18 end-to-end DQL tasks against a sample movies dataset. Every stat
 
 # DQL Movies Cookbook
 
-A practical walkthrough of every major DQL capability the v5.0.0 SDK supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
+A practical walkthrough of every major DQL capability the v5.0.x SDK line supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
 > **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
 >

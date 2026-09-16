@@ -8,7 +8,7 @@ local environment (`.env`), and what each config key means.
 
 | Feature / skill | Harness | What it does | Docs |
 |---|---|---|---|
-| [`dql`](skills/dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.4, 5.0.0, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
+| [`dql`](skills/dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.4, 5.0.3, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
 | [`data-modeling`](skills/data-modeling) | [`tests/data-modeling/`](tests/data-modeling/) | Live-model evals: feeds raw-JSON cases plus the skill to a real AI model and deterministically scores its recommendations against the rubric finding IDs | [tests/data-modeling/README.md](tests/data-modeling/README.md) |
 
 Both runners share the same config mechanism: the repo-root `.env`, loaded at

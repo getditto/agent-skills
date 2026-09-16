@@ -187,7 +187,7 @@ Pick the honest option. All four are acceptable answers; only silence isn't.
 The skill's harness covers it. Give the result:
 
 ```
-tests/dql — 249 catalog entries, 0 FAIL on 4.14.4, 5.0.0 and 5.1.0
+tests/dql — 258 catalog entries, 0 FAIL on 4.14.4, 5.0.3 and 5.1.0
 (+3 new entries from the examples added in this PR)
 ```
 
@@ -431,7 +431,7 @@ One-time setup:
 cp .env-sample .env                # fill in DITTO_OFFLINE_LICENSE
 cd tests/dql
 (cd sdks/v4.14.4 && npm install)
-(cd sdks/v5.0.0  && npm install)
+(cd sdks/v5.0.3  && npm install)
 (cd sdks/v5.1.0  && npm install)
 ```
 

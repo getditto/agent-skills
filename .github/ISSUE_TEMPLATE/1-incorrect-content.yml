@@ -44,7 +44,7 @@ body:
       placeholder: |
         XOR is rejected on all three supported lines, not just 5.0.x:
           4.14.4  ->  XOR is not supported
-          5.0.0   ->  No infix parser for token Word(XOR)
+          5.0.3   ->  No infix parser for token Word(XOR)
           5.1.0   ->  No infix parser for token Word(XOR)
     validations:
       required: true
@@ -65,7 +65,7 @@ body:
     attributes:
       label: Exact patch versions tested
       description: The builds you actually ran. Say "not tested" if you didn't run anything.
-      placeholder: "@dittolive/ditto 4.14.4, 5.0.0, 5.1.0"
+      placeholder: "@dittolive/ditto 4.14.4, 5.0.3, 5.1.0"
     validations:
       required: true
 

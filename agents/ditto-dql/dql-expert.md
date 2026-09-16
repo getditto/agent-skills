@@ -139,7 +139,7 @@ When starting any DQL task:
 
 This skill covers 4.14.x, 5.0.x, and 5.1.x. **Always confirm a version claim against `skills/dql/references/versions.md` §4 rather than from memory** — that file is harness-verified against real SDKs and is the only authority.
 
-**Rejected on every tested line** (4.14.4, 5.0.0, 5.1.0):
+**Rejected on every tested line** (4.14.4, 5.0.3, 5.1.0):
 
 - `XOR` — decompose as `(a OR b) AND NOT (a AND b)`.
 - `TOMBSTONE` — Big-Peer-only; a Small Peer returns `Tombstone is not supported`. Use `DELETE`.

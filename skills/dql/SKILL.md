@@ -57,7 +57,7 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 
 This skill covers **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Every feature in the reference files is tagged with its minimum SDK version. See `references/versions.md` for the full matrix.
 
-Rejected on every tested SDK version (verified against 4.14.4 / 5.0.0 / 5.1.0): `XOR`, `TOMBSTONE` (Big-Peer-only), `EXCLUDE MISSING` index keys, the parenthesised `USE IDS ('a', 'b')` tuple, inline `PN_COUNTER` declarations on `INSERT`, and structured `PROFILE` output. Note that multi-id `USE IDS` **does** work everywhere in its comma form (`USE IDS 'a', 'b'`).
+Rejected on every tested SDK version (verified against 4.14.4 / 5.0.3 / 5.1.0): `XOR`, `TOMBSTONE` (Big-Peer-only), `EXCLUDE MISSING` index keys, the parenthesised `USE IDS ('a', 'b')` tuple, inline `PN_COUNTER` declarations on `INSERT`, and structured `PROFILE` output. Note that multi-id `USE IDS` **does** work everywhere in its comma form (`USE IDS 'a', 'b'`).
 
 On 4.14.x under its default strict mode, `APPLY ... INCREMENT BY` on a not-yet-existing field silently does nothing.
 

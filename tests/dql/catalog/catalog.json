@@ -1196,7 +1196,7 @@
     },
     "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title",
     "availableIn": [],
-    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
+    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.4, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
@@ -4448,7 +4448,7 @@
     },
     "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
     "availableIn": [],
-    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
+    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.4, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"

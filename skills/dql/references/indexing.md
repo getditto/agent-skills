@@ -44,7 +44,7 @@ CREATE INDEX [ IF NOT EXISTS ] <index_ref> ( <key> [, <key> ...] )
 ```
 
 - `ASC` is the default sort direction.
-- `INCLUDE MISSING` / `EXCLUDE MISSING` is **in the grammar but not implemented on any supported SDK version.** 4.14.4 and 5.0.0 reject it with `not implemented yet : index key not including missing`; 5.1.0 with `not implemented yet : index with include_missing=false`. Omit the modifier and take the system default — documents lacking the key get an index entry against a `MISSING` sentinel.
+- `INCLUDE MISSING` / `EXCLUDE MISSING` is **in the grammar but not implemented on any supported SDK version.** 4.14.4 and 5.0.3 reject it with `not implemented yet : index key not including missing`; 5.1.0 with `not implemented yet : index with include_missing=false`. Omit the modifier and take the system default — documents lacking the key get an index entry against a `MISSING` sentinel.
 - Index names must be unique **per collection**. Two collections may each have an index named `by_year`.
 - Without `IF NOT EXISTS`, creating an index that already exists raises an error.
 - The two written forms are equivalent. Pick one and stick with it codebase-wide.

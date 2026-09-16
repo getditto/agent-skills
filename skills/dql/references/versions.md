@@ -52,7 +52,7 @@ Four categories of version annotation appear throughout the reference files:
 2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
 3. **SDK 5.0+** — the feature landed in v5 and is **not** available in v4 at all. Example: quantifier expressions (`ANY/EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), recursive descent via `WITHIN`, `BETWEEN`, `IN UNNEST`, hex literals, the `PROFILE` leading keyword, the `#profile` directive.
 4. **SDK 5.1+** — the feature landed in 5.1.x. Example: `JOIN`, composite indexes, `RETURNING`, `ADVISE`, `EXPLAIN` on DML, `INSERT … SELECT`, `round()` / `array_sort()` / `serialize_json()` / `object_size()`.
-5. **Unavailable in the tested SDK versions** — the syntax may appear in older or forward-looking documentation but is rejected by 4.14.4, 5.0.0, and 5.1.0. `XOR`, `TOMBSTONE`, `EXCLUDE MISSING` and the `USE IDS ('a','b')` tuple spelling are all in this category.
+5. **Unavailable in the tested SDK versions** — the syntax may appear in older or forward-looking documentation but is rejected by 4.14.4, 5.0.3, and 5.1.0. `XOR`, `TOMBSTONE`, `EXCLUDE MISSING` and the `USE IDS ('a','b')` tuple spelling are all in this category.
 
 When you see a tag like "SDK 4.12+" it means: works on 4.12 through 4.14.x **and** on 5.0.x and 5.1.x. "SDK 5.0+" means 5.0.x and newer only — it will parse-error on any 4.x release. "SDK 5.1+" means 5.1.x only.
 
@@ -211,8 +211,8 @@ This is the most user-visible cross-version difference and the most likely cause
 
 ## 6. `XOR` is unavailable; `DO MERGE` aliases `DO UPDATE`
 
-- **`XOR` operator.** The docs once listed `XOR` as v4-only; the harness shows 4.14.4, 5.0.0, **and** 5.1.0 all reject it (`XOR is not supported` / `No infix parser`). Treat `XOR` as unavailable everywhere until it actually ships. **Workaround:** `a XOR b` ≡ `(a OR b) AND NOT (a AND b)`. See [`operators.md`](operators.md) §11.
-- **`INSERT ... ON ID CONFLICT DO MERGE`.** SDK 4.14.4, 5.0.0, and 5.1.0 all accept `MERGE` and map it to the same action as `DO UPDATE`. It is a portable alias, not a distinct merge mode. Prefer `DO UPDATE` as the canonical spelling. See [`statements.md`](statements.md) §1.6.
+- **`XOR` operator.** The docs once listed `XOR` as v4-only; the harness shows 4.14.4, 5.0.3, **and** 5.1.0 all reject it (`XOR is not supported` / `No infix parser`). Treat `XOR` as unavailable everywhere until it actually ships. **Workaround:** `a XOR b` ≡ `(a OR b) AND NOT (a AND b)`. See [`operators.md`](operators.md) §11.
+- **`INSERT ... ON ID CONFLICT DO MERGE`.** SDK 4.14.4, 5.0.3, and 5.1.0 all accept `MERGE` and map it to the same action as `DO UPDATE`. It is a portable alias, not a distinct merge mode. Prefer `DO UPDATE` as the canonical spelling. See [`statements.md`](statements.md) §1.6.
 
 ---
 

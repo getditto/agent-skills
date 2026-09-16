@@ -203,7 +203,7 @@ UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
 
 Notes:
 
-- `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.4, 5.0.0, and 5.1.0.
+- `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.4, 5.0.3, and 5.1.0.
 - `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select.md`](select.md).
 - `UPDATE COLLECTION coll (col_defs…)` is required when any mutation touches a non-register CRDT field. The type def applies to that statement only; it does not redefine the schema globally.
 - **`USE IDS` on `UPDATE` is SDK 5.1+**, and only in the pre-`SET` position: `UPDATE movies USE IDS 'tt0111161' SET …`. The trailing form (`… SET x = 1 USE IDS …`) is a parse error on every SDK version. On 4.14.x / 5.0.x use `WHERE _id IN (...)`.
@@ -323,7 +323,7 @@ TOMBSTONE FROM <collection>
   [ RETURNING <projection> ]
 ```
 
-- **Big Peer only, and not executable from any tested SDK version.** 4.14.4, 5.0.0 and 5.1.0 all reject `TOMBSTONE` on a Small Peer with `Tombstone is not supported`, after parsing succeeds. Every example in this section is therefore Big-Peer-only and unverifiable from an Edge SDK. Prefer `DELETE`, which resolves to the right behaviour on either peer type.
+- **Big Peer only, and not executable from any tested SDK version.** 4.14.4, 5.0.3 and 5.1.0 all reject `TOMBSTONE` on a Small Peer with `Tombstone is not supported`, after parsing succeeds. Every example in this section is therefore Big-Peer-only and unverifiable from an Edge SDK. Prefer `DELETE`, which resolves to the right behaviour on either peer type.
 - **`USE IDS` is not supported on `TOMBSTONE`** on any tested version — and neither is `TOMBSTONE` itself, which the Small Peer rejects outright. Use `DELETE ... WHERE _id IN (...)`.
 - `RETURNING` additionally requires SDK **5.1+** (§1.8), so the combinations cannot be exercised offline ahead of Big Peer support.
 

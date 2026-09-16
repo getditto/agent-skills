@@ -172,7 +172,7 @@ FROM movies
 ORDER BY genre_score DESC, title
 ```
 
-`CASE` is shorthand for chained ternaries. **There is no `IF(cond, t, f)` function on any supported SDK** (`Function "IF" not found` on 4.14.4, 5.0.0 and 5.1.0) — for null/missing-coalescing use `coalesce` / `ifnull` / `ifmissing` (see [`functions.md`](functions.md)); on 4.14.x, where `CASE` is unavailable, express two-way branches as boolean predicates in the `WHERE` clause or compute them in app code.
+`CASE` is shorthand for chained ternaries. **There is no `IF(cond, t, f)` function on any supported SDK** (`Function "IF" not found` on 4.14.4, 5.0.3 and 5.1.0) — for null/missing-coalescing use `coalesce` / `ifnull` / `ifmissing` (see [`functions.md`](functions.md)); on 4.14.x, where `CASE` is unavailable, express two-way branches as boolean predicates in the `WHERE` clause or compute them in app code.
 
 ---
 

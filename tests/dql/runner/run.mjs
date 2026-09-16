@@ -30,7 +30,7 @@ loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
-  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.0|5.1.0");
+  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.3|5.1.0");
   process.exit(1);
 }
 
@@ -44,7 +44,7 @@ const DATABASE_ID = process.env.DITTO_DATABASE_ID || "00000000-1111-2222-3333-44
 const CAPTURE_EXPECTED = process.argv.includes("--capture-expected");
 const FAIL_FAST = process.argv.includes("--fail-fast");
 
-// "4.14.4" -> "4.14.x", "5.0.0" -> "5.0.x"
+// "4.14.4" -> "4.14.x", "5.0.3" -> "5.0.x"
 const versionLine = VERSION.replace(/\.[0-9]+$/, ".x");
 
 const catalogPath = path.resolve(import.meta.dirname, "..", "catalog", "catalog.json");
