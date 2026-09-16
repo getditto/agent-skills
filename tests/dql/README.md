@@ -4,13 +4,13 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 
 ## Current status
 
-| SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION |
-|---|---|---|---|---|
-| `@dittolive/ditto@4.14.4` | 196 | 54 | 0 | 0 |
-| `@dittolive/ditto@5.0.0`  | 213 | 37 | 0 | 0 |
-| `@dittolive/ditto@5.1.0`  | 242 | 8  | 0 | 0 |
+| SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION | BROKEN-EVERYWHERE |
+|---|---|---|---|---|---|
+| `@dittolive/ditto@4.14.4` | 199 | 53 | 0 | 0 | 0 |
+| `@dittolive/ditto@5.0.0`  | 216 | 36 | 0 | 0 | 0 |
+| `@dittolive/ditto@5.1.0`  | 246 | 6  | 0 | 0 | 0 |
 
-Catalog size: **250 entries** (plus 26 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+Catalog size: **259 entries** (plus 39 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
 
 **Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.4 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
@@ -44,6 +44,18 @@ Each SDK lives in its own `node_modules` tree under `sdks/v<version>/` because t
 | `FAIL` | Query errored unexpectedly. Either the documented query is broken, the SDK rejects it, or the catalog has a bug. |
 | `FAIL-ASSERTION` | Query ran but row count or first-row check disagreed with `expect`. Usually golden drift. |
 | `FAIL-UNEXPECTED-PASS` | Query was marked `expectError: true` but the SDK accepted it. **Action:** flip `expectError` to `false`. |
+| `BROKEN-EVERYWHERE` | Entry is tagged `availableIn: []` — it runs on **no** supported SDK — and no `unavailableReason` justifies that. A documented example that works nowhere is a documentation defect, so this **fails the run**. **Action:** fix the example, or, if it is deliberately illustrating an unsupported construct (a Big-Peer-only statement, or a "this is rejected" example), add an entry to `overrides.json` → `unavailableReason` saying so. |
+
+### Why `BROKEN-EVERYWHERE` exists
+
+`availableIn: []` used to be reported as `PASS-AS-EXPECTED-FAIL`, which meant a
+documented example that failed on every supported SDK counted toward a clean
+scoreboard. Two real documentation defects were sitting behind that status when
+it was introduced (a `PN_COUNTER` declaration shown as canonical syntax, and an
+`XOR` row that claimed 4.14.x support). Requiring an explicit
+`unavailableReason` keeps the legitimately-unavailable cases — Big-Peer-only
+statements, deliberate negative examples — passing, while surfacing anything
+that is broken by accident.
 
 ## Setup
 
@@ -150,7 +162,7 @@ tests/dql/
 - **Golden conservatism.** `merge-captured.mjs` only writes assertions that cannot be flaky: `rowCount` is recorded only when every supported SDK version that ran the query agrees on it; `firstRow` only when it is byte-identical across versions *and* the query has an `ORDER BY`. EXPLAIN/PROFILE output is never asserted.
 - **Dataset stability.** Some queries (especially those filtering on `imdb.votes`-derived `box_office_millions`) depend on the fixture's exact contents. If `fixtures/movies-pedagogical.ndjson` is regenerated, expected row counts may drift; re-run `--capture-expected` and review the diff.
 - **First-row assertions are sparse.** We removed `firstRow` from entries where it was unstable across runs (JSON deep-equality on rows with floats, MAP fields, attachment blobs). Most entries only assert `rowCount`.
-- **Genuinely unavailable features are expected-fail.** `catalog/overrides.json` tags documented-but-unshipped features with `availableIn: []` (e.g. `XOR`, `DO MERGE`, multi-id `USE IDS`, `TOMBSTONE ... RETURNING`, directive+subquery combos), so those queries count as PASS-AS-EXPECTED-FAIL until the SDK ships them. v5.1.0 features (JOINs, composite indexes, `RETURNING`, `ADVISE`) are documented, tested, and green.
+- **Genuinely unavailable features are expected-fail.** `catalog/overrides.json` tags documented-but-unshipped features with `availableIn: []` (e.g. `XOR`, multi-id `USE IDS`, `TOMBSTONE ... RETURNING`, directive+subquery combos), so those queries count as PASS-AS-EXPECTED-FAIL until the SDK ships them. `DO MERGE` is supported on every tested line as an alias for `DO UPDATE`. v5.1.0 features (JOINs, composite indexes, `RETURNING`, `ADVISE`) are documented, tested, and green.
 - **Some queries have no FROM clause.** Many `references/functions.md` examples illustrate function semantics standalone (e.g., `SELECT duration_cast('2h22m', 'seconds')`). DQL requires a FROM clause, so curation ignores them automatically.
 
 ## What gets tested (and what doesn't)

@@ -1,15 +1,15 @@
 ---
 title: DQL operators reference
-description: Complete operator catalog with precedence, NULL/MISSING semantics, and 4-valued logic. Covers Ditto SDK 4.14.x and 5.0.x.
+description: Complete operator catalog with precedence, NULL/MISSING semantics, and 4-valued logic. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
 ---
 
 # DQL operators reference
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every operator usable on **Ditto SDK 4.14.x and 5.0.x**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
+Authoritative catalog of every operator usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
 
-Unless a section carries an "Available in:" note, the operator works identically on 4.14.x and 5.0.x. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).
+Unless a section carries an "Available in:" note, the operator works identically on 4.14.x, 5.0.x, and 5.1.x. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).
 
 ---
 
@@ -27,7 +27,7 @@ Higher precedence binds tighter. When in doubt, parenthesize.
 | 17         | `IS [NOT] {NULL\|MISSING\|UNKNOWN\|TRUE\|FALSE}`, `IS [NOT] DISTINCT FROM` |
 | 15         | unary `NOT`                                                                |
 | 10         | `AND`                                                                      |
-| 7          | `XOR` *(Ditto SDK 4.x only — see §11)*                                     |
+| 7          | `XOR` *(reserved word; rejected on every supported SDK version — see §11)*        |
 | 5          | `OR`                                                                       |
 
 Postfix member access (`a.b`, `arr[i]`) binds tighter than arithmetic, so `ratings.imdb * 10` is `(ratings.imdb) * 10`. `NOT` is unary and prefix; `NOT a LIKE b` parses as `NOT (a LIKE b)` because `LIKE` (19) outranks `NOT` (15) only when `NOT` appears as a separate prefix — when `NOT` follows the term (`a NOT LIKE b`) it is folded into the comparison.
@@ -174,7 +174,9 @@ SELECT title FROM movies WHERE title LIKE 'The %'
 SELECT title FROM movies WHERE title ILIKE '%lord of the%'
 
 -- literal percent sign via ESCAPE
-SELECT comment FROM reviews WHERE comment LIKE '5\%%' ESCAPE '\'
+-- Use a non-backslash escape character: on SDK 5.1+ a backslash escapes the
+-- closing quote, so the literal '\' is an unterminated string. '!' is portable.
+SELECT comment FROM reviews WHERE comment LIKE '5!%%' ESCAPE '!'
 
 -- full regex alternation
 SELECT title FROM movies WHERE director.name SIMILAR TO '%(Coppola|Spielberg)%'

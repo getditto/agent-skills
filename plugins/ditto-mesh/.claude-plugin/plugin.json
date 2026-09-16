@@ -1,0 +1,22 @@
+{
+  "name": "ditto-mesh",
+  "version": "1.0.0",
+  "description": "Ditto mesh networking and transport configuration — transports, peer discovery, runtime config updates, and transport-aware data modeling",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "awdl",
+    "bluetooth",
+    "ditto",
+    "mesh",
+    "networking",
+    "offline-first",
+    "peer-to-peer",
+    "sync",
+    "transports",
+    "wifi-aware"
+  ]
+}

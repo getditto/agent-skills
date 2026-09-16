@@ -1,17 +1,17 @@
 ---
 title: DQL statements reference
-description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, EXPLAIN, ALTER SYSTEM, SHOW, SYNC CONTEXT, and PROFILE. Covers Ditto SDK 4.14.x and 5.0.x; version-gated features tagged.
+description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, EXPLAIN, ALTER SYSTEM, SHOW, SYNC CONTEXT, PROFILE, RETURNING, and ADVISE. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features tagged.
 ---
 
 # DQL statements reference
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x and 5.0.x**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
+Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
 
-Both SDKs ship the same `Statement` enum: `Explain`, `Query` (`SELECT`), `Insert`, `Update`, `Remove` (`EVICT` / `TOMBSTONE` / `DELETE`), `AlterSystem`, `Show`, `RemoteQuery` (`SYNC CONTEXT`), `CreateIndex`, `DropIndex`. A statement may be prefixed by `EXPLAIN` and (on **5.0+ only**) by the `PROFILE` keyword.
+All three SDK versions ship the same core `Statement` enum: `Explain`, `Query` (`SELECT`), `Insert`, `Update`, `Remove` (`EVICT` / `TOMBSTONE` / `DELETE`), `AlterSystem`, `Show`, `RemoteQuery` (`SYNC CONTEXT`), `CreateIndex`, `DropIndex`; 5.1.x adds `Advise`. A statement may be prefixed by `EXPLAIN` and (on **5.0+ only**) by the `PROFILE` keyword.
 
-Unless a section carries an "Available in:" note, the statement works identically on 4.14.x and 5.0.x.
+Unless a section carries an "Available in:" note, the statement works identically on 4.14.x, 5.0.x, and 5.1.x.
 
 For expression grammar see [`expressions.md`](expressions.md); for operators see [`operators.md`](operators.md); for functions see [`functions.md`](functions.md); for CRDT types and mutators (`COUNTER`, `MAP`, `APPLY`) see [`types-mutators.md`](types-mutators.md).
 
@@ -26,9 +26,10 @@ Adds documents to a collection. Three optional knobs: a type definition (`INTO C
 ```
 INSERT INTO [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
   [ INITIAL ]
-  { DOCUMENTS | VALUES } ( <doc_expr> ) [, ( <doc_expr> ) ...]
+  { { DOCUMENTS | VALUES } ( <doc_expr> ) [, ( <doc_expr> ) ...]
+  | <select_statement> }                   -- SDK 5.1+, see §1.9
   [ ON ID CONFLICT { FAIL | DO NOTHING | DO UPDATE | DO UPDATE_LOCAL_DIFF } ]
-  [ RETURNING <projection> ]
+  [ RETURNING <projection> ]               -- SDK 5.1+, see §1.8
 
 <col_def> ::= <field_name> <crdt_type>     -- e.g. `director MAP`, `watch_count COUNTER`
 ```
@@ -36,7 +37,8 @@ INSERT INTO [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
 - `DOCUMENTS` and `VALUES` are synonyms.
 - `_id` is optional. Omit it and Ditto generates one.
 - `INTO COLLECTION coll (cols…)` is **required** whenever you touch a non-register CRDT (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`). See [`types-mutators.md`](types-mutators.md).
-- `INITIAL` is **Small Peer only** (both 4.x and 5.0). Cannot be combined with `SELECT`-source or with `ON ID CONFLICT`.
+- **`PN_COUNTER` cannot be declared on an inline `INSERT`** on any supported SDK version — see [`types-mutators.md`](types-mutators.md) §4.
+- `INITIAL` is **Small Peer only** (all three SDK versions). Cannot be combined with a `SELECT` source or with `ON ID CONFLICT`.
 
 ### 1.2 Plain insert with auto-generated id
 
@@ -87,7 +89,7 @@ ON ID CONFLICT DO UPDATE;
 
 A counter initialised to `0` here will accept `APPLY watch_count INCREMENT BY n` afterwards (see [§2 UPDATE](#2-update)).
 
-> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+. `MAP` and `ATTACHMENT` are available in all 4.x and 5.0.x.
+> **Available in:** `COUNTER` requires SDK 4.13+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
 
 ### 1.5 `ON ID CONFLICT` actions
 
@@ -121,13 +123,13 @@ ON ID CONFLICT DO UPDATE_LOCAL_DIFF;   -- SDK 4.12+
 
 ### 1.6 Cross-version notes — `DO MERGE`
 
-`DO MERGE` is **not** a portable conflict action on the 4.14.x / 5.0.x cross-section:
+`DO MERGE` is accepted on every supported SDK version:
 
-- **SDK 4.x:** the parser accepts `ON ID CONFLICT DO MERGE` and folds it to `DO UPDATE`. It is an undocumented alias and produces the same effect as `DO UPDATE`.
-- **SDK 5.0.x:** the keyword was removed. `DO MERGE` raises a parse error.
-- **SDK 5.1+ (out of scope here):** `DO MERGE` returns as a first-class action distinct from `DO UPDATE`.
+- **SDK 4.14.x:** alias for `DO UPDATE`.
+- **SDK 5.0.x:** alias for `DO UPDATE`.
+- **SDK 5.1.x:** alias for `DO UPDATE`; it is not a distinct merge mode.
 
-**Recommendation:** write `ON ID CONFLICT DO UPDATE` for code that needs to run on both 4.14.x and 5.0.x. Avoid `DO MERGE` entirely until you can pin to 5.1+.
+Prefer the canonical spelling `ON ID CONFLICT DO UPDATE` unless you are maintaining code that already uses `DO MERGE`.
 
 ### 1.7 `INITIAL` — seed default data (Small Peer)
 
@@ -139,9 +141,9 @@ INSERT INTO movies INITIAL DOCUMENTS
   ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 });
 ```
 
-- Small Peer only on both 4.x and 5.0.x.
+- Small Peer only on all three SDK versions.
 - Cannot be combined with `ON ID CONFLICT`.
-- Cannot use `INSERT ... SELECT` source.
+- Cannot be combined with an `INSERT ... SELECT` source (§1.9).
 
 ### 1.8 `RETURNING`
 
@@ -157,6 +159,22 @@ RETURNING _id, movie_id, score;
 ```
 
 `DISTINCT` and `RAW` are **not** allowed inside `RETURNING`.
+
+### 1.9 `INSERT ... SELECT` — insert from a query
+
+> **Available in:** Ditto SDK **5.1+**. On 4.14.x and 5.0.x this is a parse error: `Unexpected token SELECT ...; expected DOCUMENTS or VALUES`.
+
+Instead of literal documents, the source can be a `SELECT`. Every row the query returns is inserted into the target collection.
+
+```sql
+-- Available in: SDK 5.1+
+INSERT INTO movies_archive SELECT * FROM movies WHERE year < 1950;
+```
+
+- Cannot be combined with `INITIAL` (§1.7).
+- `ON ID CONFLICT` and `RETURNING` apply as usual.
+- The projected `_id` carries over, so re-running against the same source is a conflict unless you supply an `ON ID CONFLICT` action.
+
 
 ---
 
@@ -188,7 +206,7 @@ Notes:
 - `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.4, 5.0.0, and 5.1.0.
 - `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select.md`](select.md).
 - `UPDATE COLLECTION coll (col_defs…)` is required when any mutation touches a non-register CRDT field. The type def applies to that statement only; it does not redefine the schema globally.
-- **`USE IDS` is not supported on `UPDATE`** in either 4.14.x or 5.0.x (parser TODO). To target specific docs, use `WHERE _id IN (...)`.
+- **`USE IDS` on `UPDATE` is SDK 5.1+**, and only in the pre-`SET` position: `UPDATE movies USE IDS 'tt0111161' SET …`. The trailing form (`… SET x = 1 USE IDS …`) is a parse error on every SDK version. On 4.14.x / 5.0.x use `WHERE _id IN (...)`.
 
 ### 2.2 `SET` and `UNSET`
 
@@ -271,11 +289,11 @@ EVICT FROM <collection>
   [ ORDER BY <expr> [ASC|DESC] [, ...] ]
   [ LIMIT   <int> ]
   [ OFFSET  <int> ]
-  [ RETURNING <projection> ]
+  [ RETURNING <projection> ]     -- SDK 5.1+
 ```
 
 - Small Peer only.
-- **`USE IDS` is not supported on `EVICT`** in either 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- **`RETURNING` is SDK 5.1+.** On 4.14.x and 5.0.x it raises `RETURNING is not supported`.
 
 ```sql
 -- Drop all pre-1950 movies from this device's local store
@@ -305,8 +323,8 @@ TOMBSTONE FROM <collection>
   [ RETURNING <projection> ]
 ```
 
-- **Big Peer only.** Running `TOMBSTONE` on a Small Peer is an error.
-- **`USE IDS` is not supported on `TOMBSTONE`** in any tested version (parser TODO). Use `WHERE _id IN (...)`.
+- **Big Peer only, and not executable from any tested SDK version.** 4.14.4, 5.0.0 and 5.1.0 all reject `TOMBSTONE` on a Small Peer with `Tombstone is not supported`, after parsing succeeds. Every example in this section is therefore Big-Peer-only and unverifiable from an Edge SDK. Prefer `DELETE`, which resolves to the right behaviour on either peer type.
+- **`USE IDS` is not supported on `TOMBSTONE`** on any tested version — and neither is `TOMBSTONE` itself, which the Small Peer rejects outright. Use `DELETE ... WHERE _id IN (...)`.
 - `RETURNING` additionally requires SDK **5.1+** (§1.8), so the combinations cannot be exercised offline ahead of Big Peer support.
 
 ```sql
@@ -320,13 +338,15 @@ TOMBSTONE FROM movies
 WHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');
 ```
 
-> TOMBSTONE is the right tool when you genuinely want the document gone everywhere. The replicated tombstone has a TTL (7 days on Edge SDKs, 30 days on the Big Peer / Cloud). Offline peers that come online after the TTL may re-introduce the document — design for the TTL window.
+> TOMBSTONE is the right tool when you genuinely want the document gone everywhere. The replicated tombstone is **not** retained forever — an offline peer that reconnects after the retention window can re-introduce the document, because no peer still holds a tombstone to suppress it. Design for that window rather than assuming a delete is final. Confirm the current retention period with Ditto support for your deployment; it is not stated in the public documentation and should not be hard-coded from memory.
 
 ---
 
-## 5. DELETE — alias
+## 5. DELETE — the mesh-wide delete
 
-`DELETE FROM ...` is a **context-resolved alias**: on a Small Peer it behaves like `EVICT`; on a Big Peer it behaves like `TOMBSTONE`. Syntax is identical to both.
+`DELETE FROM ...` **overwrites the matching documents with tombstones, and those tombstones replicate.** It is the statement to reach for when you want a document gone everywhere, and — unlike `TOMBSTONE` — it works from an Edge SDK. Syntax is identical to `EVICT` and `TOMBSTONE`.
+
+> **`DELETE` is not a "context-resolved alias" for `EVICT`.** Running it on a Small Peer does *not* mean "local eviction". In the engine only `EVICT` takes the local path: the removal-propagation kind is `LocalEvict` for `EVICT` and `PublicRemove` for both `DELETE` and `TOMBSTONE` (`ffi/src/store/dql/ffi_access.rs` on 4.14; the equivalent `is_evict` branch in `ditto-core/src/dql/access.rs` on 5.0/5.1), and the Small Peer store's `remove_docs_batch` is documented as "Remove (tombstone) multiple documents". `TOMBSTONE` itself is described in the AST as a "deprecated BP-only alias for `DELETE`".
 
 ```
 DELETE FROM <collection>
@@ -334,14 +354,14 @@ DELETE FROM <collection>
   [ ORDER BY <expr> [ASC|DESC] [, ...] ]
   [ LIMIT   <int> ]
   [ OFFSET  <int> ]
-  [ RETURNING <projection> ]
+  [ RETURNING <projection> ]     -- SDK 5.1+
 ```
 
-- Available on both Small and Big Peer.
-- **`USE IDS` is not supported on `DELETE`** in either 4.14.x or 5.0.x (parser TODO). Use `WHERE _id IN (...)` instead.
+- Available on both Small and Big Peer, and replicating on both.
+- **`RETURNING` is SDK 5.1+.** On 4.14.x and 5.0.x it raises `RETURNING is not supported`.
 
 ```sql
--- Bulk delete by id list (resolves to EVICT on Small Peer, TOMBSTONE on Big Peer)
+-- Bulk delete by id list (tombstones the documents mesh-wide, from either peer type)
 DELETE FROM movies
 WHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');
 
@@ -355,11 +375,11 @@ RETURNING _id, movie_id, user_id, score;
 
 | Keyword     | Scope                                    | Replicates? | Available on  | Pick it when…                                                  |
 | ----------- | ---------------------------------------- | ----------- | ------------- | -------------------------------------------------------------- |
-| `EVICT`     | Local Small-Peer store only              | No          | Small Peer    | You want to free local storage / shrink working set.           |
-| `TOMBSTONE` | Mesh-wide, replicates to all peers       | Yes         | Big Peer      | You want the document gone everywhere, permanently.            |
-| `DELETE`    | Resolves to `EVICT` (Small) or `TOMBSTONE` (Big) | Depends     | Both          | You want one statement that "just does the right thing" per peer role. |
+| `EVICT`     | Local store only                         | No          | Small Peer    | You want to free local storage / shrink working set.           |
+| `DELETE`    | Mesh-wide, replicates to all peers       | Yes         | Both          | You want the document gone everywhere. **This is the one to use.** |
+| `TOMBSTONE` | Mesh-wide, replicates to all peers       | Yes         | Big Peer only | Never, from an Edge SDK — it is a deprecated alias for `DELETE` and the Small Peer rejects it. |
 
-Mental shorthand: **EVICT = local sweep, TOMBSTONE = "tell the mesh to forget"**. If you `EVICT` a document on one peer, another peer that still has it can replicate it back. If you `TOMBSTONE` it, the tombstone propagates and the document stays gone everywhere (subject to TTL).
+Mental shorthand: **EVICT = local sweep, DELETE = "tell the mesh to forget"**. If you `EVICT` a document on one peer, another peer that still has it can replicate it back. If you `DELETE` it, the tombstone propagates and the document stays gone everywhere (subject to TTL).
 
 ---
 
@@ -371,13 +391,13 @@ Returns the query plan as a single document and does **not** execute the stateme
 EXPLAIN <statement>
 ```
 
-`<statement>` can be `SELECT`, `INSERT`, `UPDATE`, or any of `EVICT` / `TOMBSTONE` / `DELETE` (i.e. the `Remove` family). Both 4.14.x and 5.0.x accept the same shape.
+> **Version-gated by statement kind.** `EXPLAIN SELECT` works on 4.14.x, 5.0.x and 5.1.x. `EXPLAIN` of any **mutation** (`INSERT`, `UPDATE`, `DELETE`, `EVICT`) is **SDK 5.1+** — on 4.14.x and 5.0.x it raises `Explain DML is not supported`.
 
 ```sql
--- Plan a SELECT against an indexed collection
+-- Plan a SELECT against an indexed collection — works on every SDK version
 EXPLAIN SELECT * FROM movies WHERE year = 1994 AND ratings.imdb > 8;
 
--- Plan a mutating statement (no docs are modified)
+-- Plan a mutating statement (no docs are modified) -- SDK 5.1+ only
 EXPLAIN UPDATE movies
 SET is_classic = true
 WHERE year < 1980;
@@ -433,17 +453,24 @@ ALTER SYSTEM RESET ALL;
 Inspect runtime configuration parameters.
 
 ```
-SHOW ALL [ { LIKE | ILIKE } '<pattern>' [ ESCAPE '<char>' ] ]
+SHOW ALL [ { LIKE | ILIKE } '<pattern>' [ ESCAPE '<char>' ] ]   -- filter clause: SDK 5.1+
 SHOW <parameter_name>
 ```
 
-- `LIKE` is case-sensitive; `ILIKE` is case-insensitive.
+> **`SHOW ALL` and `SHOW <parameter_name>` work on every SDK version. The `LIKE` / `ILIKE` / `ESCAPE` filter clause is SDK 5.1+** — on 4.14.x and 5.0.x it is a parse error (`Unexpected token LIKE`). On those versions, run bare `SHOW ALL` and filter in the application.
+
+- `LIKE` is case-sensitive; `ILIKE` is case-insensitive. Parameter names are lowercase, so `LIKE 'DQL_%'` matches nothing — use `'dql_%'` or `ILIKE`.
 - `%` and `_` are wildcards inside the pattern; use `ESCAPE` to introduce a literal wildcard.
 
 ```sql
-SHOW ALL;                                    -- every parameter
+SHOW ALL;                                    -- every parameter (all SDK versions)
+SHOW DQL_STRICT_MODE;                        -- one parameter (all SDK versions)
+```
+
+```sql
+-- Available in: SDK 5.1+
 SHOW ALL LIKE 'transport_%';                 -- all transport_… parameters
-SHOW ALL ILIKE 'DQL_%';                      -- DQL_… (case-insensitive)
+SHOW ALL ILIKE 'DQL_%';                      -- dql_… (case-insensitive)
 SHOW ALL LIKE 'transport!_%' ESCAPE '!';     -- literal underscore in pattern
 SHOW dql_strict_mode;                        -- one parameter
 ```
@@ -505,6 +532,6 @@ Three statement-level features are excluded from this reference because they are
 
 - **`ADVISE` / `ADVISE AND PROVISION`** — index recommendation wrapper. Lands in SDK 5.1+. Not supported on either 4.14.x or 5.0.x; do not use.
 - **Structured `PROFILE` output** — see §10. Lands in 5.1+.
-- **`USE IDS` on `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE`** — the parser carries a TODO in both 4.14.x and 5.0.x. `USE IDS` is supported only on `SELECT`. For mutations, use `WHERE _id IN (...)` instead.
+- **`USE IDS` on mutations** — a parse error on 4.14.x and 5.0.x for all of `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only); `USE IDS` remains a SELECT-only feature and should not be used on mutations. `TOMBSTONE` is unavailable everywhere. Use `WHERE _id IN (...)` for mutations on every SDK version.
 
 `SELECT` lives in [`select.md`](select.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md). CRDT type definitions (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`) and their mutators are documented in [`types-mutators.md`](types-mutators.md).

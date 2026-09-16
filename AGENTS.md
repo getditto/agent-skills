@@ -18,15 +18,17 @@ skills or content that are not appropriate for customer use.**
 
 ```
 skills/                        # Canonical skills — the portable unit
-└── dql/
-    ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
-    ├── references/            # Detailed reference docs loaded on demand
-    ├── examples/              # Worked examples
-    ├── best-practices.md
-    └── README.md              # Human-facing docs for the skill
+├── dql/
+│   ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
+│   ├── references/            # Detailed reference docs loaded on demand
+│   ├── examples/              # Worked examples
+│   ├── best-practices.md
+│   └── README.md              # Human-facing docs for the skill
+└── ditto-mesh-networking/
 
 agents/                        # Portable agent definitions (markdown)
-└── dql-expert.md
+└── ditto-dql/                 # Namespaced by the plugin that ships them
+    └── dql-expert.md
 
 tests/                         # Per-skill test harnesses
 ├── dql/                       # DQL: name-matched subdirectory
@@ -37,10 +39,19 @@ tests/                         # Per-skill test harnesses
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
-└── ditto-<plugin>/
+├── ditto-dql/                 # One plugin per skill it ships
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/dql -> ../../../skills/dql        (symlinked dir)
+│   └── agents -> ../../agents/ditto-dql         (symlinked dir)
+├── ditto-mesh/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/ditto-mesh-networking -> ../../../skills/ditto-mesh-networking
+├── ditto-subscriptions/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/sync-subscriptions -> ../../../skills/sync-subscriptions
+└── ditto-data-modeling/
     ├── .claude-plugin/plugin.json
-    ├── skills -> ../../skills   (symlink)
-    └── agents -> ../../agents   (symlink)
+    └── skills/data-modeling -> ../../../skills/data-modeling
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -65,9 +76,22 @@ docs/                          # Contributor-facing docs
 
 `.claude-plugin/marketplace.json` stays at the repo root (required by
 `/plugin marketplace add`). Each entry's `source` points at a thin wrapper
-under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` and
-symlinks into the canonical `skills/` and `agents/` dirs. Skill content is
-never duplicated in the wrapper.
+under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
+`skills/` directory holding **one symlink per skill that plugin ships**, plus
+— if it ships agents — an `agents` symlink pointing at that plugin's namespaced
+subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
+
+**Agents must be linked as a directory, not as individual files.** Claude Code
+follows a symlinked *directory* but not a symlinked *file*: an
+`agents/foo.md -> ../../../agents/foo.md` link is silently dropped and the
+agent never loads. Hence `agents/<plugin>/` namespacing.
+
+**Plugins are scoped — never symlink the whole `skills/` or `agents/` tree
+into a wrapper.** Users install only the skills they ask for: `ditto-dql`
+ships the DQL skill and its agent; `ditto-mesh` ships the
+ditto-mesh-networking skill. A new skill gets its own plugin unless it genuinely belongs to an
+existing one, because adding it to an existing wrapper changes what that
+plugin installs for everyone who already has it. CI enforces the scoping.
 
 ## Tests
 
@@ -80,7 +104,8 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). CI workflows:
 
 - `.github/workflows/ci.yml` — validates JSON manifests and SKILL.md
-  frontmatter, checks marketplace `source` targets exist.
+  frontmatter, checks marketplace `source` targets exist, and enforces that
+  each plugin wrapper only symlinks the skills/agents it declares.
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
   harness; triggers on changes to `skills/dql/**` or `tests/dql/**`.
 

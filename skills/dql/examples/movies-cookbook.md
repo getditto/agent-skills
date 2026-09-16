@@ -1,13 +1,13 @@
 ---
 title: DQL movies cookbook
-description: 18 end-to-end DQL tasks against a sample movies dataset. Every statement here is verified to work on Ditto SDK 4.14.x and 5.0.x (with v4 fallbacks shown where features differ).
+description: 18 end-to-end DQL tasks against a sample movies dataset. Every statement here is verified to work on Ditto SDK 4.14.x, 5.0.x, and 5.1.x (with v4 fallbacks shown where features differ).
 ---
 
 # DQL Movies Cookbook
 
 A practical walkthrough of every major DQL capability the v5.0.0 SDK supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
-> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`, structured `PROFILE` output, `INSERT ... ON ID CONFLICT DO MERGE`, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.13+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.13+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
 >
 > **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`types-mutators.md`](../references/types-mutators.md) §7.
 
@@ -182,7 +182,7 @@ WHERE array_contains(genres, 'Drama')
    OR array_contains(genres, 'Crime');
 ```
 
-**Notes:** The `OR`/`array_contains` form is portable across both SDK lines and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §5 (array functions) and [`expressions.md`](../references/expressions.md) §7.
+**Notes:** The `OR`/`array_contains` form is portable across all three SDK versions and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §5 (array functions) and [`expressions.md`](../references/expressions.md) §7.
 
 ### Task 7 — Flat view with computed fields
 
@@ -283,7 +283,7 @@ const topIds = topReviews.items.map(r => r.value.movie_id);
 const movies = await store.execute(step2Query, { top_ids: topIds });
 ```
 
-**Notes:** Use `WHERE _id IN (...)` rather than `USE IDS LIST` — `USE IDS LIST` accepts a single list parameter on SELECT, but the `IN (...)` form is universal across SELECT/UPDATE/DELETE/EVICT/TOMBSTONE and works the same on both SDK lines. For very long id lists, see the `#max_inlist` directive in [`indexing.md`](../references/indexing.md) §3.4.
+**Notes:** Use `WHERE _id IN (...)` rather than `USE IDS LIST` — `USE IDS LIST` accepts a single list parameter on SELECT, but the `IN (...)` form is universal across SELECT/UPDATE/DELETE/EVICT/TOMBSTONE and works the same on all three SDK versions. For very long id lists, see the `#max_inlist` directive in [`indexing.md`](../references/indexing.md) §3.4.
 
 ---
 
@@ -342,7 +342,7 @@ WHERE year < 1980
 RETURNING _id, title;
 ```
 
-**Notes:** `RETURNING` works on `UPDATE`, `DELETE`, `EVICT`, and `TOMBSTONE` on both SDK lines. The projection list mirrors the rules for `SELECT`, except `DISTINCT` and `RAW` are not allowed. See [`statements.md`](../references/statements.md) §2.5.
+**Notes:** `RETURNING` is SDK 5.1+ and works there on `UPDATE`, `DELETE`, and `EVICT` (`TOMBSTONE` accepts it in the grammar, but `TOMBSTONE` itself is Big-Peer-only). The projection list mirrors the rules for `SELECT`, except `DISTINCT` and `RAW` are not allowed. See [`statements.md`](../references/statements.md) §2.5.
 
 ### Task 14 — Remove a derived field post-backfill (UNSET)
 
@@ -385,7 +385,7 @@ EVICT FROM movies
 WHERE year < 1950;
 ```
 
-**Notes:** `EVICT` is **non-replicating** — Small Peer only. Other peers in the mesh still hold these documents, and if any of them syncs to this peer later, the films will return. Use `EVICT` for "this device doesn't need it in its working set anymore", and `TOMBSTONE` / `DELETE` for "remove globally". See [`statements.md`](../references/statements.md) §3.
+**Notes:** `EVICT` is **non-replicating** — Small Peer only. Other peers in the mesh still hold these documents, and if any of them syncs to this peer later, the films will return. Use `EVICT` for "this device doesn't need it in its working set anymore", and `DELETE` for "remove globally". See [`statements.md`](../references/statements.md) §3.
 
 ### Task 17 — Mesh-wide retraction of a withdrawn film (TOMBSTONE)
 
@@ -399,7 +399,7 @@ WHERE _id = :withdrawn_id
 RETURNING _id, title;
 ```
 
-**Notes:** `TOMBSTONE` is **Big Peer only** and replicates the deletion to every connected peer. The tombstone has a TTL (7 days on Edge SDKs, 30 days on the Big Peer); offline peers that come online after that window may reintroduce the document. For a peer-agnostic "delete here, propagate if on Big Peer" idiom, use `DELETE FROM ...` instead. See [`statements.md`](../references/statements.md) §4.
+**Notes:** `TOMBSTONE` is **Big Peer only** and replicates the deletion to every connected peer. The tombstone has a TTL (7 days on Edge SDKs, 30 days on the Big Peer); offline peers that come online after that window may reintroduce the document. From an Edge SDK use `DELETE FROM ...` instead — it replicates the same way and is not gated to the Big Peer. See [`statements.md`](../references/statements.md) §4.
 
 ### Task 18 — Bulk delete with an id list
 
@@ -412,7 +412,7 @@ DELETE FROM movies
 WHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992');
 ```
 
-**Notes:** `DELETE` is a context-resolved alias — it behaves like `EVICT` on a Small Peer and `TOMBSTONE` on a Big Peer. **Do not use `USE IDS LIST` on `DELETE`, `UPDATE`, `EVICT`, or `TOMBSTONE`** — both the 4.14.x and 5.0.x parsers carry TODO comments for `USE IDS` on mutations, so `USE IDS` is `SELECT`-only today. `WHERE _id IN (...)` is the portable, supported form. See [`statements.md`](../references/statements.md) §5.
+**Notes:** `DELETE` writes replicating tombstones from either peer type — it is the mesh-wide delete, and the one to use from an Edge SDK (`TOMBSTONE` is a deprecated Big-Peer-only alias for it). **Do not use `USE IDS LIST` on `DELETE`, `UPDATE`, `EVICT`, or `TOMBSTONE`** — both the 4.14.x and 5.0.x parsers carry TODO comments for `USE IDS` on mutations, so `USE IDS` is `SELECT`-only today. `WHERE _id IN (...)` is the portable, supported form. See [`statements.md`](../references/statements.md) §5.
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "name": "ditto-subscriptions",
+  "version": "1.0.0",
+  "description": "How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "database",
+    "ditto",
+    "flooding",
+    "mesh",
+    "offline-first",
+    "p2p",
+    "replication",
+    "subscriptions",
+    "sync"
+  ]
+}

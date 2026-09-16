@@ -182,6 +182,14 @@ function extractRows(result) {
 for (const entry of catalog) {
   i++;
   const inVersion = entry.availableIn?.includes(versionLine) ?? false;
+  // An entry marked available on NO version is a documented example that works
+  // nowhere. That is a documentation defect, not a passing test -- unless it is
+  // deliberately illustrating an unsupported construct (a Big-Peer-only
+  // statement, or a "this is rejected" example), which must be declared with an
+  // `unavailableReason` in catalog/overrides.json.
+  const availableNowhere =
+    Array.isArray(entry.availableIn) && entry.availableIn.length === 0;
+  const justified = Boolean(entry.unavailableReason);
   const result = { id: entry.id, version: VERSION, status: null, message: null };
 
   // Re-seed if the previous entry destructively mutated the shared movies state.
@@ -249,7 +257,11 @@ for (const entry of catalog) {
     }
   } catch (e) {
     const msg = String(e?.message || e).slice(0, 300);
-    if (entry.expectError || !inVersion) {
+    if (availableNowhere && !justified) {
+      // Works on no supported SDK and nobody said why -- surface it.
+      result.status = "BROKEN-EVERYWHERE";
+      result.message = msg;
+    } else if (entry.expectError || !inVersion) {
       result.status = "PASS-AS-EXPECTED-FAIL";
       result.message = msg;
     } else {
@@ -282,7 +294,7 @@ for (const entry of catalog) {
       `  ${i}/${catalog.length}  ${result.status.padEnd(28)} ${entry.id}\n`,
     );
   }
-  if (FAIL_FAST && result.status?.startsWith("FAIL")) {
+  if (FAIL_FAST && (result.status?.startsWith("FAIL") || result.status === "BROKEN-EVERYWHERE")) {
     console.error("Fail-fast: stopping after first FAIL");
     break;
   }
@@ -327,5 +339,7 @@ for (const [k, v] of Object.entries(counts).sort()) {
 }
 console.log(`Detail: ${outPath}`);
 
-const failures = results.filter((r) => r.status?.startsWith("FAIL"));
+const failures = results.filter(
+  (r) => r.status?.startsWith("FAIL") || r.status === "BROKEN-EVERYWHERE",
+);
 process.exit(failures.length === 0 ? 0 : 1);
