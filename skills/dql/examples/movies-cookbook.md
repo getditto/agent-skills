@@ -189,7 +189,7 @@ WHERE array_contains(genres, 'Drama')
 
 ### Task 7 — Flat view with computed fields
 
-> **Available in:** Ditto SDK 5.0+ (`CASE`). On 4.14.x use `IF` / `coalesce` for the two-branch cases and drop the multi-branch column.
+> **Available in:** Ditto SDK 5.0+ (`CASE`). On 4.14.x there is no in-query conditional at all (no `CASE`, and no `IF()` function on any version) — use `coalesce`/`ifnull` for null-coalescing only, and derive branch columns in app code.
 
 **Goal:** Project a row per movie with one or two derived columns.
 
@@ -316,7 +316,7 @@ APPLY legacy_views PN_INCREMENT BY 1
 WHERE _id = :id;
 ```
 
-**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer state-based `COUNTER` (4.14+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
+**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer `COUNTER` (4.14+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
 
 ### Task 12 — Update a nested MAP field without clobbering siblings
 

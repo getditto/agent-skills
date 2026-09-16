@@ -15,19 +15,19 @@
 
 ### Document Size Limits
 
-**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; verified identical on 4.14.4, 5.0.0 and 5.1.0):
+**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.4, 5.0.0 and 5.1.0 — the *behaviour* of the hard limit is not):
 
 | Parameter | Default | Behaviour when exceeded |
 | --- | --- | --- |
-| `document_size_soft_limit_bytes` | `262144` (**256 KiB**) | Warn-level log entry. The write succeeds. |
-| `document_size_hard_limit_bytes` | `5242880` (**5 MiB**) | Error-level log entry. The write **still succeeds and the document still syncs.** |
+| `document_size_soft_limit_bytes` | `262144` (**256 KiB**) | Warn-level log entry. The write succeeds. Same on every version. |
+| `document_size_hard_limit_bytes` | `5242880` (**5 MiB**) | **5.1+: the local write is rejected** with a `DocumentSizeLimitError`. 4.14.x / 5.0.x: error-level log entry only — the write succeeds and the document still syncs. |
 
 ```sql
 SHOW document_size_soft_limit_bytes;   -- 262144
 SHOW document_size_hard_limit_bytes;   -- 5242880
 ```
 
-> **These are not yet enforced.** Ditto's documentation is explicit that oversized documents currently replicate normally and that the limits are a forward signal: a future release will reject writes above the hard limit and skip such documents during replication. Treat them as budgets to design against, not as guarantees the engine gives you today. Both values must be set to the **same** number on every peer in the mesh — mismatched limits cause replication sessions to be disabled once enforcement lands.
+> **Enforcement is version-dependent, and writer-side only.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.0 and 4.14.4 accept the same write and log). On **every** version the check applies only to user-originated writes — an oversized document arriving over replication is still stored, so a 5.1 peer can hold a document it would refuse to write itself. Note that docs.ditto.live still describes the pre-5.1 "logs but succeeds" behaviour for the hard limit; the engine changed in 5.1 and the page has not caught up. Both values must be set to the **same** number on every peer in the mesh — mismatched limits disable replication sessions where enforcement is live.
 
 Large documents are also slow on constrained transports — Bluetooth LE in particular (~20 KB/second effective) — so the practical ceiling is usually well below the soft limit.
 
@@ -649,7 +649,7 @@ For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_M
 
 ### Configuration
 
-The canonical user-facing parameter is `dql_strict_mode` (lowercase — the literal name accepted by `ALTER SYSTEM SET` / `SHOW`). `DQL_STRICT_MODE` is the internal Rust constant; don't pass that as the parameter name. See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
+The canonical user-facing parameter is `dql_strict_mode`. Parameter names in `ALTER SYSTEM SET` / `RESET` / `SHOW` are **case-insensitive** — the resolver lowercases the identifier, so `SHOW DQL_STRICT_MODE` works — but prefer lowercase: it is the name `SHOW` echoes back and the only spelling that matches a case-sensitive `SHOW ALL LIKE` pattern (use `ILIKE` if you want to match uppercase). See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
 
 **Opting into lenient mode (the 5.0+ default; the migration target on 4.x):**
 ```sql
@@ -974,7 +974,7 @@ WHERE expires_at < clock()
 ### Data Modeling
 
 - [ ] Documents < 256 KiB (avoid warnings)
-- [ ] Documents < 5 MiB (hard limit — 5.1+ rejects the write)
+- [ ] Documents < 5 MiB (hard limit — 5.1+ rejects the local write)
 - [ ] Use flat models for complex data
 - [ ] Use ATTACHMENT for large files
 - [ ] Include schema_version field

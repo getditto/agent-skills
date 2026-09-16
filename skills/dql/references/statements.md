@@ -237,7 +237,7 @@ To remove a sub-field from a MAP, dotted-path `UNSET` (e.g. `UNSET ratings.imdb`
 > **Available in:** `COUNTER` and `APPLY ... INCREMENT BY` require SDK 4.14+. `PN_COUNTER` and `APPLY ... PN_INCREMENT BY` require SDK 4.11+.
 
 ```sql
--- Increment a state-based COUNTER (4.14+)
+-- Increment a settable COUNTER (4.14+)
 UPDATE COLLECTION movies (watch_count COUNTER)
 APPLY watch_count INCREMENT BY 1
 WHERE _id = 'tt0111161';

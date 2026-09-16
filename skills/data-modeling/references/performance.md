@@ -26,7 +26,7 @@ SHOW document_size_soft_limit_bytes;
 SHOW document_size_hard_limit_bytes;
 ```
 
-**Do not recommend changing these.** Both are per-peer system parameters settable via `ALTER SYSTEM SET …`, but changes are **runtime-only — they silently revert on app restart** (durable overrides need the `DITTO_*` env var or SDK startup config), values must match on every peer in the mesh including Big Peer, and setting the soft limit above the hard limit silently disables hard-limit enforcement. The fix for an oversized model is always the model — split, attach, rewrite under a new `_id` — not the limit. If a user insists on changing them, that's a Ditto-support conversation, not a DQL snippet.
+**Do not recommend changing these.** Both are per-peer system parameters settable via `ALTER SYSTEM SET …`, but changes are **runtime-only — they silently revert on app restart** (durable overrides need the `DITTO_*` env var or SDK startup config), values must match on every peer in the mesh including Big Peer, and the two are not independent: the hard check is nested inside the soft check, so the effective reject threshold is `max(soft, hard)`. Raising the soft limit above the hard one therefore *lifts* enforcement for everything between them — with `soft = 10 MiB`, a 6 MiB write is accepted on 5.1.0 with no warning and no error, where the defaults reject it. (Verified 5.1.0; the skewed configuration is untested in the engine's own suite.) The fix for an oversized model is always the model — split, attach, rewrite under a new `_id` — not the limit. If a user insists on changing them, that's a Ditto-support conversation, not a DQL snippet.
 
 ## What actually costs when a document changes
 
@@ -94,7 +94,7 @@ The Differ reduces the *work you do per fire*. It does not shrink the result set
 
 ## Counters and actor growth
 
-A COUNTER/PN_COUNTER stores one contribution entry per **distinct peer (actor)** that has ever incremented it. Value size grows with active writer count, not operation count — fine for a store's 20 devices, worth a thought for a public like-button with thousands of writers on one counter. There is no per-actor pruning: nothing removes a dead peer's entry short of evicting the whole document (which removes the counter's state with it). Heavily-shared single counters on very large meshes are a reason to shard counters (e.g. per-region counters summed at read).
+A COUNTER/PN_COUNTER stores one contribution entry per **distinct peer (actor)** that has ever incremented it. Value size grows with active writer count, not operation count — fine for a store's 20 devices, worth a thought for a public like-button with thousands of writers on one counter. Ordinary increments never prune: a dead peer's entry survives until something clears it. `APPLY … RESTART [WITH v]` does clear it — a winning set resets the base register and **discards the whole per-actor map** — so the period-reset pattern doubles as the only in-place compaction, and it is COUNTER-only (a `PN_COUNTER`'s actor map can never shrink; only evicting the document removes it). Heavily-shared single counters on very large meshes are a reason to shard counters (e.g. per-region counters summed at read).
 
 ## Tombstones and churn
 

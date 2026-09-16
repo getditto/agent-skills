@@ -50,6 +50,8 @@ DOCUMENTS ({
 
 -- message: immutable body, append-friendly receipts
 -- readers infers MAP; ATTACHMENT is declared (inference can't guess it)
+-- :image is the object returned by ditto.store.newAttachment(path, metadata) —
+-- bind it, never hand-write the token; the engine rejects an invalid id outright.
 INSERT INTO COLLECTION messages (image ATTACHMENT)
 DOCUMENTS ({
   '_id': 'm-9001',
@@ -58,7 +60,7 @@ DOCUMENTS ({
   'text': 'Gate B is open',
   'sentAt': '2026-08-25T10:31:00.000Z',
   'readers': { 'u-2': '2026-08-25T10:40:11.112Z' },
-  'image': { 'id': '<attachment-token>', 'len': 1258291, 'metadata': { 'mime': 'image/jpeg' } }
+  'image': :image
 });
 
 CREATE INDEX IF NOT EXISTS idx_messages_channel_sent

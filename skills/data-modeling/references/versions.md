@@ -25,11 +25,11 @@ Default per SDK line: **4.14.x → `true`**, **5.0.x / 5.1.x → `false`**.
 
 ```sql
 SHOW dql_strict_mode;
-ALTER SYSTEM SET dql_strict_mode = false;   -- restore the engine default with:
+ALTER SYSTEM SET dql_strict_mode = false;   -- undo a runtime SET with:
 ALTER SYSTEM RESET dql_strict_mode;
 ```
 
-Set it at every app start, before starting sync or running queries — it is not persisted.
+Set it at every app start, before starting sync or running queries — it is not persisted. `RESET` drops the *runtime* override and falls back to whatever the startup config or a `DITTO_DQL_STRICT_MODE` env var resolved to — which is not necessarily the compiled default. A runtime `SET` also shadows that env var until the process restarts.
 
 ### Migration: strict → lenient (the only direction we recommend)
 

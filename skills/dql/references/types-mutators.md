@@ -9,7 +9,7 @@ description: REGISTER, MAP, COUNTER (4.14+), PN_COUNTER (4.11+), and ATTACHMENT 
 
 Authoritative reference for the five CRDT types DQL exposes on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, the type-definition syntax you use to declare them on `INSERT`/`UPDATE`, and the mutation clauses that touch each one.
 
-All three SDK versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (state-based, SDK 4.14+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **factory default of `dql_strict_mode`** (`true` on 4.14.x, `false` on 5.x) — and this skill assumes `false` on every peer, the state every 4.14.x mesh migrates to. See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
+All three SDK versions ship the same `CrdtType` enum: `REGISTER`, `MAP`, `COUNTER` (settable counter, SDK 4.14+), `PN_COUNTER` (legacy positive-negative counter, SDK 4.11+), and `ATTACHMENT`. The user-visible difference across versions is the **factory default of `dql_strict_mode`** (`true` on 4.14.x, `false` on 5.x) — and this skill assumes `false` on every peer, the state every 4.14.x mesh migrates to. See [§7](#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 Cross-references:
 
@@ -176,7 +176,7 @@ WHERE  _id = 'tt0111161';
 
 > **Available in:** Ditto SDK 4.14+.
 
-**Merge semantics:** state-based distributed counter. Every peer maintains its own contribution; the merged value is the sum across peers. Increments from concurrent offline peers all survive.
+**Merge semantics:** a **settable** counter — internally an LWW base register plus a per-actor counter. Every peer maintains its own contribution and the merged value is the base plus the sum across actors, so increments from concurrent offline peers all survive. A *set* (`RESTART [WITH]`) is different: sets resolve last-write-wins against each other, and **a set beats increments it raced with** — the winning side's base is taken and the losing side's accumulated increments are discarded. Plan `RESTART` for moments when nobody else is incrementing.
 
 **When to use it:**
 
@@ -232,7 +232,7 @@ Counters can be combined with other mutation clauses in one statement — but `A
 
 **When NOT to use it:**
 
-- New code on SDK 4.14+. Prefer `COUNTER` for everything new — it has the same merge semantics plus `RESTART WITH`.
+- New code on SDK 4.14+. Prefer `COUNTER` for everything new — increments merge identically, and it adds `RESTART WITH` (whose set-wins semantics are the one behavioural difference; see §3).
 
 **Declaration syntax:** *not* identical to `COUNTER`. A `PN_COUNTER` **cannot be declared on an inline `INSERT`** on any supported SDK version — 4.14.4, 5.0.0 and 5.1.0 all reject it:
 
@@ -273,7 +273,7 @@ WHERE  _id = 'tt0111161';
 
 | Need                                                  | Pick           | Why                                                |
 | ----------------------------------------------------- | -------------- | -------------------------------------------------- |
-| New code, SDK 4.14+ or 5.0.x                          | `COUNTER`      | Adds `RESTART WITH`, otherwise identical merge.    |
+| New code, SDK 4.14+ or 5.0.x                          | `COUNTER`      | Increments merge identically; adds set-wins `RESTART WITH`. |
 | Code targeting an SDK older than 4.14 (unsupported)     | `PN_COUNTER`   | `COUNTER` does not exist yet.                      |
 | Existing field in production storage already `PN_COUNTER` | `PN_COUNTER`   | Don't change the type of an existing field. See [`best-practices.md`](../best-practices.md#schema-versioning-best-practices). |
 | Need to roll a counter to zero each period            | `COUNTER`      | `PN_COUNTER` has no `RESTART`.                     |
@@ -301,7 +301,7 @@ WHERE  _id = 'tt0111161';
 | ---------- | ------ | ----------------------------------------------------------- |
 | `id`       | string | Content id returned when the SDK created the attachment.    |
 | `len`      | int    | Byte length of the blob.                                    |
-| `metadata` | object | Application-defined metadata. Optional but commonly used.   |
+| `metadata` | object | Application-defined string map. **Required** — a token literal without it is rejected (`attachment property 'metadata' is missing`); pass `{}` if you have none. |
 
 **Declaration syntax:**
 

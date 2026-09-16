@@ -65,7 +65,7 @@ DOCUMENTS ({
   'subtotal_cents': 4497, 'tax_cents': 360, 'total_cents': 4857,
   'status': 'placed',
   'status_log': { '2026-08-25T10:30:45.891Z': 'placed' },
-  'receipt': { 'id': '<attachment-token>', 'len': 389112, 'metadata': { 'mime': 'application/pdf' } },
+  'receipt': :receipt,   -- bind ditto.store.newAttachment(pdfPath, { mime: 'application/pdf' })
   'createdAt': '2026-08-25T10:30:45.891Z'
 });
 ```
