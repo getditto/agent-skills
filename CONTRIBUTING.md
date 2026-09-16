@@ -315,7 +315,19 @@ with that evidence before writing the skill.
 
 ### Scaffold
 
-Follow [`docs/SKILLS-TEMPLATE.md`](docs/SKILLS-TEMPLATE.md):
+**Per-language SDK skills** (`skills/swift-sdk/`, `skills/kotlin-sdk/`, …) follow a
+stricter, separate spec: [`docs/SDK-SKILL-TEMPLATE.md`](docs/SDK-SKILL-TEMPLATE.md).
+Copy its skeleton rather than scaffolding by hand:
+
+```bash
+cp -R docs/templates/sdk-skill skills/<lang>-sdk
+```
+
+It adds a twenty-item capability contract (CAP-01 … CAP-20) that every language skill
+must address, so the nine SDK skills can be diffed against one another and gaps are
+declared instead of silently missing.
+
+For every other skill, follow [`docs/SKILLS-TEMPLATE.md`](docs/SKILLS-TEMPLATE.md):
 
 ```
 skills/<skill-name>/

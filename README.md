@@ -25,7 +25,7 @@ skills/          Canonical skills (the portable unit: SKILL.md + references/ + e
 agents/<plugin>/ Portable agent definitions (markdown), namespaced per plugin
 tests/<skill>/   Executable verification for each skill's documented examples
 plugins/         Thin per-tool packaging (Claude Code plugin wrappers w/ symlinks)
-docs/            Contributor docs (SKILLS-TEMPLATE.md, plans)
+docs/            Contributor docs (skill templates, SDK skill spec, plans)
 ```
 
 Skill content lives exactly once in `skills/`. Everything tool-specific wraps
