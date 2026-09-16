@@ -1,38 +1,38 @@
 {
   "$comment": "Manual curation applied by scripts/curate-catalog.mjs after its mechanical rules. Keys are entry ids (stable: hash of repo-relative file + line + query). availableIn: corrects the version tag when the tested SDKs disagree with doc inference ([] = fails on every tested version). ignore: drops the entry with a reason. setup: extra preQueries/postQueries.",
   "availableIn": {
-    "sk_indexing_79cbb7ae": [],
-    "sk_types_mutators_c49a0921": [],
-    "sk_best_practices_522406fc": [
+    "sk_indexing_a5ca6e2a": [],
+    "sk_types_mutators_14d30f05": [],
+    "sk_best_practices_0e7894cb": [
       "5.0.x",
       "5.1.x"
     ],
-    "sk_operators_5a0fc377": [
+    "sk_operators_9c4bbab9": [
       "5.0.x",
       "5.1.x"
     ],
-    "sk_operators_db076d63": [
+    "sk_operators_f8ddc00a": [
       "5.0.x",
       "5.1.x"
     ],
-    "sk_operators_f565e8e0": [],
-    "sk_statements_3dbf2729": [],
-    "sk_statements_ede66e19": [],
-    "sk_movies_cookbook_514f84c9": []
+    "sk_operators_14c61b97": [],
+    "sk_statements_a05a293a": [],
+    "sk_statements_91f92844": [],
+    "sk_movies_cookbook_0c22ec9d": []
   },
   "ignore": {},
   "skipGoldens": {
-    "sk_select_23138e45": "firstRow on `cast` (array of MAPs) has non-deterministic inner ordering across runs even when row content is stable \u2014 keep rowCount only.",
-    "sk_select_68ba5d9a": "LEFT JOIN + GROUP BY + ORDER BY review_count hits many ties at 0; firstRow depends on unspecified tie ordering \u2014 keep rowCount only."
+    "sk_select_db70f2fe": "firstRow on `cast` (array of MAPs) has non-deterministic inner ordering across runs even when row content is stable — keep rowCount only.",
+    "sk_select_5055104f": "LEFT JOIN + GROUP BY + ORDER BY review_count hits many ties at 0; firstRow depends on unspecified tie ordering — keep rowCount only."
   },
   "unavailableReason": {
     "$comment": "Justifies an entry whose availableIn is []. Without a reason here the runner reports BROKEN-EVERYWHERE and fails the run, so a documented example that works on no supported SDK cannot hide as PASS-AS-EXPECTED-FAIL.",
-    "sk_types_mutators_c49a0921": "Negative example: types-mutators.md \u00a74 shows this INSERT precisely to document that a PN_COUNTER cannot be declared inline on any supported line.",
-    "sk_operators_f565e8e0": "Negative example: operators.md \u00a711 shows XOR to document that it is rejected on every supported line.",
-    "sk_indexing_79cbb7ae": "Planner-directive illustration that pins two named indexes the pedagogical fixture does not create; the directive form, not the result, is what the doc teaches.",
-    "sk_statements_3dbf2729": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
-    "sk_statements_ede66e19": "SYNC CONTEXT is Big-Peer-only \u2014 the Small Peer parser rejects the SYNC keyword outright. Documented for completeness; not runnable from an Edge SDK.",
-    "sk_movies_cookbook_514f84c9": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK."
+    "sk_types_mutators_14d30f05": "Negative example: types-mutators.md §4 shows this INSERT precisely to document that a PN_COUNTER cannot be declared inline on any supported line.",
+    "sk_operators_14c61b97": "Negative example: operators.md §11 shows XOR to document that it is rejected on every supported line.",
+    "sk_indexing_a5ca6e2a": "Planner-directive illustration that pins two named indexes the pedagogical fixture does not create; the directive form, not the result, is what the doc teaches.",
+    "sk_statements_a05a293a": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
+    "sk_statements_91f92844": "SYNC CONTEXT is Big-Peer-only — the Small Peer parser rejects the SYNC keyword outright. Documented for completeness; not runnable from an Edge SDK.",
+    "sk_movies_cookbook_0c22ec9d": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.4, 5.0.0, 5.1.0). Documented for completeness; not runnable from an Edge SDK."
   },
   "setup": {}
 }

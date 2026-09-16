@@ -1,0 +1,1382 @@
+[
+  {
+    "id": "sk_best_practices_18312e75",
+    "file": "skills/dql/best-practices.md",
+    "line": 25
+  },
+  {
+    "id": "sk_best_practices_8e4b5f96",
+    "file": "skills/dql/best-practices.md",
+    "line": 52
+  },
+  {
+    "id": "sk_best_practices_95977c5e",
+    "file": "skills/dql/best-practices.md",
+    "line": 79
+  },
+  {
+    "id": "sk_best_practices_c6d65447",
+    "file": "skills/dql/best-practices.md",
+    "line": 110
+  },
+  {
+    "id": "sk_best_practices_68cfc172",
+    "file": "skills/dql/best-practices.md",
+    "line": 120
+  },
+  {
+    "id": "sk_best_practices_fc0f61ca",
+    "file": "skills/dql/best-practices.md",
+    "line": 156
+  },
+  {
+    "id": "sk_best_practices_8e6dfd33",
+    "file": "skills/dql/best-practices.md",
+    "line": 172
+  },
+  {
+    "id": "sk_best_practices_a32e3f4a",
+    "file": "skills/dql/best-practices.md",
+    "line": 199
+  },
+  {
+    "id": "sk_best_practices_f8309b15",
+    "file": "skills/dql/best-practices.md",
+    "line": 221
+  },
+  {
+    "id": "sk_best_practices_e83afec0",
+    "file": "skills/dql/best-practices.md",
+    "line": 252
+  },
+  {
+    "id": "sk_best_practices_6082be3d",
+    "file": "skills/dql/best-practices.md",
+    "line": 268
+  },
+  {
+    "id": "sk_best_practices_8552c8e9",
+    "file": "skills/dql/best-practices.md",
+    "line": 285
+  },
+  {
+    "id": "sk_best_practices_4e282717",
+    "file": "skills/dql/best-practices.md",
+    "line": 359
+  },
+  {
+    "id": "sk_best_practices_4adf35c1",
+    "file": "skills/dql/best-practices.md",
+    "line": 375
+  },
+  {
+    "id": "sk_best_practices_0e7894cb",
+    "file": "skills/dql/best-practices.md",
+    "line": 393
+  },
+  {
+    "id": "sk_best_practices_2633a544",
+    "file": "skills/dql/best-practices.md",
+    "line": 462
+  },
+  {
+    "id": "sk_best_practices_b7c97c51",
+    "file": "skills/dql/best-practices.md",
+    "line": 486
+  },
+  {
+    "id": "sk_best_practices_b6a6b0b5",
+    "file": "skills/dql/best-practices.md",
+    "line": 501
+  },
+  {
+    "id": "sk_best_practices_245a6f7d",
+    "file": "skills/dql/best-practices.md",
+    "line": 515
+  },
+  {
+    "id": "sk_best_practices_20d138f3",
+    "file": "skills/dql/best-practices.md",
+    "line": 526
+  },
+  {
+    "id": "sk_best_practices_199c2d8b",
+    "file": "skills/dql/best-practices.md",
+    "line": 554
+  },
+  {
+    "id": "sk_best_practices_f3c85d2a",
+    "file": "skills/dql/best-practices.md",
+    "line": 579
+  },
+  {
+    "id": "sk_best_practices_5c5b1d61",
+    "file": "skills/dql/best-practices.md",
+    "line": 590
+  },
+  {
+    "id": "sk_best_practices_6a69cc4e",
+    "file": "skills/dql/best-practices.md",
+    "line": 599
+  },
+  {
+    "id": "sk_best_practices_400e2e78",
+    "file": "skills/dql/best-practices.md",
+    "line": 610
+  },
+  {
+    "id": "sk_best_practices_33d9e6f0",
+    "file": "skills/dql/best-practices.md",
+    "line": 655
+  },
+  {
+    "id": "sk_best_practices_ea43f08b",
+    "file": "skills/dql/best-practices.md",
+    "line": 661
+  },
+  {
+    "id": "sk_best_practices_4f1259c6",
+    "file": "skills/dql/best-practices.md",
+    "line": 666
+  },
+  {
+    "id": "sk_best_practices_d535ba43",
+    "file": "skills/dql/best-practices.md",
+    "line": 673
+  },
+  {
+    "id": "sk_best_practices_94a2c6b0",
+    "file": "skills/dql/best-practices.md",
+    "line": 687
+  },
+  {
+    "id": "sk_best_practices_0e377dab",
+    "file": "skills/dql/best-practices.md",
+    "line": 746
+  },
+  {
+    "id": "sk_best_practices_f657f27e",
+    "file": "skills/dql/best-practices.md",
+    "line": 759
+  },
+  {
+    "id": "sk_best_practices_0fd1fcc5",
+    "file": "skills/dql/best-practices.md",
+    "line": 769
+  },
+  {
+    "id": "sk_best_practices_12e453ca",
+    "file": "skills/dql/best-practices.md",
+    "line": 806
+  },
+  {
+    "id": "sk_best_practices_e3bf9aa0",
+    "file": "skills/dql/best-practices.md",
+    "line": 827
+  },
+  {
+    "id": "sk_best_practices_d4582be9",
+    "file": "skills/dql/best-practices.md",
+    "line": 854
+  },
+  {
+    "id": "sk_best_practices_743de684",
+    "file": "skills/dql/best-practices.md",
+    "line": 880
+  },
+  {
+    "id": "sk_best_practices_ff3de1e5",
+    "file": "skills/dql/best-practices.md",
+    "line": 893
+  },
+  {
+    "id": "sk_best_practices_d38b28f2",
+    "file": "skills/dql/best-practices.md",
+    "line": 903
+  },
+  {
+    "id": "sk_best_practices_3cc54a5d",
+    "file": "skills/dql/best-practices.md",
+    "line": 913
+  },
+  {
+    "id": "sk_best_practices_bcaa8df1",
+    "file": "skills/dql/best-practices.md",
+    "line": 920
+  },
+  {
+    "id": "sk_best_practices_f1532a19",
+    "file": "skills/dql/best-practices.md",
+    "line": 926
+  },
+  {
+    "id": "sk_best_practices_da5b14a4",
+    "file": "skills/dql/best-practices.md",
+    "line": 933
+  },
+  {
+    "id": "sk_best_practices_909cef02",
+    "file": "skills/dql/best-practices.md",
+    "line": 941
+  },
+  {
+    "id": "sk_movies_cookbook_53bada8f",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 57
+  },
+  {
+    "id": "sk_movies_cookbook_e61b0997",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 87
+  },
+  {
+    "id": "sk_movies_cookbook_afaff684",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 114
+  },
+  {
+    "id": "sk_movies_cookbook_b0cd4faa",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 131
+  },
+  {
+    "id": "sk_movies_cookbook_8415fa9a",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 145
+  },
+  {
+    "id": "sk_movies_cookbook_e0745c10",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 154
+  },
+  {
+    "id": "sk_movies_cookbook_07433162",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 172
+  },
+  {
+    "id": "sk_movies_cookbook_b2d7426d",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 180
+  },
+  {
+    "id": "sk_movies_cookbook_2ff21a08",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 198
+  },
+  {
+    "id": "sk_movies_cookbook_c9e64fa4",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 223
+  },
+  {
+    "id": "sk_movies_cookbook_3f8cf611",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 245
+  },
+  {
+    "id": "sk_movies_cookbook_c1eca4d0",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 266
+  },
+  {
+    "id": "sk_movies_cookbook_f62224cd",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 277
+  },
+  {
+    "id": "sk_movies_cookbook_21a07f82",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 305
+  },
+  {
+    "id": "sk_movies_cookbook_9306e1e2",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 313
+  },
+  {
+    "id": "sk_movies_cookbook_c8f636f4",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 327
+  },
+  {
+    "id": "sk_movies_cookbook_0594ab50",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 343
+  },
+  {
+    "id": "sk_movies_cookbook_0f197001",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 358
+  },
+  {
+    "id": "sk_movies_cookbook_0dbaadd5",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 374
+  },
+  {
+    "id": "sk_movies_cookbook_fa5ef482",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 388
+  },
+  {
+    "id": "sk_movies_cookbook_0c22ec9d",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 401
+  },
+  {
+    "id": "sk_movies_cookbook_f0ecab97",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 415
+  },
+  {
+    "id": "sk_movies_cookbook_c85a1e5b",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 438
+  },
+  {
+    "id": "sk_movies_cookbook_54c2410e",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 452
+  },
+  {
+    "id": "sk_movies_cookbook_ca54fe60",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 462
+  },
+  {
+    "id": "sk_movies_cookbook_ec24fb17",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 483
+  },
+  {
+    "id": "sk_movies_cookbook_be8b5228",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 501
+  },
+  {
+    "id": "sk_movies_cookbook_dfb212b7",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 520
+  },
+  {
+    "id": "sk_movies_cookbook_6b5e7b76",
+    "file": "skills/dql/examples/movies-cookbook.md",
+    "line": 525
+  },
+  {
+    "id": "sk_retail_cookbook_58046bae",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 28
+  },
+  {
+    "id": "sk_retail_cookbook_fbb8cbeb",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 36
+  },
+  {
+    "id": "sk_retail_cookbook_acf270b3",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 50
+  },
+  {
+    "id": "sk_retail_cookbook_d75b42c8",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 60
+  },
+  {
+    "id": "sk_retail_cookbook_a76f548b",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 74
+  },
+  {
+    "id": "sk_retail_cookbook_2798df93",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 82
+  },
+  {
+    "id": "sk_retail_cookbook_80b74496",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 90
+  },
+  {
+    "id": "sk_retail_cookbook_61bfdcf4",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 100
+  },
+  {
+    "id": "sk_retail_cookbook_8efe568f",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 110
+  },
+  {
+    "id": "sk_retail_cookbook_94a00d0a",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 124
+  },
+  {
+    "id": "sk_retail_cookbook_10417499",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 141
+  },
+  {
+    "id": "sk_retail_cookbook_fc3f2adf",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 147
+  },
+  {
+    "id": "sk_retail_cookbook_f0c1d821",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 159
+  },
+  {
+    "id": "sk_retail_cookbook_5b132423",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 175
+  },
+  {
+    "id": "sk_retail_cookbook_d463e0bd",
+    "file": "skills/dql/examples/retail-cookbook.md",
+    "line": 186
+  },
+  {
+    "id": "sk_retail_joins_cookbook_efd27787",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 45
+  },
+  {
+    "id": "sk_retail_joins_cookbook_b0fd81f0",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 62
+  },
+  {
+    "id": "sk_retail_joins_cookbook_6e3f154c",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 79
+  },
+  {
+    "id": "sk_retail_joins_cookbook_ad2788df",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 87
+  },
+  {
+    "id": "sk_retail_joins_cookbook_ff6e61f3",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 101
+  },
+  {
+    "id": "sk_retail_joins_cookbook_9262db74",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 111
+  },
+  {
+    "id": "sk_retail_joins_cookbook_4560c0e2",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 130
+  },
+  {
+    "id": "sk_retail_joins_cookbook_0c12b9d0",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 148
+  },
+  {
+    "id": "sk_retail_joins_cookbook_ad907d8b",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 156
+  },
+  {
+    "id": "sk_retail_joins_cookbook_f796bc51",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 174
+  },
+  {
+    "id": "sk_retail_joins_cookbook_779bc4c6",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 193
+  },
+  {
+    "id": "sk_retail_joins_cookbook_508258b8",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 199
+  },
+  {
+    "id": "sk_retail_joins_cookbook_993e691e",
+    "file": "skills/dql/examples/retail-joins-cookbook.md",
+    "line": 207
+  },
+  {
+    "id": "sk_expressions_c3c0fa24",
+    "file": "skills/dql/references/expressions.md",
+    "line": 36
+  },
+  {
+    "id": "sk_expressions_657ca280",
+    "file": "skills/dql/references/expressions.md",
+    "line": 68
+  },
+  {
+    "id": "sk_expressions_bffab40a",
+    "file": "skills/dql/references/expressions.md",
+    "line": 89
+  },
+  {
+    "id": "sk_expressions_d256654c",
+    "file": "skills/dql/references/expressions.md",
+    "line": 131
+  },
+  {
+    "id": "sk_expressions_d2c4660a",
+    "file": "skills/dql/references/expressions.md",
+    "line": 161
+  },
+  {
+    "id": "sk_expressions_03f225bc",
+    "file": "skills/dql/references/expressions.md",
+    "line": 193
+  },
+  {
+    "id": "sk_expressions_031587d4",
+    "file": "skills/dql/references/expressions.md",
+    "line": 230
+  },
+  {
+    "id": "sk_expressions_407971da",
+    "file": "skills/dql/references/expressions.md",
+    "line": 250
+  },
+  {
+    "id": "sk_expressions_05315411",
+    "file": "skills/dql/references/expressions.md",
+    "line": 270
+  },
+  {
+    "id": "sk_expressions_37d0df75",
+    "file": "skills/dql/references/expressions.md",
+    "line": 288
+  },
+  {
+    "id": "sk_expressions_53750407",
+    "file": "skills/dql/references/expressions.md",
+    "line": 302
+  },
+  {
+    "id": "sk_expressions_a1960b7a",
+    "file": "skills/dql/references/expressions.md",
+    "line": 324
+  },
+  {
+    "id": "sk_expressions_da5ce93b",
+    "file": "skills/dql/references/expressions.md",
+    "line": 360
+  },
+  {
+    "id": "sk_functions_42b86fe5",
+    "file": "skills/dql/references/functions.md",
+    "line": 32
+  },
+  {
+    "id": "sk_functions_bc27e575",
+    "file": "skills/dql/references/functions.md",
+    "line": 36
+  },
+  {
+    "id": "sk_functions_bbd3cedc",
+    "file": "skills/dql/references/functions.md",
+    "line": 58
+  },
+  {
+    "id": "sk_functions_0160367f",
+    "file": "skills/dql/references/functions.md",
+    "line": 63
+  },
+  {
+    "id": "sk_functions_604d13f1",
+    "file": "skills/dql/references/functions.md",
+    "line": 76
+  },
+  {
+    "id": "sk_functions_8e52e5c9",
+    "file": "skills/dql/references/functions.md",
+    "line": 100
+  },
+  {
+    "id": "sk_functions_639f5e0d",
+    "file": "skills/dql/references/functions.md",
+    "line": 108
+  },
+  {
+    "id": "sk_functions_35c1c0ee",
+    "file": "skills/dql/references/functions.md",
+    "line": 113
+  },
+  {
+    "id": "sk_functions_557eb3da",
+    "file": "skills/dql/references/functions.md",
+    "line": 150
+  },
+  {
+    "id": "sk_functions_4756c1e8",
+    "file": "skills/dql/references/functions.md",
+    "line": 156
+  },
+  {
+    "id": "sk_functions_f60fad80",
+    "file": "skills/dql/references/functions.md",
+    "line": 166
+  },
+  {
+    "id": "sk_functions_104cbb22",
+    "file": "skills/dql/references/functions.md",
+    "line": 183
+  },
+  {
+    "id": "sk_functions_bd2c848b",
+    "file": "skills/dql/references/functions.md",
+    "line": 191
+  },
+  {
+    "id": "sk_functions_514f951d",
+    "file": "skills/dql/references/functions.md",
+    "line": 196
+  },
+  {
+    "id": "sk_functions_da32ac57",
+    "file": "skills/dql/references/functions.md",
+    "line": 202
+  },
+  {
+    "id": "sk_functions_917492e6",
+    "file": "skills/dql/references/functions.md",
+    "line": 210
+  },
+  {
+    "id": "sk_functions_04fac624",
+    "file": "skills/dql/references/functions.md",
+    "line": 215
+  },
+  {
+    "id": "sk_functions_461270b3",
+    "file": "skills/dql/references/functions.md",
+    "line": 220
+  },
+  {
+    "id": "sk_functions_0c8e11c8",
+    "file": "skills/dql/references/functions.md",
+    "line": 229
+  },
+  {
+    "id": "sk_functions_61e6a36c",
+    "file": "skills/dql/references/functions.md",
+    "line": 234
+  },
+  {
+    "id": "sk_functions_e8c9ee1f",
+    "file": "skills/dql/references/functions.md",
+    "line": 239
+  },
+  {
+    "id": "sk_functions_1fc24a03",
+    "file": "skills/dql/references/functions.md",
+    "line": 254
+  },
+  {
+    "id": "sk_functions_6a43a545",
+    "file": "skills/dql/references/functions.md",
+    "line": 259
+  },
+  {
+    "id": "sk_functions_7b81300c",
+    "file": "skills/dql/references/functions.md",
+    "line": 266
+  },
+  {
+    "id": "sk_functions_3e9e048f",
+    "file": "skills/dql/references/functions.md",
+    "line": 302
+  },
+  {
+    "id": "sk_functions_d0e5a6f3",
+    "file": "skills/dql/references/functions.md",
+    "line": 308
+  },
+  {
+    "id": "sk_functions_445bed10",
+    "file": "skills/dql/references/functions.md",
+    "line": 314
+  },
+  {
+    "id": "sk_functions_3f0827b7",
+    "file": "skills/dql/references/functions.md",
+    "line": 320
+  },
+  {
+    "id": "sk_functions_4bdfe9f8",
+    "file": "skills/dql/references/functions.md",
+    "line": 325
+  },
+  {
+    "id": "sk_functions_8fc07f2d",
+    "file": "skills/dql/references/functions.md",
+    "line": 330
+  },
+  {
+    "id": "sk_functions_18c38d8d",
+    "file": "skills/dql/references/functions.md",
+    "line": 361
+  },
+  {
+    "id": "sk_functions_871c02e8",
+    "file": "skills/dql/references/functions.md",
+    "line": 368
+  },
+  {
+    "id": "sk_functions_bbf269a3",
+    "file": "skills/dql/references/functions.md",
+    "line": 378
+  },
+  {
+    "id": "sk_functions_3ed767c5",
+    "file": "skills/dql/references/functions.md",
+    "line": 385
+  },
+  {
+    "id": "sk_functions_f1ea586b",
+    "file": "skills/dql/references/functions.md",
+    "line": 393
+  },
+  {
+    "id": "sk_functions_e3ad12b5",
+    "file": "skills/dql/references/functions.md",
+    "line": 398
+  },
+  {
+    "id": "sk_functions_cd3c01a5",
+    "file": "skills/dql/references/functions.md",
+    "line": 408
+  },
+  {
+    "id": "sk_functions_fd033db3",
+    "file": "skills/dql/references/functions.md",
+    "line": 413
+  },
+  {
+    "id": "sk_functions_c96d0284",
+    "file": "skills/dql/references/functions.md",
+    "line": 427
+  },
+  {
+    "id": "sk_functions_14971a84",
+    "file": "skills/dql/references/functions.md",
+    "line": 432
+  },
+  {
+    "id": "sk_functions_98201e8e",
+    "file": "skills/dql/references/functions.md",
+    "line": 445
+  },
+  {
+    "id": "sk_functions_cf1b53cc",
+    "file": "skills/dql/references/functions.md",
+    "line": 466
+  },
+  {
+    "id": "sk_functions_aaaf7414",
+    "file": "skills/dql/references/functions.md",
+    "line": 479
+  },
+  {
+    "id": "sk_functions_6ca1b48e",
+    "file": "skills/dql/references/functions.md",
+    "line": 492
+  },
+  {
+    "id": "sk_indexing_a85884c4",
+    "file": "skills/dql/references/indexing.md",
+    "line": 56
+  },
+  {
+    "id": "sk_indexing_82fc2d28",
+    "file": "skills/dql/references/indexing.md",
+    "line": 64
+  },
+  {
+    "id": "sk_indexing_646903d6",
+    "file": "skills/dql/references/indexing.md",
+    "line": 87
+  },
+  {
+    "id": "sk_indexing_928b114a",
+    "file": "skills/dql/references/indexing.md",
+    "line": 99
+  },
+  {
+    "id": "sk_indexing_d061499f",
+    "file": "skills/dql/references/indexing.md",
+    "line": 130
+  },
+  {
+    "id": "sk_indexing_487ae345",
+    "file": "skills/dql/references/indexing.md",
+    "line": 148
+  },
+  {
+    "id": "sk_indexing_b12b3d22",
+    "file": "skills/dql/references/indexing.md",
+    "line": 172
+  },
+  {
+    "id": "sk_indexing_f3447501",
+    "file": "skills/dql/references/indexing.md",
+    "line": 189
+  },
+  {
+    "id": "sk_indexing_a5ca6e2a",
+    "file": "skills/dql/references/indexing.md",
+    "line": 228
+  },
+  {
+    "id": "sk_indexing_8cab37ca",
+    "file": "skills/dql/references/indexing.md",
+    "line": 242
+  },
+  {
+    "id": "sk_indexing_84859df2",
+    "file": "skills/dql/references/indexing.md",
+    "line": 260
+  },
+  {
+    "id": "sk_indexing_4186236a",
+    "file": "skills/dql/references/indexing.md",
+    "line": 284
+  },
+  {
+    "id": "sk_indexing_5a9665bb",
+    "file": "skills/dql/references/indexing.md",
+    "line": 290
+  },
+  {
+    "id": "sk_indexing_b9e9fc85",
+    "file": "skills/dql/references/indexing.md",
+    "line": 302
+  },
+  {
+    "id": "sk_indexing_113487b2",
+    "file": "skills/dql/references/indexing.md",
+    "line": 351
+  },
+  {
+    "id": "sk_indexing_09c6589f",
+    "file": "skills/dql/references/indexing.md",
+    "line": 366
+  },
+  {
+    "id": "sk_indexing_10afacc8",
+    "file": "skills/dql/references/indexing.md",
+    "line": 380
+  },
+  {
+    "id": "sk_indexing_23087069",
+    "file": "skills/dql/references/indexing.md",
+    "line": 392
+  },
+  {
+    "id": "sk_indexing_eaf05c69",
+    "file": "skills/dql/references/indexing.md",
+    "line": 402
+  },
+  {
+    "id": "sk_indexing_e12b0068",
+    "file": "skills/dql/references/indexing.md",
+    "line": 417
+  },
+  {
+    "id": "sk_indexing_256aa2a0",
+    "file": "skills/dql/references/indexing.md",
+    "line": 440
+  },
+  {
+    "id": "sk_indexing_000c2782",
+    "file": "skills/dql/references/indexing.md",
+    "line": 466
+  },
+  {
+    "id": "sk_indexing_57c263ea",
+    "file": "skills/dql/references/indexing.md",
+    "line": 478
+  },
+  {
+    "id": "sk_indexing_064b45a5",
+    "file": "skills/dql/references/indexing.md",
+    "line": 495
+  },
+  {
+    "id": "sk_indexing_b4a1ac5a",
+    "file": "skills/dql/references/indexing.md",
+    "line": 506
+  },
+  {
+    "id": "sk_indexing_fc6936de",
+    "file": "skills/dql/references/indexing.md",
+    "line": 517
+  },
+  {
+    "id": "sk_indexing_da95d2fa",
+    "file": "skills/dql/references/indexing.md",
+    "line": 529
+  },
+  {
+    "id": "sk_indexing_edb0f14e",
+    "file": "skills/dql/references/indexing.md",
+    "line": 538
+  },
+  {
+    "id": "sk_operators_fa86c105",
+    "file": "skills/dql/references/operators.md",
+    "line": 46
+  },
+  {
+    "id": "sk_operators_710772ba",
+    "file": "skills/dql/references/operators.md",
+    "line": 75
+  },
+  {
+    "id": "sk_operators_f01edbd9",
+    "file": "skills/dql/references/operators.md",
+    "line": 104
+  },
+  {
+    "id": "sk_operators_9c4bbab9",
+    "file": "skills/dql/references/operators.md",
+    "line": 120
+  },
+  {
+    "id": "sk_operators_f8ddc00a",
+    "file": "skills/dql/references/operators.md",
+    "line": 129
+  },
+  {
+    "id": "sk_operators_be0a34ce",
+    "file": "skills/dql/references/operators.md",
+    "line": 135
+  },
+  {
+    "id": "sk_operators_bbf02051",
+    "file": "skills/dql/references/operators.md",
+    "line": 143
+  },
+  {
+    "id": "sk_operators_366003fc",
+    "file": "skills/dql/references/operators.md",
+    "line": 152
+  },
+  {
+    "id": "sk_operators_1377ca55",
+    "file": "skills/dql/references/operators.md",
+    "line": 169
+  },
+  {
+    "id": "sk_operators_285954ca",
+    "file": "skills/dql/references/operators.md",
+    "line": 225
+  },
+  {
+    "id": "sk_operators_880d4ea0",
+    "file": "skills/dql/references/operators.md",
+    "line": 240
+  },
+  {
+    "id": "sk_operators_1fc89ebe",
+    "file": "skills/dql/references/operators.md",
+    "line": 248
+  },
+  {
+    "id": "sk_operators_0742f43e",
+    "file": "skills/dql/references/operators.md",
+    "line": 260
+  },
+  {
+    "id": "sk_operators_e6c225f9",
+    "file": "skills/dql/references/operators.md",
+    "line": 270
+  },
+  {
+    "id": "sk_operators_4ceca36d",
+    "file": "skills/dql/references/operators.md",
+    "line": 282
+  },
+  {
+    "id": "sk_operators_e8ff55fb",
+    "file": "skills/dql/references/operators.md",
+    "line": 292
+  },
+  {
+    "id": "sk_operators_c2b7b381",
+    "file": "skills/dql/references/operators.md",
+    "line": 307
+  },
+  {
+    "id": "sk_operators_24b4956e",
+    "file": "skills/dql/references/operators.md",
+    "line": 321
+  },
+  {
+    "id": "sk_operators_10cadece",
+    "file": "skills/dql/references/operators.md",
+    "line": 334
+  },
+  {
+    "id": "sk_operators_b93fabbf",
+    "file": "skills/dql/references/operators.md",
+    "line": 350
+  },
+  {
+    "id": "sk_operators_14c61b97",
+    "file": "skills/dql/references/operators.md",
+    "line": 373
+  },
+  {
+    "id": "sk_schema_cdb4145b",
+    "file": "skills/dql/references/schema.md",
+    "line": 82
+  },
+  {
+    "id": "sk_select_d9e8856e",
+    "file": "skills/dql/references/select.md",
+    "line": 63
+  },
+  {
+    "id": "sk_select_04120979",
+    "file": "skills/dql/references/select.md",
+    "line": 70
+  },
+  {
+    "id": "sk_select_6c286a3a",
+    "file": "skills/dql/references/select.md",
+    "line": 83
+  },
+  {
+    "id": "sk_select_975b1672",
+    "file": "skills/dql/references/select.md",
+    "line": 110
+  },
+  {
+    "id": "sk_select_43de9a32",
+    "file": "skills/dql/references/select.md",
+    "line": 154
+  },
+  {
+    "id": "sk_select_aa4c37d7",
+    "file": "skills/dql/references/select.md",
+    "line": 160
+  },
+  {
+    "id": "sk_select_a58640e3",
+    "file": "skills/dql/references/select.md",
+    "line": 168
+  },
+  {
+    "id": "sk_select_71a6a498",
+    "file": "skills/dql/references/select.md",
+    "line": 178
+  },
+  {
+    "id": "sk_select_5faf50a6",
+    "file": "skills/dql/references/select.md",
+    "line": 189
+  },
+  {
+    "id": "sk_select_6a17ecfd",
+    "file": "skills/dql/references/select.md",
+    "line": 210
+  },
+  {
+    "id": "sk_select_cb0decf1",
+    "file": "skills/dql/references/select.md",
+    "line": 236
+  },
+  {
+    "id": "sk_select_8ac302e0",
+    "file": "skills/dql/references/select.md",
+    "line": 273
+  },
+  {
+    "id": "sk_select_1568e18f",
+    "file": "skills/dql/references/select.md",
+    "line": 311
+  },
+  {
+    "id": "sk_select_42c0b3c8",
+    "file": "skills/dql/references/select.md",
+    "line": 340
+  },
+  {
+    "id": "sk_select_9f13a924",
+    "file": "skills/dql/references/select.md",
+    "line": 356
+  },
+  {
+    "id": "sk_select_82852433",
+    "file": "skills/dql/references/select.md",
+    "line": 389
+  },
+  {
+    "id": "sk_select_3fb21a2b",
+    "file": "skills/dql/references/select.md",
+    "line": 423
+  },
+  {
+    "id": "sk_select_253d6034",
+    "file": "skills/dql/references/select.md",
+    "line": 445
+  },
+  {
+    "id": "sk_select_34b9ec3d",
+    "file": "skills/dql/references/select.md",
+    "line": 464
+  },
+  {
+    "id": "sk_select_6e34dddc",
+    "file": "skills/dql/references/select.md",
+    "line": 509
+  },
+  {
+    "id": "sk_select_7ae42c93",
+    "file": "skills/dql/references/select.md",
+    "line": 521
+  },
+  {
+    "id": "sk_select_080164bc",
+    "file": "skills/dql/references/select.md",
+    "line": 566
+  },
+  {
+    "id": "sk_select_db70f2fe",
+    "file": "skills/dql/references/select.md",
+    "line": 577
+  },
+  {
+    "id": "sk_select_49ecc1df",
+    "file": "skills/dql/references/select.md",
+    "line": 597
+  },
+  {
+    "id": "sk_select_045b9e2c",
+    "file": "skills/dql/references/select.md",
+    "line": 692
+  },
+  {
+    "id": "sk_select_b4512c82",
+    "file": "skills/dql/references/select.md",
+    "line": 707
+  },
+  {
+    "id": "sk_select_f2ddb7ed",
+    "file": "skills/dql/references/select.md",
+    "line": 713
+  },
+  {
+    "id": "sk_select_5055104f",
+    "file": "skills/dql/references/select.md",
+    "line": 726
+  },
+  {
+    "id": "sk_select_7e764ee7",
+    "file": "skills/dql/references/select.md",
+    "line": 742
+  },
+  {
+    "id": "sk_select_9d4ddcd9",
+    "file": "skills/dql/references/select.md",
+    "line": 755
+  },
+  {
+    "id": "sk_statements_a6636707",
+    "file": "skills/dql/references/statements.md",
+    "line": 45
+  },
+  {
+    "id": "sk_statements_a6e60d03",
+    "file": "skills/dql/references/statements.md",
+    "line": 52
+  },
+  {
+    "id": "sk_statements_71d9e54b",
+    "file": "skills/dql/references/statements.md",
+    "line": 63
+  },
+  {
+    "id": "sk_statements_f2a143e6",
+    "file": "skills/dql/references/statements.md",
+    "line": 107
+  },
+  {
+    "id": "sk_statements_abaea258",
+    "file": "skills/dql/references/statements.md",
+    "line": 138
+  },
+  {
+    "id": "sk_statements_a30c18f4",
+    "file": "skills/dql/references/statements.md",
+    "line": 154
+  },
+  {
+    "id": "sk_statements_bdaf53db",
+    "file": "skills/dql/references/statements.md",
+    "line": 169
+  },
+  {
+    "id": "sk_statements_1a120040",
+    "file": "skills/dql/references/statements.md",
+    "line": 213
+  },
+  {
+    "id": "sk_statements_ddc204dc",
+    "file": "skills/dql/references/statements.md",
+    "line": 226
+  },
+  {
+    "id": "sk_statements_f50ca795",
+    "file": "skills/dql/references/statements.md",
+    "line": 239
+  },
+  {
+    "id": "sk_statements_069cd8e4",
+    "file": "skills/dql/references/statements.md",
+    "line": 265
+  },
+  {
+    "id": "sk_statements_a464dc21",
+    "file": "skills/dql/references/statements.md",
+    "line": 298
+  },
+  {
+    "id": "sk_statements_a05a293a",
+    "file": "skills/dql/references/statements.md",
+    "line": 330
+  },
+  {
+    "id": "sk_statements_76062b18",
+    "file": "skills/dql/references/statements.md",
+    "line": 363
+  },
+  {
+    "id": "sk_statements_ac1b321e",
+    "file": "skills/dql/references/statements.md",
+    "line": 396
+  },
+  {
+    "id": "sk_statements_f50465c9",
+    "file": "skills/dql/references/statements.md",
+    "line": 435
+  },
+  {
+    "id": "sk_statements_639bf65c",
+    "file": "skills/dql/references/statements.md",
+    "line": 465
+  },
+  {
+    "id": "sk_statements_ad7d66bd",
+    "file": "skills/dql/references/statements.md",
+    "line": 470
+  },
+  {
+    "id": "sk_statements_91f92844",
+    "file": "skills/dql/references/statements.md",
+    "line": 495
+  },
+  {
+    "id": "sk_statements_ac0b422f",
+    "file": "skills/dql/references/statements.md",
+    "line": 519
+  },
+  {
+    "id": "sk_types_mutators_e7a9242b",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 48
+  },
+  {
+    "id": "sk_types_mutators_6d2e5c18",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 87
+  },
+  {
+    "id": "sk_types_mutators_0c9f20b1",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 96
+  },
+  {
+    "id": "sk_types_mutators_5a081510",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 130
+  },
+  {
+    "id": "sk_types_mutators_c15ba434",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 147
+  },
+  {
+    "id": "sk_types_mutators_f3a668e4",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 167
+  },
+  {
+    "id": "sk_types_mutators_3f8c3c47",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 193
+  },
+  {
+    "id": "sk_types_mutators_31550d5e",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 202
+  },
+  {
+    "id": "sk_types_mutators_14d30f05",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 239
+  },
+  {
+    "id": "sk_types_mutators_637f1055",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 249
+  },
+  {
+    "id": "sk_types_mutators_2a3af0ef",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 266
+  },
+  {
+    "id": "sk_types_mutators_6b623d16",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 308
+  },
+  {
+    "id": "sk_types_mutators_c30e95f9",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 319
+  },
+  {
+    "id": "sk_types_mutators_f369871c",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 337
+  },
+  {
+    "id": "sk_types_mutators_f68d8948",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 371
+  },
+  {
+    "id": "sk_types_mutators_4207ee66",
+    "file": "skills/dql/references/types-mutators.md",
+    "line": 393
+  },
+  {
+    "id": "sk_versions_74388326",
+    "file": "skills/dql/references/versions.md",
+    "line": 240
+  },
+  {
+    "id": "sk_versions_699f1e5d",
+    "file": "skills/dql/references/versions.md",
+    "line": 253
+  }
+]

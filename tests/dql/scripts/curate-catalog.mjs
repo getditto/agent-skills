@@ -559,11 +559,37 @@ if (fs.existsSync(OVERRIDES_PATH)) {
 // Write outputs
 // ---------------------------------------------------------------------------
 
+// Prune orphans before writing. `ignored` and `ignoreReasons` are seeded from
+// the previous run so persistent ignores keep their hand-written reason, but
+// that also means an id whose sql block was edited or deleted would be carried
+// forward forever. Keep only ids that correspond to a block seen in THIS run
+// (the raw catalog is every block in skills/dql, pre-filter).
+const BLOCKS_PATH = path.join(TESTS_DIR, "catalog", "blocks.json");
+const liveIds = fs.existsSync(BLOCKS_PATH)
+  ? new Set(JSON.parse(fs.readFileSync(BLOCKS_PATH, "utf8")).map(b => b.id))
+  : new Set([...RAW_CATALOG.map(e => e.id), ...ignored]); // no inventory: prune nothing
+const orphans = [...ignored].filter(id => !liveIds.has(id));
+for (const id of orphans) { ignored.delete(id); ignoreReasons.delete(id); }
+
+// Re-attach captured assertions stashed by extract-queries.mjs, keyed by the
+// (stable) entry id. Without this, re-extracting drops every golden.
+const GOLDENS_PATH = path.join(TESTS_DIR, "catalog", "goldens.json");
+let reattached = 0;
+if (fs.existsSync(GOLDENS_PATH)) {
+  const goldens = JSON.parse(fs.readFileSync(GOLDENS_PATH, "utf8"));
+  for (const e of curated) {
+    if (e.expect === undefined && goldens[e.id] !== undefined) { e.expect = goldens[e.id]; reattached++; }
+  }
+  console.log(`Re-attached ${reattached} golden(s) from ${GOLDENS_PATH}`);
+}
+
 fs.writeFileSync(CATALOG, JSON.stringify(curated, null, 2));
 fs.writeFileSync(IGNORE,  JSON.stringify([...ignored].sort(), null, 2));
 
 // Also drop a sidecar file with reasons -- useful for Task 12 audit.
 fs.writeFileSync(REASONS_PATH, JSON.stringify(Object.fromEntries(ignoreReasons), null, 2));
+
+if (orphans.length) console.log(`Pruned ${orphans.length} orphaned ignore id(s): ${orphans.join(", ")}`);
 
 console.log("=== Curation summary ===");
 console.log(`Input entries:                    ${counters.total}`);

@@ -6,25 +6,38 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 
 | SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION | BROKEN-EVERYWHERE |
 |---|---|---|---|---|---|
-| `@dittolive/ditto@4.14.4` | 199 | 53 | 0 | 0 | 0 |
-| `@dittolive/ditto@5.0.0`  | 216 | 36 | 0 | 0 | 0 |
-| `@dittolive/ditto@5.1.0`  | 246 | 6  | 0 | 0 | 0 |
+| `@dittolive/ditto@4.14.4` | 205 | 53 | 0 | 0 | 0 |
+| `@dittolive/ditto@5.0.0`  | 222 | 36 | 0 | 0 | 0 |
+| `@dittolive/ditto@5.1.0`  | 252 | 6  | 0 | 0 | 0 |
 
-Catalog size: **259 entries** (plus 39 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
 
 **Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.4 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
 ## How it works
 
-1. **Extraction.** `scripts/extract-queries.mjs` walks every `.md` file under `skills/dql/`, pulls every ` ```sql ` code block, and emits a draft catalog entry per query. Each entry has an ID that's a stable hash of `(file, line, query text)`.
+1. **Extraction.** `scripts/extract-queries.mjs` walks every `.md` file under `skills/dql/`, pulls every ` ```sql ` code block, and emits a draft catalog entry per query. Each entry has a content-addressed ID — see **Entry IDs** below. It also writes `catalog/blocks.json` (every block, including ignored ones) and stashes the curated catalog's `expect` goldens into `catalog/goldens.json` before overwriting it.
 
-2. **Curation.** `scripts/curate-catalog.mjs` splits multi-statement blocks (paren-depth aware, so subqueries aren't chopped), substitutes concrete values for `:param` placeholders, marks version-gated features with `availableIn`, strips statement-terminator semicolons (the SDK takes exactly one statement, no `;`), ignores `SELECT`s with no top-level `FROM` clause, and applies the manual decisions in `catalog/overrides.json` — version corrections for features the tested SDKs don't actually ship, plus ignores with reasons. Entry IDs are stable: a hash of the repo-relative `(file, line, query)`, independent of machine and repo location.
+2. **Curation.** `scripts/curate-catalog.mjs` splits multi-statement blocks (paren-depth aware, so subqueries aren't chopped), substitutes concrete values for `:param` placeholders, marks version-gated features with `availableIn`, strips statement-terminator semicolons (the SDK takes exactly one statement, no `;`), ignores `SELECT`s with no top-level `FROM` clause, and applies the manual decisions in `catalog/overrides.json` — version corrections for features the tested SDKs don't actually ship, plus ignores with reasons. It re-attaches the stashed goldens by ID and prunes ignore entries whose block no longer exists.
 
 3. **Transformation.** `scripts/transform-dataset.mjs` reads the real `~/Developer/dql-metrics/benchmarks/skills-test/movies.ndjson`, strides across it for an even era distribution, and writes 194 pedagogical-schema docs to `fixtures/movies-pedagogical.ndjson`. This is committed to the repo. The `fixtures/retail/*.ndjson` files come from the dql-metric's `retail-joins-1k` benchmark suite (committed as-is) and are seeded alongside the movies data by `seed-store.mjs`.
 
 4. **Execution.** `runner/run.mjs` (one invocation per SDK version) opens a Ditto Small Peer using the version-shim, seeds the movies dataset, and runs every catalog entry as `[preQueries], query, [postQueries]`. Results are classified and written to `results/<version>.json`.
 
 5. **Reporting.** `scripts/report.mjs` produces a unified pass/fail table across versions.
+
+## Entry IDs
+
+An entry's ID is `sk_<file-slug>_<sha1(repo-relative-path + normalized-sql + occurrence)>`, where *normalized* means `--` comments stripped (quote-aware) and whitespace runs collapsed, and *occurrence* disambiguates byte-identical queries within one file.
+
+**The invariant: an ID changes when, and only when, the statement itself changes.** Editing prose above a block, reflowing or reindenting the SQL, and rewording a `--` comment all leave IDs untouched. That matters because `ignore.json`, `ignore-reasons.json`, `overrides.json` and `goldens.json` are all keyed by ID — under the previous scheme, which hashed `(file, line, raw sql)`, inserting a paragraph silently re-keyed every entry below it, orphaning its override and dropping its assertions with no error anywhere.
+
+Consequences worth knowing:
+
+- **Editing docs is safe.** Add prose, reflow blocks, reword comments freely; `npm run extract && node scripts/curate-catalog.mjs` is a no-op on IDs.
+- **Changing a query is a deliberate re-key.** The entry gets a new ID and loses its golden — which is correct, since the expected result may have changed. Re-capture with `node runner/run.mjs --capture-expected`.
+- **Don't hand-edit IDs.** If you need to re-key, regenerate; the pipeline is lossless in both directions.
+- **`blocks.json` and `goldens.json` are generated.** Commit them: curation needs `blocks.json` to tell an orphaned ignore from a live one, and `goldens.json` is what survives an extract.
 
 ## Supported versions
 
@@ -123,10 +136,12 @@ tests/dql/
 ├── package.json                           top-level scripts (extract, transform, test, report)
 ├── .gitignore                             results/, node_modules/, .ditto/
 ├── catalog/
-│   ├── catalog.json                       200 curated entries
+│   ├── catalog.json                       258 curated entries
 │   ├── overrides.json                     manual version / ignore decisions, applied by curation
 │   ├── ignore.json                        generated: IDs intentionally skipped
 │   ├── ignore-reasons.json                generated: why each is ignored
+│   ├── blocks.json                        generated: every sql block (id/file/line), incl. ignored
+│   ├── goldens.json                       generated: captured assertions, survives re-extraction
 │   └── schema-mapping.json                pedagogical-schema mapping from the real dataset
 ├── scripts/
 │   ├── extract-queries.mjs                markdown → catalog draft
