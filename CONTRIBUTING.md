@@ -187,7 +187,7 @@ Pick the honest option. All four are acceptable answers; only silence isn't.
 The skill's harness covers it. Give the result:
 
 ```
-tests/dql — 258 catalog entries, 0 FAIL on 4.14.4, 5.0.3 and 5.1.0
+tests/dql — 258 catalog entries, 0 FAIL on 4.14.6, 5.0.3 and 5.1.0
 (+3 new entries from the examples added in this PR)
 ```
 
@@ -201,7 +201,7 @@ actual output**, not a summary of it:
 
 ```
 5.1.0   DELETE FROM nz USE IDS 'k1'   -> ok, rows=0 ; count still 4
-4.14.4  DELETE FROM nz USE IDS 'k1'   -> Unexpected token USE at line 1 column 16
+4.14.6  DELETE FROM nz USE IDS 'k1'   -> Unexpected token USE at line 1 column 16
 ```
 
 Real output catches things a summary hides. "Returns 0 rows" and "reports
@@ -430,7 +430,7 @@ One-time setup:
 ```bash
 cp .env-sample .env                # fill in DITTO_OFFLINE_LICENSE
 cd tests/dql
-(cd sdks/v4.14.4 && npm install)
+(cd sdks/v4.14.6 && npm install)
 (cd sdks/v5.0.3  && npm install)
 (cd sdks/v5.1.0  && npm install)
 ```

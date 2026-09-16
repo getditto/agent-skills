@@ -6,13 +6,13 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 
 | SDK | PASS | PASS-AS-EXPECTED-FAIL | FAIL | FAIL-ASSERTION | BROKEN-EVERYWHERE |
 |---|---|---|---|---|---|
-| `@dittolive/ditto@4.14.4` | 205 | 53 | 0 | 0 | 0 |
+| `@dittolive/ditto@4.14.6` | 205 | 53 | 0 | 0 | 0 |
 | `@dittolive/ditto@5.0.3`  | 222 | 36 | 0 | 0 | 0 |
 | `@dittolive/ditto@5.1.0`  | 252 | 6  | 0 | 0 | 0 |
 
 Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
 
-**Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.4 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
+**Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.6 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
 ## How it works
 
@@ -41,7 +41,7 @@ Consequences worth knowing:
 
 ## Supported versions
 
-- `@dittolive/ditto@4.14.4` (LTS)
+- `@dittolive/ditto@4.14.6` (LTS)
 - `@dittolive/ditto@5.0.3`
 - `@dittolive/ditto@5.1.0` (current — JOINs, composite indexes, RETURNING, ADVISE)
 
@@ -86,7 +86,7 @@ Both test runners auto-load the repo-root `.env`; variables already set in the e
 cd tests/dql
 
 # Install all isolated SDK trees
-(cd sdks/v4.14.4 && npm install)
+(cd sdks/v4.14.6 && npm install)
 (cd sdks/v5.0.3 && npm install)
 (cd sdks/v5.1.0 && npm install)
 
@@ -109,7 +109,7 @@ npm run test:v4
 npm run report
 
 # Capture expected outputs after content changes (rebuilds catalog goldens)
-for v in 4.14.4 5.0.3 5.1.0; do
+for v in 4.14.6 5.0.3 5.1.0; do
   DITTO_SDK_VERSION=$v node runner/run.mjs --capture-expected
 done
 node scripts/merge-captured.mjs
@@ -158,11 +158,11 @@ tests/dql/
 │   ├── movies-pedagogical.ndjson         194 docs spanning 1893–2002 (committed)
 │   └── retail/*.ndjson                   8 collections, ~4.9k docs (committed, from dql-metrics retail-joins-1k)
 ├── sdks/
-│   ├── v4.14.4/                           isolated node_modules
+│   ├── v4.14.6/                           isolated node_modules
 │   ├── v5.0.3/                            isolated node_modules
 │   └── v5.1.0/                            isolated node_modules
 └── results/                               generated, gitignored
-    ├── 4.14.4.json
+    ├── 4.14.6.json
     ├── 5.0.3.json
     ├── 5.1.0.json
     └── report.json

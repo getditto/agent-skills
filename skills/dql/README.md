@@ -73,7 +73,7 @@ The plugin ships with an automated test harness that runs every documented DQL e
 ```bash
 cd tests/dql
 # One-time setup
-(cd sdks/v4.14.4 && npm install)
+(cd sdks/v4.14.6 && npm install)
 (cd sdks/v5.0.3 && npm install)
 (cd sdks/v5.1.0 && npm install)
 npm run transform               # produce pedagogical-schema test dataset (one-time)
@@ -83,7 +83,7 @@ DITTO_OFFLINE_LICENSE="$DITTO_LICENSE" npm test
 npm run report
 ```
 
-Current status: **205 PASS / 53 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.4`; **222 PASS / 36 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.3`; **252 PASS / 6 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.1.0` (258 catalog entries, 0 FAIL). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0).
+Current status: **205 PASS / 53 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.6`; **222 PASS / 36 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.3`; **252 PASS / 6 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.1.0` (258 catalog entries, 0 FAIL). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0).
 
 See [`tests/dql/README.md`](../../tests/dql/README.md) for the harness internals.
 

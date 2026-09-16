@@ -59,9 +59,9 @@ Ditto `_id`s can be **objects**, not just strings, and this is the single most D
 
 **Why an object beats a string.** Ditto's permission system can only see `_id` — sync permissions and Big Peer / auth-webhook rules are expressed as queries over it, and nothing else in the document is visible to them. So **any value you will ever want to scope permissions by must be a subfield of `_id`.** With `{ "store_id": 42, "order_id": … }`, a store's device can be granted exactly the orders where `_id.store_id = 42`. With `"order-2026-00042"`, it cannot — the scope isn't there to filter on, and retrofitting it means rewriting every document under a new `_id`, which is an offline-mesh migration, not a config change.
 
-**The `_id` subfields are real, first-class fields — don't copy them into the body.** `WHERE _id.store_id = 42`, `CREATE INDEX … ON orders (_id.store_id)`, composite indexes over `(_id.store_id, status)` (5.1+), and `JOIN … ON child.order_id = parent._id.order_id` (5.1+) all work directly against the path. A body copy buys nothing, costs a field's worth of CRDT metadata on every document, and creates two values that can disagree. Verified on 4.14.4, 5.0.3, and 5.1.0.
+**The `_id` subfields are real, first-class fields — don't copy them into the body.** `WHERE _id.store_id = 42`, `CREATE INDEX … ON orders (_id.store_id)`, composite indexes over `(_id.store_id, status)` (5.1+), and `JOIN … ON child.order_id = parent._id.order_id` (5.1+) all work directly against the path. A body copy buys nothing, costs a field's worth of CRDT metadata on every document, and creates two values that can disagree. Verified on 4.14.6, 5.0.3, and 5.1.0.
 
-Three more things a composite object buys you, all verified on 4.14.4, 5.0.3, and 5.1.0:
+Three more things a composite object buys you, all verified on 4.14.6, 5.0.3, and 5.1.0:
 
 - **Query and index the parts.** As above — whole-object equality (`WHERE _id = { … }`) works too. Subfields of a string `_id` are only reachable with string functions, and never indexable.
 - **Uniqueness for free on the real key.** The tuple is the identity, so a per-store order number can't collide with another store's.

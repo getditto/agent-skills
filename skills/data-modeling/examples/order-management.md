@@ -77,7 +77,7 @@ SELECT * FROM orders WHERE _id.store_id = 42;
 CREATE INDEX IF NOT EXISTS idx_orders_store ON orders (_id.store_id);
 ```
 
-`store_id` lives in `_id` and nowhere else — there is no second copy in the body. `_id.store_id` is an ordinary path, so predicates, indexes, and JOIN keys all work against it directly; a body copy would only add per-document CRDT metadata and a second value that can drift from the first. The remaining `store` map keeps just the descriptive fields (name, region), which no rule needs to filter on. Verified on 4.14.4, 5.0.3, and 5.1.0. Full rule: [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
+`store_id` lives in `_id` and nowhere else — there is no second copy in the body. `_id.store_id` is an ordinary path, so predicates, indexes, and JOIN keys all work against it directly; a body copy would only add per-document CRDT metadata and a second value that can drift from the first. The remaining `store` map keeps just the descriptive fields (name, region), which no rule needs to filter on. Verified on 4.14.6, 5.0.3, and 5.1.0. Full rule: [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
 
 Inventory side (the actual counter):
 
@@ -93,7 +93,7 @@ APPLY stock INCREMENT BY -2          -- sale of qty 2 -> 498
 WHERE _id = 'SKU-100';               -- COUNTER requires 4.14+
 ```
 
-Three things to know about that seed (all executed on 4.14.4, 5.0.3, and 5.1.0):
+Three things to know about that seed (all executed on 4.14.6, 5.0.3, and 5.1.0):
 
 - **The declaration on the INSERT is what makes it a counter, and it is not optional.** Insert `{'stock': 500}` with no `(stock COUNTER)` and you get a REGISTER holding `500`. A later `APPLY stock INCREMENT BY 3` on that document then reads **3**, not 503 — the counter starts from zero and the register's value is discarded, silently. Same result on both SDK lines. If a field is ever going to be a counter, declare it on the statement that creates the document.
 - **A seed is an assignment, not an increment.** Two peers that each seed `stock` to 500 offline converge on 500, not 1000 — normal LWW. That's what you want for an opening balance and wrong for anything else, so seed once, from one authority, and never replay the seed while live increments matter. `ON ID CONFLICT DO NOTHING` is the safe idiom for a seed that might be re-run; `DO UPDATE` re-asserts the baseline every time.

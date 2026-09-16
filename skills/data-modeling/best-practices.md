@@ -94,7 +94,7 @@ SELECT * FROM orders WHERE _id.store_id = 42;              -- permissions can ex
 CREATE INDEX IF NOT EXISTS idx_orders_store ON orders (_id.store_id);
 ```
 
-- **Object `_id`s over string `_id`s** whenever a scoping value exists (store, site, tenant, region, org). Subfields are queryable (`_id.store_id`), indexable, and readable in the portal and HTTP API. Verified on 4.14.4, 5.0.3, and 5.1.0.
+- **Object `_id`s over string `_id`s** whenever a scoping value exists (store, site, tenant, region, org). Subfields are queryable (`_id.store_id`), indexable, and readable in the portal and HTTP API. Verified on 4.14.6, 5.0.3, and 5.1.0.
 - **Don't copy the `_id` subfields into the body.** They are ordinary queryable, indexable paths — predicates, single and composite indexes, and JOIN keys all work against `_id.<field>` directly. A body copy adds per-field CRDT metadata to every document and gives you two values that can disagree. (A *child's back-reference* to its parent is a different thing and is fine — see the split pattern above.)
 - **Composite *string* `_id`s (`'store42:order-77'`) are an anti-pattern** — a relational composite key flattened for a system that only took strings. Ditto has no such limit. Delimiter-joined keys break when a component contains the delimiter, need parsing at every read, can't be indexed per-component, and are invisible to permissions. Use the object.
 - `_id` is **immutable** and never a CRDT field (no type declaration, no `SET _id`).

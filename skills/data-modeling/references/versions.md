@@ -16,7 +16,7 @@ Tagging convention used across this skill: **4.14+** (exists in the LTS line and
 | Bare object in `INSERT`/`UPDATE` becomes | `MAP` (per-field merge) — the engine duck-types JSON into CRDT intent | `REGISTER` (whole-object LWW) |
 | Scalars and arrays become | `REGISTER` (arrays are always registers) | `REGISTER` |
 | `MAP`/`REGISTER` keywords on writes | **Not needed — do not write them.** The inferred default is the intended behavior | **Required** for every non-REGISTER field — an undeclared object silently stores as `REGISTER` |
-| Type declarations on reads | **Not needed — do not write them.** `SELECT` returns the most recent value of every field, whatever its CRDT type | **Required** — a MAP/COUNTER field the query doesn't re-declare is **omitted from the result entirely, as if it never existed** (no error; verified on 4.14.4: plain reads return `{}`) |
+| Type declarations on reads | **Not needed — do not write them.** `SELECT` returns the most recent value of every field, whatever its CRDT type | **Required** — a MAP/COUNTER field the query doesn't re-declare is **omitted from the result entirely, as if it never existed** (no error; verified on 4.14.6: plain reads return `{}`) |
 | `COUNTER` / `ATTACHMENT` declarations | Still required — inference can't guess them from a JSON value | Required |
 
 Default per SDK line: **4.14.x → `true`**, **5.0.x / 5.1.x → `false`**.

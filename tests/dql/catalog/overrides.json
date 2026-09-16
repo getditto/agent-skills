@@ -30,9 +30,9 @@
     "sk_types_mutators_14d30f05": "Negative example: types-mutators.md §4 shows this INSERT precisely to document that a PN_COUNTER cannot be declared inline on any supported line.",
     "sk_operators_14c61b97": "Negative example: operators.md §11 shows XOR to document that it is rejected on every supported line.",
     "sk_indexing_a5ca6e2a": "Planner-directive illustration that pins two named indexes the pedagogical fixture does not create; the directive form, not the result, is what the doc teaches.",
-    "sk_statements_a05a293a": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.4, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
+    "sk_statements_a05a293a": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.6, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
     "sk_statements_91f92844": "SYNC CONTEXT is Big-Peer-only — the Small Peer parser rejects the SYNC keyword outright. Documented for completeness; not runnable from an Edge SDK.",
-    "sk_movies_cookbook_0c22ec9d": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.4, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK."
+    "sk_movies_cookbook_0c22ec9d": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.6, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK."
   },
   "setup": {}
 }

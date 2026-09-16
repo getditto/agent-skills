@@ -136,7 +136,7 @@ Skips the collection scan and goes directly to the indexed-by-id path.
 
 > **Tested-SDK note:** only the single-id form of the explicit syntax is accepted by 4.14.x / 5.0.x / 5.1.0 as shipped — the multi-id list and list-parameter forms (§§3.2–3.3) currently fail with ``(...) is not supported``.
 >
-> You rarely need to write `USE IDS` at all on 5.0+: the planner **automatically rewrites** `_id` equality filters into an id-direct plan when it can. Harness-verified against 4.14.4 / 5.0.0 / 5.1.0 (`EXPLAIN` shows the `idScan` operator when the rewrite fires):
+> You rarely need to write `USE IDS` at all on 5.0+: the planner **automatically rewrites** `_id` equality filters into an id-direct plan when it can. Harness-verified against 4.14.6 / 5.0.0 / 5.1.0 (`EXPLAIN` shows the `idScan` operator when the rewrite fires):
 >
 > | Filter shape | 4.14.x | 5.0.x | 5.1.x |
 > |---|---|---|---|

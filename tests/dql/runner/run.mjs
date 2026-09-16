@@ -30,7 +30,7 @@ loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
-  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.3|5.1.0");
+  console.error("Set DITTO_SDK_VERSION=4.14.6|5.0.3|5.1.0");
   process.exit(1);
 }
 
@@ -44,7 +44,7 @@ const DATABASE_ID = process.env.DITTO_DATABASE_ID || "00000000-1111-2222-3333-44
 const CAPTURE_EXPECTED = process.argv.includes("--capture-expected");
 const FAIL_FAST = process.argv.includes("--fail-fast");
 
-// "4.14.4" -> "4.14.x", "5.0.3" -> "5.0.x"
+// "4.14.6" -> "4.14.x", "5.0.3" -> "5.0.x"
 const versionLine = VERSION.replace(/\.[0-9]+$/, ".x");
 
 const catalogPath = path.resolve(import.meta.dirname, "..", "catalog", "catalog.json");
@@ -117,7 +117,7 @@ if (typeof ditto.disableSyncWithV3 === "function") {
 
 // NOTE: deliberately NOT calling startSync() on v4. With
 // disableSyncWithV3() set, calling startSync() causes the FFI layer to
-// SIGABRT during the first DQL mutation (observed on 4.14.4). The tests
+// SIGABRT during the first DQL mutation (observed on 4.14.6). The tests
 // are local-only DQL — no peer sync needed.
 
 const store = ditto.store;
@@ -128,7 +128,7 @@ if (!store) {
 
 // Normalize to the documented baseline: dql_strict_mode = false on every peer.
 // The skill's examples assume lenient mode (the 5.x default and the 4.x
-// migration target). On 4.14.4 this flips the peer off the strict factory
+// migration target). On 4.14.6 this flips the peer off the strict factory
 // default; on 5.x it is a no-op. Runtime-only setting — applied per process.
 try {
   await store.execute("ALTER SYSTEM SET dql_strict_mode = false");
