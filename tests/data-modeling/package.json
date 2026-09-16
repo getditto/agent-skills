@@ -1,0 +1,12 @@
+{
+  "name": "ditto-data-modeling-skill-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Live-model evaluation harness for the data-modeling skill: raw JSON in, scored recommendations out.",
+  "type": "module",
+  "scripts": {
+    "prompts": "node runner/run.mjs --prompts-only",
+    "run": "node runner/run.mjs",
+    "score": "node runner/score.mjs"
+  }
+}

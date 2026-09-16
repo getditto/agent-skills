@@ -1,0 +1,895 @@
+{
+  "sk_best_practices_18312e75": {
+    "rowCount": 1
+  },
+  "sk_best_practices_8e4b5f96": {
+    "rowCount": 0
+  },
+  "sk_best_practices_95977c5e": {
+    "rowCount": 0
+  },
+  "sk_best_practices_68cfc172": {
+    "rowCount": 0
+  },
+  "sk_best_practices_8e6dfd33": {
+    "rowCount": 0
+  },
+  "sk_best_practices_a32e3f4a": {
+    "rowCount": 0
+  },
+  "sk_best_practices_f8309b15": {
+    "rowCount": 0
+  },
+  "sk_best_practices_e83afec0": {
+    "rowCount": 0
+  },
+  "sk_best_practices_6082be3d": {
+    "rowCount": 0
+  },
+  "sk_best_practices_8552c8e9": {
+    "rowCount": 0
+  },
+  "sk_best_practices_4e282717": {
+    "rowCount": 0
+  },
+  "sk_best_practices_4adf35c1": {
+    "rowCount": 1
+  },
+  "sk_best_practices_0e7894cb": {
+    "rowCount": 1
+  },
+  "sk_best_practices_2633a544": {
+    "rowCount": 1
+  },
+  "sk_best_practices_b7c97c51": {
+    "rowCount": 0
+  },
+  "sk_best_practices_b6a6b0b5": {
+    "rowCount": 1
+  },
+  "sk_best_practices_245a6f7d": {
+    "rowCount": 0
+  },
+  "sk_best_practices_20d138f3": {
+    "rowCount": 0
+  },
+  "sk_best_practices_199c2d8b": {
+    "rowCount": 1
+  },
+  "sk_best_practices_f3c85d2a": {
+    "rowCount": 1
+  },
+  "sk_best_practices_5c5b1d61": {
+    "rowCount": 1
+  },
+  "sk_best_practices_6a69cc4e": {
+    "rowCount": 0
+  },
+  "sk_best_practices_400e2e78": {
+    "rowCount": 1
+  },
+  "sk_best_practices_33d9e6f0": {
+    "rowCount": 1
+  },
+  "sk_best_practices_ea43f08b": {
+    "rowCount": 1
+  },
+  "sk_best_practices_4f1259c6": {
+    "rowCount": 1
+  },
+  "sk_best_practices_d535ba43": {
+    "rowCount": 0
+  },
+  "sk_best_practices_94a2c6b0": {
+    "rowCount": 0
+  },
+  "sk_best_practices_0e377dab": {
+    "rowCount": 0
+  },
+  "sk_best_practices_f657f27e": {
+    "rowCount": 0
+  },
+  "sk_best_practices_0fd1fcc5": {
+    "rowCount": 0
+  },
+  "sk_best_practices_12e453ca": {
+    "rowCount": 0
+  },
+  "sk_best_practices_ff3de1e5": {
+    "rowCount": 0
+  },
+  "sk_best_practices_d38b28f2": {
+    "rowCount": 0
+  },
+  "sk_best_practices_3cc54a5d": {
+    "rowCount": 0
+  },
+  "sk_best_practices_bcaa8df1": {
+    "rowCount": 0
+  },
+  "sk_best_practices_f1532a19": {
+    "rowCount": 0
+  },
+  "sk_best_practices_da5b14a4": {
+    "rowCount": 0
+  },
+  "sk_best_practices_909cef02": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_53bada8f": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_e61b0997": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_afaff684": {
+    "rowCount": 25,
+    "firstRow": {
+      "_id": "573a1399f29313caabcee345",
+      "imdb": 8.8,
+      "title": "Andaz Apna Apna",
+      "year": 1994
+    }
+  },
+  "sk_movies_cookbook_b0cd4faa": {
+    "rowCount": 1
+  },
+  "sk_movies_cookbook_8415fa9a": {
+    "rowCount": 1,
+    "firstRow": {
+      "_id": "573a1399f29313caabcecb4a",
+      "title": "Robin Hood: Prince of Thieves",
+      "year": 1991
+    }
+  },
+  "sk_movies_cookbook_e0745c10": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_07433162": {
+    "rowCount": 128
+  },
+  "sk_movies_cookbook_b2d7426d": {
+    "rowCount": 128
+  },
+  "sk_movies_cookbook_2ff21a08": {
+    "rowCount": 194,
+    "firstRow": {
+      "_id": "573a13a1f29313caabd0660a",
+      "imdb": 7.6,
+      "is_pre_1980": false,
+      "title": "The Tracker",
+      "verdict": "good"
+    }
+  },
+  "sk_movies_cookbook_c9e64fa4": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_3f8cf611": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_c1eca4d0": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_f62224cd": {
+    "rowCount": 1
+  },
+  "sk_movies_cookbook_21a07f82": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_9306e1e2": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_c8f636f4": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_0594ab50": {
+    "rowCount": 76
+  },
+  "sk_movies_cookbook_0f197001": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_0dbaadd5": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_fa5ef482": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_f0ecab97": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_c85a1e5b": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_54c2410e": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_ca54fe60": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "573a1395f29313caabce2b21",
+      "avg_score": 0,
+      "review_count": 0,
+      "title": "A Big Hand for the Little Lady"
+    }
+  },
+  "sk_movies_cookbook_ec24fb17": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_be8b5228": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "573a13a1f29313caabd0660a",
+      "title": "The Tracker",
+      "year": 2002
+    }
+  },
+  "sk_movies_cookbook_dfb212b7": {
+    "rowCount": 0
+  },
+  "sk_movies_cookbook_6b5e7b76": {
+    "rowCount": 0
+  },
+  "sk_retail_cookbook_58046bae": {
+    "rowCount": 1
+  },
+  "sk_retail_cookbook_fbb8cbeb": {
+    "rowCount": 1
+  },
+  "sk_retail_cookbook_acf270b3": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "order_20250325_0001",
+      "customer_id": "9f15ed64-7249-461d-b2f0-fde51ccbc4a8",
+      "order_date": "2025-03-25T19:17:00Z",
+      "total": 704.72
+    }
+  },
+  "sk_retail_cookbook_d75b42c8": {
+    "rowCount": 2
+  },
+  "sk_retail_cookbook_a76f548b": {
+    "rowCount": 3
+  },
+  "sk_retail_cookbook_2798df93": {
+    "rowCount": 3
+  },
+  "sk_retail_cookbook_80b74496": {
+    "rowCount": 0
+  },
+  "sk_retail_cookbook_61bfdcf4": {
+    "rowCount": 1,
+    "firstRow": {
+      "revenue": 783909.3799999993,
+      "store_id": "store_seattle"
+    }
+  },
+  "sk_retail_cookbook_8efe568f": {
+    "rowCount": 2
+  },
+  "sk_retail_cookbook_94a00d0a": {
+    "rowCount": 1,
+    "firstRow": {
+      "revenue": 783909.3799999993,
+      "store_id": "store_seattle"
+    }
+  },
+  "sk_retail_cookbook_10417499": {
+    "rowCount": 1000
+  },
+  "sk_retail_cookbook_fc3f2adf": {
+    "rowCount": 292
+  },
+  "sk_retail_cookbook_f0c1d821": {
+    "rowCount": 10,
+    "firstRow": {
+      "amount": 704.72,
+      "order_ref": "order_20250325_0001",
+      "store_id": "store_seattle"
+    }
+  },
+  "sk_retail_cookbook_5b132423": {
+    "rowCount": 10,
+    "firstRow": {
+      "product_id": "prod_grd_0050",
+      "units_on_hand": 95
+    }
+  },
+  "sk_retail_cookbook_d463e0bd": {
+    "rowCount": 2
+  },
+  "sk_retail_joins_cookbook_efd27787": {
+    "rowCount": 1
+  },
+  "sk_retail_joins_cookbook_b0fd81f0": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "order_20250325_0001",
+      "first_name": "Jessica",
+      "last_name": "Cunningham",
+      "order_date": "2025-03-25T19:17:00Z",
+      "total": 704.72
+    }
+  },
+  "sk_retail_joins_cookbook_6e3f154c": {
+    "rowCount": 0
+  },
+  "sk_retail_joins_cookbook_ad2788df": {
+    "rowCount": 3,
+    "firstRow": {
+      "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
+      "base_price": 63.37,
+      "line_total": 228.13,
+      "product_name": "ELC item 0009",
+      "quantity": 4
+    }
+  },
+  "sk_retail_joins_cookbook_ff6e61f3": {
+    "rowCount": 0
+  },
+  "sk_retail_joins_cookbook_9262db74": {
+    "rowCount": 1,
+    "firstRow": {
+      "_id": "store_seattle",
+      "revenue": 783909.3799999993,
+      "store_name": "Zava Retail Seattle"
+    }
+  },
+  "sk_retail_joins_cookbook_4560c0e2": {
+    "rowCount": 1,
+    "firstRow": {
+      "_id": "store_seattle",
+      "revenue": 783909.3799999993,
+      "store_name": "Zava Retail Seattle"
+    }
+  },
+  "sk_retail_joins_cookbook_0c12b9d0": {
+    "rowCount": 0
+  },
+  "sk_retail_joins_cookbook_ad907d8b": {
+    "rowCount": 10
+  },
+  "sk_retail_joins_cookbook_f796bc51": {
+    "rowCount": 10,
+    "firstRow": {
+      "amount": 960.51,
+      "order_ref": "order_20221210_0001",
+      "store": "Zava Retail Seattle"
+    }
+  },
+  "sk_retail_joins_cookbook_779bc4c6": {
+    "rowCount": 0
+  },
+  "sk_retail_joins_cookbook_508258b8": {
+    "rowCount": 0
+  },
+  "sk_retail_joins_cookbook_993e691e": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "prod_pwr_0003",
+      "inventory_value": 25011,
+      "product_name": "PWR item 0003",
+      "units_on_hand": 70
+    }
+  },
+  "sk_expressions_c3c0fa24": {
+    "rowCount": 5
+  },
+  "sk_expressions_657ca280": {
+    "rowCount": 5,
+    "firstRow": {
+      "cast_size": 4,
+      "title": "Peter Pan"
+    }
+  },
+  "sk_expressions_bffab40a": {
+    "rowCount": 0
+  },
+  "sk_expressions_d256654c": {
+    "rowCount": 194
+  },
+  "sk_expressions_d2c4660a": {
+    "rowCount": 194,
+    "firstRow": {
+      "genre_score": 3,
+      "title": "Boiling Point"
+    }
+  },
+  "sk_expressions_03f225bc": {
+    "rowCount": 194,
+    "firstRow": {
+      "title": "A Big Hand for the Little Lady",
+      "verdict": "good"
+    }
+  },
+  "sk_expressions_031587d4": {
+    "rowCount": 1
+  },
+  "sk_expressions_407971da": {},
+  "sk_expressions_05315411": {},
+  "sk_expressions_37d0df75": {
+    "rowCount": 194
+  },
+  "sk_expressions_a1960b7a": {
+    "rowCount": 194
+  },
+  "sk_expressions_da5ce93b": {
+    "rowCount": 194
+  },
+  "sk_functions_42b86fe5": {
+    "rowCount": 194
+  },
+  "sk_functions_bc27e575": {
+    "rowCount": 194
+  },
+  "sk_functions_bbd3cedc": {
+    "rowCount": 194
+  },
+  "sk_functions_0160367f": {
+    "rowCount": 3
+  },
+  "sk_functions_604d13f1": {
+    "rowCount": 3
+  },
+  "sk_functions_8e52e5c9": {
+    "rowCount": 194
+  },
+  "sk_functions_639f5e0d": {
+    "rowCount": 194
+  },
+  "sk_functions_557eb3da": {
+    "rowCount": 194
+  },
+  "sk_functions_f60fad80": {
+    "rowCount": 1
+  },
+  "sk_functions_104cbb22": {
+    "rowCount": 0
+  },
+  "sk_functions_bd2c848b": {
+    "rowCount": 39
+  },
+  "sk_functions_514f951d": {
+    "rowCount": 194
+  },
+  "sk_functions_da32ac57": {
+    "rowCount": 3
+  },
+  "sk_functions_917492e6": {
+    "rowCount": 194
+  },
+  "sk_functions_04fac624": {
+    "rowCount": 194
+  },
+  "sk_functions_461270b3": {
+    "rowCount": 194
+  },
+  "sk_functions_0c8e11c8": {
+    "rowCount": 194
+  },
+  "sk_functions_61e6a36c": {
+    "rowCount": 194
+  },
+  "sk_functions_e8c9ee1f": {
+    "rowCount": 1
+  },
+  "sk_functions_1fc24a03": {
+    "rowCount": 118
+  },
+  "sk_functions_6a43a545": {
+    "rowCount": 5,
+    "firstRow": {
+      "cast_size": 4,
+      "title": "Peter Pan"
+    }
+  },
+  "sk_functions_7b81300c": {
+    "rowCount": 0
+  },
+  "sk_functions_3e9e048f": {
+    "rowCount": 0
+  },
+  "sk_functions_d0e5a6f3": {
+    "rowCount": 0
+  },
+  "sk_functions_445bed10": {
+    "rowCount": 194
+  },
+  "sk_functions_3f0827b7": {
+    "rowCount": 194
+  },
+  "sk_functions_4bdfe9f8": {
+    "rowCount": 194
+  },
+  "sk_functions_8fc07f2d": {
+    "rowCount": 0
+  },
+  "sk_functions_18c38d8d": {
+    "rowCount": 0
+  },
+  "sk_functions_871c02e8": {
+    "rowCount": 3
+  },
+  "sk_functions_bbf269a3": {
+    "rowCount": 0
+  },
+  "sk_functions_3ed767c5": {
+    "rowCount": 10
+  },
+  "sk_functions_e3ad12b5": {
+    "rowCount": 0
+  },
+  "sk_functions_cd3c01a5": {
+    "rowCount": 194
+  },
+  "sk_functions_fd033db3": {
+    "rowCount": 1
+  },
+  "sk_functions_14971a84": {
+    "rowCount": 194
+  },
+  "sk_functions_cf1b53cc": {
+    "rowCount": 1
+  },
+  "sk_functions_aaaf7414": {
+    "rowCount": 1
+  },
+  "sk_functions_6ca1b48e": {
+    "rowCount": 41,
+    "firstRow": {
+      "avg_rating": 6.22,
+      "n": 5,
+      "year": 2000
+    }
+  },
+  "sk_indexing_a85884c4": {
+    "rowCount": 0
+  },
+  "sk_indexing_82fc2d28": {
+    "rowCount": 0
+  },
+  "sk_indexing_646903d6": {
+    "rowCount": 0
+  },
+  "sk_indexing_928b114a": {
+    "rowCount": 0
+  },
+  "sk_indexing_d061499f": {
+    "rowCount": 0
+  },
+  "sk_indexing_487ae345": {
+    "rowCount": 0
+  },
+  "sk_indexing_b12b3d22": {
+    "rowCount": 7,
+    "firstRow": {
+      "title": "Jails, Hospitals & Hip-Hop"
+    }
+  },
+  "sk_indexing_f3447501": {
+    "rowCount": 10,
+    "firstRow": {
+      "title": "Andaz Apna Apna"
+    }
+  },
+  "sk_indexing_8cab37ca": {
+    "rowCount": 10,
+    "firstRow": {
+      "title": "Andaz Apna Apna"
+    }
+  },
+  "sk_indexing_84859df2": {
+    "rowCount": 0
+  },
+  "sk_indexing_4186236a": {
+    "rowCount": 1
+  },
+  "sk_indexing_5a9665bb": {
+    "rowCount": 1
+  },
+  "sk_indexing_b9e9fc85": {
+    "rowCount": 0
+  },
+  "sk_indexing_113487b2": {
+    "rowCount": 0
+  },
+  "sk_indexing_09c6589f": {
+    "rowCount": 1
+  },
+  "sk_indexing_10afacc8": {
+    "rowCount": 1
+  },
+  "sk_indexing_23087069": {
+    "rowCount": 1
+  },
+  "sk_indexing_eaf05c69": {
+    "rowCount": 1
+  },
+  "sk_indexing_e12b0068": {
+    "rowCount": 3
+  },
+  "sk_indexing_256aa2a0": {
+    "rowCount": 1
+  },
+  "sk_indexing_000c2782": {
+    "rowCount": 0
+  },
+  "sk_indexing_57c263ea": {
+    "rowCount": 0
+  },
+  "sk_indexing_064b45a5": {
+    "rowCount": 0
+  },
+  "sk_indexing_b4a1ac5a": {
+    "rowCount": 0
+  },
+  "sk_indexing_fc6936de": {
+    "rowCount": 0
+  },
+  "sk_indexing_da95d2fa": {
+    "rowCount": 0
+  },
+  "sk_indexing_edb0f14e": {
+    "rowCount": 0
+  },
+  "sk_operators_710772ba": {
+    "rowCount": 7
+  },
+  "sk_operators_f01edbd9": {
+    "rowCount": 194
+  },
+  "sk_operators_9c4bbab9": {},
+  "sk_operators_f8ddc00a": {
+    "rowCount": 187
+  },
+  "sk_operators_be0a34ce": {
+    "rowCount": 0
+  },
+  "sk_operators_bbf02051": {
+    "rowCount": 118
+  },
+  "sk_operators_366003fc": {
+    "rowCount": 194
+  },
+  "sk_operators_1377ca55": {
+    "rowCount": 39
+  },
+  "sk_operators_285954ca": {
+    "rowCount": 0
+  },
+  "sk_operators_880d4ea0": {
+    "rowCount": 194
+  },
+  "sk_operators_1fc89ebe": {
+    "rowCount": 194
+  },
+  "sk_operators_0742f43e": {
+    "rowCount": 194
+  },
+  "sk_operators_e6c225f9": {
+    "rowCount": 32
+  },
+  "sk_operators_4ceca36d": {
+    "rowCount": 194
+  },
+  "sk_operators_e8ff55fb": {},
+  "sk_schema_cdb4145b": {
+    "rowCount": 0
+  },
+  "sk_select_d9e8856e": {
+    "rowCount": 194
+  },
+  "sk_select_04120979": {
+    "rowCount": 194
+  },
+  "sk_select_6c286a3a": {},
+  "sk_select_975b1672": {
+    "rowCount": 76
+  },
+  "sk_select_43de9a32": {
+    "rowCount": 0
+  },
+  "sk_select_aa4c37d7": {
+    "rowCount": 1
+  },
+  "sk_select_a58640e3": {
+    "rowCount": 0
+  },
+  "sk_select_71a6a498": {
+    "rowCount": 1
+  },
+  "sk_select_5faf50a6": {
+    "rowCount": 0
+  },
+  "sk_select_6a17ecfd": {
+    "rowCount": 0
+  },
+  "sk_select_cb0decf1": {
+    "rowCount": 0
+  },
+  "sk_select_8ac302e0": {
+    "rowCount": 76
+  },
+  "sk_select_1568e18f": {
+    "rowCount": 0
+  },
+  "sk_select_42c0b3c8": {
+    "rowCount": 69,
+    "firstRow": {
+      "n": 12,
+      "year": 1996
+    }
+  },
+  "sk_select_9f13a924": {
+    "rowCount": 144,
+    "firstRow": {
+      "n": 1,
+      "primary_genre": "Drama",
+      "year": 2002
+    }
+  },
+  "sk_select_82852433": {
+    "rowCount": 0
+  },
+  "sk_select_3fb21a2b": {
+    "rowCount": 10,
+    "firstRow": {
+      "imdb": 8.8,
+      "title": "Andaz Apna Apna"
+    }
+  },
+  "sk_select_253d6034": {
+    "rowCount": 20,
+    "firstRow": {
+      "box_office_millions": 22,
+      "title": "Ferris Bueller's Day Off"
+    }
+  },
+  "sk_select_34b9ec3d": {
+    "rowCount": 20,
+    "firstRow": {
+      "_id": "573a1396f29313caabce397c",
+      "title": "The Land",
+      "year": 1969
+    }
+  },
+  "sk_select_6e34dddc": {
+    "rowCount": 194
+  },
+  "sk_select_7ae42c93": {
+    "rowCount": 194,
+    "firstRow": {
+      "box_office_millions": 22,
+      "title": "Ferris Bueller's Day Off"
+    }
+  },
+  "sk_select_080164bc": {
+    "rowCount": 0
+  },
+  "sk_select_49ecc1df": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "573a1399f29313caabcee345",
+      "imdb": 8.8,
+      "title": "Andaz Apna Apna"
+    }
+  },
+  "sk_select_045b9e2c": {
+    "rowCount": 0
+  },
+  "sk_select_b4512c82": {
+    "rowCount": 0
+  },
+  "sk_select_f2ddb7ed": {
+    "rowCount": 0
+  },
+  "sk_select_7e764ee7": {
+    "rowCount": 0
+  },
+  "sk_select_9d4ddcd9": {
+    "rowCount": 10,
+    "firstRow": {
+      "_id": "573a13a1f29313caabd0660a",
+      "title": "The Tracker",
+      "year": 2002
+    }
+  },
+  "sk_statements_a6636707": {
+    "rowCount": 0
+  },
+  "sk_statements_a6e60d03": {
+    "rowCount": 0
+  },
+  "sk_statements_71d9e54b": {
+    "rowCount": 0
+  },
+  "sk_statements_f2a143e6": {
+    "rowCount": 0
+  },
+  "sk_statements_abaea258": {
+    "rowCount": 0
+  },
+  "sk_statements_a30c18f4": {
+    "rowCount": 1
+  },
+  "sk_statements_bdaf53db": {
+    "rowCount": 0
+  },
+  "sk_statements_1a120040": {
+    "rowCount": 0
+  },
+  "sk_statements_ddc204dc": {
+    "rowCount": 0
+  },
+  "sk_statements_f50ca795": {
+    "rowCount": 0
+  },
+  "sk_statements_069cd8e4": {
+    "rowCount": 76
+  },
+  "sk_statements_a464dc21": {
+    "rowCount": 0
+  },
+  "sk_statements_76062b18": {
+    "rowCount": 0
+  },
+  "sk_statements_ac1b321e": {
+    "rowCount": 1
+  },
+  "sk_statements_f50465c9": {
+    "rowCount": 1
+  },
+  "sk_statements_639bf65c": {
+    "rowCount": 1
+  },
+  "sk_statements_ad7d66bd": {
+    "rowCount": 1
+  },
+  "sk_statements_ac0b422f": {
+    "rowCount": 2
+  },
+  "sk_types_mutators_e7a9242b": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_6d2e5c18": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_0c9f20b1": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_5a081510": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_c15ba434": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_f3a668e4": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_3f8c3c47": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_31550d5e": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_637f1055": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_2a3af0ef": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_f369871c": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_f68d8948": {
+    "rowCount": 0
+  },
+  "sk_types_mutators_4207ee66": {
+    "rowCount": 1
+  },
+  "sk_versions_74388326": {
+    "rowCount": 1
+  },
+  "sk_versions_699f1e5d": {
+    "rowCount": 1
+  }
+}

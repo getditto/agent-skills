@@ -89,7 +89,7 @@ ON ID CONFLICT DO UPDATE;
 
 A counter initialised to `0` here will accept `APPLY watch_count INCREMENT BY n` afterwards (see [§2 UPDATE](#2-update)).
 
-> **Available in:** `COUNTER` requires SDK 4.13+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
+> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
 
 ### 1.5 `ON ID CONFLICT` actions
 
@@ -186,9 +186,9 @@ Modify documents in place. Three mutation clauses — `SET`, `UNSET`, `APPLY` �
 
 ```
 UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
-  [ SET   <field> = <expr> [, <field> = <expr> ...] ]
-  [ UNSET <field> [, <field> ...] ]
-  [ APPLY <field> <counter_mutator> [, <field> <counter_mutator> ...] ]
+  [ APPLY <field> <counter_mutator> [, ...] ]   -- clause order below is MANDATORY:
+  [ SET   <field> = <expr> [, <field> = <expr> ...] ]  -- APPLY, then SET, then UNSET;
+  [ UNSET <field> [, <field> ...] ]                    -- any other order is a syntax error
   [ WHERE   <expr> ]
   [ ORDER BY <expr> [ASC|DESC] [, ...] ]
   [ LIMIT   <int> ]
@@ -196,14 +196,14 @@ UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
   [ RETURNING <projection> ]
 
 <counter_mutator> ::=
-    INCREMENT    BY <expr>        -- requires field declared COUNTER     (SDK 4.13+)
+    INCREMENT    BY <expr>        -- requires field declared COUNTER     (SDK 4.14+)
   | PN_INCREMENT BY <expr>        -- requires field declared PN_COUNTER  (SDK 4.11+)
   | RESTART [ WITH <expr> ]       -- counter only; resets to baseline
 ```
 
 Notes:
 
-- `SET`, `UNSET`, and `APPLY` clauses can be combined in one statement.
+- `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.6, 5.0.3, and 5.1.0.
 - `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select.md`](select.md).
 - `UPDATE COLLECTION coll (col_defs…)` is required when any mutation touches a non-register CRDT field. The type def applies to that statement only; it does not redefine the schema globally.
 - **`USE IDS` on `UPDATE` is SDK 5.1+**, and only in the pre-`SET` position: `UPDATE movies USE IDS 'tt0111161' SET …`. The trailing form (`… SET x = 1 USE IDS …`) is a parse error on every SDK version. On 4.14.x / 5.0.x use `WHERE _id IN (...)`.
@@ -230,14 +230,14 @@ SET ratings = { 'imdb': 9.4 }
 WHERE _id = 'tt0111161';
 ```
 
-To remove a sub-field from a MAP, `UNSET` the parent field or rebuild it. See [`types-mutators.md`](types-mutators.md) for the full MAP semantics.
+To remove a sub-field from a MAP, dotted-path `UNSET` (e.g. `UNSET ratings.imdb`) — each removal writes per-key tombstone metadata, so for mass clearing prefer `UNSET` on the parent field. See [`types-mutators.md`](types-mutators.md) for the full MAP semantics.
 
 ### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`
 
-> **Available in:** `COUNTER` and `APPLY ... INCREMENT BY` require SDK 4.13+. `PN_COUNTER` and `APPLY ... PN_INCREMENT BY` require SDK 4.11+.
+> **Available in:** `COUNTER` and `APPLY ... INCREMENT BY` require SDK 4.14+. `PN_COUNTER` and `APPLY ... PN_INCREMENT BY` require SDK 4.11+.
 
 ```sql
--- Increment a state-based COUNTER (4.13+)
+-- Increment a settable COUNTER (4.14+)
 UPDATE COLLECTION movies (watch_count COUNTER)
 APPLY watch_count INCREMENT BY 1
 WHERE _id = 'tt0111161';
@@ -323,7 +323,7 @@ TOMBSTONE FROM <collection>
   [ RETURNING <projection> ]
 ```
 
-- **Big Peer only, and not executable from any tested SDK version.** 4.14.4, 5.0.0 and 5.1.0 all reject `TOMBSTONE` on a Small Peer with `Tombstone is not supported`, after parsing succeeds. Every example in this section is therefore Big-Peer-only and unverifiable from an Edge SDK. Prefer `DELETE`, which resolves to the right behaviour on either peer type.
+- **Big Peer only, and not executable from any tested SDK version.** 4.14.6, 5.0.3 and 5.1.0 all reject `TOMBSTONE` on a Small Peer with `Tombstone is not supported`, after parsing succeeds. Every example in this section is therefore Big-Peer-only and unverifiable from an Edge SDK. Prefer `DELETE`, which resolves to the right behaviour on either peer type.
 - **`USE IDS` is not supported on `TOMBSTONE`** on any tested version — and neither is `TOMBSTONE` itself, which the Small Peer rejects outright. Use `DELETE ... WHERE _id IN (...)`.
 - `RETURNING` additionally requires SDK **5.1+** (§1.8), so the combinations cannot be exercised offline ahead of Big Peer support.
 
@@ -433,14 +433,14 @@ ALTER SYSTEM RESET ALL
 - Use `SHOW` (§8) to discover available parameter names.
 
 ```sql
--- Switch off strict mode (5.0.x ships strict=false by default; 4.x ships strict=true)
-ALTER SYSTEM SET DQL_STRICT_MODE = false;
+-- Lenient mode: the 5.0.x default, and the recommended setting on 4.x (which ships strict=true)
+ALTER SYSTEM SET dql_strict_mode = false;
 
 -- Same thing using TO
-ALTER SYSTEM SET DQL_STRICT_MODE TO false;
+ALTER SYSTEM SET dql_strict_mode TO false;
 
 -- Reset one parameter to its default
-ALTER SYSTEM RESET DQL_STRICT_MODE;
+ALTER SYSTEM RESET dql_strict_mode;
 
 -- Reset everything
 ALTER SYSTEM RESET ALL;
@@ -464,7 +464,7 @@ SHOW <parameter_name>
 
 ```sql
 SHOW ALL;                                    -- every parameter (all SDK versions)
-SHOW DQL_STRICT_MODE;                        -- one parameter (all SDK versions)
+SHOW dql_strict_mode;                        -- one parameter (all SDK versions)
 ```
 
 ```sql
@@ -472,6 +472,7 @@ SHOW DQL_STRICT_MODE;                        -- one parameter (all SDK versions)
 SHOW ALL LIKE 'transport_%';                 -- all transport_… parameters
 SHOW ALL ILIKE 'DQL_%';                      -- dql_… (case-insensitive)
 SHOW ALL LIKE 'transport!_%' ESCAPE '!';     -- literal underscore in pattern
+SHOW dql_strict_mode;                        -- one parameter
 ```
 
 ---
@@ -500,7 +501,7 @@ SYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')
 
 -- Inspect strict-mode setting on every staging peer
 SYNC CONTEXT (PEERS WHERE peerMetadata.environment = 'staging')
-  SHOW DQL_STRICT_MODE;
+  SHOW dql_strict_mode;
 ```
 
 ---

@@ -12,6 +12,8 @@ DQL is Ditto's SQL-like language for querying and mutating documents in a CRDT-a
 2. **`NULL` and `MISSING` are distinct.** `NULL` = field exists, value is null. `MISSING` = field is absent. They behave differently in every operator.
 3. **Every field is a CRDT.** The CRDT type (REGISTER, MAP, COUNTER, PN_COUNTER, ATTACHMENT) controls how concurrent edits merge.
 
+Scope: this skill covers DQL syntax and semantics. For schema design — CRDT type selection, embed-vs-split decisions, document size budgets, reviewing raw JSON models — use the `data-modeling` skill.
+
 ## First: which SDK version is the user on?
 
 DQL features land version by version. **Before answering a non-trivial DQL question, confirm the SDK version.** If the user has not said which Ditto SDK they're on, ask:
@@ -19,6 +21,8 @@ DQL features land version by version. **Before answering a non-trivial DQL quest
 > "Which Ditto SDK version is this for? I support guidance for 4.14.x, 5.0.x, and 5.1.x."
 
 If they don't know, ask them to check the SDK package version in their project (`Ditto.swift` / `build.gradle` / `package.json`) — or to run `SHOW dql_strict_mode` to identify the v4 strict-default vs v5 lenient-default behavior. Then filter the rest of the conversation to features available in that version (see `references/versions.md`).
+
+**Strict mode:** this skill assumes `dql_strict_mode = false` (lenient) on every peer — the 5.x default and the migration target for 4.14.x meshes. Examples therefore use no `MAP`/`REGISTER` keywords on reads or writes (objects infer MAP; reads see every type). If a 4.x user reports fields missing from query results or whole-object overwrites on merge, suspect an un-migrated strict peer first — see `references/types-mutators.md` §7 and `best-practices.md` "Strict Mode".
 
 If the user explicitly says "give me the latest" or "use the newest" without picking a version, default to 5.1.x and say so.
 
@@ -53,7 +57,7 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 
 This skill covers **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Every feature in the reference files is tagged with its minimum SDK version. See `references/versions.md` for the full matrix.
 
-Rejected on every tested SDK version (verified against 4.14.4 / 5.0.0 / 5.1.0): `XOR`, `TOMBSTONE` (Big-Peer-only), `EXCLUDE MISSING` index keys, the parenthesised `USE IDS ('a', 'b')` tuple, inline `PN_COUNTER` declarations on `INSERT`, and structured `PROFILE` output. Note that multi-id `USE IDS` **does** work everywhere in its comma form (`USE IDS 'a', 'b'`).
+Rejected on every tested SDK version (verified against 4.14.6 / 5.0.3 / 5.1.0): `XOR`, `TOMBSTONE` (Big-Peer-only), `EXCLUDE MISSING` index keys, the parenthesised `USE IDS ('a', 'b')` tuple, inline `PN_COUNTER` declarations on `INSERT`, and structured `PROFILE` output. Note that multi-id `USE IDS` **does** work everywhere in its comma form (`USE IDS 'a', 'b'`).
 
 On 4.14.x under its default strict mode, `APPLY ... INCREMENT BY` on a not-yet-existing field silently does nothing.
 

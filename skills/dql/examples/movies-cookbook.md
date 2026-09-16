@@ -5,9 +5,11 @@ description: 18 end-to-end DQL tasks against a sample movies dataset. Every stat
 
 # DQL Movies Cookbook
 
-A practical walkthrough of every major DQL capability the v5.0.0 SDK supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
+A practical walkthrough of every major DQL capability the v5.0.x SDK line supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
-> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.13+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.13+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+>
+> **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`types-mutators.md`](../references/types-mutators.md) §7.
 
 ## Dataset
 
@@ -46,14 +48,14 @@ The cookbook uses two collections: `movies` and `reviews`.
 
 ### Task 1 — Load movies with conflict-tolerant upserts
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER)
+> **Available in:** Ditto SDK 4.14+ (COUNTER)
 
 **Goal:** Insert a batch of movies, treating an existing `_id` as an update rather than an error.
 
 **Query:**
 
 ```sql
-INSERT INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)
+INSERT INTO COLLECTION movies (watch_count COUNTER)
 DOCUMENTS
   ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,
      'runtime_minutes': 142, 'genres': ['Drama'],
@@ -74,7 +76,7 @@ DOCUMENTS
 ON ID CONFLICT DO UPDATE;
 ```
 
-**Notes:** The `INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)` clause is what makes the statement portable across SDK 4.14.x (strict default) and 5.0.x (lenient default) — without it, v4 would store `director` and `ratings` as `REGISTER` and concurrent edits would clobber each other. `COUNTER` requires SDK 4.13+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
+**Notes:** Only `watch_count` is declared — inference can't guess a `COUNTER` from a plain integer, and seeding one without the declaration would create a REGISTER that never merges increments. `director` and `ratings` carry **no** `MAP` keyword: with `dql_strict_mode = false` (assumed everywhere) bare objects infer MAP automatically, so the declaration would be boilerplate. The one peer population that still needs explicit MAP declarations is un-migrated 4.14.x strict-mode peers — migrate them to `false` rather than declaring for them. `COUNTER` requires SDK 4.14+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
 
 ### Task 2 — Seed reviews with auto-generated ids
 
@@ -102,6 +104,8 @@ INSERT INTO reviews DOCUMENTS
 ## Read patterns
 
 ### Task 3 — Top-rated movies in a decade with pagination
+
+> **Available in:** Ditto SDK 5.0+ (`BETWEEN`). On 4.14.x rewrite as `year >= :decade_start AND year <= :decade_end`.
 
 **Goal:** Page through highly-rated films released between two years, ordered by IMDb score.
 
@@ -148,7 +152,7 @@ ORDER BY year ASC;
 **v4 fallback:** Quantifier expressions don't exist on 4.14.x. If you must support v4, denormalise an `actor_names` array of strings at write time and use `array_contains`:
 
 ```sql
--- v4-portable: maintain a parallel actor_names array
+-- Available in: SDK 4.14+ (all three lines) — array_contains is portable
 SELECT _id, title, year
 FROM movies
 WHERE array_contains(actor_names, :actor_name)
@@ -174,6 +178,7 @@ WHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END;
 **v4-portable form (also works on 5.0+):**
 
 ```sql
+-- Available in: SDK 4.14+ (all three lines)
 SELECT _id, title, genres
 FROM movies
 WHERE array_contains(genres, 'Drama')
@@ -183,6 +188,8 @@ WHERE array_contains(genres, 'Drama')
 **Notes:** The `OR`/`array_contains` form is portable across all three SDK versions and is what to ship when your peer fleet is mixed. The quantifier form scales more cleanly when the candidate list is large or comes from a parameter. See [`functions.md`](../references/functions.md) §5 (array functions) and [`expressions.md`](../references/expressions.md) §7.
 
 ### Task 7 — Flat view with computed fields
+
+> **Available in:** Ditto SDK 5.0+ (`CASE`). On 4.14.x there is no in-query conditional at all (no `CASE`, and no `IF()` function on any version) — use `coalesce`/`ifnull` for null-coalescing only, and derive branch columns in app code.
 
 **Goal:** Project a row per movie with one or two derived columns.
 
@@ -289,11 +296,11 @@ const movies = await store.execute(step2Query, { top_ids: topIds });
 
 ### Task 11 — Increment the watch counter
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER). PN_COUNTER variant requires SDK 4.11+.
+> **Available in:** Ditto SDK 4.14+ (COUNTER). PN_COUNTER variant requires SDK 4.11+.
 
 **Goal:** Bump a peer-safe counter by one.
 
-**Query (COUNTER — recommended, 4.13+):**
+**Query (COUNTER — recommended, 4.14+):**
 
 ```sql
 UPDATE COLLECTION movies (watch_count COUNTER)
@@ -309,7 +316,7 @@ APPLY legacy_views PN_INCREMENT BY 1
 WHERE _id = :id;
 ```
 
-**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer state-based `COUNTER` (4.13+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
+**Notes:** This is the **only** correct way to bump a counter. `SET watch_count = watch_count + 1` would silently lose concurrent increments on merge because `+ 1` resolves once on the writing peer and stores a regular `REGISTER` value. Prefer `COUNTER` (4.14+) on new code; `PN_COUNTER` exists for backwards compatibility. See [`types-mutators.md`](../references/types-mutators.md) §3.
 
 ### Task 12 — Update a nested MAP field without clobbering siblings
 
@@ -318,12 +325,12 @@ WHERE _id = :id;
 **Query:**
 
 ```sql
-UPDATE COLLECTION movies (ratings MAP)
+UPDATE movies
 SET ratings.rotten_tomatoes = 95
 WHERE _id = :id;
 ```
 
-**Notes on `dql_strict_mode`:** On **SDK 5.0.x** the lenient default (`dql_strict_mode = false`) means the engine treats `ratings` as a MAP even without the explicit declaration — `UPDATE movies SET ratings.rotten_tomatoes = 95 WHERE _id = :id` would also work. On **SDK 4.14.x** the strict default requires the `INTO COLLECTION movies (ratings MAP)` clause; without it, the engine stores `ratings.rotten_tomatoes` as a sub-`REGISTER` path that does not merge with sibling sub-fields. For cross-version code, always declare `ratings MAP` explicitly. See [`types-mutators.md`](../references/types-mutators.md) §§2 and 7 for the strict-mode flip and MAP merge semantics.
+**Notes on `dql_strict_mode`:** No declaration on the statement — with `dql_strict_mode = false` (the assumed baseline: 5.x default, 4.14.x migration target) the engine treats `ratings` as a MAP automatically, on reads and writes. The `UPDATE COLLECTION movies (ratings MAP) ...` form is only for un-migrated 4.14.x strict peers: there, a nested-field `SET` without the declaration is rejected (or stored as a non-merging sub-`REGISTER` path), and plain reads omit the field entirely. Migrate those peers to `false` — don't write declarations for them. See [`types-mutators.md`](../references/types-mutators.md) §§2 and 7 for the strict-mode behaviors and MAP merge semantics.
 
 ### Task 13 — Flag pre-1980 films as classics with RETURNING
 
@@ -358,7 +365,7 @@ WHERE legacy_field IS NOT MISSING;
 
 ### Task 15 — Reset the watch counter on a re-release (RESTART)
 
-> **Available in:** Ditto SDK 4.13+ (COUNTER)
+> **Available in:** Ditto SDK 4.14+ (COUNTER)
 
 **Goal:** Rebaseline a counter back to zero — later `INCREMENT BY` mutations start fresh from this value.
 

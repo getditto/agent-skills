@@ -22,7 +22,7 @@ Not: "improve docs", "update DQL skill", "various fixes".
 <!--
 Which Ditto SDK releases does this content apply to?
 
-State exact patch versions you actually ran against (e.g. 4.14.4, 5.0.0, 5.1.0),
+State exact patch versions you actually ran against (e.g. 4.14.6, 5.0.3, 5.1.0),
 not just the line. If a claim is version-gated, say where the gate is documented
 (a version tag inline, plus a row in skills/dql/references/versions.md).
 
@@ -46,7 +46,7 @@ technical claims), write "N/A — no version-specific claims" and move on.
 - [ ] **Not executable** — explain what you did instead (source reading, docs)
 
 **Automated:** <!-- Which harness, and the result. e.g. "tests/dql, 259 entries,
-0 FAIL on 4.14.4 / 5.0.0 / 5.1.0". If you added catalog entries, say how many. -->
+0 FAIL on 4.14.6 / 5.0.3 / 5.1.0". If you added catalog entries, say how many. -->
 
 **Manual:** <!-- What you ran and what came back. Paste the statement and the
 actual output/error, not a summary of it. -->

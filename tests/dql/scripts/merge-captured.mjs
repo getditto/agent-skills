@@ -2,8 +2,8 @@
 //
 // Merges captured rowCount / firstRow values from test runs into
 // catalog.json's `expect` fields. Run after:
-//   DITTO_SDK_VERSION=5.0.0 node runner/run.mjs --capture-expected
-//   DITTO_SDK_VERSION=4.14.4 node runner/run.mjs --capture-expected
+//   DITTO_SDK_VERSION=5.0.3 node runner/run.mjs --capture-expected
+//   DITTO_SDK_VERSION=4.14.6 node runner/run.mjs --capture-expected
 // to populate goldens.
 //
 // Only deterministic goldens are kept:
@@ -23,10 +23,10 @@ import path from "node:path";
 const here = import.meta.dirname;
 const catalogPath = path.resolve(here, "..", "catalog", "catalog.json");
 const cap5 = readJsonIfExists(
-  path.resolve(here, "..", "results", "captured-5.0.0.json"),
+  path.resolve(here, "..", "results", "captured-5.0.3.json"),
 );
 const cap4 = readJsonIfExists(
-  path.resolve(here, "..", "results", "captured-4.14.4.json"),
+  path.resolve(here, "..", "results", "captured-4.14.6.json"),
 );
 const cap51 = readJsonIfExists(
   path.resolve(here, "..", "results", "captured-5.1.0.json"),

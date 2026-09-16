@@ -1,0 +1,14 @@
+{
+  "_id": "user-481516",
+  "username": "ada.l",
+  "displayName": "Ada Lovelace",
+  "email": "ada@example.com",
+  "homeAddress": {
+    "street": "12 Analytical Way",
+    "city": "London",
+    "postcode": "N1 9GU"
+  },
+  "avatarUrl": "https://cdn.example.com/avatars/ada.png",
+  "preferences": { "theme": "dark", "notifications": true },
+  "createdAt": "2026-08-20T08:00:00Z"
+}

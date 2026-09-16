@@ -1,0 +1,88 @@
+---
+title: Data-modeling feature matrix across SDK versions
+description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x — strict-mode defaults, CRDT types, JOINs, indexes, and mixed-version mesh rules.
+---
+
+# Version matrix for data modeling
+
+Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). **This skill assumes lenient mode on every peer** — it is the 5.x default and the migration target for every 4.x mesh. If you need the DQL feature matrix (operators, functions, statements), see the `write-dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
+
+## Strict mode: `false` is the assumed baseline (most important section)
+
+`dql_strict_mode` is a per-peer, runtime-only engine flag (exists since 4.11; not persisted across restarts) that decides how plain JSON maps onto CRDT types when a statement doesn't declare them. It changes behavior on **both writes and reads**:
+
+| Behavior | `false` (lenient) — **baseline** | `true` (strict) — legacy 4.14.x default |
+|---|---|---|
+| Bare object in `INSERT`/`UPDATE` becomes | `MAP` (per-field merge) — the engine duck-types JSON into CRDT intent | `REGISTER` (whole-object LWW) |
+| Scalars and arrays become | `REGISTER` (arrays are always registers) | `REGISTER` |
+| `MAP`/`REGISTER` keywords on writes | **Not needed — do not write them.** The inferred default is the intended behavior | **Required** for every non-REGISTER field — an undeclared object silently stores as `REGISTER` |
+| Type declarations on reads | **Not needed — do not write them.** `SELECT` returns the most recent value of every field, whatever its CRDT type | **Required** — a MAP/COUNTER field the query doesn't re-declare is **omitted from the result entirely, as if it never existed** (no error; verified on 4.14.6: plain reads return `{}`) |
+| `COUNTER` / `ATTACHMENT` declarations | Still required — inference can't guess them from a JSON value | Required |
+
+Default per SDK line: **4.14.x → `true`**, **5.0.x / 5.1.x → `false`**.
+
+### Inspecting and changing the flag
+
+```sql
+SHOW dql_strict_mode;
+ALTER SYSTEM SET dql_strict_mode = false;   -- undo a runtime SET with:
+ALTER SYSTEM RESET dql_strict_mode;
+```
+
+Set it at every app start, before starting sync or running queries — it is not persisted. `RESET` drops the *runtime* override and falls back to whatever the startup config or a `DITTO_DQL_STRICT_MODE` env var resolved to — which is not necessarily the compiled default. A runtime `SET` also shadows that env var until the process restarts.
+
+### Migration: strict → lenient (the only direction we recommend)
+
+If any peer in a mesh has `dql_strict_mode = true` — every default-configured 4.14.x peer does — the guidance is: **migrate to `false`, mesh-wide, and do it before upgrading to v5** so the version jump changes no merge behavior. New customers still on 4.14 should flip immediately and learn the lenient behaviors.
+
+1. **Flip every peer**: `ALTER SYSTEM SET dql_strict_mode = false` at app start, everywhere. Never set it back to `true` on 5.x; never flip peers ad hoc mid-mesh — an uncoordinated change is how fields silently change CRDT type.
+2. **Transition window** (strict peers still present): declare MAP/COUNTER explicitly on every statement a strict peer executes — writes *and* reads. Data syncs correctly regardless of each peer's setting, but a strict peer treats an undeclared MAP written by a lenient peer as a REGISTER (nested fields appear **missing**), and plain `SELECT` on a strict peer omits declared MAP/COUNTER fields unless the read repeats the declaration — `SELECT ... FROM COLLECTION orders (status_log MAP)`. No error, just absent fields.
+3. **End state** (all peers lenient): stop writing `MAP`/`REGISTER` declarations entirely. Keep `COUNTER`/`ATTACHMENT` declarations and deliberate `REGISTER` overrides on atomic objects — those are per-field intent, not strict-mode boilerplate.
+
+### The Big Peer HTTP API is a peer too — and it has its own strict mode
+
+`dql_strict_mode` is per-peer, and the Big Peer's HTTP Data API exposes that setting **as the endpoint version**. There is no request header or body flag to change it; the URL *is* the choice:
+
+| Endpoint | Effective strict mode | Writes | Reads |
+|---|---|---|---|
+| `/api/v4/store/execute` | `DQL_STRICT_MODE = true` — same semantics as a default 4.14.x SDK peer | A bare nested object is written as a **whole-object REGISTER**. Every non-REGISTER field must be declared (`INSERT INTO COLLECTION orders (items MAP, stock COUNTER) …`) or the field silently loses per-field merge | A MAP/COUNTER field the query does not re-declare is **omitted from the response entirely** — no error, just an absent key |
+| `/api/v5/store/execute` | `DQL_STRICT_MODE = false` — same semantics as a default 5.x SDK peer, and this skill's baseline | Bare objects infer `MAP`; no `MAP`/`REGISTER` keywords needed. `COUNTER`/`ATTACHMENT` still declared | Plain `SELECT` returns every field at its most recent value, whatever its CRDT type |
+
+**Why this matters for the model, not just the plumbing:** a backend still calling `/api/v4/store/execute` is a strict peer writing into your mesh. It will store the `customer` object your lenient mobile peers expect to merge per-field as one atomic REGISTER — so a phone editing `customer.tier` and the backend editing `customer.email` concurrently lose one of the two, silently. Two mitigations, in order of preference:
+
+1. **Migrate the caller to `/api/v5/store/execute`** — the same statements, lenient semantics, aligned with every SDK peer. Do this as part of the same coordinated flip described above, not separately.
+2. **While v4 callers remain**, declare every non-REGISTER type on every v4 statement — writes *and* reads — exactly as you would for an un-migrated 4.14.x SDK peer.
+
+Both endpoints are fully sync-compatible; the incompatibility is in how each *interprets* undeclared fields, which is a data-modeling problem, not a networking one.
+
+## CRDT type availability
+
+| Type | 4.14.x | 5.0.x | 5.1.x |
+|---|:-:|:-:|:-:|
+| `REGISTER` | ✓ | ✓ | ✓ |
+| `MAP` | ✓ | ✓ | ✓ |
+| `ATTACHMENT` | ✓ | ✓ | ✓ |
+| `COUNTER` (settable; `INCREMENT BY`, `RESTART [WITH]`) | ✓ (4.14+) | ✓ | ✓ |
+| `PN_COUNTER` (legacy; `PN_INCREMENT BY`) | ✓ (4.11+) | ✓ | ✓ |
+
+> `COUNTER` shipped with the 4.14.x LTS line. SDKs older than 4.14 are out of support; if a mesh somehow contains a pre-4.14 peer, its only counter option is `PN_COUNTER`.
+
+## Modeling-relevant statement features
+
+| Feature | 4.14.x | 5.0.x | 5.1.x | Modeling relevance |
+|---|:-:|:-:|:-:|---|
+| `CREATE INDEX` (single/nested path) | ✓ (4.12+) | ✓ | ✓ | Which fields are queryable cheaply — informs embed-vs-split |
+| Composite (multi-column) indexes | ✗ | ✗ | ✓ | Combined-key queries without splitting |
+| `INSERT … ON ID CONFLICT DO UPDATE_LOCAL_DIFF` | ✓ (4.12+) | ✓ | ✓ | Safe denormalized duplication (skips unchanged fields) |
+| `RETURNING` on INSERT/UPDATE | ✗ | ✗ | ✓ | Write-then-read in one statement |
+| `JOIN` (inner/left) | ✗ | ✗ | ✓ | Normalize across collections and reassemble at read time; right-side key must be `_id` or indexed. **Small Peers only** — joins are unsupported on Big Peer and in `registerSubscription` (use `execute` / observers) |
+| `EXPLAIN` / `ADVISE` | ✓ / ✗ | ✓ / ✗ | ✓ / ✓ | Verify the access path your model assumes |
+| Document size limits (`document_size_soft_limit_bytes` 256 KiB / `document_size_hard_limit_bytes` 5 MiB) | ✓ | ✓ | ✓ | Same defaults everywhere; **5.1.x rejects oversized local writes**, earlier lines only log — see [`performance.md`](performance.md) |
+| dot-notation nested paths + `UNSET` | ✓ (4.11+) | ✓ | ✓ | Legacy `->` arrows and `tombstone()` were removed in v5 |
+
+## Practical rules by target version
+
+- **Targeting 4.14.x:** migrate every peer to `dql_strict_mode = false` first (and before any v5 upgrade); while strict peers remain, declare every non-REGISTER type on the statements they execute — writes and reads; no JOINs — denormalize or fetch related collections in app code; single-column indexes only.
+- **Targeting 5.1.x:** keep the strict-mode default `false` and rely on lenient inference — no `MAP`/`REGISTER` declarations on reads or writes; keywords only to override (e.g. `REGISTER` for atomic objects) or where inference can't help (`COUNTER` seeds on INSERT, `ATTACHMENT`). You may normalize more aggressively (JOIN + index the join key), but only where the split triggers in [`../best-practices.md`](../best-practices.md) actually fire — embedding is still the default.
+- **Mixed 4.14/5.x mesh:** flip the 4.x peers to lenient as the first step of the upgrade; while any strict peers remain, declare MAP/COUNTER types on the statements those peers execute (including reads), and model to the 4.14 read surface (no JOIN-dependent screens).
+- **Any target, if a backend talks to the Big Peer over HTTP:** the SDK flip is only half the migration. **Cut every HTTP caller over from `/api/v4/store/execute` to `/api/v5/store/execute` in the same coordinated change** — a v4 caller is a strict peer no `ALTER SYSTEM` on a device can fix, and it will keep writing bare objects as whole-object REGISTERs into collections your SDK peers merge per-field. Inventory the callers (backend services, webhooks, scripts, CDC consumers, Postman collections) before flipping anything; any caller you can't move yet must declare MAP/COUNTER on every statement it sends until it does.

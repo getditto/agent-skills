@@ -15,21 +15,21 @@
 
 ### Document Size Limits
 
-**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; verified identical on 4.14.4, 5.0.0 and 5.1.0):
+**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.6, 5.0.3 and 5.1.0 — the *behaviour* of the hard limit is not):
 
 | Parameter | Default | Behaviour when exceeded |
 | --- | --- | --- |
-| `document_size_soft_limit_bytes` | `262144` (**256 KiB**) | Warn-level log entry. The write succeeds. |
-| `document_size_hard_limit_bytes` | `5242880` (**5 MiB**) | Error-level log entry. The write **still succeeds and the document still syncs.** |
+| `document_size_soft_limit_bytes` | `262144` (**256 KiB**) | Warn-level log entry. The write succeeds. Same on every version. |
+| `document_size_hard_limit_bytes` | `5242880` (**5 MiB**) | **5.1+: the local write is rejected** with a `DocumentSizeLimitError`. 4.14.x / 5.0.x: error-level log entry only — the write succeeds and the document still syncs. |
 
 ```sql
 SHOW document_size_soft_limit_bytes;   -- 262144
 SHOW document_size_hard_limit_bytes;   -- 5242880
 ```
 
-> **These are not yet enforced.** Ditto's documentation is explicit that oversized documents currently replicate normally and that the limits are a forward signal: a future release will reject writes above the hard limit and skip such documents during replication. Treat them as budgets to design against, not as guarantees the engine gives you today. Both values must be set to the **same** number on every peer in the mesh — mismatched limits cause replication sessions to be disabled once enforcement lands.
+> **Enforcement is version-dependent, and writer-side only.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.3 and 4.14.6 accept the same write and log). On **every** version the check applies only to user-originated writes — an oversized document arriving over replication is still stored, so a 5.1 peer can hold a document it would refuse to write itself. Note that docs.ditto.live still describes the pre-5.1 "logs but succeeds" behaviour for the hard limit; the engine changed in 5.1 and the page has not caught up. Both values must be set to the **same** number on every peer in the mesh — mismatched limits disable replication sessions where enforcement is live.
 
-Large documents are also slow on constrained transports — Bluetooth LE in particular — so the practical ceiling is usually well below the soft limit.
+Large documents are also slow on constrained transports — Bluetooth LE in particular (~20 KB/second effective) — so the practical ceiling is usually well below the soft limit.
 
 **Recommendation:** Keep documents small and focused.
 
@@ -625,36 +625,39 @@ HAVING category != 'deleted'
 
 ### Overview
 
-Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an object literal with no type definition.
+Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an object literal with no type definition — and controls whether `SELECT` needs type declarations to *see* non-REGISTER fields.
+
+**This guidance assumes `dql_strict_mode = false` (lenient) on every peer** — the 5.x factory default and the migration target for 4.14.x meshes. With strict mode false you do **not** use `MAP`/`REGISTER` keywords on reads or writes: objects infer MAP, and reads return the most recent value of every field whatever its CRDT type.
 
 **Default State:**
-- SDK 4.14.x: `dql_strict_mode = true` → object → `REGISTER` (last-write-wins on the whole object)
+- SDK 4.14.x: `dql_strict_mode = true` (legacy default — migrate to `false`) → object → `REGISTER` (last-write-wins on the whole object)
 - SDK 5.0.x: `dql_strict_mode = false` → object → `MAP` (per-field merge)
-- Available: SDK 4.11+
+- Available: SDK 4.11+; runtime-only, re-apply at every app start
 
 For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag, and worked merge examples, see [`references/types-mutators.md`](references/types-mutators.md) §7.
 
 ### Behavioral Differences
 
-| Aspect | Strict=true | Strict=false |
+| Aspect | Strict=true (legacy 4.14.x default) | Strict=false (baseline) |
 |--------|------------|--------------|
-| **Objects** | Treated as REGISTER (last-write-wins) | Auto-inferred as MAP (per-field merge) |
+| **Objects on writes** | Stored as REGISTER (last-write-wins whole object) | Auto-inferred as MAP (per-field merge) — duck-typed from the JSON |
 | **Nested Updates** | Replace entire object | Merge individual fields |
-| **Collection Definitions** | Required for non-REGISTER types | Only needed for explicit REGISTER objects |
-| **Counter Visibility** | Must declare COUNTER type | Auto-visible |
+| **`MAP`/`REGISTER` keywords on writes** | Required for every non-REGISTER field | **Not needed — do not write them** |
+| **Type declarations on reads** | Required — an undeclared MAP/COUNTER field is **omitted from results entirely**, as if it never existed (no error) | **Not needed** — reads return the most recent value of any type |
+| **Counter Visibility** | Must declare COUNTER type on writes and reads | Declare COUNTER on writes; reads just work |
 | **Legacy Compatibility** | Difficult | Easy |
 
 ### Configuration
 
-The canonical user-facing parameter is `dql_strict_mode` (lowercase — the literal name accepted by `ALTER SYSTEM SET` / `SHOW`). `DQL_STRICT_MODE` is the internal Rust constant; don't pass that as the parameter name. See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
+The canonical user-facing parameter is `dql_strict_mode`. Parameter names in `ALTER SYSTEM SET` / `RESET` / `SHOW` are **case-insensitive** — the resolver lowercases the identifier, so `SHOW DQL_STRICT_MODE` works — but prefer lowercase: it is the name `SHOW` echoes back and the only spelling that matches a case-sensitive `SHOW ALL LIKE` pattern (use `ILIKE` if you want to match uppercase). See [`references/types-mutators.md`](references/types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
 
-**Disable Strict Mode (Recommended):**
+**Opting into lenient mode (the 5.0+ default; the migration target on 4.x):**
 ```sql
 -- Apply before starting sync
 ALTER SYSTEM SET dql_strict_mode = false
 ```
 
-**Enable Strict Mode:**
+**Enable Strict Mode (legacy 4.14.x default — not recommended on any version):**
 ```sql
 ALTER SYSTEM SET dql_strict_mode = true
 ```
@@ -697,23 +700,23 @@ UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user
 
 ### Cross-Peer Compatibility
 
-**⚠️ CRITICAL: All peers should use same strict mode setting**
+**⚠️ CRITICAL: every peer should run `dql_strict_mode = false`**
 
 **Problem:**
 When peers use different strict mode settings without explicit MAP definitions:
 - Data syncs correctly
-- But displays differently on each peer
+- But displays differently on each peer — strict peers silently omit undeclared MAP/COUNTER fields from query results, as if the fields never existed
 - Appears as sync issue (but isn't)
 
 **Solutions:**
 
-1. **Match strict mode across all peers:**
+1. **Set lenient mode on every peer (the fix — do this first):**
    ```sql
-   -- All peers run:
+   -- All peers run, at every app start:
    ALTER SYSTEM SET dql_strict_mode = false
    ```
 
-2. **Explicitly define MAP types (strict=true peers):**
+2. **Transition window only — declare MAP types on statements still-strict peers execute (writes and reads):**
    ```sql
    INSERT INTO users (
      profile MAP(bio STRING, location STRING, city STRING)
@@ -722,19 +725,15 @@ When peers use different strict mode settings without explicit MAP definitions:
 
 ### When to Use Strict Mode
 
-**Use Strict Mode = true when:**
-- Need explicit control over CRDT types
-- Want REGISTER (last-write-wins) for objects
-- Have well-defined schemas
-- Can ensure all peers use same setting
+**Strict mode = true is the legacy 4.14.x factory default, not a configuration choice.** No new mesh should adopt it, and existing 4.14.x meshes should migrate off it. If you find it set to `true` anywhere, plan the migration to `false` — mesh-wide, and before upgrading to v5 so the version jump changes no merge behavior.
 
-**Use Strict Mode = false when:**
-- Want automatic MAP inference (recommended)
-- Need per-field merge for nested objects
-- Working with legacy data
-- Mixed client versions in production
+**Strict Mode = false (the assumed baseline):**
+- Automatic MAP inference — objects duck-type to per-field merge
+- No `MAP`/`REGISTER` keywords on writes or reads
+- Reads return the most recent value of every field, whatever its CRDT type
+- Keywords remain only for `COUNTER`/`ATTACHMENT` and deliberate `REGISTER` overrides on atomic objects
 
-**Recommendation:** Use strict mode = false (will be default in SDK 5.0) for most applications.
+**Recommendation:** never change the flag on 5.0+ (the lenient default is correct); on 4.x migrate to `dql_strict_mode = false` mesh-wide before upgrading to 5.0.
 
 ---
 
@@ -748,12 +747,15 @@ When peers use different strict mode settings without explicit MAP definitions:
 -- ✅ SAFE: Parameterized
 SELECT * FROM tasks WHERE title = :search
 -- Pass arguments: {search: userInput}
+```
 
--- ❌ UNSAFE: String concatenation (SQL injection risk)
+```js
+// ❌ UNSAFE: String concatenation (SQL injection risk)
 const query = "SELECT * FROM tasks WHERE title = '" + userInput + "'";
 ```
 
-**Multiple Parameters:**
+**Multiple parameters** bind the same way — one statement, several named placeholders:
+
 ```sql
 SELECT * FROM tasks
 WHERE assignee = :user AND status = :status AND priority >= :min_priority
@@ -795,7 +797,7 @@ An offline peer that comes back online after the retention window has expired ca
 
 > **Confirm the retention period for your deployment with Ditto support.** It differs between Small Peer / Edge and Big Peer / Cloud and is not stated in the public documentation, so it should not be hard-coded from memory. Design for the existence of a window rather than a specific number of days.
 
-Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.4, 5.0.0 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE` — it writes a replicating tombstone, exactly like `TOMBSTONE` does on a Big Peer, and is not a local-only eviction. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
+Note also that `TOMBSTONE` as a DQL statement is rejected on 4.14.6, 5.0.3 and 5.1.0 when run from a Small Peer (`Tombstone is not supported`) — it is Big-Peer-only. From an Edge SDK, use `DELETE` — it writes a replicating tombstone, exactly like `TOMBSTONE` does on a Big Peer, and is not a local-only eviction. See [`references/statements.md`](references/statements.md) §4–§5 for the full `EVICT`/`TOMBSTONE`/`DELETE` semantics and when each applies.
 
 ### Soft Delete Pattern
 
@@ -912,13 +914,19 @@ INSERT INTO messages DOCUMENTS ({
 -- Documents in specific month
 SELECT * FROM logs
 WHERE timestamp >= '2024-12-01T00:00:00Z'
-  AND timestamp < '2025-01-01T00:00:00Z'
+  AND timestamp < '2025-01-01T00:00:00Z';
+```
 
+```sql
 -- Last 7 days
-WHERE created_at >= date_sub(clock(), 7, 'days')
+SELECT * FROM logs
+WHERE created_at >= date_sub(clock(), 7, 'days');
+```
 
+```sql
 -- Next 24 hours
-WHERE expires_at <= date_add(clock(), 24, 'hours')
+SELECT * FROM logs
+WHERE expires_at <= date_add(clock(), 24, 'hours');
 ```
 
 **Recent Documents:**
@@ -965,8 +973,8 @@ WHERE expires_at < clock()
 
 ### Data Modeling
 
-- [ ] Documents < 250 KB (avoid warnings)
-- [ ] Documents < 5 MB (hard limit)
+- [ ] Documents < 256 KiB (avoid warnings)
+- [ ] Documents < 5 MiB (hard limit — 5.1+ rejects the local write)
 - [ ] Use flat models for complex data
 - [ ] Use ATTACHMENT for large files
 - [ ] Include schema_version field

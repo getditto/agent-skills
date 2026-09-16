@@ -1,6 +1,6 @@
 [
   {
-    "id": "sk_best_practices_6fb26e6f",
+    "id": "sk_best_practices_18312e75",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 25,
@@ -12,10 +12,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_452a4f69",
+    "id": "sk_best_practices_8e4b5f96",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 52,
@@ -33,10 +36,13 @@
     ],
     "postQueries": [
       "EVICT FROM users WHERE _id IN ('user-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_b4b5feb4",
+    "id": "sk_best_practices_95977c5e",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 79,
@@ -55,10 +61,13 @@
     "postQueries": [
       "INSERT INTO cars DOCUMENTS\n  ({'_id': 'car-1', 'owner_id': 'person-1', 'make': 'Hyundai', 'year': 2020}),\n  ({'_id': 'car-2', 'owner_id': 'person-1', 'make': 'Tesla', 'year': 2023})",
       "EVICT FROM people WHERE _id IN ('person-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_a10dd3f2",
+    "id": "sk_best_practices_68cfc172",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 120,
@@ -76,10 +85,13 @@
     ],
     "postQueries": [
       "EVICT FROM orders WHERE _id IN ('order-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_c7ed9734",
+    "id": "sk_best_practices_8e6dfd33",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 172,
@@ -97,10 +109,13 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_6cb5441e",
+    "id": "sk_best_practices_a32e3f4a",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 199,
@@ -112,10 +127,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_2e90d21e",
+    "id": "sk_best_practices_f8309b15",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 221,
@@ -127,10 +145,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_f8738c4f",
+    "id": "sk_best_practices_e83afec0",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 252,
@@ -150,10 +171,13 @@
       "UPDATE cars SET features.sunroof = true WHERE _id = 'test_seed_id'",
       "INSERT INTO car_maintenance DOCUMENTS ({\n  '_id': 'maint-1',\n  'car_id': 'car-1',\n  'service_date': '2024-12-01'\n})",
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_cdf97ca7",
+    "id": "sk_best_practices_6082be3d",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 268,
@@ -171,10 +195,13 @@
     ],
     "postQueries": [
       "EVICT FROM cars WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_f1c11e35",
+    "id": "sk_best_practices_8552c8e9",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 285,
@@ -189,10 +216,13 @@
     "expectError": false,
     "postQueries": [
       "UPDATE cars SET\n  schema_version = 2,\n  year_string = CAST(year AS STRING)\nWHERE schema_version = 1"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_25aa4bb4",
+    "id": "sk_best_practices_4e282717",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 359,
@@ -204,10 +234,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_4876b0e0",
+    "id": "sk_best_practices_4adf35c1",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 375,
@@ -219,10 +252,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_522406fc",
+    "id": "sk_best_practices_0e7894cb",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 393,
@@ -236,10 +272,13 @@
     "expectError": false,
     "postQueries": [
       "INSERT INTO cars DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'schema_version': 2,\n  'make': 'Tesla',\n  'model': 'Model 3',\n  'year': 2010,\n  'color': 'blue',\n  'features': {\n    'sunroof': false,\n    'leather': true,\n    'seats': 5\n  }\n}) ON ID CONFLICT DO UPDATE"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_c3ab884d",
+    "id": "sk_best_practices_2633a544",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 462,
@@ -251,10 +290,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_866d9fb4",
+    "id": "sk_best_practices_b7c97c51",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 486,
@@ -266,10 +308,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_80dd5636",
+    "id": "sk_best_practices_b6a6b0b5",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 501,
@@ -281,10 +326,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_459e8b63",
+    "id": "sk_best_practices_245a6f7d",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 515,
@@ -296,10 +344,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_0c3b53e1",
+    "id": "sk_best_practices_20d138f3",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 526,
@@ -311,10 +362,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_fdbad6c5",
+    "id": "sk_best_practices_199c2d8b",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 554,
@@ -326,10 +380,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_d0de2469",
+    "id": "sk_best_practices_f3c85d2a",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 579,
@@ -341,10 +398,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_fa4fb96a",
+    "id": "sk_best_practices_5c5b1d61",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 590,
@@ -356,10 +416,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_4943b6e2",
+    "id": "sk_best_practices_6a69cc4e",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 599,
@@ -371,10 +434,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_0abae1af",
+    "id": "sk_best_practices_400e2e78",
     "source": {
       "file": "skills/dql/best-practices.md",
       "line": 610,
@@ -386,13 +452,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_e6152df4",
+    "id": "sk_best_practices_33d9e6f0",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 652,
+      "line": 655,
       "heading": "### Configuration"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -404,13 +473,16 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_8f0de03f",
+    "id": "sk_best_practices_ea43f08b",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 658,
+      "line": 661,
       "heading": "### Configuration"
     },
     "query": "ALTER SYSTEM SET dql_strict_mode = true",
@@ -422,13 +494,16 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_9194c9d6",
+    "id": "sk_best_practices_4f1259c6",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 663,
+      "line": 666,
       "heading": "### Configuration"
     },
     "query": "SHOW dql_strict_mode",
@@ -437,13 +512,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_best_practices_699b1491",
+    "id": "sk_best_practices_d535ba43",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 670,
+      "line": 673,
       "heading": "### Example: Object Merge Behavior"
     },
     "query": "\nUPDATE users SET profile = {'bio': 'Designer', 'location': 'NYC'} WHERE _id = 'user-1'",
@@ -459,13 +537,77 @@
     "postQueries": [
       "UPDATE users SET profile = {'bio': 'Engineer', 'city': 'SF'} WHERE _id = 'user-1'",
       "EVICT FROM users WHERE _id = 'user-1'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_68434efc",
+    "id": "sk_best_practices_94a2c6b0",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 767,
+      "line": 687,
+      "heading": "### Example: Object Merge Behavior"
+    },
+    "query": "\nUPDATE users SET profile.bio = 'Designer', profile.location = 'NYC' WHERE _id = 'user-1'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "preQueries": [
+      "INSERT INTO users DOCUMENTS ({ '_id': 'user-1', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
+    ],
+    "postQueries": [
+      "UPDATE users SET profile.bio = 'Engineer', profile.city = 'SF' WHERE _id = 'user-1'",
+      "EVICT FROM users WHERE _id = 'user-1'"
+    ],
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_0e377dab",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 746,
+      "heading": "### Parameterized Queries (Prevent Injection)"
+    },
+    "query": "\nSELECT * FROM tasks WHERE title = 'inception'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_f657f27e",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 759,
+      "heading": "### Parameterized Queries (Prevent Injection)"
+    },
+    "query": "SELECT * FROM tasks\nWHERE assignee = 'u-42' AND status = 'active' AND priority >= 3",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_0fd1fcc5",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 769,
       "heading": "### Always Use ON ID CONFLICT"
     },
     "query": "\nINSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n}) ON ID CONFLICT DO UPDATE",
@@ -481,13 +623,16 @@
     "postQueries": [
       "INSERT INTO tasks DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'title': 'Inception'\n})",
       "EVICT FROM tasks WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_75e9cdd3",
+    "id": "sk_best_practices_12e453ca",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 804,
+      "line": 806,
       "heading": "### Soft Delete Pattern"
     },
     "query": "\nUPDATE tasks SET deleted = true, deleted_at = clock() WHERE _id = 'test_seed_id'",
@@ -503,13 +648,16 @@
     "postQueries": [
       "DELETE FROM tasks WHERE deleted = true AND deleted_at < date_sub(clock(), 30, 'days')",
       "EVICT FROM tasks WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_91f79342",
+    "id": "sk_best_practices_ff3de1e5",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 891,
+      "line": 893,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT\n  _id,\n  title,\n  clock() - created_at AS age_ms,\n  date_diff(clock(), created_at, 'hours') AS age_hours\nFROM documents",
@@ -518,13 +666,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_26e15878",
+    "id": "sk_best_practices_d38b28f2",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 901,
+      "line": 903,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "INSERT INTO messages DOCUMENTS ({\n  '_id': 'test_seed_id',\n  'message': 'hello',\n  'sent_at': clock(),  \n  'sender_id': 'u-42'\n})",
@@ -539,13 +690,70 @@
     ],
     "postQueries": [
       "EVICT FROM messages WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_ee461ceb",
+    "id": "sk_best_practices_3cc54a5d",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 925,
+      "line": 913,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "\nSELECT * FROM logs\nWHERE timestamp >= '2024-12-01T00:00:00Z'\n  AND timestamp < '2025-01-01T00:00:00Z'",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_bcaa8df1",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 920,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "\nSELECT * FROM logs\nWHERE created_at >= date_sub(clock(), 7, 'days')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_f1532a19",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 926,
+      "heading": "### Common Timestamp Patterns"
+    },
+    "query": "\nSELECT * FROM logs\nWHERE expires_at <= date_add(clock(), 24, 'hours')",
+    "availableIn": [
+      "4.14.x",
+      "5.0.x",
+      "5.1.x"
+    ],
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
+  },
+  {
+    "id": "sk_best_practices_da5b14a4",
+    "source": {
+      "file": "skills/dql/best-practices.md",
+      "line": 933,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT * FROM tasks\nWHERE updated_at >= '2024-12-01T00:00:00Z'\nORDER BY updated_at DESC\nLIMIT 50",
@@ -554,13 +762,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_best_practices_b9eead56",
+    "id": "sk_best_practices_909cef02",
     "source": {
       "file": "skills/dql/best-practices.md",
-      "line": 933,
+      "line": 941,
       "heading": "### Common Timestamp Patterns"
     },
     "query": "SELECT * FROM sessions\nWHERE expires_at < clock()",
@@ -569,16 +780,19 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_67c25134",
+    "id": "sk_movies_cookbook_53bada8f",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 55,
+      "line": 57,
       "heading": "### Task 1 — Load movies with conflict-tolerant upserts"
     },
-    "query": "INSERT INTO COLLECTION movies (director MAP, ratings MAP, watch_count COUNTER)\nDOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,\n     'runtime_minutes': 142, 'genres': ['Drama'],\n     'director': { 'name': 'Frank Darabont', 'born': 1959 },\n     'cast': [\n       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },\n       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n     ],\n     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,\n     'released': '1994-09-23' }),\n  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,\n     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],\n     'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },\n     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,\n     'released': '2010-07-16' })\nON ID CONFLICT DO UPDATE",
+    "query": "INSERT INTO COLLECTION movies (watch_count COUNTER)\nDOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,\n     'runtime_minutes': 142, 'genres': ['Drama'],\n     'director': { 'name': 'Frank Darabont', 'born': 1959 },\n     'cast': [\n       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },\n       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n     ],\n     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,\n     'released': '1994-09-23' }),\n  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,\n     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],\n     'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },\n     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,\n     'released': '2010-07-16' })\nON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -590,13 +804,16 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161', 'tt1375666')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_fc265026",
+    "id": "sk_movies_cookbook_e61b0997",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 85,
+      "line": 87,
       "heading": "### Task 2 — Seed reviews with auto-generated ids"
     },
     "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-42',\n     'score': 5, 'comment': 'Hope is a good thing.',\n     'created_at': '2024-03-15T10:00:00Z' }),\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-7',\n     'score': 4, 'comment': 'A slow burn that pays off.',\n     'created_at': '2024-03-18T09:15:00Z' }),\n  ({ 'movie_id': 'tt1375666', 'user_id': 'u-7',\n     'score': 4, 'comment': 'Everyone should watch it twice.',\n     'created_at': '2024-04-02T22:31:00Z' })",
@@ -605,13 +822,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_bb4f91f7",
+    "id": "sk_movies_cookbook_afaff684",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 110,
+      "line": 114,
       "heading": "### Task 3 — Top-rated movies in a decade with pagination"
     },
     "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN 1990 AND 1999\n  AND ratings.imdb >= 7.0\nORDER BY imdb DESC, title ASC\nLIMIT 25 OFFSET 0",
@@ -619,13 +839,22 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 25,
+      "firstRow": {
+        "_id": "573a1399f29313caabcee345",
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna",
+        "year": 1994
+      }
+    }
   },
   {
-    "id": "sk_movies_cookbook_1ea4288f",
+    "id": "sk_movies_cookbook_b0cd4faa",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 127,
+      "line": 131,
       "heading": "### Task 4 — Single-document lookup (fastest path)"
     },
     "query": "SELECT * FROM movies USE IDS ('573a1390f29313caabcd4135')",
@@ -634,13 +863,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_movies_cookbook_4f596cb8",
+    "id": "sk_movies_cookbook_8415fa9a",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 141,
+      "line": 145,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
     "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\nORDER BY year ASC",
@@ -648,13 +880,21 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "573a1399f29313caabcecb4a",
+        "title": "Robin Hood: Prince of Thieves",
+        "year": 1991
+      }
+    }
   },
   {
-    "id": "sk_movies_cookbook_4079a59d",
+    "id": "sk_movies_cookbook_e0745c10",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 150,
+      "line": 154,
       "heading": "### Task 5 — Films featuring a specific actor"
     },
     "query": "\nSELECT _id, title, year\nFROM movies\nWHERE array_contains(actor_names, 'Morgan Freeman')\nORDER BY year ASC",
@@ -663,13 +903,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_acf7179b",
+    "id": "sk_movies_cookbook_07433162",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 168,
+      "line": 172,
       "heading": "### Task 6 — Films in any of N genres"
     },
     "query": "SELECT _id, title, genres\nFROM movies\nWHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END",
@@ -677,28 +920,34 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 128
+    }
   },
   {
-    "id": "sk_movies_cookbook_5a351308",
+    "id": "sk_movies_cookbook_b2d7426d",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 176,
+      "line": 180,
       "heading": "### Task 6 — Films in any of N genres"
     },
-    "query": "SELECT _id, title, genres\nFROM movies\nWHERE array_contains(genres, 'Drama')\n   OR array_contains(genres, 'Crime')",
+    "query": "\nSELECT _id, title, genres\nFROM movies\nWHERE array_contains(genres, 'Drama')\n   OR array_contains(genres, 'Crime')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 128
+    }
   },
   {
-    "id": "sk_movies_cookbook_93f6901f",
+    "id": "sk_movies_cookbook_2ff21a08",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 191,
+      "line": 198,
       "heading": "### Task 7 — Flat view with computed fields"
     },
     "query": "SELECT\n  _id,\n  title,\n  year,\n  ratings.imdb AS imdb,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict,\n  year < 1980 AS is_pre_1980\nFROM movies\nORDER BY year DESC",
@@ -706,13 +955,23 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "imdb": 7.6,
+        "is_pre_1980": false,
+        "title": "The Tracker",
+        "verdict": "good"
+      }
+    }
   },
   {
-    "id": "sk_movies_cookbook_b58f96e2",
+    "id": "sk_movies_cookbook_c9e64fa4",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 216,
+      "line": 223,
       "heading": "### Task 8 — Director leaderboard"
     },
     "query": "SELECT\n  director.name            AS director,\n  count(*)                 AS films,\n  avg(ratings.imdb)        AS avg_imdb,\n  max(box_office_millions) AS top_grossing\nFROM movies\nWHERE director IS NOT MISSING\nGROUP BY director.name\nHAVING count(*) >= 3\nORDER BY avg_imdb DESC\nLIMIT 25",
@@ -721,13 +980,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_6d3f6531",
+    "id": "sk_movies_cookbook_3f8cf611",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 238,
+      "line": 245,
       "heading": "### Task 9 — Per-movie review statistics"
     },
     "query": "SELECT\n  movie_id,\n  count(*)   AS review_count,\n  avg(score) AS avg_score,\n  min(score) AS min_score,\n  max(score) AS max_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 10\nORDER BY avg_score DESC",
@@ -736,13 +998,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_c24d7057",
+    "id": "sk_movies_cookbook_c1eca4d0",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 259,
+      "line": 266,
       "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
     },
     "query": "SELECT movie_id, avg(score) AS avg_score\nFROM reviews\nGROUP BY movie_id\nHAVING count(*) >= 50 AND avg(score) >= 4.5\nORDER BY avg_score DESC\nLIMIT 10",
@@ -751,13 +1016,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_5b9fcc9c",
+    "id": "sk_movies_cookbook_f62224cd",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 270,
+      "line": 277,
       "heading": "### Task 10 — Two-step \"join\" (top movies by review average)"
     },
     "query": "SELECT _id, title, year\nFROM movies\nWHERE _id IN (('573a1390f29313caabcd4135'))",
@@ -766,13 +1034,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_movies_cookbook_7d37a327",
+    "id": "sk_movies_cookbook_21a07f82",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 298,
+      "line": 305,
       "heading": "### Task 11 — Increment the watch counter"
     },
     "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
@@ -787,13 +1058,16 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_3a5a0563",
+    "id": "sk_movies_cookbook_9306e1e2",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 306,
+      "line": 313,
       "heading": "### Task 11 — Increment the watch counter"
     },
     "query": "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'test_seed_id'",
@@ -808,16 +1082,19 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_c2a52a9a",
+    "id": "sk_movies_cookbook_c8f636f4",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 320,
+      "line": 327,
       "heading": "### Task 12 — Update a nested MAP field without clobbering siblings"
     },
-    "query": "UPDATE COLLECTION movies (ratings MAP)\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id'",
+    "query": "UPDATE movies\nSET ratings.rotten_tomatoes = 95\nWHERE _id = 'test_seed_id'",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -829,26 +1106,32 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_3fe09002",
+    "id": "sk_movies_cookbook_0594ab50",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 336,
+      "line": 343,
       "heading": "### Task 13 — Flag pre-1980 films as classics with RETURNING"
     },
     "query": "UPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
   },
   {
-    "id": "sk_movies_cookbook_86aa4674",
+    "id": "sk_movies_cookbook_0f197001",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 351,
+      "line": 358,
       "heading": "### Task 14 — Remove a derived field post-backfill (UNSET)"
     },
     "query": "UPDATE movies\nUNSET legacy_field\nWHERE legacy_field IS NOT MISSING",
@@ -857,13 +1140,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_215100f8",
+    "id": "sk_movies_cookbook_0dbaadd5",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 367,
+      "line": 374,
       "heading": "### Task 15 — Reset the watch counter on a re-release (RESTART)"
     },
     "query": "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE _id = 'test_seed_id'",
@@ -878,13 +1164,16 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'test_seed_id'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_3c1d2e82",
+    "id": "sk_movies_cookbook_fa5ef482",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 381,
+      "line": 388,
       "heading": "### Task 16 — Local cleanup of pre-1950 films (EVICT)"
     },
     "query": "EVICT FROM movies\nWHERE year < 1950",
@@ -893,18 +1182,21 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_be3461e2",
+    "id": "sk_movies_cookbook_0c22ec9d",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 394,
+      "line": 401,
       "heading": "### Task 17 — Mesh-wide retraction of a withdrawn film (TOMBSTONE)"
     },
     "query": "TOMBSTONE FROM movies\nWHERE _id = 'test_seed_id'\nRETURNING _id, title",
     "availableIn": [],
-    "unavailableReason": "Same TOMBSTONE Big-Peer-only restriction as sk_statements_f1949f8d.",
+    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK (4.14.6, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'test_seed_id', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
@@ -914,10 +1206,10 @@
     ]
   },
   {
-    "id": "sk_movies_cookbook_1f11c879",
+    "id": "sk_movies_cookbook_f0ecab97",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 408,
+      "line": 415,
       "heading": "### Task 18 — Bulk delete with an id list"
     },
     "query": "DELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
@@ -926,26 +1218,32 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_763b9bf6",
+    "id": "sk_movies_cookbook_c85a1e5b",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 431,
+      "line": 438,
       "heading": "### Task 19 — Reviews joined to their movie (INNER JOIN)"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.created_at DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_f0c67c84",
+    "id": "sk_movies_cookbook_54c2410e",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 445,
+      "line": 452,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -954,75 +1252,104 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_fe50edb0",
+    "id": "sk_movies_cookbook_ca54fe60",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 455,
+      "line": 462,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "SELECT m._id, m.title,\n       COUNT(r._id)      AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC, m.title ASC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a1395f29313caabce2b21",
+        "avg_score": 0,
+        "review_count": 0,
+        "title": "A Big Hand for the Little Lady"
+      }
+    }
   },
   {
-    "id": "sk_movies_cookbook_b9853e8f",
+    "id": "sk_movies_cookbook_ec24fb17",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 476,
+      "line": 483,
       "heading": "### Task 21 — Only well-reviewed movies (JOIN + HAVING)"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_c751b1fd",
+    "id": "sk_movies_cookbook_be8b5228",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 494,
+      "line": 501,
       "heading": "### Task 22 — Movies with no reviews (anti-join)"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "title": "The Tracker",
+        "year": 2002
+      }
+    }
   },
   {
-    "id": "sk_movies_cookbook_f4fc40f6",
+    "id": "sk_movies_cookbook_dfb212b7",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 513,
+      "line": 520,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_created\n  ON reviews (movie_id ASC, created_at DESC)",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_movies_cookbook_dc3e7c5a",
+    "id": "sk_movies_cookbook_6b5e7b76",
     "source": {
       "file": "skills/dql/examples/movies-cookbook.md",
-      "line": 518,
+      "line": 525,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nWHERE r.movie_id = 'tt0111161'\nORDER BY r.created_at DESC\nLIMIT 20",
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_cookbook_302b39fd",
+    "id": "sk_retail_cookbook_58046bae",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 28,
@@ -1034,10 +1361,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_retail_cookbook_d23530f6",
+    "id": "sk_retail_cookbook_fbb8cbeb",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 36,
@@ -1049,10 +1379,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_retail_cookbook_29455eea",
+    "id": "sk_retail_cookbook_acf270b3",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 50,
@@ -1064,10 +1397,19 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "customer_id": "9f15ed64-7249-461d-b2f0-fde51ccbc4a8",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
   },
   {
-    "id": "sk_retail_cookbook_e05664da",
+    "id": "sk_retail_cookbook_d75b42c8",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 60,
@@ -1079,10 +1421,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
   },
   {
-    "id": "sk_retail_cookbook_2afc646b",
+    "id": "sk_retail_cookbook_a76f548b",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 74,
@@ -1094,10 +1439,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_retail_cookbook_c1a1cb57",
+    "id": "sk_retail_cookbook_2798df93",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 82,
@@ -1109,10 +1457,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_retail_cookbook_1e70e345",
+    "id": "sk_retail_cookbook_80b74496",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 90,
@@ -1124,10 +1475,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_cookbook_bf800f84",
+    "id": "sk_retail_cookbook_61bfdcf4",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 100,
@@ -1139,10 +1493,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_cookbook_baebcf6f",
+    "id": "sk_retail_cookbook_8efe568f",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 110,
@@ -1154,10 +1515,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
   },
   {
-    "id": "sk_retail_cookbook_2d6092fe",
+    "id": "sk_retail_cookbook_94a00d0a",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 124,
@@ -1169,10 +1533,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "revenue": 783909.3799999993,
+        "store_id": "store_seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_cookbook_a92e69a0",
+    "id": "sk_retail_cookbook_10417499",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 141,
@@ -1184,10 +1555,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1000
+    }
   },
   {
-    "id": "sk_retail_cookbook_3af12196",
+    "id": "sk_retail_cookbook_fc3f2adf",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 147,
@@ -1199,10 +1573,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 292
+    }
   },
   {
-    "id": "sk_retail_cookbook_74f50d06",
+    "id": "sk_retail_cookbook_f0c1d821",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 159,
@@ -1214,10 +1591,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 704.72,
+        "order_ref": "order_20250325_0001",
+        "store_id": "store_seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_cookbook_f29f7b27",
+    "id": "sk_retail_cookbook_5b132423",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 175,
@@ -1229,10 +1614,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "product_id": "prod_grd_0050",
+        "units_on_hand": 95
+      }
+    }
   },
   {
-    "id": "sk_retail_cookbook_3945ca75",
+    "id": "sk_retail_cookbook_d463e0bd",
     "source": {
       "file": "skills/dql/examples/retail-cookbook.md",
       "line": 186,
@@ -1244,10 +1636,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_790c2c37",
+    "id": "sk_retail_joins_cookbook_efd27787",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 45,
@@ -1257,10 +1652,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_403b7de5",
+    "id": "sk_retail_joins_cookbook_b0fd81f0",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 62,
@@ -1270,10 +1668,20 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "order_20250325_0001",
+        "first_name": "Jessica",
+        "last_name": "Cunningham",
+        "order_date": "2025-03-25T19:17:00Z",
+        "total": 704.72
+      }
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_9401fe19",
+    "id": "sk_retail_joins_cookbook_6e3f154c",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 79,
@@ -1285,10 +1693,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_64eccfd5",
+    "id": "sk_retail_joins_cookbook_ad2788df",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 87,
@@ -1298,10 +1709,20 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3,
+      "firstRow": {
+        "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
+        "base_price": 63.37,
+        "line_total": 228.13,
+        "product_name": "ELC item 0009",
+        "quantity": 4
+      }
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_27ea1e29",
+    "id": "sk_retail_joins_cookbook_ff6e61f3",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 101,
@@ -1313,10 +1734,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_7a462c12",
+    "id": "sk_retail_joins_cookbook_9262db74",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 111,
@@ -1326,10 +1750,18 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_cd231acd",
+    "id": "sk_retail_joins_cookbook_4560c0e2",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 130,
@@ -1339,10 +1771,18 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1,
+      "firstRow": {
+        "_id": "store_seattle",
+        "revenue": 783909.3799999993,
+        "store_name": "Zava Retail Seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_bcc6bfe3",
+    "id": "sk_retail_joins_cookbook_0c12b9d0",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 148,
@@ -1354,10 +1794,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_66b1fc72",
+    "id": "sk_retail_joins_cookbook_ad907d8b",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 156,
@@ -1367,10 +1810,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_14ff9331",
+    "id": "sk_retail_joins_cookbook_f796bc51",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 174,
@@ -1380,10 +1826,18 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "amount": 960.51,
+        "order_ref": "order_20221210_0001",
+        "store": "Zava Retail Seattle"
+      }
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_2021712d",
+    "id": "sk_retail_joins_cookbook_779bc4c6",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 193,
@@ -1395,10 +1849,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_00e23f06",
+    "id": "sk_retail_joins_cookbook_508258b8",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 199,
@@ -1408,10 +1865,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_retail_joins_cookbook_2702a4f8",
+    "id": "sk_retail_joins_cookbook_993e691e",
     "source": {
       "file": "skills/dql/examples/retail-joins-cookbook.md",
       "line": 207,
@@ -1421,10 +1881,19 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "prod_pwr_0003",
+        "inventory_value": 25011,
+        "product_name": "PWR item 0003",
+        "units_on_hand": 70
+      }
+    }
   },
   {
-    "id": "sk_expressions_262d5d00",
+    "id": "sk_expressions_c3c0fa24",
     "source": {
       "file": "skills/dql/references/expressions.md",
       "line": 36,
@@ -1436,13 +1905,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 5
+    }
   },
   {
-    "id": "sk_expressions_cf187696",
+    "id": "sk_expressions_657ca280",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 78,
+      "line": 68,
       "heading": "## 2. Identifiers"
     },
     "query": "\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
@@ -1451,13 +1923,20 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "cast_size": 4,
+        "title": "Peter Pan"
+      }
+    }
   },
   {
-    "id": "sk_expressions_7cacbbb7",
+    "id": "sk_expressions_bffab40a",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 99,
+      "line": 89,
       "heading": "## 3. Parameters"
     },
     "query": "\nSELECT title, ratings.imdb FROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC\nLIMIT 25",
@@ -1466,13 +1945,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_expressions_709ee84a",
+    "id": "sk_expressions_d256654c",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 141,
+      "line": 131,
       "heading": "### Examples against `movies`"
     },
     "query": "\nSELECT title, director.name AS director FROM movies",
@@ -1481,13 +1963,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_expressions_31d07b72",
+    "id": "sk_expressions_d2c4660a",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 169,
+      "line": 161,
       "heading": "## 5. `CASE` — simple form"
     },
     "query": "\nSELECT\n  title,\n  CASE genres[0]\n    WHEN 'Drama'  THEN 1\n    WHEN 'Comedy' THEN 2\n    WHEN 'Action' THEN 3\n    ELSE 0\n  END AS genre_score\nFROM movies\nORDER BY genre_score DESC, title",
@@ -1495,13 +1980,20 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "genre_score": 3,
+        "title": "Boiling Point"
+      }
+    }
   },
   {
-    "id": "sk_expressions_3bb5893d",
+    "id": "sk_expressions_03f225bc",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 199,
+      "line": 193,
       "heading": "## 6. `CASE` — searched form"
     },
     "query": "\nSELECT\n  title,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict\nFROM movies\nORDER BY title",
@@ -1509,13 +2001,20 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "title": "A Big Hand for the Little Lady",
+        "verdict": "good"
+      }
+    }
   },
   {
-    "id": "sk_expressions_154cf2ec",
+    "id": "sk_expressions_031587d4",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 236,
+      "line": 230,
       "heading": "## 7. `ANY ... IN ... SATISFIES ... END`"
     },
     "query": "\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END",
@@ -1523,13 +2022,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_expressions_4f621df3",
+    "id": "sk_expressions_407971da",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 256,
+      "line": 250,
       "heading": "## 8. `EVERY ... IN ... SATISFIES ... END`"
     },
     "query": "\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
@@ -1537,13 +2039,14 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {}
   },
   {
-    "id": "sk_expressions_d7f4229a",
+    "id": "sk_expressions_05315411",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 276,
+      "line": 270,
       "heading": "## 9. `ANY AND EVERY ... IN ... SATISFIES ... END`"
     },
     "query": "\nSELECT title FROM movies\nWHERE ANY AND EVERY actor IN `cast`\n  SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
@@ -1551,13 +2054,14 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {}
   },
   {
-    "id": "sk_expressions_b2ca6ad8",
+    "id": "sk_expressions_37d0df75",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 294,
+      "line": 288,
       "heading": "## 10. `IN` vs `WITHIN` inside quantifiers and comprehensions"
     },
     "query": "\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END",
@@ -1565,13 +2069,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_expressions_cc7958c1",
+    "id": "sk_expressions_a1960b7a",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 330,
+      "line": 324,
       "heading": "## 11. `ARRAY expr FOR ... IN ... [WHEN ...] END`"
     },
     "query": "\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies",
@@ -1579,13 +2086,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_expressions_da58d5fa",
+    "id": "sk_expressions_da5ce93b",
     "source": {
       "file": "skills/dql/references/expressions.md",
-      "line": 366,
+      "line": 360,
       "heading": "## 12. `OBJECT NameExpr : ValueExpr FOR ... IN ... [WHEN ...] END`"
     },
     "query": "\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies",
@@ -1593,10 +2103,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_82c0afbc",
+    "id": "sk_functions_42b86fe5",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 32,
@@ -1608,10 +2121,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_585f1bb1",
+    "id": "sk_functions_bc27e575",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 36,
@@ -1623,10 +2139,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_86ac6b83",
+    "id": "sk_functions_bbd3cedc",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 58,
@@ -1638,10 +2157,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_c5b3f557",
+    "id": "sk_functions_0160367f",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 63,
@@ -1653,10 +2175,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_functions_9cf3029c",
+    "id": "sk_functions_604d13f1",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 76,
@@ -1668,10 +2193,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_functions_5ecf0bce",
+    "id": "sk_functions_8e52e5c9",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 100,
@@ -1683,10 +2211,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_cc2ef4f9",
+    "id": "sk_functions_639f5e0d",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 108,
@@ -1698,10 +2229,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_88dc470d",
+    "id": "sk_functions_557eb3da",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 150,
@@ -1713,10 +2247,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_4da2a1d0",
+    "id": "sk_functions_f60fad80",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 166,
@@ -1728,10 +2265,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_functions_2e026687",
+    "id": "sk_functions_104cbb22",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 183,
@@ -1743,10 +2283,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_e00ef285",
+    "id": "sk_functions_bd2c848b",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 191,
@@ -1758,10 +2301,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 39
+    }
   },
   {
-    "id": "sk_functions_af231be0",
+    "id": "sk_functions_514f951d",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 196,
@@ -1773,10 +2319,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_7b27e431",
+    "id": "sk_functions_da32ac57",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 202,
@@ -1788,10 +2337,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_functions_2d1dde36",
+    "id": "sk_functions_917492e6",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 210,
@@ -1803,10 +2355,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_ca74ed47",
+    "id": "sk_functions_04fac624",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 215,
@@ -1818,10 +2373,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_fd5c438f",
+    "id": "sk_functions_461270b3",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 220,
@@ -1833,10 +2391,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_1d3ee49f",
+    "id": "sk_functions_0c8e11c8",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 229,
@@ -1848,10 +2409,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_d3ee4e4e",
+    "id": "sk_functions_61e6a36c",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 234,
@@ -1863,10 +2427,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_7173d960",
+    "id": "sk_functions_e8c9ee1f",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 239,
@@ -1878,10 +2445,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_functions_433a21e1",
+    "id": "sk_functions_1fc24a03",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 254,
@@ -1893,10 +2463,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 118
+    }
   },
   {
-    "id": "sk_functions_443cf2e0",
+    "id": "sk_functions_6a43a545",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 259,
@@ -1908,10 +2481,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 5,
+      "firstRow": {
+        "cast_size": 4,
+        "title": "Peter Pan"
+      }
+    }
   },
   {
-    "id": "sk_functions_a0f35d1e",
+    "id": "sk_functions_7b81300c",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 266,
@@ -1923,10 +2503,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_6522661c",
+    "id": "sk_functions_3e9e048f",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 302,
@@ -1938,10 +2521,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_84f8dc9a",
+    "id": "sk_functions_d0e5a6f3",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 308,
@@ -1953,10 +2539,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_e5cd7c87",
+    "id": "sk_functions_445bed10",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 314,
@@ -1968,10 +2557,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_1ba22526",
+    "id": "sk_functions_3f0827b7",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 320,
@@ -1983,10 +2575,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_dadfdb6a",
+    "id": "sk_functions_4bdfe9f8",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 325,
@@ -1998,10 +2593,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_c29edfb4",
+    "id": "sk_functions_8fc07f2d",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 330,
@@ -2013,10 +2611,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_55d9e527",
+    "id": "sk_functions_18c38d8d",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 361,
@@ -2028,10 +2629,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_2d887549",
+    "id": "sk_functions_871c02e8",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 368,
@@ -2043,10 +2647,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_functions_4b9a5500",
+    "id": "sk_functions_bbf269a3",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 378,
@@ -2058,10 +2665,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_95a8958a",
+    "id": "sk_functions_3ed767c5",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 385,
@@ -2073,10 +2683,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10
+    }
   },
   {
-    "id": "sk_functions_55aeb9a1",
+    "id": "sk_functions_e3ad12b5",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 398,
@@ -2088,10 +2701,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_functions_75ceff23",
+    "id": "sk_functions_cd3c01a5",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 408,
@@ -2103,10 +2719,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_a9ee0d45",
+    "id": "sk_functions_fd033db3",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 413,
@@ -2118,10 +2737,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_functions_eb133324",
+    "id": "sk_functions_14971a84",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 432,
@@ -2133,10 +2755,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_functions_3f8fba8f",
+    "id": "sk_functions_cf1b53cc",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 466,
@@ -2148,10 +2773,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_functions_938576dd",
+    "id": "sk_functions_aaaf7414",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 479,
@@ -2163,10 +2791,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_functions_42bb5741",
+    "id": "sk_functions_6ca1b48e",
     "source": {
       "file": "skills/dql/references/functions.md",
       "line": 492,
@@ -2178,10 +2809,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 41,
+      "firstRow": {
+        "avg_rating": 6.22,
+        "n": 5,
+        "year": 2000
+      }
+    }
   },
   {
-    "id": "sk_indexing_e4109ccf",
+    "id": "sk_indexing_a85884c4",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 56,
@@ -2191,10 +2830,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_fcfee520",
+    "id": "sk_indexing_82fc2d28",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 64,
@@ -2206,10 +2848,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_7f67ed8c",
+    "id": "sk_indexing_646903d6",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 87,
@@ -2219,10 +2864,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_566f8afb",
+    "id": "sk_indexing_928b114a",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 99,
@@ -2234,10 +2882,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_3715003d",
+    "id": "sk_indexing_d061499f",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 130,
@@ -2249,10 +2900,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_0855cf7f",
+    "id": "sk_indexing_487ae345",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 148,
@@ -2264,10 +2918,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_ff4466f6",
+    "id": "sk_indexing_b12b3d22",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 172,
@@ -2279,10 +2936,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 7,
+      "firstRow": {
+        "title": "Jails, Hospitals & Hip-Hop"
+      }
+    }
   },
   {
-    "id": "sk_indexing_dd6e2d81",
+    "id": "sk_indexing_f3447501",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 189,
@@ -2294,10 +2957,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "title": "Andaz Apna Apna"
+      }
+    }
   },
   {
-    "id": "sk_indexing_79cbb7ae",
+    "id": "sk_indexing_a5ca6e2a",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 228,
@@ -2309,7 +2978,7 @@
     "expectError": false
   },
   {
-    "id": "sk_indexing_bff89b80",
+    "id": "sk_indexing_8cab37ca",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 242,
@@ -2321,10 +2990,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "title": "Andaz Apna Apna"
+      }
+    }
   },
   {
-    "id": "sk_indexing_be5944f5",
+    "id": "sk_indexing_84859df2",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 260,
@@ -2336,10 +3011,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_ec9024e4",
+    "id": "sk_indexing_4186236a",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 284,
@@ -2351,10 +3029,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_2d60f204",
+    "id": "sk_indexing_5a9665bb",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 290,
@@ -2366,10 +3047,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_8b6d15e9",
+    "id": "sk_indexing_b9e9fc85",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 302,
@@ -2381,10 +3065,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_0669275e",
+    "id": "sk_indexing_113487b2",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 351,
@@ -2394,10 +3081,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_6de7c6d1",
+    "id": "sk_indexing_09c6589f",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 366,
@@ -2409,10 +3099,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_751591e3",
+    "id": "sk_indexing_10afacc8",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 380,
@@ -2424,10 +3117,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_1aa20659",
+    "id": "sk_indexing_23087069",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 392,
@@ -2439,10 +3135,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_251907a2",
+    "id": "sk_indexing_eaf05c69",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 402,
@@ -2454,10 +3153,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_76f6afc5",
+    "id": "sk_indexing_e12b0068",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 417,
@@ -2469,10 +3171,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 3
+    }
   },
   {
-    "id": "sk_indexing_cafe6829",
+    "id": "sk_indexing_256aa2a0",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 440,
@@ -2484,10 +3189,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_indexing_3555efac",
+    "id": "sk_indexing_000c2782",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 466,
@@ -2499,10 +3207,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_25d31fbb",
+    "id": "sk_indexing_57c263ea",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 478,
@@ -2512,10 +3223,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_bba22622",
+    "id": "sk_indexing_064b45a5",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 495,
@@ -2527,10 +3241,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_7035946e",
+    "id": "sk_indexing_b4a1ac5a",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 506,
@@ -2540,10 +3257,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_900240e1",
+    "id": "sk_indexing_fc6936de",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 517,
@@ -2555,10 +3275,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_228f14a2",
+    "id": "sk_indexing_da95d2fa",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 529,
@@ -2570,10 +3293,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_indexing_5cdfef35",
+    "id": "sk_indexing_edb0f14e",
     "source": {
       "file": "skills/dql/references/indexing.md",
       "line": 538,
@@ -2585,10 +3311,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_operators_7a025688",
+    "id": "sk_operators_710772ba",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 75,
@@ -2600,10 +3329,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 7
+    }
   },
   {
-    "id": "sk_operators_b061c17b",
+    "id": "sk_operators_f01edbd9",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 104,
@@ -2615,10 +3347,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_5a0fc377",
+    "id": "sk_operators_9c4bbab9",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 120,
@@ -2629,10 +3364,11 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {}
   },
   {
-    "id": "sk_operators_db076d63",
+    "id": "sk_operators_f8ddc00a",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 129,
@@ -2643,10 +3379,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 187
+    }
   },
   {
-    "id": "sk_operators_091afc3a",
+    "id": "sk_operators_be0a34ce",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 135,
@@ -2658,10 +3397,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_operators_a271d717",
+    "id": "sk_operators_bbf02051",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 143,
@@ -2673,10 +3415,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 118
+    }
   },
   {
-    "id": "sk_operators_9a733372",
+    "id": "sk_operators_366003fc",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 152,
@@ -2688,10 +3433,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_4d0f7af7",
+    "id": "sk_operators_1377ca55",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 169,
@@ -2703,10 +3451,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 39
+    }
   },
   {
-    "id": "sk_operators_3bdd4dcf",
+    "id": "sk_operators_285954ca",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 225,
@@ -2718,10 +3469,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_operators_0fc9b12b",
+    "id": "sk_operators_880d4ea0",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 240,
@@ -2733,10 +3487,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_7af8df12",
+    "id": "sk_operators_1fc89ebe",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 248,
@@ -2748,10 +3505,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_9660bce9",
+    "id": "sk_operators_0742f43e",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 260,
@@ -2763,10 +3523,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_25b18f68",
+    "id": "sk_operators_e6c225f9",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 270,
@@ -2778,10 +3541,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 32
+    }
   },
   {
-    "id": "sk_operators_ddc4c24c",
+    "id": "sk_operators_4ceca36d",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 282,
@@ -2793,10 +3559,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_operators_548d7e8c",
+    "id": "sk_operators_e8ff55fb",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 292,
@@ -2808,10 +3577,11 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {}
   },
   {
-    "id": "sk_operators_f565e8e0",
+    "id": "sk_operators_14c61b97",
     "source": {
       "file": "skills/dql/references/operators.md",
       "line": 373,
@@ -2823,13 +3593,13 @@
     "expectError": false
   },
   {
-    "id": "sk_schema_5595752b",
+    "id": "sk_schema_cdb4145b",
     "source": {
       "file": "skills/dql/references/schema.md",
       "line": 82,
       "heading": "## Seeding the dataset"
     },
-    "query": "INSERT INTO COLLECTION movies (\n  director MAP,\n  ratings MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
+    "query": "INSERT INTO COLLECTION movies (\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -2841,10 +3611,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_a1128461",
+    "id": "sk_select_d9e8856e",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 63,
@@ -2856,10 +3629,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_select_f3666302",
+    "id": "sk_select_04120979",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 70,
@@ -2871,10 +3647,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_select_642b7400",
+    "id": "sk_select_6c286a3a",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 83,
@@ -2886,10 +3665,11 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {}
   },
   {
-    "id": "sk_select_dc59b934",
+    "id": "sk_select_975b1672",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 110,
@@ -2901,10 +3681,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
   },
   {
-    "id": "sk_select_2cbf2070",
+    "id": "sk_select_43de9a32",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 154,
@@ -2916,10 +3699,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_906a8612",
+    "id": "sk_select_aa4c37d7",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 160,
@@ -2931,10 +3717,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_select_c7bf45a6",
+    "id": "sk_select_a58640e3",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 168,
@@ -2946,10 +3735,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_866ea5b5",
+    "id": "sk_select_71a6a498",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 178,
@@ -2961,10 +3753,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_select_d2683d71",
+    "id": "sk_select_5faf50a6",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 189,
@@ -2979,10 +3774,13 @@
     "expectError": false,
     "postQueries": [
       "DELETE FROM movies WHERE _id IN ('test_seed_id')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_ec8f7140",
+    "id": "sk_select_6a17ecfd",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 210,
@@ -2994,10 +3792,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_6dc138b3",
+    "id": "sk_select_cb0decf1",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 236,
@@ -3009,10 +3810,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_c1ca245e",
+    "id": "sk_select_8ac302e0",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 273,
@@ -3024,10 +3828,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 76
+    }
   },
   {
-    "id": "sk_select_97e1a68a",
+    "id": "sk_select_1568e18f",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 311,
@@ -3038,10 +3845,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_1367cae5",
+    "id": "sk_select_42c0b3c8",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 340,
@@ -3053,10 +3863,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 69,
+      "firstRow": {
+        "n": 12,
+        "year": 1996
+      }
+    }
   },
   {
-    "id": "sk_select_a4c5e68e",
+    "id": "sk_select_9f13a924",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 356,
@@ -3068,10 +3885,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 144,
+      "firstRow": {
+        "n": 1,
+        "primary_genre": "Drama",
+        "year": 2002
+      }
+    }
   },
   {
-    "id": "sk_select_4e3a0372",
+    "id": "sk_select_82852433",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 389,
@@ -3083,10 +3908,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_04f6eb97",
+    "id": "sk_select_3fb21a2b",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 423,
@@ -3098,10 +3926,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna"
+      }
+    }
   },
   {
-    "id": "sk_select_930da004",
+    "id": "sk_select_253d6034",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 445,
@@ -3113,10 +3948,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 20,
+      "firstRow": {
+        "box_office_millions": 22,
+        "title": "Ferris Bueller's Day Off"
+      }
+    }
   },
   {
-    "id": "sk_select_57c61599",
+    "id": "sk_select_34b9ec3d",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 464,
@@ -3128,10 +3970,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 20,
+      "firstRow": {
+        "_id": "573a1396f29313caabce397c",
+        "title": "The Land",
+        "year": 1969
+      }
+    }
   },
   {
-    "id": "sk_select_a840f3b5",
+    "id": "sk_select_6e34dddc",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 509,
@@ -3143,10 +3993,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194
+    }
   },
   {
-    "id": "sk_select_a0fd6744",
+    "id": "sk_select_7ae42c93",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 521,
@@ -3158,10 +4011,17 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 194,
+      "firstRow": {
+        "box_office_millions": 22,
+        "title": "Ferris Bueller's Day Off"
+      }
+    }
   },
   {
-    "id": "sk_select_a19eca0d",
+    "id": "sk_select_080164bc",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 566,
@@ -3173,10 +4033,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_23138e45",
+    "id": "sk_select_db70f2fe",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 577,
@@ -3191,7 +4054,7 @@
     "expectError": false
   },
   {
-    "id": "sk_select_7ce3c6df",
+    "id": "sk_select_49ecc1df",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 597,
@@ -3203,10 +4066,18 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a1399f29313caabcee345",
+        "imdb": 8.8,
+        "title": "Andaz Apna Apna"
+      }
+    }
   },
   {
-    "id": "sk_select_dce851bf",
+    "id": "sk_select_045b9e2c",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 692,
@@ -3216,10 +4087,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_038c229f",
+    "id": "sk_select_b4512c82",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 707,
@@ -3231,10 +4105,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_1ef1a002",
+    "id": "sk_select_f2ddb7ed",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 713,
@@ -3244,10 +4121,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_68ba5d9a",
+    "id": "sk_select_5055104f",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 726,
@@ -3260,7 +4140,7 @@
     "expectError": false
   },
   {
-    "id": "sk_select_80984eca",
+    "id": "sk_select_7e764ee7",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 742,
@@ -3270,10 +4150,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_select_dc43ccda",
+    "id": "sk_select_9d4ddcd9",
     "source": {
       "file": "skills/dql/references/select.md",
       "line": 755,
@@ -3283,10 +4166,18 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 10,
+      "firstRow": {
+        "_id": "573a13a1f29313caabd0660a",
+        "title": "The Tracker",
+        "year": 2002
+      }
+    }
   },
   {
-    "id": "sk_statements_5f6006e5",
+    "id": "sk_statements_a6636707",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 45,
@@ -3298,10 +4189,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_295a125f",
+    "id": "sk_statements_a6e60d03",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 52,
@@ -3319,10 +4213,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0468569', 'tt1375666', 'tt1853728')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_a123fdcd",
+    "id": "sk_statements_71d9e54b",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 63,
@@ -3340,10 +4237,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0816692')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_e7160ae4",
+    "id": "sk_statements_f2a143e6",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 107,
@@ -3363,10 +4263,13 @@
       "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption' })\nON ID CONFLICT DO NOTHING",
       "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0816692', 'box_office_millions': 681.0 })\nON ID CONFLICT DO UPDATE_LOCAL_DIFF",
       "EVICT FROM movies WHERE _id IN ('tt1160419')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_75ae3c08",
+    "id": "sk_statements_abaea258",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 138,
@@ -3384,10 +4287,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('seed-1')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_e063899b",
+    "id": "sk_statements_a30c18f4",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 154,
@@ -3397,10 +4303,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_statements_16ec08b9",
+    "id": "sk_statements_bdaf53db",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 169,
@@ -3410,10 +4319,13 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_606282e7",
+    "id": "sk_statements_1a120040",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 213,
@@ -3431,10 +4343,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_10ac005c",
+    "id": "sk_statements_ddc204dc",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 226,
@@ -3452,10 +4367,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_0c6ee7c9",
+    "id": "sk_statements_f50ca795",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 239,
@@ -3476,10 +4394,13 @@
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count RESTART WITH 0\nWHERE title = 'The Shawshank Redemption'",
       "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY legacy_views PN_INCREMENT BY 1\nWHERE _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_a39e8367",
+    "id": "sk_statements_069cd8e4",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 265,
@@ -3492,13 +4413,16 @@
     "expectError": false,
     "postQueries": [
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nORDER BY released DESC\nLIMIT 5\nRETURNING _id, title, watch_count"
-    ]
+    ],
+    "expect": {
+      "rowCount": 76
+    }
   },
   {
-    "id": "sk_statements_d8f9c6a1",
+    "id": "sk_statements_a464dc21",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 299,
+      "line": 298,
       "heading": "## 3. EVICT"
     },
     "query": "\nEVICT FROM movies\nWHERE year < 1950",
@@ -3510,18 +4434,21 @@
     "expectError": false,
     "postQueries": [
       "EVICT FROM reviews\nWHERE score < 3\nRETURNING _id, movie_id"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_f1949f8d",
+    "id": "sk_statements_a05a293a",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 331,
+      "line": 330,
       "heading": "## 4. TOMBSTONE"
     },
     "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
     "availableIn": [],
-    "unavailableReason": "TOMBSTONE is a deprecated Big-Peer-only statement; every Small Peer SDK returns 'Tombstone is not supported'. Documented deliberately, with that restriction stated in statements.md §4.",
+    "unavailableReason": "TOMBSTONE is Big-Peer-only; the Small Peer rejects it with 'Tombstone is not supported' on every tested SDK version (4.14.6, 5.0.3, 5.1.0). Documented for completeness; not runnable from an Edge SDK.",
     "expectError": false,
     "preQueries": [
       "INSERT INTO movies DOCUMENTS ({ '_id': 'tt0111161', '__test_seed': true }) ON ID CONFLICT DO UPDATE"
@@ -3532,11 +4459,11 @@
     ]
   },
   {
-    "id": "sk_statements_a421f503",
+    "id": "sk_statements_76062b18",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 363,
-      "heading": "## 5. DELETE — alias"
+      "heading": "## 5. DELETE — the mesh-wide delete"
     },
     "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
     "availableIn": [
@@ -3547,10 +4474,13 @@
     "expectError": false,
     "postQueries": [
       "DELETE FROM reviews\nWHERE created_at < '2020-01-01'\nRETURNING _id, movie_id, user_id, score"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_statements_ea3c631b",
+    "id": "sk_statements_ac1b321e",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 396,
@@ -3562,16 +4492,19 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_statements_af38759c",
+    "id": "sk_statements_f50465c9",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 435,
       "heading": "## 7. ALTER SYSTEM"
     },
-    "query": "\nALTER SYSTEM SET DQL_STRICT_MODE = false",
+    "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
@@ -3579,11 +4512,14 @@
     ],
     "expectError": false,
     "postQueries": [
-      "ALTER SYSTEM RESET DQL_STRICT_MODE"
-    ]
+      "ALTER SYSTEM RESET dql_strict_mode"
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_statements_08254fcb",
+    "id": "sk_statements_639bf65c",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 465,
@@ -3595,10 +4531,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_statements_e48f164f",
+    "id": "sk_statements_ad7d66bd",
     "source": {
       "file": "skills/dql/references/statements.md",
       "line": 470,
@@ -3608,25 +4547,28 @@
     "availableIn": [
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_statements_6d68f83e",
+    "id": "sk_statements_91f92844",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 494,
+      "line": 495,
       "heading": "## 9. SYNC CONTEXT (RemoteQuery)"
     },
     "query": "\nSYNC CONTEXT (PEERS WHERE peerMetadata.role = 'kiosk')",
     "availableIn": [],
-    "unavailableReason": "SYNC CONTEXT is a Big-Peer-only remote-query wrapper and cannot execute on a Small Peer.",
+    "unavailableReason": "SYNC CONTEXT is Big-Peer-only — the Small Peer parser rejects the SYNC keyword outright. Documented for completeness; not runnable from an Edge SDK.",
     "expectError": false
   },
   {
-    "id": "sk_statements_2918adff",
+    "id": "sk_statements_ac0b422f",
     "source": {
       "file": "skills/dql/references/statements.md",
-      "line": 518,
+      "line": 519,
       "heading": "## 10. PROFILE"
     },
     "query": "\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
@@ -3634,10 +4576,13 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 2
+    }
   },
   {
-    "id": "sk_types_mutators_dc0e0abe",
+    "id": "sk_types_mutators_e7a9242b",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 48,
@@ -3655,10 +4600,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0816692')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_5e40f434",
+    "id": "sk_types_mutators_6d2e5c18",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 87,
@@ -3676,10 +4624,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_bb81e982",
+    "id": "sk_types_mutators_0c9f20b1",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 96,
@@ -3698,10 +4649,13 @@
     "postQueries": [
       "UPDATE movies\nSET    is_classic = true,\n       box_office_millions = 28.34\nUNSET  tags\nWHERE  _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id IN ('tt0468569')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_5dd12193",
+    "id": "sk_types_mutators_5a081510",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 130,
@@ -3720,10 +4674,13 @@
     "postQueries": [
       "INSERT INTO COLLECTION movies (\n  director MAP (name REGISTER, awards MAP)\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'director': { 'name': 'Frank Darabont', 'awards': { 'oscars': 0, 'baftas': 1 } }\n})",
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_150e4d13",
+    "id": "sk_types_mutators_c15ba434",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 147,
@@ -3743,10 +4700,13 @@
       "UPDATE COLLECTION movies (director MAP)\nSET    director.born = 1959\nWHERE  _id = 'tt0111161'",
       "UPDATE COLLECTION movies (director MAP, ratings MAP)\nSET    director.born = 1959,\n       ratings = { 'imdb': 9.4 }\nWHERE  _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_db3ac989",
+    "id": "sk_types_mutators_f3a668e4",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 167,
@@ -3764,10 +4724,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_ded854b9",
+    "id": "sk_types_mutators_3f8c3c47",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 193,
@@ -3785,10 +4748,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_020d5a25",
+    "id": "sk_types_mutators_31550d5e",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 202,
@@ -3808,10 +4774,13 @@
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count INCREMENT BY -1\nWHERE  _id = 'tt0111161'",
       "UPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY  watch_count RESTART WITH 0\nWHERE  title = 'The Shawshank Redemption'",
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_c49a0921",
+    "id": "sk_types_mutators_14d30f05",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 239,
@@ -3829,7 +4798,7 @@
     ]
   },
   {
-    "id": "sk_types_mutators_59ce70f0",
+    "id": "sk_types_mutators_637f1055",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 249,
@@ -3848,10 +4817,13 @@
     "postQueries": [
       "UPDATE COLLECTION movies (legacy_views PN_COUNTER)\nAPPLY  legacy_views PN_INCREMENT BY 1\nWHERE  _id = 'tt0111161'",
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_733fcc03",
+    "id": "sk_types_mutators_2a3af0ef",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 266,
@@ -3869,10 +4841,13 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id = 'tt0111161'"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_842e4580",
+    "id": "sk_types_mutators_f369871c",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
       "line": 337,
@@ -3884,13 +4859,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_c69d1044",
+    "id": "sk_types_mutators_f68d8948",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 374,
+      "line": 371,
       "heading": "### Worked example: same statement, different results"
     },
     "query": "\nINSERT INTO movies DOCUMENTS ({\n  '_id'      : 'tt0111161',\n  'title'    : 'The Shawshank Redemption',\n  'director' : { 'name': 'Frank Darabont', 'born': 1959 }\n})",
@@ -3905,14 +4883,17 @@
     ],
     "postQueries": [
       "EVICT FROM movies WHERE _id IN ('tt0111161')"
-    ]
+    ],
+    "expect": {
+      "rowCount": 0
+    }
   },
   {
-    "id": "sk_types_mutators_af7d8c23",
+    "id": "sk_types_mutators_4207ee66",
     "source": {
       "file": "skills/dql/references/types-mutators.md",
-      "line": 400,
-      "heading": "### Cross-version recommendation"
+      "line": 393,
+      "heading": "### Recommendation: lenient everywhere, migrate strict peers off"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
@@ -3923,13 +4904,16 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_versions_507bfe9a",
+    "id": "sk_versions_74388326",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 244,
+      "line": 240,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nSHOW dql_strict_mode",
@@ -3938,13 +4922,16 @@
       "5.0.x",
       "5.1.x"
     ],
-    "expectError": false
+    "expectError": false,
+    "expect": {
+      "rowCount": 1
+    }
   },
   {
-    "id": "sk_versions_d3d248a8",
+    "id": "sk_versions_699f1e5d",
     "source": {
       "file": "skills/dql/references/versions.md",
-      "line": 257,
+      "line": 253,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
@@ -3956,6 +4943,9 @@
     "expectError": false,
     "postQueries": [
       "ALTER SYSTEM RESET dql_strict_mode"
-    ]
+    ],
+    "expect": {
+      "rowCount": 1
+    }
   }
 ]

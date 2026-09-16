@@ -99,7 +99,7 @@ SELECT DISTINCT director.name, genres FROM movies;
 <name>           ::= <identifier> | '`' <quoted_name> '`'
 ```
 
-- `movies` — the default `default:` datasource, where every field defaults to `REGISTER`.
+- `movies` — the default `default:` datasource. Undeclared field types are inferred from the value under the lenient baseline (objects → `MAP`, scalars and arrays → `REGISTER`); under strict mode everything undeclared is a `REGISTER`. See [`types-mutators.md`](types-mutators.md).
 - `default:movies` — fully qualified.
 - `system:collections`, `system:vitals`, etc. — virtual collections in the `system` datasource.
 - `` `weird name` `` — backticks for identifiers with spaces, hyphens, or reserved words.
@@ -136,7 +136,7 @@ Skips the collection scan and goes directly to the indexed-by-id path.
 
 > **Tested-SDK note:** only the single-id form of the explicit syntax is accepted by 4.14.x / 5.0.x / 5.1.0 as shipped — the multi-id list and list-parameter forms (§§3.2–3.3) currently fail with ``(...) is not supported``.
 >
-> You rarely need to write `USE IDS` at all on 5.0+: the planner **automatically rewrites** `_id` equality filters into an id-direct plan when it can. Harness-verified against 4.14.4 / 5.0.0 / 5.1.0 (`EXPLAIN` shows the `idScan` operator when the rewrite fires):
+> You rarely need to write `USE IDS` at all on 5.0+: the planner **automatically rewrites** `_id` equality filters into an id-direct plan when it can. Harness-verified against 4.14.6 / 5.0.0 / 5.1.0 (`EXPLAIN` shows the `idScan` operator when the rewrite fires):
 >
 > | Filter shape | 4.14.x | 5.0.x | 5.1.x |
 > |---|---|---|---|

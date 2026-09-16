@@ -146,6 +146,8 @@ For dynamic key access (`ratings['rotten_tomatoes']`) and array literal containm
 
 ## 5. `CASE` — simple form
 
+> **Available in:** Ditto SDK 5.0+ (not supported in 4.14.x).
+
 Matches `expression` against each `value-expr` in order; first match wins. No match and no `ELSE` returns `NULL`.
 
 ```text
@@ -170,11 +172,13 @@ FROM movies
 ORDER BY genre_score DESC, title
 ```
 
-`CASE` is shorthand for chained ternaries. For two-branch decisions, `IF(cond, t, f)` (see [`functions.md`](functions.md)) is more compact; for null-coalescing chains, prefer `coalesce(...)`.
+`CASE` is shorthand for chained ternaries. **There is no `IF(cond, t, f)` function on any supported SDK** (`Function "IF" not found` on 4.14.6, 5.0.3 and 5.1.0) — for null/missing-coalescing use `coalesce` / `ifnull` / `ifmissing` (see [`functions.md`](functions.md)); on 4.14.x, where `CASE` is unavailable, express two-way branches as boolean predicates in the `WHERE` clause or compute them in app code.
 
 ---
 
 ## 6. `CASE` — searched form
+
+> **Available in:** Ditto SDK 5.0+ (not supported in 4.14.x).
 
 Each `WHEN` is an independent boolean predicate. The first one that evaluates to `TRUE` wins. `NULL` / `MISSING` predicates skip to the next branch; no match and no `ELSE` returns `NULL`.
 
@@ -205,7 +209,7 @@ Two practical notes:
 - Branch conditions are evaluated top-to-bottom; **order them most-specific-first**. The two examples above both put the high-rating bucket before the catch-all `ELSE`.
 - A `WHEN ratings.imdb IS MISSING` arm has to come **before** any branch that reads `ratings.imdb`, because `ratings.imdb >= 9` on a missing field evaluates to `MISSING` (which is not `TRUE`, so the branch is skipped — but no error). Putting the `IS MISSING` arm first keeps the intent explicit.
 
-For two-way conditionals and null-coalescing, see `IF` / `IFNULL` / `coalesce` in [`functions.md`](functions.md).
+For null/missing-coalescing, see `coalesce` / `ifnull` / `ifmissing` / `nvl` in [`functions.md`](functions.md). There is no `IF(...)` function — `CASE` (5.0+) is the only in-query conditional.
 
 ---
 

@@ -1,0 +1,49 @@
+{
+  "id": "pos-order",
+  "title": "POS order with line items, status history, and inline PDF",
+  "context": "Mixed mesh: some registers on Ditto SDK 4.14.x (LTS), back-office tablets on 5.1.x. Bluetooth LE is one of the transports between registers. Cashiers on different devices may add items to the same order before checkout. Each store's registers must only sync that store's orders \u2014 enforced by Big Peer sync permissions.",
+  "findings": [
+    {
+      "id": "ARRAY_LWW",
+      "path": "items",
+      "severity": "blocker",
+      "groups": [["array", "items"], ["last.?write.?wins|lww|whole.?array|overwrit|lost|silent"], ["map|keyed|separate collection|child collection|own document"]]
+    },
+    {
+      "id": "ARRAY_LWW",
+      "path": "statusHistory",
+      "severity": "blocker",
+      "groups": [["statushistory|status.?history|status.?log|history"], ["timestamp.?keyed|map|separate|own document|per.?field|merge"]]
+    },
+    {
+      "id": "ATTACHMENT_CANDIDATE",
+      "path": "receiptPdfBase64",
+      "severity": "blocker",
+      "groups": [["receipt|pdf|base64|binary"], ["attachment"]]
+    },
+    {
+      "id": "COMPOSITE_ID",
+      "path": "_id",
+      "severity": "warn",
+      "groups": [["composite|object.?_id|_id.*object|structured.?_id"], ["store_id|store.?id|store"], ["permission|auth|scope|sync rule|access"]]
+    },
+    {
+      "id": "DECLARE_TYPES",
+      "path": "customer/store",
+      "severity": "warn",
+      "groups": [["4\\.14|strict.?mode|v4"], ["map"], ["declar|explicit|migrat|flip|lenient|false"]]
+    },
+    {
+      "id": "SIZE_SOFT",
+      "path": "document",
+      "severity": "warn",
+      "groups": [["256\\s?(k|kb|kib)|soft.?limit|5\\s?(m|mb|mib)|hard.?limit|size"]]
+    }
+  ],
+  "antiFindings": [
+    {
+      "desc": "recommends duplicating the _id subfields into the document body (a MongoDB Connector ID-mapping accommodation, not a Ditto pattern)",
+      "groups": [["(?<!\\b(?:don't|dont|do not|never|avoid|not|rather than|instead of|no need to)[^.\\n]{0,25})(duplicat|copie|copy|mirror|repeat)\\w*[^\\n.]{0,80}\\b(into|in) the (document )?body"]]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "team-portal",
+  "title": "Support ticket migrating from MongoDB, with comments/history/labels",
+  "context": "Migrating from MongoDB. Fleet is all on Ditto SDK 5.1.x, but the team asks whether they could add 4.14.x LTS devices later. Kanban screens list tickets per team; a detail screen shows one ticket with its comments and history. Each team's devices must only sync that team's tickets.",
+  "findings": [
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "comments",
+      "severity": "blocker",
+      "groups": [["comments?"], ["separate collection|own document|per.?comment|child collection|split"]]
+    },
+    {
+      "id": "SPLIT_UNBOUNDED",
+      "path": "history",
+      "severity": "blocker",
+      "groups": [["history|state.?log|state_log"], ["separate|own document|timestamp.?keyed|map|split"]]
+    },
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "commentsCount",
+      "severity": "warn",
+      "groups": [["commentscount|count"], ["counter|drop|remove|count at read|compute"]]
+    },
+    {
+      "id": "JOIN_VS_DENORMALIZE",
+      "path": "teamId/assigneeId reads",
+      "severity": "info",
+      "groups": [["join"], ["5\\.1"], ["4\\.14|lts"]]
+    },
+    {
+      "id": "OBSERVER_SCOPE",
+      "path": "kanban screen",
+      "severity": "warn",
+      "groups": [["observer|live.?query|subscribe|watch"], ["team|state|scope|narrow|filter|limit"]]
+    },
+    {
+      "id": "COMPOSITE_ID",
+      "path": "_id",
+      "severity": "warn",
+      "groups": [["composite|object.?_id|_id.*object|structured.?_id"], ["team_?id|team"], ["permission|auth|scope|sync rule|access"]]
+    }
+  ],
+  "antiFindings": [
+    {
+      "desc": "recommends duplicating the _id subfields into the document body (a MongoDB Connector ID-mapping accommodation, not a Ditto pattern)",
+      "groups": [["(?<!\\b(?:don't|dont|do not|never|avoid|not|rather than|instead of|no need to)[^.\\n]{0,25})(duplicat|copie|copy|mirror|repeat)\\w*[^\\n.]{0,80}\\b(into|in) the (document )?body"]]
+    }
+  ]
+}

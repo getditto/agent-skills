@@ -24,24 +24,27 @@ import os from "node:os";
 import { loadSdk } from "./version-shim.mjs";
 import { assertRowCount, assertFirstRow } from "./assertions.mjs";
 import { seedMovies, seedRetail } from "../scripts/seed-store.mjs";
+import { loadEnv } from "../../lib/load-env.mjs";
+
+loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
-  console.error("Set DITTO_SDK_VERSION=4.14.4|5.0.0");
+  console.error("Set DITTO_SDK_VERSION=4.14.6|5.0.3|5.1.0");
   process.exit(1);
 }
 
 const LICENSE = process.env.DITTO_OFFLINE_LICENSE || process.env.DITTO_PLAYGROUND_TOKEN;
 if (!LICENSE) {
-  console.error("Set DITTO_OFFLINE_LICENSE or DITTO_PLAYGROUND_TOKEN");
+  console.error("Set DITTO_OFFLINE_LICENSE — in the repo-root .env (see .env-sample) or the environment");
   process.exit(1);
 }
 
-const APP_ID = process.env.DITTO_APP_ID || "00000000-1111-2222-3333-444444444444";
+const DATABASE_ID = process.env.DITTO_DATABASE_ID || "00000000-1111-2222-3333-444444444444";
 const CAPTURE_EXPECTED = process.argv.includes("--capture-expected");
 const FAIL_FAST = process.argv.includes("--fail-fast");
 
-// "4.14.4" -> "4.14.x", "5.0.0" -> "5.0.x"
+// "4.14.6" -> "4.14.x", "5.0.3" -> "5.0.x"
 const versionLine = VERSION.replace(/\.[0-9]+$/, ".x");
 
 const catalogPath = path.resolve(import.meta.dirname, "..", "catalog", "catalog.json");
@@ -69,13 +72,13 @@ let ditto;
 try {
   if (versionLine === "4.14.x") {
     ditto = new sdk.Ditto(
-      { type: "offlinePlayground", appID: APP_ID },
+      { type: "offlinePlayground", appID: DATABASE_ID }, // appID is the v4 SDK's own property name
       storeDir,
     );
   } else {
     // v5+: build a DittoConfig and call the static factory.
     const config = new sdk.DittoConfig(
-      APP_ID,
+      DATABASE_ID,
       { mode: "smallPeersOnly" },
       storeDir,
     );
@@ -114,13 +117,23 @@ if (typeof ditto.disableSyncWithV3 === "function") {
 
 // NOTE: deliberately NOT calling startSync() on v4. With
 // disableSyncWithV3() set, calling startSync() causes the FFI layer to
-// SIGABRT during the first DQL mutation (observed on 4.14.4). The tests
+// SIGABRT during the first DQL mutation (observed on 4.14.6). The tests
 // are local-only DQL — no peer sync needed.
 
 const store = ditto.store;
 if (!store) {
   console.error(`Ditto.store is undefined on ${VERSION} — SDK API likely changed`);
   process.exit(1);
+}
+
+// Normalize to the documented baseline: dql_strict_mode = false on every peer.
+// The skill's examples assume lenient mode (the 5.x default and the 4.x
+// migration target). On 4.14.6 this flips the peer off the strict factory
+// default; on 5.x it is a no-op. Runtime-only setting — applied per process.
+try {
+  await store.execute("ALTER SYSTEM SET dql_strict_mode = false");
+} catch (e) {
+  console.warn("ALTER SYSTEM dql_strict_mode = false failed:", e.message);
 }
 
 console.log("Seeding movies dataset...");
@@ -189,6 +202,15 @@ for (const entry of catalog) {
       console.warn(`Reseed failed before ${entry.id}:`, e.message);
     }
     needsReseed = false;
+  }
+
+  // Re-assert the documented baseline before every entry: catalog entries that
+  // flip dql_strict_mode (the ALTER SYSTEM examples) must not leak that state
+  // into the next entry. Runtime-only setting; a no-op on 5.x.
+  try {
+    await store.execute("ALTER SYSTEM SET dql_strict_mode = false");
+  } catch {
+    // intentionally ignored
   }
 
   try {

@@ -1,0 +1,32 @@
+{
+  "id": "inventory",
+  "title": "Catalog product with stock numbers many devices adjust",
+  "context": "Ditto SDK 4.14.x on all devices now; upgrade to 5.1.x planned. Multiple point-of-sale devices decrement stock and soldToday concurrently, often offline. Attributes are edited rarely, by the catalog app only.",
+  "findings": [
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "stock",
+      "severity": "blocker",
+      "groups": [["stock"], ["counter"], ["increment|apply"], ["lost|merge|concurrent|summed|survive"]]
+    },
+    {
+      "id": "COUNTER_CANDIDATE",
+      "path": "soldToday",
+      "severity": "blocker",
+      "groups": [["soldtoday|sold.?today"], ["counter"], ["restart|reset|roll"]]
+    },
+    {
+      "id": "DECLARE_TYPES",
+      "path": "attrs",
+      "severity": "warn",
+      "groups": [["4\\.14|strict.?mode"], ["register|whole.?object|atomic"], ["map|declar|explicit|migrat|flip|lenient|false"]]
+    },
+    {
+      "id": "FLOAT_MONEY",
+      "path": "price",
+      "severity": "info",
+      "groups": [["price|money|currency"], ["cents|integer|float|rounding"]]
+    }
+  ],
+  "antiFindings": []
+}
