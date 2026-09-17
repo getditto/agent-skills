@@ -34,8 +34,11 @@ tests/                         # Per-skill test harnesses
 ├── dql/                       # DQL: name-matched subdirectory
 │   ├── catalog/  scripts/  runner/  fixtures/  sdks/
 │   └── README.md
-└── data-modeling/             # data-modeling: live-model JSON-review evals
-    ├── cases/  runner/
+├── data-modeling/             # data-modeling: live-model JSON-review evals
+│   ├── cases/  runner/
+│   └── README.md
+└── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
+    ├── Sources/  Tests/  scripts/
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
@@ -49,9 +52,12 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-subscriptions/
 │   ├── .claude-plugin/plugin.json
 │   └── skills/sync-subscriptions -> ../../../skills/sync-subscriptions
-└── ditto-data-modeling/
+├── ditto-data-modeling/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/data-modeling -> ../../../skills/data-modeling
+└── ditto-swift/
     ├── .claude-plugin/plugin.json
-    └── skills/data-modeling -> ../../../skills/data-modeling
+    └── skills/swift-sdk -> ../../../skills/swift-sdk
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -126,8 +132,11 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
 environment variables (and CI secrets) always take precedence. Keys:
-`DITTO_OFFLINE_LICENSE` (tests/dql, required), `DITTO_DATABASE_ID`
-(tests/dql, optional), `DM_MODEL_CMD` (tests/data-modeling, required).
+`DITTO_OFFLINE_LICENSE` (tests/dql and tests/swift-sdk, required),
+`DITTO_DATABASE_ID` (optional), `DITTO_URL` + `DITTO_TOKEN` (tests/swift-sdk,
+optional — enables the server-authentication leg), `DM_MODEL_CMD`
+(tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` read the same
+`.env` with their own shell parser.
 Overview for contributors: `testing-readme.md`.
 
 ## MCP Servers

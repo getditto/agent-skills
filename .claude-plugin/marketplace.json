@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ditto-plugins",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Claude Code plugin marketplace for Ditto - the peer-to-peer sync platform",
   "owner": {
     "name": "Ditto",
@@ -50,6 +50,17 @@
         "email": "support@ditto.com"
       },
       "source": "./plugins/ditto-data-modeling",
+      "category": "development"
+    },
+    {
+      "name": "ditto-swift",
+      "description": "Ditto Swift SDK guidance for iOS, iPadOS, macOS and Mac Catalyst apps — DittoConfig and Ditto.open, sync and subscriptions, DQL execution, store observers and DittoDiffer, attachments, presence, Swift 6 concurrency, and 4.14.x/5.0.x/5.1.x version differences",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-swift",
       "category": "development"
     }
   ]

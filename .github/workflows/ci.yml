@@ -182,3 +182,6 @@ jobs:
 
           print("All plugin wrappers are correctly scoped")
           EOF
+
+      - name: Validate SDK skill structure
+        run: python3 scripts/validate-sdk-skills.py

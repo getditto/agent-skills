@@ -1,0 +1,67 @@
+name: Swift SDK Skill Tests
+
+on:
+  pull_request:
+    paths:
+      - 'skills/swift-sdk/**'
+      - 'tests/swift-sdk/**'
+      - '.github/workflows/swift-skill-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/swift-sdk/**'
+      - 'tests/swift-sdk/**'
+      - '.github/workflows/swift-skill-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test against Ditto SDK ${{ matrix.sdk }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['4.14.6', '5.0.3', '5.1.0']
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          uname -m
+          swift --version
+          xcodebuild -version
+
+      - name: Run the fixture and the minimal app
+        working-directory: tests/swift-sdk
+        env:
+          # The fixture runs offline-only; DITTO_URL / DITTO_TOKEN are deliberately
+          # not supplied in CI, so the server-mode tests skip themselves.
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: ./scripts/run.sh "${{ matrix.sdk }}" --app --offline
+
+  platforms:
+    name: Compile for every supported Apple platform
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['4.14.6', '5.0.3', '5.1.0']
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build macOS, iOS Simulator, iOS device and Mac Catalyst
+        working-directory: tests/swift-sdk
+        run: ./scripts/build-platforms.sh "${{ matrix.sdk }}"
+
+  persistence:
+    name: Cross-version on-disk store
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Upgrade, rollback and legacy-directory fallback
+        working-directory: tests/swift-sdk
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: ./scripts/persistence-matrix.sh
