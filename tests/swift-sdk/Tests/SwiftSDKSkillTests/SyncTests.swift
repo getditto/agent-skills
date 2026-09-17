@@ -102,7 +102,13 @@ struct SyncTests {
         #expect(live.peerToPeer.bluetoothLE.isEnabled)
         #expect(live.peerToPeer.lan.isEnabled)
         #expect(live.peerToPeer.lan.isMDNSEnabled)
+        #expect(live.peerToPeer.lan.isMulticastEnabled)
         #expect(live.peerToPeer.awdl.isEnabled)
+
+        // The v5 `webSocketSync` change is a STRUCT-default change. A live instance
+        // reports false on every supported line, which is what stops a reader concluding
+        // that upgrading flips their running configuration.
+        #expect(live.listen.http.webSocketSync == false)
 
         // A freshly constructed value type has every `isEnabled` OFF. Assigning one to
         // `ditto.transportConfig` therefore silently disables the mesh.

@@ -115,7 +115,9 @@ final class CarsModel: ObservableObject {
             })
         }
         self.observer = observer
-        continuation.onTermination = { _ in observer.cancel() }
+        // `[weak observer]`, or handler -> continuation -> onTermination -> observer
+        // is a retain cycle.
+        continuation.onTermination = { [weak observer] _ in observer?.cancel() }
         consumer = Task { @MainActor [weak self] in
             for await makes in updates { self?.makes = makes }
         }

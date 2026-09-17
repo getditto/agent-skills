@@ -3,4 +3,5 @@ Package.resolved
 # Ditto writes its store and logs into the working directory when a relative or
 # malformed persistence path is used. Never commit those: the logs carry the database ID.
 ditto_logs/
-[0-9]*.[0-9]*.[0-9]*/
+/[0-9]*.[0-9]*.[0-9]*/
+.build.lock

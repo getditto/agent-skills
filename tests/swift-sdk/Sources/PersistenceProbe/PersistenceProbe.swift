@@ -7,6 +7,7 @@
 //
 //   PersistenceProbe write <id> [directory] [--expect-version X.Y.Z]
 //   PersistenceProbe read  <id> [directory] [--no-index] [--expect-version X.Y.Z]
+//                                  [--expect-directory /absolute/path]
 //
 // `read` EXITS NON-ZERO unless the document written by `write` is present with its
 // expected field, and (unless --no-index) at least one index survived. The matrix is
@@ -38,6 +39,7 @@ enum PersistenceProbe {
         // mistaken for the optional directory argument.
         var positional: [String] = []
         var expectedVersion: String?
+        var expectedDirectory: String?
         var index = 3
         while index < arguments.count {
             let argument = arguments[index]
@@ -45,6 +47,9 @@ enum PersistenceProbe {
             case "--expect-version":
                 index += 1
                 if index < arguments.count { expectedVersion = arguments[index] }
+            case "--expect-directory":
+                index += 1
+                if index < arguments.count { expectedDirectory = arguments[index] }
             case let flag where flag.hasPrefix("--"):
                 break
             default:
@@ -60,6 +65,15 @@ enum PersistenceProbe {
             connect: .smallPeersOnly(),
             persistenceDirectory: directory
         )
+
+        // Checked before the legacy branch below, which returns early — otherwise the
+        // writer half of the legacy-fallback pair is the one leg with no version guard.
+        if let expected = expectedVersion, expected != Ditto.version {
+            FileHandle.standardError.write(
+                Data("FAIL: expected SDK \(expected), running \(Ditto.version)\n".utf8)
+            )
+            exit(1)
+        }
 
         #if DITTO_V4
         if mode == .legacyWrite {
@@ -93,14 +107,7 @@ enum PersistenceProbe {
         print("version=\(Ditto.version)")
         print("directory=\(ditto.absolutePersistenceDirectory.path)")
 
-        // A stale artifact would turn "4.14.6 writes, 5.1.0 reads" into a same-version
-        // pair that still reports success, so the caller states which SDK it expects.
-        if let expected = expectedVersion, expected != Ditto.version {
-            FileHandle.standardError.write(
-                Data("FAIL: expected SDK \(expected), running \(Ditto.version)\n".utf8)
-            )
-            exit(1)
-        }
+        // (The version guard ran above, before the legacy-write branch.)
 
         switch mode {
         case .legacyWrite:
@@ -122,6 +129,19 @@ enum PersistenceProbe {
             print("make=\(make ?? "?")")
             let indexes = try await ditto.store.execute(query: "SELECT * FROM system:indexes")
             print("indexes=\(indexes.items.count)")
+
+            // The matrix's document assertion does NOT cover this: v5 can find a v4
+            // store through the legacy-path fallback even if the two defaults diverged,
+            // so directory equality has to be asserted separately when it is claimed.
+            if let expectedDirectory {
+                let actual = ditto.absolutePersistenceDirectory.standardizedFileURL.path
+                if actual != URL(fileURLWithPath: expectedDirectory).standardizedFileURL.path {
+                    FileHandle.standardError.write(
+                        Data("FAIL: expected directory \(expectedDirectory), got \(actual)\n".utf8)
+                    )
+                    exit(1)
+                }
+            }
 
             // Assert, rather than print and exit 0. Without this the whole
             // cross-version persistence matrix passes even when nothing survived.

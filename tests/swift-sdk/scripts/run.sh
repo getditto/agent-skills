@@ -17,6 +17,31 @@ set -euo pipefail
 FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 
+# Serialise against another run sharing this .build directory. Two concurrent
+# swift/xcodebuild invocations here produce confusing failures — "build.db: database is
+# locked", and dlopen crashes from a half-written framework — that look like SDK bugs.
+#
+# `mkdir` rather than `flock`: flock is not present on macOS, where this fixture runs,
+# so a flock-based guard would be a silent no-op on the only platform that needs it.
+acquire_build_lock() {
+  local lock="$FIXTURE_DIR/.build.lock" waited=0
+  until mkdir "$lock" 2>/dev/null; do
+    if [[ $waited -ge 600 ]]; then
+      echo "another run has held $lock for 10 minutes; remove it if that run is gone" >&2
+      exit 1
+    fi
+    # `${lock}`, braced: bash absorbs the following multi-byte character into the
+    # variable name otherwise, and `set -u` then reports it as unbound.
+    [[ $waited -eq 0 ]] && echo "waiting for another run to release ${lock}" >&2
+    sleep 2
+    waited=$((waited + 2))
+  done
+  # Expand the path NOW: `lock` is a local, so a single-quoted trap would reference an
+  # unbound variable by the time it runs (and `set -u` makes that fatal).
+  trap "rmdir '$lock' 2>/dev/null || true" EXIT
+}
+acquire_build_lock
+
 if [[ -f "$REPO_ROOT/.env" ]]; then
   # Environment variables already set take precedence, matching tests/lib/load-env.mjs.
   # Split on the FIRST "=" only, and never with IFS: base64 license tokens end in "=",

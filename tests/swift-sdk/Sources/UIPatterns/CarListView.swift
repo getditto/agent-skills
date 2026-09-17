@@ -47,6 +47,10 @@ public struct CarsRootView: View {
     /// `@StateObject` guarantees exactly one loader across re-renders.
     @StateObject private var loader: DittoLoader
 
+    /// `configuration` is read **once**, on first render: `@StateObject`'s autoclosure
+    /// does not re-run, so a parent passing a different configuration later is ignored.
+    /// That is correct here — the instance is app-scoped — but it is the classic
+    /// SwiftUI trap and worth knowing before this is copied somewhere it is not.
     public init(configuration: DittoLoader.Configuration) {
         _loader = StateObject(wrappedValue: DittoLoader(configuration: configuration))
     }
@@ -59,7 +63,10 @@ public struct CarsRootView: View {
             case .ready(let model):
                 CarListView().environmentObject(model)
             case .failed(let message):
-                Text("Ditto failed to start: \(message)")
+                VStack(spacing: 12) {
+                    Text("Ditto failed to start: \(message)")
+                    Button("Retry") { Task { await loader.retry() } }
+                }
             }
         }
         .task { await loader.bootstrap() }
@@ -134,10 +141,22 @@ public final class DittoLoader: ObservableObject {
             } catch {
                 uiPatternsLogger.error("Ditto bootstrap failed: \(error.localizedDescription, privacy: .public)")
                 self.phase = .failed(error.localizedDescription)
+                // Clear the task so `retry()` can run. Leaving it set makes a transient
+                // launch failure — no network, a server blip, a login timeout — permanent
+                // for the life of the process, with force-quit as the only recovery.
+                self.bootstrapTask = nil
             }
         }
         bootstrapTask = task
         await task.value
+    }
+
+    /// Re-attempts a failed bootstrap. Offline-first apps hit transient launch failures
+    /// routinely, so the failure state needs a way out.
+    public func retry() async {
+        guard case .failed = phase else { return }
+        phase = .loading
+        await bootstrap()
     }
 }
 
@@ -153,7 +172,10 @@ public final class DittoLoader: ObservableObject {
 //                         databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
 //                         connect: .server(url: URL(string: "REPLACE_ME_WITH_YOUR_CONNECT_URL")!)
 //                     ),
-//                     authenticate: { try await authCoordinator.start($0) }
+//                     authenticate: { ditto in
+//                         let tokens = TokenStore(token: "REPLACE_ME_WITH_YOUR_TOKEN")
+//                         try await AuthCoordinator(tokens: tokens).start(ditto)
+//                     }
 //                 ))
 //             }
 //         }

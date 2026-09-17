@@ -344,18 +344,32 @@ def validate_sdk_skill(name: str) -> None:
 
     # §3 — "A reference must never be the only path to another reference": every
     # reference has to be linked from SKILL.md or README.md, not just from a sibling.
-    entry_points = ""
+    # Compare resolved LINK TARGETS, not substrings: a bare prose mention of a file
+    # name is not a path to it. Covers examples/ as well as references/.
+    linked: set[str] = set()
     for entry in ("SKILL.md", "README.md"):
         path = os.path.join(skill_dir, entry)
-        if os.path.isfile(path):
-            entry_points += read(path)
-    if os.path.isdir(references):
-        for entry in sorted(os.listdir(references)):
+        if not os.path.isfile(path):
+            continue
+        for target in LINK_RE.findall(read(path)):
+            if target.startswith(("http://", "https://", "mailto:", "#")):
+                continue
+            resolved = os.path.normpath(
+                os.path.join(skill_dir, target.partition("#")[0])
+            )
+            linked.add(resolved)
+
+    for subdirectory in ("references", "examples"):
+        directory = os.path.join(skill_dir, subdirectory)
+        if not os.path.isdir(directory):
+            continue
+        for entry in sorted(os.listdir(directory)):
             if not entry.endswith(".md"):
                 continue
-            if f"references/{entry}" not in entry_points:
+            path = os.path.normpath(os.path.join(directory, entry))
+            if path not in linked:
                 fail(
-                    f"{references}/{entry}: not linked from SKILL.md or README.md. "
+                    f"{path}: not linked from SKILL.md or README.md. "
                     f"{SPEC} §3 requires every reference to be reachable without "
                     f"following a chain through another reference."
                 )
@@ -494,30 +508,57 @@ def capability_detail(text: str, cap_id: str) -> str:
 # `examples/minimal-app.md` restates its fixture rather than referencing it, because a
 # plugin user has no `tests/` tree to open. §12.2 asks for a reference; this check makes
 # the duplication safe by failing when the two drift.
-MINIMAL_APP_FIXTURES = {
-    "swift-sdk": "tests/swift-sdk/Sources/MinimalApp/MinimalApp.swift",
-}
+#
+# The fixture is DERIVED from the markdown's own declaration, not from a table here: a
+# hard-coded map silently skips any skill nobody remembered to register, and silently
+# stops checking when a fixture is renamed — both of which were demonstrated.
+FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
+
+# Everything below this marker in the fixture is the documented program. Declared rather
+# than inferred, so the boundary does not depend on Swift syntax.
+PROGRAM_MARKER = "// MARK: - begin documented program"
 
 
 def check_minimal_app_matches_fixture(name: str) -> None:
-    fixture = MINIMAL_APP_FIXTURES.get(name)
-    if not fixture or not os.path.isfile(fixture):
-        return
     example = os.path.join(SKILLS_DIR, name, "examples", "minimal-app.md")
     if not os.path.isfile(example):
         return
+    text = read(example)
 
-    match = re.search(r"## Program\n\n```\w+\n(.*?)\n```\n", read(example), re.S)
+    declaration = FIXTURE_DECL_RE.search(text)
+    harness = os.path.join("tests", name)
+    if not declaration:
+        # No declaration and no harness is fine — the skill has no fixture yet. A harness
+        # with no declaration is a gap, not a pass.
+        if os.path.isdir(harness):
+            fail(
+                f"{example}: {harness}/ exists but the file does not declare which "
+                f"fixture it copies. Add: This is a copy of `<path>` in the fixture."
+            )
+        return
+
+    fixture = os.path.join(harness, declaration.group(1))
+    if not os.path.isfile(fixture):
+        fail(
+            f"{example}: declares a copy of `{declaration.group(1)}`, which does not "
+            f"resolve to a file ({fixture}). A renamed fixture must not silently "
+            f"disable this check."
+        )
+        return
+
+    match = re.search(r"## Program\n\n```\w+\n(.*?)\n```\n", text, re.S)
     if not match:
         fail(f"{example}: no '## Program' fence found to compare against {fixture}")
         return
 
-    source = read(fixture).rstrip("\n").split("\n")
-    try:
-        start = next(i for i, line in enumerate(source) if line.startswith("#if "))
-    except StopIteration:
-        start = 0
-    expected = "\n".join(source[start:])
+    source = read(fixture).rstrip("\n")
+    if PROGRAM_MARKER not in source:
+        fail(
+            f"{fixture}: missing the '{PROGRAM_MARKER}' marker that delimits the "
+            f"documented program."
+        )
+        return
+    expected = source.split(PROGRAM_MARKER, 1)[1].lstrip("\n")
 
     if match.group(1) != expected:
         fail(

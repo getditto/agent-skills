@@ -195,11 +195,16 @@ ditto.auth?.expirationHandler = nil   // stop new logins being submitted
 exit(0)                                // terminates without running deinitializers
 ```
 
-That is also what a real app does — an app holds its instance for the whole process
-lifetime and never deinitializes Ditto on the way out. The exposure is to **tests,
-command-line tools, and any flow that releases a server-backed instance mid-process**.
-A logout-and-sign-in-as-a-different-user flow is in that category, so this is not purely
-a test-harness concern.
+**`exit(0)` is for command-line tools and test harnesses only.** Never call `exit()` from
+an iOS or macOS app: it skips `applicationWillTerminate`, reads to the user as a crash,
+and is an App Store rejection. The reason it works here is that it does what normal
+process termination does — an app holds its instance for the whole process lifetime and
+never deinitializes Ditto on the way out either.
+
+**In an app there is no safe workaround on 5.1.0.** The exposed flow is
+logout-and-sign-in-as-a-different-user: it releases a server-backed instance
+mid-process, which is exactly the case. Hold the instance and re-authenticate in place
+rather than releasing and reopening.
 
 This is listed under "Not verified" in [`README.md`](../README.md): it is a race, and a
 race that does not reproduce is not a race that is fixed.

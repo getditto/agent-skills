@@ -121,17 +121,17 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
 
-- **72 test cases** (`scripts/run.sh --all`). Not all run on every line, because some
+- **77 test cases** (`scripts/run.sh --all`). Not all run on every line, because some
   describe a specific one:
 
   | Line | Run | Skipped |
   |---|---:|---|
-  | 4.14.6 | 69 | the two v5-only attachment tests, and `isActivated` |
-  | 5.0.3 | 70 | the two 4.14.x-only tests |
-  | 5.1.0 | 70 | the two 4.14.x-only tests |
+  | 4.14.6 | 74 | the two v5-only attachment tests, and `isActivated` |
+  | 5.0.3 | 75 | the two 4.14.x-only tests |
+  | 5.1.0 | 75 | the two 4.14.x-only tests |
 
   One further test needs `DITTO_URL` + `DITTO_TOKEN` and skips without them, which is how
-  CI runs — so CI executes 68 / 69 / 69. Skipped is reported as skipped, never as passed.
+  CI runs — so CI executes 73 / 74 / 74. Skipped is reported as skipped, never as passed.
 
   Coverage: opening and activation, persistence-directory exclusivity (matching the
   error case, not merely "something threw") and reuse, sync start/stop, subscriptions and
@@ -140,10 +140,11 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   rejection, indexing, `ADVISE` and `ADVISE AND PROVISION` (and their parse error before
   5.1), eviction, observer delivery, cancellation against an uncancelled positive
   control, `signalNext` coalescing, `DittoDiffer` statefulness, `deliverOn:` behaviour
-  per line, the recommended observer bridge (ordering, bounded buffering and
-  `onTermination` teardown), `Car` identity for non-`String` `_id`s, attachments,
-  presence, logging, disk usage, small-peer and presence metadata limits, system queries,
-  and the documented error cases.
+  per line, the recommended observer bridge (bounded buffering, `onTermination` teardown,
+  non-decreasing delivery order), `Car` identity for non-`String` `_id`s, the login
+  deadline that bounds a non-cancellable completion handler, attachments, presence,
+  logging, disk usage, small-peer and presence metadata limits, system queries, and the
+  documented error cases.
 
   Each of those guards has a **negative control** — the table in
   [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) lists how to break each
@@ -161,6 +162,10 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   and v4 legacy-directory fallbacks. The reader exits non-zero unless the document, its
   field and the index survive, and unless it is running the SDK the leg claims — both
   verified by negative control.
+
+**How to read the citations.** Paths beginning `sdk/` or `snippets/` are pages of the
+published documentation at <https://docs.ditto.live>, at the path shown.
+`sdk-release-<version>:<path>` is a tag in Ditto's SDK repository.
 
 **Verified from source:** the aggregate `fatalError` paths, the `deliverOn:` mechanism,
 the `@Sendable` typealias change, the Combine publisher inventory, the `preview` labels,
@@ -191,9 +196,9 @@ repository, at the Swift source path that exists at each tag.
   there. Both were reproduced by hand; the skill marks them `source`.
 - **The `NO_COLOR=1` panic.** Reproduced by hand on all three lines; the harness clears
   the variable rather than asserting the panic.
-- **Most transport struct defaults.** Eight cells are executed (the live-instance versus
-  default-constructed comparison, plus `webSocketSync`); the rest are read from
-  `DittoTransportConfig.swift`.
+- **Most transport struct defaults.** The live-versus-constructed comparison table and
+  `webSocketSync` are asserted; the remaining struct defaults (ports, retry interval,
+  sync group, routing hint) are read from `DittoTransportConfig.swift`.
 - **The server-teardown auth race.** No ordering reliably avoids it: a sequence measured
   at 0 aborts in 11 runs later aborted a test process anyway. `references/connect.md`
   describes it as an SDK defect with a workaround (do not release the instance), not as
@@ -206,6 +211,11 @@ repository, at the Swift source path that exists at each tag.
 - **The UIKit and AppKit samples' runtime behaviour.** They are compiled on every
   platform and version, and the observer bridge underneath them is tested, but no test
   drives a real table view.
+- **That a `Task` per delivery actually reorders.** `ObserverBridge`'s single-consumer
+  loop is ordered by construction, and a test pins that deliveries never arrive out of
+  order — but substituting the unordered anti-pattern still passes it (measured 3 of 3),
+  because `AsyncStream` serialises yields and the window is too small to provoke
+  locally. The argument for the bridge is structural, not measured.
 
 **Last verified:** 2026-09-17.
 

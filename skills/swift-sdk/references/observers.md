@@ -60,22 +60,65 @@ detail: [versions.md](versions.md#deliveron-is-ignored-on-50x).
 **Write handlers that do not depend on `deliverOn:`.** Do the work in the handler, then
 hop explicitly:
 
+This is the shape to use; everything below explains a part of it.
+
 ```swift
-let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
-    // Off the main actor on 5.0.x, on `.main` elsewhere. Decode here either way —
-    // this is the expensive part and it does not belong on the main thread.
-    let cars = result.items.compactMap { item -> Car? in
-        defer { item.dematerialize() }
-        return Car(item.value)
-    }
-    Task { @MainActor in
-        model.cars = cars       // plain Sendable values cross the boundary
+/// Extracted inside the callback, because `item.value` is `[String: Any?]` — not
+/// `Sendable`, and it must not cross an isolation boundary.
+///
+/// Non-failable on purpose. A `DittoDiffer`'s index sets are computed over the raw
+/// items, so dropping a row here desynchronises them from the data source; and a
+/// malformed document can arrive from any peer at any schema version.
+struct Car: Identifiable, Sendable, Equatable {
+    let id: String, make: String, mileage: Int
+    init(_ value: [String: Any?]) {
+        // `_id` need not be a String — a composite (map) `_id` is a supported pattern —
+        // and a positional fallback is not an identity.
+        self.id = (value["_id"] as? String) ?? String(describing: value["_id"] ?? "")
+        self.make = value["make"] as? String ?? "Unknown"
+        self.mileage = (value["mileage"] as? NSNumber)?.intValue ?? 0
     }
 }
+
+// `.bufferingNewest(1)`: the default is `.unbounded`, which lets a fast observer queue
+// a backlog of results the UI will never display.
+let (updates, continuation) = AsyncStream<[Car]>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
+    // Off the main actor on 5.0.x, on `.main` elsewhere. Decode here either way — this
+    // is the expensive part and it does not belong on the main thread.
+    continuation.yield(result.items.map { item in
+        defer { item.dematerialize() }
+        return Car(item.value)
+    })
+}
+
+// `[weak observer]`, or handler -> continuation storage -> onTermination -> observer
+// is a retain cycle.
+continuation.onTermination = { [weak observer] _ in observer?.cancel() }
+
+// ONE consumer. A `Task { @MainActor in … }` per delivery has no ordering relation
+// between deliveries, so an older result can be applied last and pin the UI to stale
+// data. A single `for await` loop is ordered by construction.
+let consumer = Task { @MainActor [weak model] in
+    for await cars in updates { model?.cars = cars }
+}
+// … later: consumer.cancel(), which terminates the stream and cancels the observer.
 ```
 
 Never carry a `DittoQueryResultItem`'s `value` (`[String: Any?]`, not `Sendable`) into a
 `Task { @MainActor in … }`. Extract first.
+
+**`map`, not `compactMap`** — and therefore the non-failable initializer above.
+`compactMap` over a failable `init?` drops rows, which desynchronises a `DittoDiffer`'s
+index sets from the data source; `map` over a failable initializer does not compile at
+all, because it yields `[Car?]`. Where there is no differ — as in
+[`examples/minimal-app.md`](../examples/minimal-app.md) — a failable initializer with
+`compactMap` is fine.
+
+**`onTermination` only fires on cancellation while suspended.** A consumer that `break`s
+out of the loop, returns, or is never started leaves the observer running; those paths
+still need an explicit `cancel()`.
 
 ### Back-pressure: `handler` versus `handlerWithSignalNext`
 
@@ -137,14 +180,18 @@ public struct DittoDiff {
 ```
 
 That is deliberately the shape `UITableView` and `UICollectionView` batch updates
-consume — but **not** `NSTableView`'s, and not a minimal edit script. Two measured
-properties decide whether you can use it at all:
+consume — but **not** `NSTableView`'s, and not a minimal edit script. Two properties
+decide whether you can use it at all — the first **reproduced by hand** on all three
+lines, the second read from AppKit's own contract:
 
 - **`moves` is a full permutation.** Moving one row to the front of a three-row list
   emits `(2→0), (0→1), (1→2)` — a move for every row whose index changed. Correct for
-  `performBatchUpdates`, whose `at:` indices are pre-update and `to:` post-update, but it
-  means one reorder in a 500-row list issues ~500 `moveRow` calls per delivery.
-- **`NSTableView.moveRow(at:to:)` applies immediately and sequentially**, so replaying
+  `performBatchUpdates`, whose `at:` indices are pre-update and `to:` post-update. It
+  does mean the call count scales with how far a row moved rather than with how many
+  rows changed — measured at n=3; the cost at list scale follows from that, it was not
+  itself measured.
+- **`NSTableView.moveRow(at:to:)` applies immediately and sequentially** (AppKit's
+  documented behaviour, not something this repo measures), so replaying
   that same permutation walks `[a,b,c] → [c,a,b] → [a,c,b] → [a,b,c]` and lands back
   where it started while the model says `[c,a,b]`. Permanently stale rows, no crash, no
   log. **Do not replay `DittoDiffer.moves` into `NSTableView`** without first converting
@@ -227,33 +274,9 @@ and 4.14.6's `LiveQueryPublisher` hung off the deprecated collection API and is 
 DQL observation, `registerObserver` is the only API on every supported line, and bridging
 it into SwiftUI or Combine state by hand is the intended pattern, not a workaround.
 
-```swift
-// Bridging an observer into an AsyncStream is the idiomatic hand-rolled form.
-// `.bufferingNewest(1)` is not optional: the default is `.unbounded`, and an observer
-// that fires faster than the consumer drains will queue every intermediate result and
-// then process a backlog that is already stale.
-let (updates, continuation) = AsyncStream<[Car]>.makeStream(
-    bufferingPolicy: .bufferingNewest(1)
-)
-let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
-    continuation.yield(result.items.map { item in
-        defer { item.dematerialize() }
-        return Car(item.value)
-    })
-}
-// Tie the two lifetimes together, or a cancelled consumer leaves the observer firing
-// into a dead stream for the life of the `Ditto` instance.
-continuation.onTermination = { _ in observer.cancel() }
-
-// ONE consumer task. A `Task { @MainActor in … }` per delivery has no ordering
-// guarantee between deliveries, so an older result can land last and pin the UI to
-// stale data. A single `for await` loop is ordered by construction.
-let consumer = Task { @MainActor [weak model] in
-    for await cars in updates { model?.cars = cars }
-}
-// … later
-consumer.cancel()   // onTermination cancels the observer
-```
+The hand-rolled bridge is the one at the top of this section. Its bounded buffering,
+`onTermination` teardown and value extraction are exercised at runtime by the fixture's
+`ObserverBridgeTests`.
 
 Cancellation differs between the two styles: a Combine subscription is cancelled by
 releasing its `AnyCancellable`, while an observer is cancelled by calling `cancel()` on

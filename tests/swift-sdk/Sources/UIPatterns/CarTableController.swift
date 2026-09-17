@@ -87,6 +87,7 @@ public final class CarTableController: NSViewController {
             consumer = Task { @MainActor [weak self] in
                 for await cars in bridge.stream {
                     guard let self else { return }
+                    let previous = self.carsByID
                     // `uniquingKeysWith:`, not `uniqueKeysWithValues:` — the latter
                     // traps on a duplicate id, and ids come from remote data.
                     self.carsByID = Dictionary(cars.map { ($0.id, $0) }, uniquingKeysWith: { _, new in new })
@@ -96,6 +97,21 @@ public final class CarTableController: NSViewController {
                     // De-duplicate: `appendItems` fatals on repeated identifiers.
                     var seen = Set<Car.ID>()
                     snapshot.appendItems(cars.map(\.id).filter { seen.insert($0).inserted })
+
+                    // Identity is `Car.ID`, so a content-only edit produces an empty
+                    // diff. Ask explicitly for those rows to be re-rendered rather than
+                    // relying on the data source to re-request views for an unchanged
+                    // snapshot, which Apple does not promise.
+                    //
+                    // `reloadItems`, not `reconfigureItems`: AppKit's snapshot has no
+                    // `reconfigureItems` at this deployment target, unlike UIKit's.
+                    var seenChanged = Set<Car.ID>()
+                    let changed = cars
+                        .filter { previous[$0.id] != nil && previous[$0.id] != $0 }
+                        .map(\.id)
+                        .filter { seenChanged.insert($0).inserted }
+                    if !changed.isEmpty { snapshot.reloadItems(changed) }
+
                     self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }

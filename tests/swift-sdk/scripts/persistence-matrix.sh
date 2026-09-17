@@ -21,6 +21,29 @@ FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 cd "$FIXTURE_DIR"
 
+# Serialise against another run sharing this .build directory. Two concurrent
+# swift/xcodebuild invocations here produce confusing failures — "build.db: database is
+# locked", and dlopen crashes from a half-written framework — that look like SDK bugs.
+#
+# `mkdir` rather than `flock`: flock is not present on macOS, where this fixture runs,
+# so a flock-based guard would be a silent no-op on the only platform that needs it.
+acquire_build_lock() {
+  local lock="$FIXTURE_DIR/.build.lock" waited=0
+  until mkdir "$lock" 2>/dev/null; do
+    if [[ $waited -ge 600 ]]; then
+      echo "another run has held $lock for 10 minutes; remove it if that run is gone" >&2
+      exit 1
+    fi
+    # `${lock}`, braced: bash absorbs the following multi-byte character into the
+    # variable name otherwise, and `set -u` then reports it as unbound.
+    [[ $waited -eq 0 ]] && echo "waiting for another run to release ${lock}" >&2
+    sleep 2
+    waited=$((waited + 2))
+  done
+  # persistence-matrix.sh installs its own composite EXIT trap below.
+}
+acquire_build_lock
+
 if [[ -f "$REPO_ROOT/.env" ]]; then
   while read -r line; do
     key="${line%%=*}"
@@ -43,7 +66,8 @@ if [[ -z "${DITTO_OFFLINE_LICENSE:-}" ]]; then
 fi
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# Compose with the build lock's trap rather than replacing it.
+trap 'rm -rf "$WORK"; rmdir "$FIXTURE_DIR/.build.lock" 2>/dev/null || true' EXIT
 
 probe() {
   local version="$1"; shift
@@ -98,8 +122,18 @@ banner "default directory: 4.14.6 Ditto.open writes with no persistenceDirectory
 # path is exercised without touching the real ~/Library.
 export CFFIXED_USER_HOME="$WORK/home"
 mkdir -p "$CFFIXED_USER_HOME/Library/Application Support" "$CFFIXED_USER_HOME/Documents"
-probe 4.14.6 write default-1
-probe 5.1.0  read  default-1
+
+# Capture the directory 4.14.6 resolved, then require 5.1.0 to resolve the SAME one.
+# Without this the leg passes even if the defaults diverged, because v5's legacy-path
+# fallback would find the v4 store anyway — so the claim "both versions reported the
+# same absolute directory" would be unproven.
+default_dir="$(probe 4.14.6 write default-1 | sed -n 's/^directory=//p')"
+if [[ -z "$default_dir" ]]; then
+  echo "could not capture the 4.14.6 default directory" >&2
+  exit 1
+fi
+echo "  -- 4.14.6 resolved: $default_dir"
+probe 5.1.0  read  default-1 --expect-directory "$default_dir"
 
 banner "legacy fallback: 4.14.6 Ditto(identity:) writes to <Documents>/ditto, 5.1.0 finds it"
 export CFFIXED_USER_HOME="$WORK/legacy-home"

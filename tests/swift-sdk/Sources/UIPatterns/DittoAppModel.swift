@@ -77,6 +77,9 @@ extension Array where Element == DittoQueryResultItem {
 /// This is the shape the skill recommends everywhere, factored out so it can be tested
 /// without a UI: `ObserverBridgeTests` exercises the ordering, the bounded buffer, the
 /// `onTermination` teardown, and `Car`'s identity rules.
+/// **Iterate `stream` exactly once.** `AsyncStream` supports a single consumer and
+/// traps on concurrent iteration; this is a value type only so it can be stored
+/// alongside a `Task` without a reference dance.
 public struct ObserverBridge: Sendable {
     public let stream: AsyncStream<[Car]>
     private let observer: DittoStoreObserver

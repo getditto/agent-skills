@@ -146,15 +146,24 @@ try await ditto.store.execute(
 )
 ```
 
-The result is one document whose `advice.suggestedIndexes` entries each carry a
-`collection`, a `reason`, and a ready-to-run `CREATE INDEX IF NOT EXISTS` `statement`.
+**The key name differs by form**, which is easy to miss because the entries are
+identical:
+
+| Statement | Result key |
+|---|---|
+| `ADVISE …` | `items[0].value["advice"]["suggestedIndexes"]` |
+| `ADVISE AND PROVISION …` | `items[0].value["advice"]["createdIndexes"]` |
+
+Both also carry `advice.statement`, the echoed query. Reading `suggestedIndexes` after
+provisioning returns `nil`.
+
 **Executed**: `ADVISE` leaves `system:indexes` empty, and `ADVISE AND PROVISION` does
 not. On 4.14.x and 5.0.x both forms are rejected by the parser with
 `storeError(.queryInvalid("… Unexpected token ADVISE …"))` (**executed**), so gate them
 on the version.
 
-Which columns deserve an index, composite indexes (5.1.x), the shape of the advice
-document, `EXPLAIN` and `#profile` belong to the `dql` skill or
+Which columns deserve an index, composite indexes (5.1.x), how the planner chooses what
+to recommend, `EXPLAIN` and `#profile` belong to the `dql` skill or
 <https://docs.ditto.live/dql/indexing> and <https://docs.ditto.live/dql/advise>.
 
 An index created by one version survives being opened by another, in both directions —

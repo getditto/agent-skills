@@ -84,7 +84,11 @@ public final class CarTableViewController: UITableViewController {
                     // Reconfigure only the rows whose CONTENT changed. Passing the whole
                     // list re-renders every visible cell on every delivery, which is the
                     // cost a diffable data source exists to avoid.
-                    let changed = cars.filter { previous[$0.id] != nil && previous[$0.id] != $0 }.map(\.id)
+                    var seenChanged = Set<Car.ID>()
+                    let changed = cars
+                        .filter { previous[$0.id] != nil && previous[$0.id] != $0 }
+                        .map(\.id)
+                        .filter { seenChanged.insert($0).inserted }
                     if !changed.isEmpty { snapshot.reconfigureItems(changed) }
 
                     await self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -130,6 +134,11 @@ public final class DifferCarTableViewController: UITableViewController {
     /// a re-registration has reset the differ. Without it, that stale delivery diffs old
     /// items against a fresh baseline and the index sets stop describing any transition
     /// the table actually made.
+    ///
+    /// `startObserving()` is called once from `viewDidLoad` here, so the guard is not
+    /// exercised — it is present because re-registering (a `viewDidAppear` /
+    /// `viewDidDisappear` pair, as in the AppKit sample) is the obvious extension, and
+    /// it is exactly the extension that introduces the race.
     private var generation = 0
 
     public init(ditto: Ditto) {
@@ -147,7 +156,15 @@ public final class DifferCarTableViewController: UITableViewController {
     }
 
     private func startObserving() {
+        // Cancel before reassigning. Dropping a `DittoStoreObserver` handle does NOT
+        // stop it — it keeps firing and keeps its captures alive for the life of the
+        // `Ditto` instance — so overwriting `observer` without this leaks one per call.
+        observer?.cancel()
+        // Reset the differ with the observer: its baseline is the last array it saw, and
+        // the table is about to be repopulated from empty.
         differ = DittoDiffer()
+        cars = []
+        tableView.reloadData()
         generation &+= 1
         let myGeneration = generation
         do {

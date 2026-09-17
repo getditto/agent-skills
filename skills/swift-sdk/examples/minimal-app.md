@@ -21,6 +21,12 @@ file CI compiles and runs. If the two ever disagree, the fixture is right.
 6. Writes a document with bound arguments.
 7. Waits for the observer to report the write, then tears everything down in reverse.
 
+In **server mode** the program terminates with `exit(0)` instead of releasing the
+instance, and so leaves its temporary directory behind — deliberately, because releasing
+a server-backed instance races the SDK's auth client
+([connect.md](../references/connect.md#shutdown)). A long-lived tool should clean up on
+its own schedule rather than copying that.
+
 ## Dependency
 
 ```swift
@@ -80,6 +86,10 @@ import Foundation  // v5 no longer re-exports Foundation; URL and UUID need it.
 /// Extracting into a `Sendable` struct inside the observer callback is the pattern the
 /// skill teaches: `DittoQueryResultItem.value` is `[String: Any?]`, which is not
 /// `Sendable` and must not be carried across a concurrency boundary.
+///
+/// This initializer is failable, so the extraction below uses `compactMap`. A
+/// `DittoDiffer` needs the opposite — a non-failable initializer and `map`, so the row
+/// count always matches its index sets. There is no differ here.
 struct Car: Identifiable, Sendable, Equatable {
     let id: String
     let make: String
@@ -102,33 +112,29 @@ struct Car: Identifiable, Sendable, Equatable {
 @main
 enum MinimalApp {
     static func main() async throws {
-        let environment = ProcessInfo.processInfo.environment
+        let config = makeConfiguration()
 
-        // 1. Configure. `databaseID` is case-sensitive (uppercase ID), and
-        //    `.server(url:)` takes a URL, not a String.
-        let config: DittoConfig
-        if let urlString = environment["DITTO_URL"], let url = URL(string: urlString),
-           environment["DITTO_TOKEN"] != nil {
-            config = DittoConfig(
-                databaseID: environment["DITTO_DATABASE_ID"] ?? DittoConfig.defaultDatabaseID(),
-                connect: .server(url: url),
-                persistenceDirectory: persistenceDirectory()
-            )
-        } else {
-            config = DittoConfig(
-                databaseID: environment["DITTO_DATABASE_ID"] ?? DittoConfig.defaultDatabaseID(),
-                connect: .smallPeersOnly(),
-                persistenceDirectory: persistenceDirectory()
-            )
-        }
+        // The whole workflow runs inside `runWorkflow`, which owns the only strong
+        // reference to `Ditto`. That scoping is the point: there is no `close()`, so the
+        // persistence directory is not free until the last reference goes away, and
+        // deleting it any earlier deletes a live store's files. Binding a second name —
+        // `let opened = ditto` — silently defeats this.
+        let directory = try await runWorkflow(config: config)
+
+        // By here the instance has been released, so the directory is safe to remove.
+        try? FileManager.default.removeItem(at: directory)
+        print("done")
+    }
+
+    /// Returns the persistence directory the (now released) instance was using.
+    private static func runWorkflow(config: DittoConfig) async throws -> URL {
+        let environment = ProcessInfo.processInfo.environment
 
         // 2. Open. `Ditto.open` is async. `Ditto.openSync` is the blocking form, for a
         //    genuinely synchronous entry point such as a command-line tool — never on an
         //    iOS app's main thread, where it risks a launch-watchdog termination.
-        // Held as an Optional so it can be released before the directory is removed.
-        var ditto: Ditto? = try await Ditto.open(config: config)
-        guard let opened = ditto else { return }
-        print("Ditto \(Ditto.version) opened at \(opened.absolutePersistenceDirectory.path)")
+        let ditto = try await Ditto.open(config: config)
+        print("Ditto \(Ditto.version) opened at \(ditto.absolutePersistenceDirectory.path)")
         switch config.connect {
         case .server(let url): print("mode: server (\(url.absoluteString))")
         case .smallPeersOnly: print("mode: smallPeersOnly")
@@ -139,19 +145,26 @@ enum MinimalApp {
         switch config.connect {
         case .server:
             let token = environment["DITTO_TOKEN"]!
-            // The handler is `@Sendable` and `async`. Install it before `sync.start()`:
-            // starting sync without one fails with
+            // The handler is `@Sendable` and `async`, and it is `async` precisely so the
+            // SDK can AWAIT re-authentication before treating sync as authenticated.
+            // Dispatching a login and returning defeats that. Install it before
+            // `sync.start()`: starting without one fails with
             // `DittoError.authenticationError(.expirationHandlerMissing)`.
-            opened.auth?.expirationHandler = { ditto, _ in
-                ditto.auth?.login(token: token, provider: .development) { _, error in
-                    if let error { print("login failed: \(error)") }
+            ditto.auth?.expirationHandler = { ditto, _ in
+                do {
+                    try await login(ditto, token: token, timeoutSeconds: 15)
+                } catch {
+                    // Off the main actor: log, never touch UI state from here.
+                    FileHandle.standardError.write(
+                        Data("re-authentication failed: \(error)\n".utf8)
+                    )
                 }
             }
-            try await login(opened, token: token)
+            try await login(ditto, token: token, timeoutSeconds: 15)
         case .smallPeersOnly:
             // An offline-only peer must be activated with an offline license token
             // before it will accept any work.
-            try opened.setOfflineOnlyLicenseToken(
+            try ditto.setOfflineOnlyLicenseToken(
                 environment["DITTO_OFFLINE_LICENSE"] ?? ""
             )
         @unknown default:
@@ -164,13 +177,13 @@ enum MinimalApp {
         // 4.14.x rejects every mutating DQL statement with
         // `storeError(.queryNotSupported)` until sync with v3 peers is disabled. This
         // applies to both connect modes, is irreversible, and spreads across the mesh.
-        try opened.disableSyncWithV3()
+        try ditto.disableSyncWithV3()
         #endif
 
         // 4. Start sync, then register a subscription. A subscription is what asks
         //    other peers for data; it is not what reads the local store.
-        try opened.sync.start()
-        let subscription = try opened.sync.registerSubscription(
+        try ditto.sync.start()
+        let subscription = try ditto.sync.registerSubscription(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage",
             arguments: ["minimumMileage": 100]
         )
@@ -183,7 +196,7 @@ enum MinimalApp {
         let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
             bufferingPolicy: .bufferingNewest(1)
         )
-        let observer = try opened.store.registerObserver(
+        let observer = try ditto.store.registerObserver(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
             arguments: ["minimumMileage": 100]
         ) { result in
@@ -194,10 +207,13 @@ enum MinimalApp {
                 }
             )
         }
+        // Tie the observer's lifetime to the stream's. `[weak observer]`, or the
+        // handler -> continuation storage -> onTermination -> observer chain is a cycle.
+        continuation.onTermination = { [weak observer] _ in observer?.cancel() }
 
         // 6. Write. `INSERT … DOCUMENTS` takes the document as a query argument, never
         //    as interpolated text.
-        try await opened.store.execute(
+        try await ditto.store.execute(
             query: "INSERT INTO cars DOCUMENTS (:car)",
             arguments: ["car": ["_id": "minimal-app-1", "make": "Toyota", "mileage": 120]]
         )
@@ -213,42 +229,56 @@ enum MinimalApp {
 
         // 8. Tear down in reverse order. Cancelling is what stops an observer —
         //    dropping the handle does not.
+        let directory = ditto.absolutePersistenceDirectory
         continuation.finish()
         observer.cancel()
         subscription.cancel()
-        opened.sync.stop()
+        ditto.sync.stop()
 
-        // Releasing a server-backed instance shortly after it authenticates races the
-        // SDK's auth client and aborts the process:
-        //
-        //   Panic: Attempted to submit auth request after the Ditto instance was closed
-        //
-        // No ordering we tried reliably avoids it — clearing the handler, logging out
-        // and pausing all reduce it without closing the window. So in server mode this
-        // program does what a real app does: it stops sync and lets the process exit,
-        // which releases everything. See references/connect.md.
         if case .server = config.connect {
-            opened.auth?.expirationHandler = nil
+            // Releasing a server-backed instance shortly after it authenticates races
+            // the SDK's auth client and aborts the process:
+            //
+            //   Panic: Attempted to submit auth request after the Ditto instance was closed
+            //
+            // No ordering reliably avoids it. Terminating without running deinitializers
+            // does — which is what process termination does anyway.
+            //
+            // THIS IS FOR COMMAND-LINE TOOLS AND TEST HARNESSES ONLY. Never call `exit()`
+            // from an iOS or macOS app: it skips `applicationWillTerminate`, reads to the
+            // user as a crash, and is an App Store rejection. See references/connect.md.
+            ditto.auth?.expirationHandler = nil
             print("done")
-            // `exit(0)`, not `return`: returning unwinds the scope, releases `ditto`,
-            // and races the auth client. `exit` terminates without running
-            // deinitializers, which is what a real app's process termination does — an
-            // app never deinitializes Ditto on the way out either.
             exit(0)
         }
 
-        // Offline mode can release deterministically. The directory is only free once
-        // the last strong reference to `Ditto` is gone — there is no close() — so
-        // deleting it while the instance is alive would be deleting a live store's
-        // files out from under it.
-        let directory = opened.absolutePersistenceDirectory
-        ditto = nil
-        try? FileManager.default.removeItem(at: directory)
-        print("done")
+        return directory
+    }
+
+    private static func makeConfiguration() -> DittoConfig {
+        let environment = ProcessInfo.processInfo.environment
+        let databaseID = environment["DITTO_DATABASE_ID"] ?? DittoConfig.defaultDatabaseID()
+
+        // 1. Configure. `databaseID` is case-sensitive (uppercase ID), and
+        //    `.server(url:)` takes a URL, not a String.
+        if let urlString = environment["DITTO_URL"], let url = URL(string: urlString),
+           environment["DITTO_TOKEN"] != nil {
+            return DittoConfig(
+                databaseID: databaseID,
+                connect: .server(url: url),
+                persistenceDirectory: persistenceDirectory()
+            )
+        }
+        return DittoConfig(
+            databaseID: databaseID,
+            connect: .smallPeersOnly(),
+            persistenceDirectory: persistenceDirectory()
+        )
     }
 
     /// Races a stream against a deadline, so a missing delivery fails instead of
-    /// suspending forever.
+    /// suspending forever. This shape is only safe because `AsyncStream`'s iteration is
+    /// cancellation-aware — see `login` for what to do when it is not.
     private static func firstNonEmpty(
         _ stream: AsyncStream<[Car]>,
         timeoutSeconds: UInt64
@@ -259,8 +289,8 @@ enum MinimalApp {
                 return nil
             }
             group.addTask {
-                // `Task.sleep(nanoseconds:)` and `UInt64`, not `Duration`: `Duration`
-                // is iOS 16+ and this package's floor is the SDK's own iOS 15.
+                // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is iOS 16+
+                // and this package's floor is the SDK's own iOS 15.
                 try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
                 return nil
             }
@@ -269,18 +299,49 @@ enum MinimalApp {
         }
     }
 
-    /// Bridges the completion-handler `login` into async/await so the program does not
-    /// race ahead of authentication.
-    private static func login(_ ditto: Ditto, token: String) async throws {
+    /// Bridges the completion-handler `login` into async/await **with a deadline**.
+    ///
+    /// The deadline resumes the SAME continuation rather than racing a sibling task: a
+    /// task group does not return until every child finishes, and a child suspended in
+    /// `withCheckedThrowingContinuation` is not cancellable — so a "timeout" task beside
+    /// it produces the error and then blocks forever waiting for its sibling. `Gate`
+    /// makes exactly one of the two resumptions win.
+    private static func login(_ ditto: Ditto, token: String, timeoutSeconds: UInt64) async throws {
+        guard let auth = ditto.auth else { throw LoginError.noAuthenticator }
+
+        let gate = Gate()
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            ditto.auth?.login(token: token, provider: .development) { _, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
+            let deadline = Task {
+                try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                if await gate.claim() { continuation.resume(throwing: LoginError.timedOut) }
+            }
+            auth.login(token: token, provider: .development) { _, error in
+                Task {
+                    guard await gate.claim() else { return }
+                    deadline.cancel()
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
                 }
             }
         }
+    }
+
+    /// Ensures a continuation is resumed exactly once when two paths can resume it.
+    private actor Gate {
+        private var claimed = false
+        func claim() -> Bool {
+            if claimed { return false }
+            claimed = true
+            return true
+        }
+    }
+
+    enum LoginError: Error {
+        case noAuthenticator
+        case timedOut
     }
 
     private static func persistenceDirectory() -> URL {

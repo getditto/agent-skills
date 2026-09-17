@@ -90,9 +90,12 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   it, and cancel at that scope's boundary: `deinit`, `viewDidDisappear`, `.onDisappear`.
 - Use `[weak self]` in callback closures. A strong `self` capture keeps a dead view
   controller alive for the life of the instance, because the observer is still running.
-- Set `continuation.onTermination` when bridging an observer into an `AsyncStream`, so
-  cancelling the consumer cancels the observer instead of leaving it yielding into a dead
-  stream.
+- Set `continuation.onTermination = { [weak observer] _ in observer?.cancel() }` when
+  bridging an observer into an `AsyncStream`, so cancelling the consumer cancels the
+  observer instead of leaving it yielding into a dead stream. Capture the observer
+  **weakly**: the handler holds the continuation, whose storage holds `onTermination`, so
+  a strong capture closes the loop. And note that `onTermination` fires on cancellation
+  while suspended — a consumer that `break`s out still needs an explicit `cancel()`.
 - Retain an attachment fetcher until its fetch completes or you stop it.
 - **Read `ditto.sync.subscriptions` and `ditto.store.observers` fresh.** They are computed
   in v5; a cached snapshot never updates.
@@ -167,16 +170,21 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   ready-to-run composite index rather than a hint:
 
   ```swift
-  let advice = try await ditto.store.execute(
+  let result = try await ditto.store.execute(
       query: "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
   )
-  // advice.items[0] ->
-  //   "suggestedIndexes": [{
-  //      "collection": "cars",
-  //      "reason": "order by on `make`; range predicates on `mileage`",
-  //      "statement": "CREATE INDEX IF NOT EXISTS adv_cars_make_mileage
-  //                    ON default:`cars` (`make` ASC, `mileage` ASC)"
-  //   }]
+  // result.items[0].value["advice"] ->
+  //   {
+  //     "statement": "SELECT * FROM cars WHERE mileage > 100 ORDER BY make",
+  //     "suggestedIndexes": [{
+  //        "collection": "cars",
+  //        "reason": "order by on `make`; range predicates on `mileage`",
+  //        "statement": "CREATE INDEX IF NOT EXISTS adv_cars_make_mileage
+  //                      ON default:`cars` (`make` ASC, `mileage` ASC)"
+  //     }]
+  //   }
+  // ADVISE AND PROVISION returns the same entries under `createdIndexes`, not
+  // `suggestedIndexes`.
   ```
 
   Reach for `ADVISE` first and `EXPLAIN` second: `ADVISE` tells you what is missing,

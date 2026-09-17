@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              72 Swift Testing cases
+Tests/SwiftSDKSkillTests/              77 Swift Testing cases
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -27,7 +27,7 @@ scripts/
 - `DITTO_OFFLINE_LICENSE` in the gitignored repo-root `.env` — copy `.env-sample`.
   Everything here runs offline-only and the SDK will not accept work without it.
 - Optional: `DITTO_DATABASE_ID`, and `DITTO_URL` + `DITTO_TOKEN` to additionally exercise
-  the server-authentication path. Without those, the two server tests skip themselves and
+  the server-authentication path. Without those, the one server test skips itself and
   the minimal app runs in offline mode.
 
 Environment variables already set take precedence over `.env`, matching
@@ -110,7 +110,8 @@ the single file you edited.
 | Persistence legs assert | reading a document that was never written | probe exits 1 with three `FAIL:` lines |
 | …and run the right SDK | `--expect-version` naming another version | `FAIL: expected SDK X, running Y` |
 | Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails |
-| Bounded stream coalesces | forcing `.unbounded` | `boundedBridgeDropsStaleResults` fails |
+| Bounded stream coalesces | forcing `.unbounded` | `bufferingPolicyDecidesWhatSurvives` fails on both arms |
+| The login deadline releases its caller | restoring the task-group shape in `Deadline.swift` | `neverCompletingBodyTimesOut` fails (in ~8s, not a hang) |
 | `onTermination` cancels | deleting the `onTermination` assignment | `terminationCancelsObserver` fails |
 | Identity is not positional | returning `""` from `Car.identity(of:)` | `carIdentityHandlesNonStringIDs` fails |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |

@@ -91,10 +91,18 @@ public struct AuthCoordinator: Sendable {
     ///
     /// `withCheckedThrowingContinuation` alone is neither cancellable nor bounded, so if
     /// the completion never fires — unreachable server, captive portal, DNS black hole —
-    /// the awaiting task suspends forever. At launch that is an iOS watchdog
-    /// termination. Racing it against a sleep bounds the wait; the sensible response to
-    /// `.timedOut` is usually to proceed offline, because Ditto's local store works
-    /// without authentication.
+    /// the awaiting task suspends forever. At launch that is an iOS watchdog termination.
+    ///
+    /// **A task group does not bound it.** A group does not return until every child
+    /// finishes, and a child suspended inside `withCheckedThrowingContinuation` is not
+    /// cancellable, so `cancelAll()` cannot end it: the timeout child produces the error
+    /// and the group then blocks forever waiting for its sibling. Measured — a 2-second
+    /// timeout against a never-resuming continuation was still blocked after 8 seconds.
+    ///
+    /// The deadline therefore has to resume the **same** continuation. `Gate` makes
+    /// exactly one of the two resumptions win; the losing SDK callback no-ops. The
+    /// sensible response to `.timedOut` is usually to proceed offline, because Ditto's
+    /// local store works without authentication.
     private static func performLogin(
         _ ditto: Ditto,
         tokens: TokenStore,
@@ -104,25 +112,12 @@ public struct AuthCoordinator: Sendable {
         guard let auth = ditto.auth else { throw AuthError.noAuthenticator }
         let token = await tokens.current()
 
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    auth.login(token: token, provider: provider) { _, error in
-                        // Resume on EVERY path, or the task hangs forever.
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
-                    }
-                }
+        do {
+            try await Deadline.run(seconds: timeoutSeconds) { complete in
+                auth.login(token: token, provider: provider) { _, error in complete(error) }
             }
-            group.addTask {
-                try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
-                throw AuthError.timedOut
-            }
-            defer { group.cancelAll() }
-            try await group.next()
+        } catch is Deadline.Exceeded {
+            throw AuthError.timedOut
         }
     }
 }

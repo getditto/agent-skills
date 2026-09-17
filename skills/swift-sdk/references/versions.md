@@ -287,8 +287,8 @@ The `CBOR` enum and `DittoError.StoreErrorReason.invalidDocumentStructure(cbor:)
 (#SDKS-4009). Do not write recovery code for errors the SDK has stopped emitting.
 
 `DittoError.transportError` / `TransportErrorReason` are on a different clock: already
-deprecated at 5.0.3 (`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoError.swift:422`,
-#SDKS-2945) and plain at 4.14.6.
+deprecated at 5.0.3 (`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoError.swift:422`) and
+plain at 4.14.6.
 
 ---
 
