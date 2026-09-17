@@ -92,8 +92,8 @@ This is the channel that feeds Ditto's device-observability tooling
 ### System information through DQL
 
 `SELECT * FROM system:collections`, `SELECT * FROM system:indexes` and `SHOW ALL` all run
-through `ditto.store.execute` like any other statement, and each returns at least one
-item on a populated store (**executed**). Statement grammar
+through `ditto.store.execute` like any other statement (**executed**). Note that
+`system:indexes` is empty until an index exists — documents do not populate it. Statement grammar
 belongs to the `dql` skill or <https://docs.ditto.live/dql/dql>.
 
 ### DittoSwiftTools

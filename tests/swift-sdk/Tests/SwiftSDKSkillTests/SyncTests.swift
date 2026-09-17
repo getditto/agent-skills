@@ -104,12 +104,18 @@ struct SyncTests {
         #expect(live.peerToPeer.lan.isMDNSEnabled)
         #expect(live.peerToPeer.awdl.isEnabled)
 
-        // A freshly constructed value type has them all OFF. Assigning one to
+        // A freshly constructed value type has every `isEnabled` OFF. Assigning one to
         // `ditto.transportConfig` therefore silently disables the mesh.
         let fresh = DittoTransportConfig()
         #expect(fresh.peerToPeer.bluetoothLE.isEnabled == false)
         #expect(fresh.peerToPeer.lan.isEnabled == false)
         #expect(fresh.peerToPeer.awdl.isEnabled == false)
+
+        // Not every field differs: the LAN sub-flags default ON in both. They are inert
+        // while `lan.isEnabled` is false, which is why only the three `isEnabled` flags
+        // matter for the anti-pattern.
+        #expect(fresh.peerToPeer.lan.isMDNSEnabled == true)
+        #expect(fresh.peerToPeer.lan.isMulticastEnabled == true)
     }
 
     @Test("a mutation carries a commitID; a SELECT and a transaction do not")

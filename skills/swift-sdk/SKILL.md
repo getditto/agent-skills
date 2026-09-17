@@ -27,8 +27,8 @@ main-actor-isolated, and `deliverOn:` is ignored on 5.0.x), and **result decodin
 
 Writes and reviews Ditto **Swift** code — API shape, initialization, object lifetimes,
 threading, error types and Xcode/SwiftPM build configuration — for
-`https://github.com/getditto/DittoSwiftPackage`. Covers Ditto SDK **4.14.x (LTS), 5.0.x
-and 5.1.x** across iOS, iPadOS, macOS (AppKit) and Mac Catalyst, with SwiftUI, UIKit and
+`https://github.com/getditto/DittoSwiftPackage`. Covers Ditto SDK **4.14.x (LTS — see [`README.md`](README.md) for the support
+statement), 5.0.x and 5.1.x** across iOS, iPadOS, macOS (AppKit) and Mac Catalyst, with SwiftUI, UIKit and
 AppKit.
 
 ## When to use this skill
@@ -289,7 +289,8 @@ verbatim — an `https://` URL, not derived from the database ID. `.server(url:)
 | Start sync | `ditto.sync.start()`; `startSync()` deprecated | `ditto.sync.start()` |
 | Mutating DQL | requires `try ditto.disableSyncWithV3()` first | works out of the box |
 | Concurrency | no `Sendable` conformances — needs `@preconcurrency import` | `Sendable`; `deliverOn:` ignored on 5.0.x, fixed in 5.1.0 |
-| Use after release | `throws useAfterCloseError` | **`fatalError`** |
+| Use after release (`store.registerObserver`, `store.execute`) | `throws useAfterCloseError` | **`fatalError`** |
+| Use after release (everything else) | **`fatalError`** | **`fatalError`** |
 | Architectures | `arm64` + `x86_64` | `arm64` + `x86_64` on 5.0.x; **`arm64` only** on 5.1.x |
 | On-disk store | — | index format changes in 5.1; downgrade via 5.0.2+ or 4.14.6+ |
 

@@ -76,8 +76,9 @@ verified against 5.1.0. The same is true of `DittoConfigConnect`,
 unrecognised peer OS never crashes a switch — but it does mean `.unknown` must be handled.
 
 `.tvOS` is deprecated in 5.1.0 and **retained on purpose**, so peers running older tvOS
-SDKs stay identifiable (#SDKS-3944). Handling it produces a deprecation warning; omitting
-it produces a compile error. Suppress the warning rather than deleting the case.
+SDKs stay identifiable (#SDKS-3944). Handling it in a `switch` **pattern** is
+warning-free — Swift does not diagnose a deprecated case there — while omitting it is a
+compile error. Keep the case. (Referring to `.tvOS` as a *value* does warn.)
 
 ### Connection requests
 

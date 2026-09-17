@@ -3,11 +3,13 @@
 //
 // One app-lived `Ditto`, owned by a `@MainActor` model, injected into the view tree.
 // Compiled for iOS, Mac Catalyst and macOS against 4.14.6, 5.0.3 and 5.1.0 by
-// tests/swift-sdk/scripts/build-platforms.sh.
+// scripts/build-platforms.sh, and its observer bridge is exercised at runtime by
+// ObserverBridgeTests.
 //
 
 import Foundation
 import Combine
+import os
 
 #if DITTO_V4
 @preconcurrency import DittoSwift
@@ -15,27 +17,44 @@ import Combine
 import DittoSwift
 #endif
 
+let uiPatternsLogger = Logger(subsystem: "live.ditto.skill-samples", category: "UIPatterns")
+
 /// A value type extracted from a query result item.
 ///
 /// `DittoQueryResultItem.value` is `[String: Any?]`, which is not `Sendable`. Extract
 /// into a value type inside the observer callback and hand *that* to the UI.
 ///
-/// The initializer is deliberately **non-failable**. A `DittoDiffer`'s index sets are
-/// computed over the raw `[DittoQueryResultItem]`, so any row dropped between the diff
-/// and the data source desynchronises the two and makes `performBatchUpdates` raise
-/// *"invalid number of rows in section 0"*. Tolerating a malformed document — which can
-/// arrive from any peer at any schema version — is what keeps the counts equal.
+/// The initializer is deliberately **non-failable**, for two reasons:
+///
+/// 1. A `DittoDiffer`'s index sets are computed over the raw `[DittoQueryResultItem]`,
+///    so any row dropped between the diff and the data source desynchronises the two and
+///    makes `performBatchUpdates` raise *"invalid number of rows in section 0"*.
+/// 2. A malformed or unexpected document can arrive from any peer at any schema version.
 public struct Car: Identifiable, Sendable, Equatable {
     public let id: String
     public let make: String
     public let mileage: Int
 
-    public init(_ value: [String: Any?], fallbackID: String) {
-        self.id = value["_id"] as? String ?? fallbackID
+    public init(_ value: [String: Any?]) {
+        // `_id` is not necessarily a String — a composite (map) `_id` is a supported
+        // Ditto modelling pattern. Derive a stable identity from whatever it is rather
+        // than falling back to a position, which is not an identity at all: a positional
+        // id makes every row below an insertion look like a content change, and makes
+        // cell reuse map to the wrong document.
+        self.id = Car.identity(of: value["_id"] ?? nil)
         self.make = value["make"] as? String ?? "Unknown"
         // Numbers narrow to the smallest CBOR width that holds them, so read through
         // NSNumber rather than casting to a single Swift type.
         self.mileage = (value["mileage"] as? NSNumber)?.intValue ?? 0
+    }
+
+    static func identity(of rawID: Any?) -> String {
+        switch rawID {
+        case let string as String: return string
+        case let number as NSNumber: return number.stringValue
+        case .none: return ""
+        case .some(let other): return String(describing: other)
+        }
     }
 }
 
@@ -45,12 +64,49 @@ extension Array where Element == DittoQueryResultItem {
     ///
     /// Call this **after** `DittoDiffer.diff(_:)` — the differ needs the items
     /// materialized, and dematerializing first throws away what it reads.
-    func cars() -> [Car] {
-        enumerated().map { index, item in
+    public func cars() -> [Car] {
+        map { item in
             defer { item.dematerialize() }
-            return Car(item.value, fallbackID: "row-\(index)")
+            return Car(item.value)
         }
     }
+}
+
+/// Bridges a store observer into an ordered, bounded stream of value types.
+///
+/// This is the shape the skill recommends everywhere, factored out so it can be tested
+/// without a UI: `ObserverBridgeTests` exercises the ordering, the bounded buffer, the
+/// `onTermination` teardown, and `Car`'s identity rules.
+public struct ObserverBridge: Sendable {
+    public let stream: AsyncStream<[Car]>
+    private let observer: DittoStoreObserver
+
+    /// - Parameter latestOnly: `true` keeps only the newest pending result. The default
+    ///   `AsyncStream` policy is `.unbounded`, which lets a fast observer queue a
+    ///   backlog of results the UI will never display.
+    public init(
+        ditto: Ditto,
+        query: String,
+        arguments: [String: Any?]? = nil,
+        latestOnly: Bool = true
+    ) throws {
+        let (stream, continuation) = AsyncStream<[Car]>.makeStream(
+            bufferingPolicy: latestOnly ? .bufferingNewest(1) : .unbounded
+        )
+        self.stream = stream
+        let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
+            continuation.yield(result.items.cars())
+        }
+        self.observer = observer
+        // `[weak observer]`: the handler captures the continuation, whose shared storage
+        // holds `onTermination` — capturing the observer strongly here closes that into
+        // a reference cycle, and in a file whose thesis is "retention is about being
+        // able to cancel", a leaked observer is the wrong lesson.
+        continuation.onTermination = { [weak observer] _ in observer?.cancel() }
+    }
+
+    public func cancel() { observer.cancel() }
+    public var isCancelled: Bool { observer.isCancelled }
 }
 
 @MainActor
@@ -67,7 +123,7 @@ public final class DittoAppModel: ObservableObject {
     public let ditto: Ditto
 
     private var subscription: DittoSyncSubscription?
-    private var observer: DittoStoreObserver?
+    private var bridge: ObserverBridge?
     private var consumer: Task<Void, Never>?
 
     public init(ditto: Ditto) {
@@ -76,7 +132,7 @@ public final class DittoAppModel: ObservableObject {
 
     /// Starts sync and begins observing. Safe to call once per app launch.
     public func start(minimumMileage: Int = 0) throws {
-        guard observer == nil else { return }
+        guard bridge == nil else { return }
 
         try ditto.sync.start()
         isSyncStarted = ditto.sync.isActive
@@ -86,33 +142,18 @@ public final class DittoAppModel: ObservableObject {
             arguments: ["minimumMileage": minimumMileage]
         )
 
-        // One bounded stream with ONE consumer task. This is the part that matters:
-        // creating an unstructured `Task { @MainActor in … }` per delivery gives no
-        // ordering guarantee between deliveries, so an older result can land last and
-        // pin the UI to stale data. A single `for await` loop is ordered by
-        // construction, and `.bufferingNewest(1)` bounds memory and drops results the
-        // UI would never have displayed anyway.
-        let (updates, continuation) = AsyncStream<[Car]>.makeStream(
-            bufferingPolicy: .bufferingNewest(1)
-        )
-
-        let observer = try ditto.store.registerObserver(
+        // ONE consumer task over one bounded stream. Creating an unstructured
+        // `Task { @MainActor in … }` per delivery gives no ordering guarantee between
+        // deliveries, so an older result can land last and pin the UI to stale data.
+        let bridge = try ObserverBridge(
+            ditto: ditto,
             query: "SELECT * FROM cars WHERE mileage >= :minimumMileage ORDER BY mileage",
             arguments: ["minimumMileage": minimumMileage]
-        ) { result in
-            // Decode here, off the main actor. `deliverOn:` is ignored on 5.0.x, so
-            // never assume this closure is already on the main queue — the hop below is
-            // what makes the same code correct on every supported line.
-            continuation.yield(result.items.cars())
-        }
-        self.observer = observer
-
-        // Tie the observer's lifetime to the stream's: if the consumer is cancelled the
-        // observer stops, instead of firing into a dead stream for the life of `Ditto`.
-        continuation.onTermination = { _ in observer.cancel() }
+        )
+        self.bridge = bridge
 
         consumer = Task { @MainActor [weak self] in
-            for await cars in updates {
+            for await cars in bridge.stream {
                 self?.cars = cars
             }
         }
@@ -130,8 +171,8 @@ public final class DittoAppModel: ObservableObject {
     public func stop() {
         consumer?.cancel()
         consumer = nil
-        observer?.cancel()
-        observer = nil
+        bridge?.cancel()
+        bridge = nil
         subscription?.cancel()
         subscription = nil
         ditto.sync.stop()
@@ -139,13 +180,14 @@ public final class DittoAppModel: ObservableObject {
     }
 
     public func report(_ error: any Error) {
+        uiPatternsLogger.error("Ditto failure: \(error.localizedDescription, privacy: .public)")
         failure = error.localizedDescription
     }
 
     deinit {
         // `deinit` is nonisolated; cancel through the captured handles only.
         consumer?.cancel()
-        observer?.cancel()
+        bridge?.cancel()
         subscription?.cancel()
     }
 }

@@ -154,15 +154,23 @@ struct ObserverTests {
         #expect(observer.isCancelled == true)
 
         let deliveriesAtCancel = cancelled.deliveries.count
-        try await peer.ditto.store.execute(
-            query: "INSERT INTO cars DOCUMENTS (:car)",
-            arguments: ["car": ["_id": "after-cancel", "make": "Toyota"]]
-        )
 
-        // Wait until the control has SEEN the post-cancel write. Only then is the
-        // cancelled observer's silence evidence of anything.
-        _ = try await firstElement(of: control.stream) { $0.contains(1) }
+        // TWO writes, each acknowledged by the control before the next. Waiting for a
+        // single control delivery is not enough: two independent observers have no
+        // ordering relation, so "the control has fired" does not imply "the other one
+        // would have by now" — measured, that guard let the regression through 2 runs
+        // in 10. Two full round-trips after the cancellation makes a missed delivery on
+        // the cancelled observer vanishingly unlikely.
+        for index in 0..<2 {
+            try await peer.ditto.store.execute(
+                query: "INSERT INTO cars DOCUMENTS (:car)",
+                arguments: ["car": ["_id": "after-cancel-\(index)", "make": "Toyota"]]
+            )
+            _ = try await firstElement(of: control.stream) { $0.contains(index + 1) }
+        }
+
         #expect(cancelled.deliveries.count == deliveriesAtCancel)
+        #expect(peer.ditto.store.observers.contains(observer) == false)
 
         cancelled.finish()
         control.finish()

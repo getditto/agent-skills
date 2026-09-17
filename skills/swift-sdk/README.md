@@ -30,7 +30,7 @@ Deliberately **out of scope** — these have their own skills:
 |---|---|---|
 | 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line (#SDKS-3856). |
-| 4.14.x | 4.14.6 | **LTS.** Do not pin 4.14.5 — the release notes identify it as regressed. |
+| 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
 skill's verified code targets 4.14.6, 5.0.3 or 5.1.0.
@@ -68,9 +68,9 @@ line — see [`references/preview.md`](references/preview.md#platform-exclusions
 
 Rows that are not `Support: yes`:
 
-- **CAP-03 `preview`** — on **4.14.x only**, and introduced in **4.14.4**: `DittoConfig`,
+- **CAP-03 `preview`** — on **4.14.x only**, and introduced in **4.12.0**: `DittoConfig`,
   `Ditto.open(config:)`, `Ditto.openSync(config:)` and `Ditto.config` are labelled
-  *(Preview)* (`mintlify-docs/sdk/v4/release-notes/swift.mdx:419,421,427`, and the SDK's
+  *(Preview)* (`sdk/v4/release-notes/swift.mdx:419,421,427`, and the SDK's
   own doc comments at `sdk-release-4.14.6:cocoa/DittoSwift/DittoConfig.swift:14` for the
   type and `Ditto.swift:142` for `Ditto.config`; `Ditto.open`/`openSync` carry no
   in-source preview marker).
@@ -79,10 +79,10 @@ Rows that are not `Support: yes`:
   `Ditto(identity:persistenceDirectory:)`, is deprecated on 4.14.x and removed in v5.
   **Warning carried by the SDK:** the preview label means "this is what v5 standardizes
   on", which is what shipped; it does not mean the API is unstable.
-- **CAP-04 `preview`** — on **4.14.x only**, and introduced in **4.14.4**:
+- **CAP-04 `preview`** — on **4.14.x only**, and introduced in **4.12.0**:
   `DittoAuthenticationExpirationHandler`, `DittoAuthenticationProvider` and
   `DittoAuthenticator.expirationHandler` are labelled *(Preview)*
-  (`mintlify-docs/sdk/v4/release-notes/swift.mdx:423,425,429`, and the SDK's own doc
+  (`sdk/v4/release-notes/swift.mdx:423,425,429`, and the SDK's own doc
   comments at `sdk-release-4.14.6:cocoa/DittoSwift/DittoAuthenticator.swift:11,56` and
   `DittoAuthenticationProvider.swift:9`). The `DittoAuthenticator` type itself is **not**
   labelled preview and predates 4.14. There is no opt-in flag — using the API is the
@@ -121,26 +121,33 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
 
-- **67 test cases** (`scripts/run.sh --all`). Not all run on every line, because some
+- **72 test cases** (`scripts/run.sh --all`). Not all run on every line, because some
   describe a specific one:
 
   | Line | Run | Skipped |
   |---|---:|---|
-  | 4.14.6 | 64 | the two v5-only attachment tests, and `isActivated` |
-  | 5.0.3 | 65 | the two 4.14.x-only tests |
-  | 5.1.0 | 65 | the two 4.14.x-only tests |
+  | 4.14.6 | 69 | the two v5-only attachment tests, and `isActivated` |
+  | 5.0.3 | 70 | the two 4.14.x-only tests |
+  | 5.1.0 | 70 | the two 4.14.x-only tests |
 
-  Two further tests need `DITTO_URL` + `DITTO_TOKEN` and skip without them, which is how
-  CI runs — so CI executes 62 / 63 / 63. Skipped is reported as skipped, never as passed.
+  One further test needs `DITTO_URL` + `DITTO_TOKEN` and skips without them, which is how
+  CI runs — so CI executes 68 / 69 / 69. Skipped is reported as skipped, never as passed.
 
   Coverage: opening and activation, persistence-directory exclusivity (matching the
   error case, not merely "something threw") and reuse, sync start/stop, subscriptions and
   their computed collection, sync scopes via `ALTER SYSTEM`, DQL execution and argument
   binding, numeric decoding widths, transactions including rollback and read-only
-  rejection, indexing, eviction, observer delivery, cancellation against an uncancelled
-  positive control, `signalNext` coalescing, `DittoDiffer` statefulness, `deliverOn:`
-  behaviour per line, attachments, presence, logging, disk usage, small-peer and presence
-  metadata limits, system queries, and the documented error cases.
+  rejection, indexing, `ADVISE` and `ADVISE AND PROVISION` (and their parse error before
+  5.1), eviction, observer delivery, cancellation against an uncancelled positive
+  control, `signalNext` coalescing, `DittoDiffer` statefulness, `deliverOn:` behaviour
+  per line, the recommended observer bridge (ordering, bounded buffering and
+  `onTermination` teardown), `Car` identity for non-`String` `_id`s, attachments,
+  presence, logging, disk usage, small-peer and presence metadata limits, system queries,
+  and the documented error cases.
+
+  Each of those guards has a **negative control** — the table in
+  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) lists how to break each
+  one and what should then fail.
 - **`examples/minimal-app.md`** is compiled and run on all three lines in both offline
   and server modes, the latter against a real Ditto Server. The run is **checked**: the
   harness fails unless the output names the expected version and reports the observed
@@ -149,11 +156,11 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   iOS device and Mac Catalyst × all three versions — 12 builds, including the SwiftUI,
   UIKit and AppKit samples in `Sources/UIPatterns/`. Verified non-vacuous by introducing
   a type error into those sources and confirming the matrix fails.
-- **Cross-version on-disk behaviour** (`scripts/persistence-matrix.sh`): each
-  writer/reader pair run **directly** as well as chained, plus the default-directory and
-  v4 legacy-directory fallbacks. The reader exits non-zero unless the document, its field
-  and the index survive — verified by pointing it at an empty directory and confirming it
-  fails.
+- **Cross-version on-disk behaviour** (`scripts/persistence-matrix.sh`): 10 read legs —
+  each writer/reader pair run **directly** as well as chained, plus the default-directory
+  and v4 legacy-directory fallbacks. The reader exits non-zero unless the document, its
+  field and the index survive, and unless it is running the SDK the leg claims — both
+  verified by negative control.
 
 **Verified from source:** the aggregate `fatalError` paths, the `deliverOn:` mechanism,
 the `@Sendable` typealias change, the Combine publisher inventory, the `preview` labels,
@@ -187,9 +194,18 @@ repository, at the Swift source path that exists at each tag.
 - **Most transport struct defaults.** Eight cells are executed (the live-instance versus
   default-constructed comparison, plus `webSocketSync`); the rest are read from
   `DittoTransportConfig.swift`.
-- **The server-teardown auth race.** The mitigation in `references/connect.md` was
-  measured over a handful of runs, not proven — it is a race, and a race that does not
-  reproduce is not a race that is fixed.
+- **The server-teardown auth race.** No ordering reliably avoids it: a sequence measured
+  at 0 aborts in 11 runs later aborted a test process anyway. `references/connect.md`
+  describes it as an SDK defect with a workaround (do not release the instance), not as
+  something fixed. There is deliberately no test — running one triggers the race often
+  enough to abort the whole suite.
+- **`DittoDiffer.moves` replayed into `NSTableView`.** The permutation-versus-sequential
+  mismatch documented in `references/observers.md` is reasoned from both frameworks'
+  contracts and a measured `DittoDiffer` output; the AppKit sample avoids the question by
+  using a diffable data source, so the broken form is not exercised.
+- **The UIKit and AppKit samples' runtime behaviour.** They are compiled on every
+  platform and version, and the observer bridge underneath them is tested, but no test
+  drives a real table view.
 
 **Last verified:** 2026-09-17.
 

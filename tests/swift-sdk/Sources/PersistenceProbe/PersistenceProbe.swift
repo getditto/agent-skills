@@ -5,8 +5,8 @@
 // read it back with another, so the skill's upgrade and rollback claims are executed
 // rather than inferred.
 //
-//   PersistenceProbe write <id> [directory]
-//   PersistenceProbe read  <id> [directory] [--no-index]
+//   PersistenceProbe write <id> [directory] [--expect-version X.Y.Z]
+//   PersistenceProbe read  <id> [directory] [--no-index] [--expect-version X.Y.Z]
 //
 // `read` EXITS NON-ZERO unless the document written by `write` is present with its
 // expected field, and (unless --no-index) at least one index survived. The matrix is
@@ -34,7 +34,24 @@ enum PersistenceProbe {
             exit(2)
         }
         let id = arguments[2]
-        let positional = arguments.dropFirst(3).filter { !$0.hasPrefix("--") }
+        // Parse flags and positionals together: `--expect-version`'s VALUE must not be
+        // mistaken for the optional directory argument.
+        var positional: [String] = []
+        var expectedVersion: String?
+        var index = 3
+        while index < arguments.count {
+            let argument = arguments[index]
+            switch argument {
+            case "--expect-version":
+                index += 1
+                if index < arguments.count { expectedVersion = arguments[index] }
+            case let flag where flag.hasPrefix("--"):
+                break
+            default:
+                positional.append(argument)
+            }
+            index += 1
+        }
         let directory = positional.first.map { URL(fileURLWithPath: $0) }
 
         let config = DittoConfig(
@@ -75,6 +92,15 @@ enum PersistenceProbe {
 
         print("version=\(Ditto.version)")
         print("directory=\(ditto.absolutePersistenceDirectory.path)")
+
+        // A stale artifact would turn "4.14.6 writes, 5.1.0 reads" into a same-version
+        // pair that still reports success, so the caller states which SDK it expects.
+        if let expected = expectedVersion, expected != Ditto.version {
+            FileHandle.standardError.write(
+                Data("FAIL: expected SDK \(expected), running \(Ditto.version)\n".utf8)
+            )
+            exit(1)
+        }
 
         switch mode {
         case .legacyWrite:

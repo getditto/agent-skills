@@ -57,20 +57,26 @@ disagree*:
 
 | Field | `ditto.transportConfig` on a live instance | `DittoTransportConfig()` |
 |---|---|---|
-| `peerToPeer.bluetoothLE.isEnabled` | `true` | `false` |
-| `peerToPeer.lan.isEnabled` | `true` | `false` |
-| `peerToPeer.lan.isMDNSEnabled` | `true` | `false` |
-| `peerToPeer.awdl.isEnabled` | `true` | `false` |
+| `peerToPeer.bluetoothLE.isEnabled` | `true` | **`false`** |
+| `peerToPeer.lan.isEnabled` | `true` | **`false`** |
+| `peerToPeer.awdl.isEnabled` | `true` | **`false`** |
+| `peerToPeer.lan.isMDNSEnabled` | `true` | `true` — *does not differ* |
+| `peerToPeer.lan.isMulticastEnabled` | `true` | `true` — *does not differ* |
 
-All eight cells are **executed**. The remaining struct defaults —
+All ten cells are **executed**. Only the three `isEnabled` flags flip, which is exactly
+why assigning a fresh config kills the mesh: the LAN sub-flags stay on but are inert
+while `lan.isEnabled` is false. The remaining struct defaults —
 `connect.retryInterval` `5.0`, `listen.tcp.port` `4040`, `listen.http.port` `80`,
 `global.syncGroup`/`routingHint` `0`, empty `connect` collections — are read from
 `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoTransportConfig.swift` and are not measured
 on a live instance.
 
-One version-gated default is genuinely this skill's, because it breaks a working v4 app:
-**`listen.http.webSocketSync` flipped from `true` to `false` in v5** (**executed**).
-Anything that relied on the v4 default must now set it explicitly. See
+One version-gated default is genuinely this skill's: **the `DittoHTTPListenConfig`
+struct default for `listen.http.webSocketSync` flipped from `true` to `false` in v5**
+(**executed on the value type**). Note the scope — a *live* instance reports `false` on
+all three lines (**executed**), so an app that never built its own transport config is
+unaffected. It matters only to code that constructs a `DittoTransportConfig` itself,
+which is the anti-pattern above. See
 [versions.md](versions.md#store-results-and-errors).
 
 ### Disabling cloud sync while keeping the mesh

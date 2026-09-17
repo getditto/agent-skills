@@ -24,7 +24,7 @@ do {
     case .ioError(let reason):             handle(reason)
     case .useAfterCloseError(let message):  assertionFailure(message)
     case .unsupportedError(let message), .unknownError(let message): report(message)
-    case .transportError:                  break   // deprecated in 5.1.0
+    case .transportError:                  break   // deprecated from 5.0.x
     @unknown default:                      report("\(error)")
     }
 }

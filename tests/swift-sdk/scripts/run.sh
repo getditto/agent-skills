@@ -20,9 +20,12 @@ REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 if [[ -f "$REPO_ROOT/.env" ]]; then
   # Environment variables already set take precedence, matching tests/lib/load-env.mjs.
   # Split on the FIRST "=" only, and never with IFS: base64 license tokens end in "=",
-  # which `IFS== read` silently strips as a trailing delimiter. Surrounding quotes are
-  # stripped so a `.env` written for the Node harnesses (which use
-  # `process.loadEnvFile`) behaves the same here.
+  # which `IFS== read` silently strips as a trailing delimiter.
+  #
+  # Surrounding quotes and leading whitespace are stripped, matching Node's
+  # `process.loadEnvFile`. This is NOT full parity: unlike Node, a trailing ` # comment`
+  # is kept as part of the value, and lowercase keys are ignored. Keep values in `.env`
+  # unquoted and uncommented.
   while read -r line; do
     key="${line%%=*}"
     value="${line#*=}"
@@ -69,17 +72,35 @@ run_one() {
   # Prove the framework that was linked is the one we asked for, rather than a stale
   # artifact from a previous leg. `SwiftSDKSkillTests` also asserts this at runtime
   # (`the build is pinned to the version it claims`), but failing here names the cause.
-  local resolved
-  resolved="$(python3 -c "
+  # EVERY resolved artifact must carry the requested version — 4.14.x resolves two
+  # (DittoObjC and DittoSwift), so an any-match would accept a half-stale graph. An
+  # unreadable state file is a hard failure, not a silently disabled guard.
+  if ! python3 - "$version" <<'PYEOF'
 import json, sys
-state = json.load(open('.build/workspace-state.json'))
-for artifact in state['object'].get('artifacts', []):
-    if artifact.get('packageRef', {}).get('identity') == 'dittoswiftpackage':
-        print(artifact.get('source', {}).get('url', ''))
-" 2>/dev/null || true)"
-  if [[ -n "$resolved" && "$resolved" != *"/$version/"* ]]; then
-    echo "Resolved artifact does not match the requested version $version:" >&2
-    echo "  $resolved" >&2
+
+version = sys.argv[1]
+try:
+    with open(".build/workspace-state.json") as handle:
+        state = json.load(handle)
+except (OSError, ValueError) as error:
+    sys.exit(f"Cannot read .build/workspace-state.json to verify the pin: {error}")
+
+urls = [
+    artifact.get("source", {}).get("url", "")
+    for artifact in state.get("object", {}).get("artifacts", [])
+    if artifact.get("packageRef", {}).get("identity") == "dittoswiftpackage"
+]
+if not urls:
+    sys.exit("No dittoswiftpackage artifacts resolved; cannot verify the pin.")
+
+stale = [url for url in urls if f"/{version}/" not in url]
+if stale:
+    sys.exit(
+        "Resolved artifacts do not all match the requested version "
+        f"{version}:\n  " + "\n  ".join(stale)
+    )
+PYEOF
+  then
     echo "Remove tests/swift-sdk/.build and retry." >&2
     return 1
   fi

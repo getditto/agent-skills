@@ -287,6 +287,50 @@ struct StoreTests {
         try await peer.ditto.store.execute(query: "DROP INDEX cars_mileage ON cars")
     }
 
+    @Test("ADVISE recommends an index on 5.1.x and is a parse error before it")
+    func adviseIsVersionGated() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        try await peer.ditto.store.execute(
+            query: "INSERT INTO cars DOCUMENTS (:car)",
+            arguments: ["car": ["_id": "advise-1", "make": "Toyota", "mileage": 120]]
+        )
+        let statement = "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
+
+        guard Ditto.version.hasPrefix("5.1.") else {
+            // 4.14.x and 5.0.x reject it at the parser.
+            do {
+                _ = try await peer.ditto.store.execute(query: statement)
+                Issue.record("expected ADVISE to be rejected before 5.1.x")
+            } catch let error as DittoError {
+                guard case .queryInvalid(let message) = error.storeReason else {
+                    Issue.record("expected queryInvalid, got \(error)")
+                    return
+                }
+                #expect(message.contains("Unexpected token ADVISE"))
+            }
+            return
+        }
+
+        let result = try await peer.ditto.store.execute(query: statement)
+        let advice = try #require(result.items.first)
+        let json = try #require(String(data: advice.jsonData(), encoding: .utf8))
+        #expect(json.contains("suggestedIndexes"))
+        #expect(json.contains("CREATE INDEX IF NOT EXISTS"))
+
+        // ADVISE alone plans without executing, so it creates nothing.
+        let before = try await peer.ditto.store.execute(query: "SELECT * FROM system:indexes")
+        #expect(before.items.isEmpty)
+
+        // AND PROVISION runs the recommendation.
+        try await peer.ditto.store.execute(
+            query: "ADVISE AND PROVISION SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
+        )
+        let after = try await peer.ditto.store.execute(query: "SELECT * FROM system:indexes")
+        #expect(after.items.isEmpty == false)
+    }
+
     @Test("EVICT removes documents locally without deleting them for other peers")
     func evictRemovesLocally() async throws {
         let peer = try await TestPeer.open()

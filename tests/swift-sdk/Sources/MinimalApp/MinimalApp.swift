@@ -1,8 +1,10 @@
 //
 // The normative minimal Ditto app for skills/swift-sdk.
 //
-// This is the program `skills/swift-sdk/examples/minimal-app.md` documents. Keep the
-// two in sync: the markdown quotes this file, it does not restate it.
+// This is the program `skills/swift-sdk/examples/minimal-app.md` documents. The markdown
+// carries a byte-identical copy, because a plugin user has no `tests/` tree to open;
+// `scripts/validate-sdk-skills.py` fails the build if the two drift. This file is the
+// one that is compiled and run, so edit it first and regenerate the markdown.
 //
 // It runs in one of two modes:
 //   * offline  — `.smallPeersOnly` plus an offline-only license token. Used by CI.
@@ -69,11 +71,13 @@ enum MinimalApp {
             )
         }
 
-        // 2. Open. `Ditto.open` is async; `Ditto.openSync` is the blocking form for a
-        //    synchronous composition root such as `application(_:didFinishLaunching…)`.
+        // 2. Open. `Ditto.open` is async. `Ditto.openSync` is the blocking form, for a
+        //    genuinely synchronous entry point such as a command-line tool — never on an
+        //    iOS app's main thread, where it risks a launch-watchdog termination.
         // Held as an Optional so it can be released before the directory is removed.
-        var ditto: Ditto! = try await Ditto.open(config: config)
-        print("Ditto \(Ditto.version) opened at \(ditto.absolutePersistenceDirectory.path)")
+        var ditto: Ditto? = try await Ditto.open(config: config)
+        guard let opened = ditto else { return }
+        print("Ditto \(Ditto.version) opened at \(opened.absolutePersistenceDirectory.path)")
         switch config.connect {
         case .server(let url): print("mode: server (\(url.absoluteString))")
         case .smallPeersOnly: print("mode: smallPeersOnly")
@@ -87,16 +91,16 @@ enum MinimalApp {
             // The handler is `@Sendable` and `async`. Install it before `sync.start()`:
             // starting sync without one fails with
             // `DittoError.authenticationError(.expirationHandlerMissing)`.
-            ditto.auth?.expirationHandler = { ditto, _ in
+            opened.auth?.expirationHandler = { ditto, _ in
                 ditto.auth?.login(token: token, provider: .development) { _, error in
                     if let error { print("login failed: \(error)") }
                 }
             }
-            try await login(ditto, token: token)
+            try await login(opened, token: token)
         case .smallPeersOnly:
             // An offline-only peer must be activated with an offline license token
             // before it will accept any work.
-            try ditto.setOfflineOnlyLicenseToken(
+            try opened.setOfflineOnlyLicenseToken(
                 environment["DITTO_OFFLINE_LICENSE"] ?? ""
             )
         @unknown default:
@@ -109,13 +113,13 @@ enum MinimalApp {
         // 4.14.x rejects every mutating DQL statement with
         // `storeError(.queryNotSupported)` until sync with v3 peers is disabled. This
         // applies to both connect modes, is irreversible, and spreads across the mesh.
-        try ditto.disableSyncWithV3()
+        try opened.disableSyncWithV3()
         #endif
 
         // 4. Start sync, then register a subscription. A subscription is what asks
         //    other peers for data; it is not what reads the local store.
-        try ditto.sync.start()
-        let subscription = try ditto.sync.registerSubscription(
+        try opened.sync.start()
+        let subscription = try opened.sync.registerSubscription(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage",
             arguments: ["minimumMileage": 100]
         )
@@ -128,7 +132,7 @@ enum MinimalApp {
         let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
             bufferingPolicy: .bufferingNewest(1)
         )
-        let observer = try ditto.store.registerObserver(
+        let observer = try opened.store.registerObserver(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
             arguments: ["minimumMileage": 100]
         ) { result in
@@ -142,46 +146,76 @@ enum MinimalApp {
 
         // 6. Write. `INSERT … DOCUMENTS` takes the document as a query argument, never
         //    as interpolated text.
-        try await ditto.store.execute(
+        try await opened.store.execute(
             query: "INSERT INTO cars DOCUMENTS (:car)",
             arguments: ["car": ["_id": "minimal-app-1", "make": "Toyota", "mileage": 120]]
         )
 
-        // 7. Wait for the observer to report the write.
-        for await cars in carUpdates where !cars.isEmpty {
-            print("observed \(cars.count) car(s): \(cars.map(\.make).joined(separator: ", "))")
-            break
+        // 7. Wait for the observer to report the write — with a deadline. An unbounded
+        //    `for await` hangs forever if the delivery never comes, which in CI is a
+        //    stuck job rather than a failure.
+        guard let cars = await firstNonEmpty(carUpdates, timeoutSeconds: 30) else {
+            FileHandle.standardError.write(Data("timed out waiting for the observer\n".utf8))
+            exit(1)
         }
+        print("observed \(cars.count) car(s): \(cars.map(\.make).joined(separator: ", "))")
 
         // 8. Tear down in reverse order. Cancelling is what stops an observer —
         //    dropping the handle does not.
         continuation.finish()
         observer.cancel()
         subscription.cancel()
-        ditto.sync.stop()
+        opened.sync.stop()
 
-        // Releasing a server-backed instance shortly after authenticating races the
-        // SDK's auth client, which aborts the process with
-        // "Panic: Attempted to submit auth request after the Ditto instance was
-        // closed" — observed on 5.1.0 in roughly 1 run in 4. Clearing the handler,
-        // logging out and letting the client settle avoided it in every run tried.
-        // A real app does not tear Ditto down mid-session, so this mostly affects
-        // tests and short-lived tools.
+        // Releasing a server-backed instance shortly after it authenticates races the
+        // SDK's auth client and aborts the process:
+        //
+        //   Panic: Attempted to submit auth request after the Ditto instance was closed
+        //
+        // No ordering we tried reliably avoids it — clearing the handler, logging out
+        // and pausing all reduce it without closing the window. So in server mode this
+        // program does what a real app does: it stops sync and lets the process exit,
+        // which releases everything. See references/connect.md.
         if case .server = config.connect {
-            ditto.auth?.expirationHandler = nil
-            ditto.auth?.logout()
-            // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: the latter is iOS 16+ and
-            // this package's floor is the SDK's own iOS 15.
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            opened.auth?.expirationHandler = nil
+            print("done")
+            // `exit(0)`, not `return`: returning unwinds the scope, releases `ditto`,
+            // and races the auth client. `exit` terminates without running
+            // deinitializers, which is what a real app's process termination does — an
+            // app never deinitializes Ditto on the way out either.
+            exit(0)
         }
 
-        // The directory is only free once the last strong reference to `Ditto` is gone;
-        // there is no close(). Deleting it while the instance is alive would be
-        // deleting a live store's files out from under it.
-        let directory = ditto.absolutePersistenceDirectory
+        // Offline mode can release deterministically. The directory is only free once
+        // the last strong reference to `Ditto` is gone — there is no close() — so
+        // deleting it while the instance is alive would be deleting a live store's
+        // files out from under it.
+        let directory = opened.absolutePersistenceDirectory
         ditto = nil
         try? FileManager.default.removeItem(at: directory)
         print("done")
+    }
+
+    /// Races a stream against a deadline, so a missing delivery fails instead of
+    /// suspending forever.
+    private static func firstNonEmpty(
+        _ stream: AsyncStream<[Car]>,
+        timeoutSeconds: UInt64
+    ) async -> [Car]? {
+        await withTaskGroup(of: [Car]?.self) { group in
+            group.addTask {
+                for await cars in stream where !cars.isEmpty { return cars }
+                return nil
+            }
+            group.addTask {
+                // `Task.sleep(nanoseconds:)` and `UInt64`, not `Duration`: `Duration`
+                // is iOS 16+ and this package's floor is the SDK's own iOS 15.
+                try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                return nil
+            }
+            defer { group.cancelAll() }
+            return await group.next() ?? nil
+        }
     }
 
     /// Bridges the completion-handler `login` into async/await so the program does not

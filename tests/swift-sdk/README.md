@@ -11,11 +11,13 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              64 Swift Testing cases
+Tests/SwiftSDKSkillTests/              72 Swift Testing cases
 scripts/
-  run.sh                               build, sign, run the tests (and the app)
+  run.sh                               build, verify the pin, sign, run the tests,
+                                       and assert the minimal app's output
   build-platforms.sh                   compile for every supported Apple platform
-  persistence-matrix.sh                upgrade, rollback and legacy-directory fallback
+  persistence-matrix.sh                upgrade, rollback, direct version pairs, and the
+                                       default/legacy directory fallbacks — all asserted
 ```
 
 ## Prerequisites
@@ -63,10 +65,19 @@ Two environment problems make the obvious command fail. Both are documented for 
    the runner ad-hoc signs it after building. Xcode app and test targets sign
    automatically; this is a command-line-only problem.
 
-`scripts/run.sh` also clears `.build/out` between versions, because a stale build
-directory otherwise keeps the previous version's framework and the run silently reports
-the wrong line. `build-platforms.sh` uses a per-version `-derivedDataPath` for the same
-reason — reusing one fails with *"cannot load underlying module for 'DittoSwift'"*.
+`scripts/run.sh` also clears `.build/out` and `Package.resolved` between versions and
+then **verifies** that every resolved artifact URL carries the requested version, because
+a stale build directory otherwise keeps the previous version's framework. The suite's
+`the build is pinned to the version it claims` case is the in-process backstop.
+`build-platforms.sh` uses a per-version `-derivedDataPath` for the same reason — reusing
+one fails with *"cannot load underlying module for 'DittoSwift'"* — and
+`persistence-matrix.sh` passes `--expect-version` to each probe so a degenerate
+same-version pair cannot masquerade as a cross-version one.
+
+**Every script asserts.** `PersistenceProbe read` exits non-zero unless the document, its
+field and the index survived; `run.sh --app` greps the minimal app's output rather than
+trusting its exit code; and `build-platforms.sh` prints compiler diagnostics on failure
+instead of discarding them.
 
 ## How the version pin works
 
@@ -85,6 +96,24 @@ also compile with `-DDITTO_V4`, which selects:
 Tests that cannot exist on a line are disabled with a Swift Testing `.enabled(if:)` trait
 **and** `#if` guards, because a trait is a runtime condition and the code still has to
 compile.
+
+## Proving the harness can fail
+
+Each guard below has been checked by deliberately breaking the thing it guards. If you
+change one, re-run its negative control — in a scratch copy, or with a `trap` scoped to
+the single file you edited.
+
+| Guard | Break it by | Expected |
+|---|---|---|
+| Platform matrix compiles `UIPatterns` | a type error inside the `#if canImport(UIKit)` region | only the iOS legs fail |
+| …and the AppKit region | a type error inside `#if canImport(AppKit)` | only the macOS leg fails |
+| Persistence legs assert | reading a document that was never written | probe exits 1 with three `FAIL:` lines |
+| …and run the right SDK | `--expect-version` naming another version | `FAIL: expected SDK X, running Y` |
+| Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails |
+| Bounded stream coalesces | forcing `.unbounded` | `boundedBridgeDropsStaleResults` fails |
+| `onTermination` cancels | deleting the `onTermination` assignment | `terminationCancelsObserver` fails |
+| Identity is not positional | returning `""` from `Car.identity(of:)` | `carIdentityHandlesNonStringIDs` fails |
+| Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
 
 ## What is not covered
 

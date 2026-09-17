@@ -5,6 +5,14 @@ Implements the mechanical half of docs/SDK-SKILL-TEMPLATE.md §12.1 so that nine
 near-identical skills cannot drift. Everything here is checkable without judgement;
 the judgement items in §14 stay with the reviewer.
 
+Known limits — a green run does NOT mean these were checked:
+
+* The §7 "extra information" checks are shape checks. An explanation long enough to pass
+  the length test can still say nothing, and a citation token that looks like a path
+  (`Totally.swift`) is not verified to exist or to contain what is claimed.
+* Whether a claim is TRUE is never checked. Neither is whether a code sample compiles.
+* Link checking resolves paths and anchors; it does not judge whether the link is apt.
+
 Also enforces the two repo-wide skill rules from §12.1 items 1-2 against *every*
 skill, not only SDK skills.
 
@@ -188,7 +196,10 @@ def check_links(skill_dir: str, relative_path: str) -> None:
 # §12.1 item 9 says "grep for `skills/` or `../..` in a citation". Markdown links are
 # navigation and are allowed; everything else that names a path inside this repository is
 # a citation, whether or not it is in backticks.
-CITATION_RE = re.compile(r"(?<![\w/(])(skills/[\w./-]+|\.\./\.\.(?:/[\w./-]+)?)")
+# The `(` is deliberately NOT in this lookbehind: markdown link targets are stripped
+# before this runs, so excluding a leading `(` only created a bypass —
+# "taken from (skills/dql/...)" would slip through.
+CITATION_RE = re.compile(r"(?<![\w/])(skills/[\w./-]+|\.\./\.\.(?:/[\w./-]+)?)")
 MARKDOWN_LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
 
 
@@ -331,6 +342,24 @@ def validate_sdk_skill(name: str) -> None:
             f"README.md's map has non-yes Support for {sorted(exceptions_in_map) or 'nothing'}"
         )
 
+    # §3 — "A reference must never be the only path to another reference": every
+    # reference has to be linked from SKILL.md or README.md, not just from a sibling.
+    entry_points = ""
+    for entry in ("SKILL.md", "README.md"):
+        path = os.path.join(skill_dir, entry)
+        if os.path.isfile(path):
+            entry_points += read(path)
+    if os.path.isdir(references):
+        for entry in sorted(os.listdir(references)):
+            if not entry.endswith(".md"):
+                continue
+            if f"references/{entry}" not in entry_points:
+                fail(
+                    f"{references}/{entry}: not linked from SKILL.md or README.md. "
+                    f"{SPEC} §3 requires every reference to be reachable without "
+                    f"following a chain through another reference."
+                )
+
     # §12.1 items 7 and 9 — over EVERY markdown file in the skill. §3 permits extra
     # references/ and examples/ files, and an unchecked extra file is exactly where a
     # broken link or a self-citation hides.
@@ -462,6 +491,41 @@ def capability_detail(text: str, cap_id: str) -> str:
     return " ".join(detail)
 
 
+# `examples/minimal-app.md` restates its fixture rather than referencing it, because a
+# plugin user has no `tests/` tree to open. §12.2 asks for a reference; this check makes
+# the duplication safe by failing when the two drift.
+MINIMAL_APP_FIXTURES = {
+    "swift-sdk": "tests/swift-sdk/Sources/MinimalApp/MinimalApp.swift",
+}
+
+
+def check_minimal_app_matches_fixture(name: str) -> None:
+    fixture = MINIMAL_APP_FIXTURES.get(name)
+    if not fixture or not os.path.isfile(fixture):
+        return
+    example = os.path.join(SKILLS_DIR, name, "examples", "minimal-app.md")
+    if not os.path.isfile(example):
+        return
+
+    match = re.search(r"## Program\n\n```\w+\n(.*?)\n```\n", read(example), re.S)
+    if not match:
+        fail(f"{example}: no '## Program' fence found to compare against {fixture}")
+        return
+
+    source = read(fixture).rstrip("\n").split("\n")
+    try:
+        start = next(i for i, line in enumerate(source) if line.startswith("#if "))
+    except StopIteration:
+        start = 0
+    expected = "\n".join(source[start:])
+
+    if match.group(1) != expected:
+        fail(
+            f"{example}: the '## Program' block has drifted from {fixture}. "
+            f"Regenerate it — the fixture is the copy that is compiled and run."
+        )
+
+
 def main() -> int:
     if not os.path.isdir(SKILLS_DIR):
         print("ERROR: run this from the repository root", file=sys.stderr)
@@ -476,6 +540,7 @@ def main() -> int:
     )
     for name in sdk_skills:
         validate_sdk_skill(name)
+        check_minimal_app_matches_fixture(name)
 
     for message in warnings:
         print(f"WARNING: {message}")

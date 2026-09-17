@@ -76,6 +76,9 @@ let package = Package(
             name: "SwiftSDKSkillTests",
             dependencies: [
                 "SkillSupport",
+                // The tests depend on UIPatterns so the observer bridge the skill
+                // recommends is exercised at runtime, not only type-checked.
+                "UIPatterns",
                 .product(name: "DittoSwift", package: "DittoSwiftPackage"),
             ],
             swiftSettings: versionFlags

@@ -6,8 +6,9 @@ The rules that make a Ditto test suite deterministic are the same three every ti
 **unique persistence directory per test**, an **offline-only instance** so no test
 depends on a network, and **deterministic waits** instead of sleeps.
 
-The suite this skill is verified against is `tests/swift-sdk/`; it runs against 4.14.6,
-5.0.3 and 5.1.0 from one source tree.
+The suite this skill is verified against lives in the `getditto/agent-skills`
+repository under `tests/swift-sdk/`; it runs against 4.14.6, 5.0.3 and 5.1.0 from one
+source tree.
 
 ### A disposable instance per test
 
@@ -107,6 +108,9 @@ func firstElement<Element: Sendable>(
 struct StreamTimeout: Error {}
 ```
 
+`Duration` and `Task.sleep(for:)` are iOS 16 / macOS 13 API. At the SDK's own iOS 15
+floor, take the timeout as a `UInt64` of nanoseconds and use `Task.sleep(nanoseconds:)`.
+
 **A test that asserts nothing proves nothing.** Two shapes to avoid, both of which pass
 while the behaviour under test is broken:
 
@@ -140,8 +144,10 @@ inside Xcode against an app target.
 
 ### 1. `swift test` sets `NO_COLOR=1`, which panics the SDK
 
-**Executed on 4.14.6, 5.0.3 and 5.1.0.** Ditto's Rust core reads `NO_COLOR` as its
-`--disable-color` option, which accepts only `true` or `false`. `swift test` exports
+**Reproduced by hand on 4.14.6, 5.0.3 and 5.1.0** — no committed test asserts it,
+because the harness clears the variable rather than provoking the panic. Ditto's Rust
+core reads `NO_COLOR` as its `--disable-color` option, which accepts only `true` or
+`false`. `swift test` exports
 `NO_COLOR=1` into the test process, and the SDK panics during initialization before any
 test body runs:
 

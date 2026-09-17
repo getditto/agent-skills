@@ -120,8 +120,13 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
 - **Reach for `handlerWithSignalNext` when the handler does real work.** It turns "fire as
   fast as changes arrive" into "fire as fast as this app can keep up", at the cost of
   coalescing — the next delivery is the latest state, not every intermediate one.
-- **`DittoDiffer` is for UIKit and AppKit.** In SwiftUI, `ForEach` over `Identifiable` data
-  already diffs; adding a differ makes the framework diff twice and uses neither result.
+- **Prefer a diffable data source in UIKit and AppKit**
+  (`UITableViewDiffableDataSource`, `NSTableViewDiffableDataSource`), which compute the
+  diff from a snapshot themselves. Reach for `DittoDiffer` only when something else needs
+  the raw index sets — and never replay its `moves` into `NSTableView`
+  ([observers.md](references/observers.md#dittodiffer)). In SwiftUI, `ForEach` over
+  `Identifiable` data already diffs; adding a differ makes the framework diff twice and
+  uses neither result.
 - Use `execute` for a one-shot read where the current local state is genuinely enough, and
   an observer for anything the UI displays. `execute` does not wait for sync.
 
@@ -153,8 +158,33 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
 - The shape that matters most is **how much data each observer's query returns**, because
   that cost is paid on every delivery, not once.
 - Index the fields a hot query filters or orders by
-  ([store.md](references/store.md#cap-10-indexing)); which ones, and how to read
-  `EXPLAIN`, belongs to the `dql` skill.
+  ([store.md](references/store.md#cap-10-indexing)).
+- **On 5.1.x, stop guessing which index is missing — ask.** `ADVISE <statement>` plans
+  the statement without executing it and returns the `CREATE INDEX` statements the
+  planner wants, each with the reason it wants them;
+  `ADVISE AND PROVISION <statement>` creates them. Both run through
+  `ditto.store.execute` like any other DQL (**executed**), and the recommendation is a
+  ready-to-run composite index rather than a hint:
+
+  ```swift
+  let advice = try await ditto.store.execute(
+      query: "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
+  )
+  // advice.items[0] ->
+  //   "suggestedIndexes": [{
+  //      "collection": "cars",
+  //      "reason": "order by on `make`; range predicates on `mileage`",
+  //      "statement": "CREATE INDEX IF NOT EXISTS adv_cars_make_mileage
+  //                    ON default:`cars` (`make` ASC, `mileage` ASC)"
+  //   }]
+  ```
+
+  Reach for `ADVISE` first and `EXPLAIN` second: `ADVISE` tells you what is missing,
+  `EXPLAIN` tells you what the planner did with what it has. On **4.14.x and 5.0.x
+  `ADVISE` is a parse error** — `queryInvalid("… Unexpected token ADVISE …")`
+  (**executed**) — so guard it by version. The grammar, the shape of the advice
+  document and how to read `EXPLAIN` all belong to the `dql` skill, or
+  <https://docs.ditto.live/dql/advise> and <https://docs.ditto.live/dql/explain>.
 - `dematerialize()` a result item once you have extracted what you need, so the native
   copy is freed rather than held for the result's lifetime.
 - Evict data the device no longer needs

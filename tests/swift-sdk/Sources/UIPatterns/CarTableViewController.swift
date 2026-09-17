@@ -10,6 +10,7 @@
 #if canImport(UIKit) && !os(watchOS)
 import UIKit
 import Foundation
+import os
 
 #if DITTO_V4
 @preconcurrency import DittoSwift
@@ -26,7 +27,7 @@ import DittoSwift
 @available(iOS 15, macCatalyst 15, *)
 public final class CarTableViewController: UITableViewController {
     private let ditto: Ditto
-    private var observer: DittoStoreObserver?
+    private var bridge: ObserverBridge?
     private var consumer: Task<Void, Never>?
 
     private lazy var dataSource = UITableViewDiffableDataSource<Int, Car.ID>(
@@ -60,35 +61,37 @@ public final class CarTableViewController: UITableViewController {
     }
 
     private func startObserving() {
-        // One bounded stream, one consumer: unstructured per-delivery Tasks have no
-        // ordering guarantee between them.
-        let (updates, continuation) = AsyncStream<[Car]>.makeStream(
-            bufferingPolicy: .bufferingNewest(1)
-        )
         do {
-            let observer = try ditto.store.registerObserver(
-                query: "SELECT * FROM cars ORDER BY mileage"
-            ) { result in
-                continuation.yield(result.items.cars())
-            }
-            self.observer = observer
-            continuation.onTermination = { _ in observer.cancel() }
-        } catch {
-            continuation.finish()
-            print("Failed to observe cars: \(error)")
-            return
-        }
+            // One bounded stream, one consumer: unstructured per-delivery Tasks have no
+            // ordering guarantee between them.
+            let bridge = try ObserverBridge(ditto: ditto, query: "SELECT * FROM cars ORDER BY mileage")
+            self.bridge = bridge
 
-        consumer = Task { @MainActor [weak self] in
-            for await cars in updates {
-                guard let self else { return }
-                self.carsByID = Dictionary(uniqueKeysWithValues: cars.map { ($0.id, $0) })
-                var snapshot = NSDiffableDataSourceSnapshot<Int, Car.ID>()
-                snapshot.appendSections([0])
-                snapshot.appendItems(cars.map(\.id))
-                snapshot.reconfigureItems(cars.map(\.id))
-                await self.dataSource.apply(snapshot, animatingDifferences: true)
+            consumer = Task { @MainActor [weak self] in
+                for await cars in bridge.stream {
+                    guard let self else { return }
+                    let previous = self.carsByID
+                    // `uniquingKeysWith:`, not `uniqueKeysWithValues:` — the latter
+                    // traps on a duplicate id, and ids come from remote data.
+                    self.carsByID = Dictionary(cars.map { ($0.id, $0) }, uniquingKeysWith: { _, new in new })
+
+                    var snapshot = NSDiffableDataSourceSnapshot<Int, Car.ID>()
+                    snapshot.appendSections([0])
+                    // De-duplicate: `appendItems` fatals on repeated identifiers.
+                    var seen = Set<Car.ID>()
+                    snapshot.appendItems(cars.map(\.id).filter { seen.insert($0).inserted })
+
+                    // Reconfigure only the rows whose CONTENT changed. Passing the whole
+                    // list re-renders every visible cell on every delivery, which is the
+                    // cost a diffable data source exists to avoid.
+                    let changed = cars.filter { previous[$0.id] != nil && previous[$0.id] != $0 }.map(\.id)
+                    if !changed.isEmpty { snapshot.reconfigureItems(changed) }
+
+                    await self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
             }
+        } catch {
+            uiPatternsLogger.error("Failed to observe cars: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -96,7 +99,7 @@ public final class CarTableViewController: UITableViewController {
         // Cancel at the owning scope's boundary. The controller going away does not
         // stop the observer; only `cancel()` does.
         consumer?.cancel()
-        observer?.cancel()
+        bridge?.cancel()
     }
 }
 
@@ -123,6 +126,12 @@ public final class DifferCarTableViewController: UITableViewController {
     private var observer: DittoStoreObserver?
     private var cars: [Car] = []
 
+    /// Guards against a delivery hopped before the observer was cancelled arriving after
+    /// a re-registration has reset the differ. Without it, that stale delivery diffs old
+    /// items against a fresh baseline and the index sets stop describing any transition
+    /// the table actually made.
+    private var generation = 0
+
     public init(ditto: Ditto) {
         self.ditto = ditto
         super.init(style: .plain)
@@ -139,6 +148,8 @@ public final class DifferCarTableViewController: UITableViewController {
 
     private func startObserving() {
         differ = DittoDiffer()
+        generation &+= 1
+        let myGeneration = generation
         do {
             observer = try ditto.store.registerObserver(
                 query: "SELECT * FROM cars ORDER BY mileage"
@@ -151,11 +162,12 @@ public final class DifferCarTableViewController: UITableViewController {
                     // never skip it. An observer whose handler returns without calling
                     // signalNext() stops delivering forever, silently.
                     defer { signalNext() }
-                    self?.apply(items: result.items)
+                    guard let self, self.generation == myGeneration else { return }
+                    self.apply(items: result.items)
                 }
             }
         } catch {
-            print("Failed to observe cars: \(error)")
+            uiPatternsLogger.error("Failed to observe cars: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -168,6 +180,12 @@ public final class DifferCarTableViewController: UITableViewController {
 
         // The first diff reports every item as an insertion, because the differ starts
         // empty — an initial population, not an animated insert of N rows.
+        //
+        // `diff.moves` is a full permutation, not a minimal edit script: one row moving
+        // to the front of a three-row list emits (2->0), (0->1), (1->2). That is correct
+        // for `performBatchUpdates`, whose `at:` indices are pre-update and `to:`
+        // post-update — but it means a single reorder in a 500-row list issues ~500
+        // moveRow calls per delivery.
         tableView.performBatchUpdates {
             tableView.deleteRows(at: diff.deletions.map { IndexPath(row: $0, section: 0) }, with: .automatic)
             tableView.insertRows(at: diff.insertions.map { IndexPath(row: $0, section: 0) }, with: .automatic)

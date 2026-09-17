@@ -45,9 +45,11 @@ public struct CarListView: View {
 @available(iOS 15, macOS 12, macCatalyst 15, *)
 public struct CarsRootView: View {
     /// `@StateObject` guarantees exactly one loader across re-renders.
-    @StateObject private var loader = DittoLoader()
+    @StateObject private var loader: DittoLoader
 
-    public init() {}
+    public init(configuration: DittoLoader.Configuration) {
+        _loader = StateObject(wrappedValue: DittoLoader(configuration: configuration))
+    }
 
     public var body: some View {
         Group {
@@ -69,6 +71,31 @@ public struct CarsRootView: View {
 @available(iOS 15, macOS 12, macCatalyst 15, *)
 @MainActor
 public final class DittoLoader: ObservableObject {
+    /// How to open **and activate** the instance.
+    ///
+    /// There is deliberately no default `DittoConfig`: `DittoConfig.default` opens an
+    /// offline-only instance with the all-zero database ID and never activates it, so it
+    /// accepts no work at all. Activation is not optional, and where it goes is exactly
+    /// what a reader needs to see.
+    public struct Configuration {
+        public var config: DittoConfig
+        /// Required for `.smallPeersOnly`; the instance is inert without it.
+        public var offlineLicenseToken: String?
+        /// Required for `.server`; `sync.start()` throws
+        /// `authenticationError(.expirationHandlerMissing)` without a handler installed.
+        public var authenticate: (@Sendable (Ditto) async throws -> Void)?
+
+        public init(
+            config: DittoConfig,
+            offlineLicenseToken: String? = nil,
+            authenticate: (@Sendable (Ditto) async throws -> Void)? = nil
+        ) {
+            self.config = config
+            self.offlineLicenseToken = offlineLicenseToken
+            self.authenticate = authenticate
+        }
+    }
+
     public enum Phase {
         case loading
         case ready(DittoAppModel)
@@ -77,29 +104,58 @@ public final class DittoLoader: ObservableObject {
 
     @Published public private(set) var phase: Phase = .loading
 
-    public init() {}
+    private let configuration: Configuration
+    private var bootstrapTask: Task<Void, Never>?
 
-    /// Idempotent: `.task` can run more than once across view identity changes, and
-    /// opening a second instance on the same persistence directory is an error.
-    public func bootstrap(config: DittoConfig = .default) async {
-        if case .loading = phase {} else { return }
+    public init(configuration: Configuration) {
+        self.configuration = configuration
+    }
 
-        do {
-            let ditto = try await Ditto.open(config: config)
-            let model = DittoAppModel(ditto: ditto)
-            try model.start()
-            phase = .ready(model)
-        } catch {
-            phase = .failed(error.localizedDescription)
+    /// Idempotent **across suspension**, which a `if case .loading` guard alone is not:
+    /// `.task` can run more than once, and a second call landing while `Ditto.open` is
+    /// still in flight would open a second instance on the same persistence directory
+    /// and fail with `storeError(.persistenceDirectoryLocked)`.
+    public func bootstrap() async {
+        if let bootstrapTask {
+            await bootstrapTask.value
+            return
         }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let ditto = try await Ditto.open(config: self.configuration.config)
+                if let token = self.configuration.offlineLicenseToken {
+                    try ditto.setOfflineOnlyLicenseToken(token)
+                }
+                try await self.configuration.authenticate?(ditto)
+                let model = DittoAppModel(ditto: ditto)
+                try model.start()
+                self.phase = .ready(model)
+            } catch {
+                uiPatternsLogger.error("Ditto bootstrap failed: \(error.localizedDescription, privacy: .public)")
+                self.phase = .failed(error.localizedDescription)
+            }
+        }
+        bootstrapTask = task
+        await task.value
     }
 }
 
-// The real entry point is one line more than this and is deliberately not compiled
-// here, because a package cannot contain two `@main` types:
+// The real entry point is one line more than this, and is deliberately not compiled
+// here because a package cannot contain two `@main` types:
 //
 //     @main
 //     struct CarsApp: App {
-//         var body: some Scene { WindowGroup { CarsRootView() } }
+//         var body: some Scene {
+//             WindowGroup {
+//                 CarsRootView(configuration: .init(
+//                     config: DittoConfig(
+//                         databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
+//                         connect: .server(url: URL(string: "REPLACE_ME_WITH_YOUR_CONNECT_URL")!)
+//                     ),
+//                     authenticate: { try await authCoordinator.start($0) }
+//                 ))
+//             }
+//         }
 //     }
 #endif

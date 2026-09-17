@@ -233,6 +233,7 @@ support with Sendable conformance"* for 5.0; the 5.1 handler fix contradicts it.
 | `DittoLogger.isEnabled` | **present**; `enabled` is a deprecated alias | `isEnabled` only | `isEnabled` only |
 | `DittoHTTPListenConfig.webSocketSync` default | `true` | **`false`** | **`false`** |
 | `DittoConnectionType.multicast` | absent | absent | **present** |
+| `ADVISE` / `ADVISE AND PROVISION` through `store.execute` | parse error | parse error | **present** |
 | Per-document size limit enforced | **no** | **no** | **yes, 5 242 880 bytes** |
 | Use after release: `store.registerObserver` / `store.execute` | `throws useAfterCloseError` | **`fatalError`** | **`fatalError`** |
 | Use after release: `sync.*`, `presence.*`, `smallPeerInfo.*`, `store.fetchAttachment` | **`fatalError`** | **`fatalError`** | **`fatalError`** |
@@ -255,7 +256,7 @@ the error case: this is `unknownError`, **not** `validationError(.sizeLimitExcee
 match on the message, not the case. For why documents should be far smaller than the
 limit anyway, see the `data-modeling` skill or <https://docs.ditto.live/key-concepts>.
 
-### Use after the owning `Ditto` is released: v5 is strictly worse
+### Use after the owning `Ditto` is released
 
 `sdk/v4/release-notes/swift.mdx:20` (#SPO-960, 4.14.6): *"Registering a store observer or
 executing a query after `Ditto` has been deallocated now throws a recoverable error
@@ -284,7 +285,10 @@ removes the two paths that were recoverable on 4.14.6. That is why
 The `CBOR` enum and `DittoError.StoreErrorReason.invalidDocumentStructure(cbor:)` /
 `.nonStringKeyInDocument(key:)` are deprecated in 5.1.0 and *no longer produced*
 (#SDKS-4009). Do not write recovery code for errors the SDK has stopped emitting.
-`DittoError.transportError` / `TransportErrorReason` are deprecated on the same line.
+
+`DittoError.transportError` / `TransportErrorReason` are on a different clock: already
+deprecated at 5.0.3 (`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoError.swift:422`,
+#SDKS-2945) and plain at 4.14.6.
 
 ---
 

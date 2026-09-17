@@ -57,8 +57,12 @@ probe() {
     name="$(basename "$framework" .framework)"
     /usr/bin/codesign --force --sign - "$framework/Versions/A/$name"
   done
-  # stderr is kept: PersistenceProbe reports assertion failures there.
+  # stderr is kept: PersistenceProbe reports assertion failures there. `--expect-version`
+  # makes the probe fail if a stale artifact means this leg is not running the SDK the
+  # matrix thinks it is — otherwise a degenerate same-version pair looks identical to a
+  # genuine cross-version one.
   env -u NO_COLOR DYLD_FRAMEWORK_PATH="$bin" "$bin/PersistenceProbe" "$@" \
+    --expect-version "$version" \
     2> >(grep -vE '  (INFO|WARN|DEBUG|ERROR|TRACE) ' >&2)
 }
 

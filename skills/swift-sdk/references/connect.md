@@ -28,7 +28,7 @@ Four details that cost a build or a support ticket if missed:
   host. Do not build it from the database ID and do not substitute the `wss://` sync URL.
 - **`persistenceDirectory` is a `URL?`.** `nil` means
   `<Application Support>/ditto-{databaseID}` with a fallback to the v4 location; see
-  [versions.md](storage.md#default-persistence-directory).
+  [storage.md](storage.md#default-persistence-directory).
 
 ### `open` versus `openSync`
 
@@ -182,40 +182,52 @@ Panic: Attempted to submit auth request after the Ditto instance was closed
    2: ditto_auth::client::AuthClientInner<BS>::login::{{closure}}
 ```
 
-This is a race inside the SDK's auth client between an in-flight login and shutdown, not
-an ordering an app can guarantee its way out of. The sequence below avoided it in every
-run tried (11 of 11, against 2 of 8 without it), and is what to do when you must release
-a server-backed instance:
+This is a race inside the SDK's auth client between an in-flight login and shutdown.
+**No ordering reliably avoids it.** Clearing the handler, calling `logout()` and pausing
+before release all reduce the frequency — one measurement went from 2 aborts in 8 runs to
+0 in 11 — but the same sequence later aborted a test process anyway. Treat it as an SDK
+defect to report, not as something to engineer around.
+
+What *does* avoid it is not releasing the instance at all:
 
 ```swift
 ditto.auth?.expirationHandler = nil   // stop new logins being submitted
-ditto.auth?.logout()
-try? await Task.sleep(nanoseconds: 500_000_000)  // let the auth client settle
-ditto.sync.stop()
-ditto = nil                            // now the directory lock is free
+exit(0)                                // terminates without running deinitializers
 ```
 
-In practice this mostly affects tests and short-lived command-line tools. A real app
-holds its instance for the whole process lifetime and never hits it.
- Two static knobs
-control how that release behaves:
+That is also what a real app does — an app holds its instance for the whole process
+lifetime and never deinitializes Ditto on the way out. The exposure is to **tests,
+command-line tools, and any flow that releases a server-backed instance mid-process**.
+A logout-and-sign-in-as-a-different-user flow is in that category, so this is not purely
+a test-harness concern.
+
+This is listed under "Not verified" in [`README.md`](../README.md): it is a race, and a
+race that does not reproduce is not a race that is fixed.
+
+### How release behaves
+
+Two static properties control what happens when the last strong reference goes away:
 
 - `Ditto.shouldWaitForCleanupOnClose` — whether deinit blocks until cleanup finishes.
 - `Ditto.deinitTimeoutSeconds` / `Ditto.deinitLogIntervalSeconds` — how long it waits and
   how often it logs while waiting.
 
-These are not neutral knobs. If the last strong reference is released **on the main
-thread** — which is the normal case for a `@MainActor` app model — a blocking deinit is a
-main-thread hang for up to `deinitTimeoutSeconds`. Release the instance off the main
-actor, or accept the pause deliberately.
+`shouldWaitForCleanupOnClose` defaults to **`true` in debug builds and `false` in
+release** (`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:190-192`), so a shipped
+app does not block unless you set it. In debug, though, releasing the last strong
+reference **on the main thread** — the normal case for a `@MainActor` app model — is a
+main-thread hang for up to `deinitTimeoutSeconds`. Release off the main actor, or accept
+the pause deliberately.
 
 ### Ownership
 
 `store`, `sync`, `presence`, `auth`, `diskUsage`, `smallPeerInfo` and `experimental` are
 **aggregate children holding a weak reference to their parent**. Holding only
-`ditto.store` does not keep `ditto` alive, and using it afterwards is a `fatalError` on
-v5 — see [`SKILL.md`](../SKILL.md#object-lifetimes-and-retention) and
-[versions.md](versions.md#use-after-the-owning-ditto-is-released-v5-is-strictly-worse).
+`ditto.store` does not keep `ditto` alive, and using an aggregate afterwards is a
+`fatalError` on every supported line — except `store.registerObserver` and
+`store.execute`, which throw `useAfterCloseError` on 4.14.6 only. See
+[`SKILL.md`](../SKILL.md#object-lifetimes-and-retention) and
+[versions.md](versions.md#use-after-the-owning-ditto-is-released).
 
 Where the instance should live, per UI framework, is
 [best-practices.md](../best-practices.md#instance-ownership).

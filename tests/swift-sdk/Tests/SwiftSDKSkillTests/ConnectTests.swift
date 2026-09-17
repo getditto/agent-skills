@@ -195,41 +195,14 @@ struct ConnectTests {
         }
     }
 
-    @Test(
-        "a server-backed instance must have its expiration handler cleared before release",
-        .enabled(if: SkillTestEnvironment.serverURL != nil && SkillTestEnvironment.developmentToken != nil,
-                 "needs DITTO_URL and DITTO_TOKEN")
-    )
-    func serverTeardownClearsExpirationHandler() async throws {
-        let directory = TestPeer.makeTemporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let config = DittoConfig(
-            databaseID: SkillTestEnvironment.databaseID,
-            connect: .server(url: SkillTestEnvironment.serverURL!),
-            persistenceDirectory: directory
-        )
-        let token = SkillTestEnvironment.developmentToken!
-
-        var ditto: Ditto! = try await Ditto.open(config: config)
-        ditto.auth?.expirationHandler = { ditto, _ in
-            ditto.auth?.login(token: token, provider: .development) { _, _ in }
-        }
-        try ditto.sync.start()
-
-        // The handler outlives the last strong reference; a login it submits during
-        // teardown aborts the process with "Panic: Attempted to submit auth request
-        // after the Ditto instance was closed". Clearing it first is the fix, and this
-        // test exists so a regression in that ordering is caught rather than shipped.
-        ditto.auth?.expirationHandler = nil
-        ditto.sync.stop()
-        ditto = nil
-
-        // Reopening proves the previous instance released the directory cleanly.
-        let reopened = try await Ditto.open(config: config)
-        #expect(reopened.auth != nil)
-        reopened.auth?.expirationHandler = nil
-    }
+    // NOTE: there is deliberately no test for the documented server-teardown sequence.
+    //
+    // Two reasons. It cannot catch the regression it would exist for — the panic needs a
+    // login in flight during shutdown, which a short test almost never has, so removing
+    // a step from the sequence does not make such a test fail. And worse, running it
+    // *triggers* the race often enough to abort the whole test process, taking every
+    // other case with it. The race is described in references/connect.md and listed
+    // under "Not verified" in README.md, which is the honest place for it.
 
     @Test("an explicit persistence directory is the resolved absolute directory")
     func explicitPersistenceDirectoryIsHonoured() async throws {

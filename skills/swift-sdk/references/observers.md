@@ -136,8 +136,20 @@ public struct DittoDiff {
 }
 ```
 
-That is deliberately the shape `UITableView`, `UICollectionView` and `NSTableView` batch
-updates consume.
+That is deliberately the shape `UITableView` and `UICollectionView` batch updates
+consume — but **not** `NSTableView`'s, and not a minimal edit script. Two measured
+properties decide whether you can use it at all:
+
+- **`moves` is a full permutation.** Moving one row to the front of a three-row list
+  emits `(2→0), (0→1), (1→2)` — a move for every row whose index changed. Correct for
+  `performBatchUpdates`, whose `at:` indices are pre-update and `to:` post-update, but it
+  means one reorder in a 500-row list issues ~500 `moveRow` calls per delivery.
+- **`NSTableView.moveRow(at:to:)` applies immediately and sequentially**, so replaying
+  that same permutation walks `[a,b,c] → [c,a,b] → [a,c,b] → [a,b,c]` and lands back
+  where it started while the model says `[c,a,b]`. Permanently stale rows, no crash, no
+  log. **Do not replay `DittoDiffer.moves` into `NSTableView`** without first converting
+  the permutation to sequential moves — or use `NSTableViewDiffableDataSource`, which
+  does it for you.
 
 **It is stateful.** `diff(_:)` compares against *the last array passed to that same
 differ*, so one differ belongs to exactly one observer and is never shared between

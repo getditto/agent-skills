@@ -76,7 +76,7 @@ struct ErrorTests {
     }
 
     /// Pins what the SDK *actually* returns for statements that are well-formed but
-    /// wrong. All four come back as `.queryInvalid`, not `.queryError` — which is why
+    /// wrong. All three come back as `.queryInvalid`, not `.queryError` — which is why
     /// references/errors.md marks `.queryError` as source-evidenced rather than
     /// executed.
     @Test(

@@ -130,12 +130,35 @@ try await ditto.store.execute(query: "CREATE INDEX cars_mileage ON cars (mileage
 try await ditto.store.execute(query: "DROP INDEX cars_mileage ON cars")
 ```
 
-`SELECT * FROM system:indexes` lists them. Which columns deserve an index, composite
-indexes (5.1.x), `EXPLAIN`, `ADVISE` and `#profile` belong to the `dql` skill or
-<https://docs.ditto.live/dql/indexing>.
+`SELECT * FROM system:indexes` lists them.
+
+**From 5.1.x, `ADVISE` names the index you are missing** (**executed**):
+
+```swift
+// Plans the statement without executing it; creates nothing.
+let advice = try await ditto.store.execute(
+    query: "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
+)
+
+// Same analysis, then runs the recommended CREATE INDEX statements.
+try await ditto.store.execute(
+    query: "ADVISE AND PROVISION SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
+)
+```
+
+The result is one document whose `advice.suggestedIndexes` entries each carry a
+`collection`, a `reason`, and a ready-to-run `CREATE INDEX IF NOT EXISTS` `statement`.
+**Executed**: `ADVISE` leaves `system:indexes` empty, and `ADVISE AND PROVISION` does
+not. On 4.14.x and 5.0.x both forms are rejected by the parser with
+`storeError(.queryInvalid("… Unexpected token ADVISE …"))` (**executed**), so gate them
+on the version.
+
+Which columns deserve an index, composite indexes (5.1.x), the shape of the advice
+document, `EXPLAIN` and `#profile` belong to the `dql` skill or
+<https://docs.ditto.live/dql/indexing> and <https://docs.ditto.live/dql/advise>.
 
 An index created by one version survives being opened by another, in both directions —
-see [versions.md](storage.md#upgrade-and-rollback), where each pair is run directly.
+see [storage.md](storage.md#upgrade-and-rollback), where each pair is run directly.
 
 ## CAP-17 Device storage management and eviction
 

@@ -1,2 +1,9 @@
 .DS_Store
 .env
+
+# Temporary planning file for DA-281. Its own header says to remove it once
+# implementation begins; its durable content has landed in
+# skills/swift-sdk/references/{versions,storage,preview}.md. Ignored rather than
+# deleted so the issue owner decides — but this repo is destined to be public, and it
+# carries internal checkout paths and internal reasoning that should not ship.
+docs/DA-281-*.md
