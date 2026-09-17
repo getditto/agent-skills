@@ -6,7 +6,11 @@
 // rather than inferred.
 //
 //   PersistenceProbe write <id> [directory]
-//   PersistenceProbe read  <id> [directory]
+//   PersistenceProbe read  <id> [directory] [--no-index]
+//
+// `read` EXITS NON-ZERO unless the document written by `write` is present with its
+// expected field, and (unless --no-index) at least one index survived. The matrix is
+// only evidence because of that.
 //
 // With no directory the default persistence directory is used, which is what exercises
 // the v4 -> v5 legacy-path fallback. Point CFFIXED_USER_HOME at a scratch directory so
@@ -30,7 +34,8 @@ enum PersistenceProbe {
             exit(2)
         }
         let id = arguments[2]
-        let directory = arguments.count > 3 ? URL(fileURLWithPath: arguments[3]) : nil
+        let positional = arguments.dropFirst(3).filter { !$0.hasPrefix("--") }
+        let directory = positional.first.map { URL(fileURLWithPath: $0) }
 
         let config = DittoConfig(
             databaseID: ProcessInfo.processInfo.environment["DITTO_DATABASE_ID"]
@@ -87,11 +92,31 @@ enum PersistenceProbe {
                 arguments: ["id": id]
             )
             print("found=\(result.items.count)")
-            if let value = result.items.first?.value {
-                print("make=\(value["make"] as? String ?? "?")")
-            }
+            let make = result.items.first?.value["make"] as? String
+            print("make=\(make ?? "?")")
             let indexes = try await ditto.store.execute(query: "SELECT * FROM system:indexes")
             print("indexes=\(indexes.items.count)")
+
+            // Assert, rather than print and exit 0. Without this the whole
+            // cross-version persistence matrix passes even when nothing survived.
+            let expectsIndex = !arguments.contains("--no-index")
+            var failures: [String] = []
+            if result.items.count != 1 {
+                failures.append("expected exactly 1 document with _id=\(id), found \(result.items.count)")
+            }
+            if make != "Toyota" {
+                failures.append("expected make=Toyota, found \(make ?? "nil")")
+            }
+            if expectsIndex && indexes.items.isEmpty {
+                failures.append("expected the index written by the producer to survive, found none")
+            }
+            guard failures.isEmpty else {
+                for failure in failures {
+                    FileHandle.standardError.write(Data("FAIL: \(failure)\n".utf8))
+                }
+                exit(1)
+            }
+            print("ok")
         }
     }
 

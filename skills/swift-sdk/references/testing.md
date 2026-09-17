@@ -69,25 +69,53 @@ delivery itself:
 ```swift
 @Test func observerReportsTheWrite() async throws {
     let ditto = try await makeTestDitto()
-    let (stream, continuation) = AsyncStream<Int>.makeStream()
+    let (stream, continuation) = AsyncStream<Int>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
     let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
         continuation.yield(result.items.count)
     }
-    defer { observer.cancel() }
+    defer { observer.cancel(); continuation.finish() }
 
     try await ditto.store.execute(
         query: "INSERT INTO cars DOCUMENTS (:car)",
         arguments: ["car": ["_id": "test-1", "make": "Toyota"]]
     )
 
-    for await count in stream where count == 1 { break }
+    // Never `for await … where … { break }` with no timeout: a regression then HANGS the
+    // suite instead of failing it.
+    #expect(try await firstElement(of: stream, timeout: .seconds(10)) { $0 == 1 } == 1)
 }
+
+/// Races the stream against a timeout so a missing element fails at the call site
+/// instead of suspending forever.
+func firstElement<Element: Sendable>(
+    of stream: AsyncStream<Element>,
+    timeout: Duration = .seconds(10),
+    where predicate: @escaping @Sendable (Element) -> Bool = { _ in true }
+) async throws -> Element {
+    try await withThrowingTaskGroup(of: Element?.self) { group in
+        group.addTask { for await e in stream where predicate(e) { return e }; return nil }
+        group.addTask { try await Task.sleep(for: timeout); return nil }
+        defer { group.cancelAll() }
+        guard let result = try await group.next(), let element = result else {
+            throw StreamTimeout()
+        }
+        return element
+    }
+}
+
+struct StreamTimeout: Error {}
 ```
 
-Give any such wait an explicit timeout so a regression fails the suite instead of hanging
-it — `tests/swift-sdk/Tests/SwiftSDKSkillTests/Helpers.swift` has a `firstElement(of:)`
-helper that races the stream against `Task.sleep` and fails at the call site.
+**A test that asserts nothing proves nothing.** Two shapes to avoid, both of which pass
+while the behaviour under test is broken:
+
+- *"No delivery arrived after `cancel()`"* with nothing to show a delivery **would** have
+  arrived. Register a second, uncancelled observer as a positive control, wait until the
+  control has seen the post-cancel write, and only then assert the cancelled one's count
+  is unchanged.
+- *"Something threw"* — `#expect(throws: (any Error).self)` is satisfied by a bad path, a
+  bad license or a typo. Match the `DittoError` case you actually mean.
 
 `deliverOn:` is ignored on 5.0.x, so a test that asserts *which queue* a callback ran on
 must be version-gated. Asserting on the delivered **value** is portable; asserting on the

@@ -74,21 +74,12 @@ struct VersionTests {
         #endif
     }
 
-    @Test(
-        "the observation handler type aliases are @Sendable from 5.1.0",
-        .enabled(if: !isV4, "4.14.x predates the change (#SDKS-3856)")
-    )
-    func observationHandlersAreSendable() async throws {
-        #if !DITTO_V4
-        // On 5.1.0 this compiles because `DittoStoreObservationHandler` is `@Sendable`.
-        // On 5.0.3 the alias is a plain closure, so the same assignment still compiles
-        // — the difference only shows up when the closure crosses an isolation
-        // boundary, which is why the skill states it as a compile-time fact and not a
-        // runtime one.
-        let handler: DittoStoreObservationHandler = { _ in }
-        _ = handler
-        #endif
-    }
+    // NOTE: there is deliberately no test for "the observation handler type aliases are
+    // @Sendable from 5.1.0". It is a compile-time property, and this fixture compiles
+    // one source tree for all three lines, so any assertion that passed on 5.0.3 would
+    // be vacuous and any assertion that failed would break the 5.0.3 build. The claim is
+    // carried as `source` evidence in references/versions.md and listed under "Not
+    // verified" in README.md.
 
     @Test("the default persistence directory name is derived from the database ID in v5")
     func defaultPersistenceDirectoryNaming() async throws {

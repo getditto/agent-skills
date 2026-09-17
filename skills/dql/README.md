@@ -89,6 +89,6 @@ See [`tests/dql/README.md`](../../tests/dql/README.md) for the harness internals
 
 ## Links
 
-- [Ditto documentation](https://docs.ditto.com)
-- [DQL reference](https://docs.ditto.com/dql)
-- [Ditto SDK release notes](https://docs.ditto.com/release-notes)
+- [Ditto documentation](https://docs.ditto.live)
+- [DQL reference](https://docs.ditto.live/dql)
+- [Ditto SDK release notes](https://docs.ditto.live/release-notes)

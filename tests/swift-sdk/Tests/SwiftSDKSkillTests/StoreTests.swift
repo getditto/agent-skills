@@ -186,6 +186,10 @@ struct StoreTests {
             arguments: ["car": ["_id": "mutate-1", "make": "Toyota"]]
         )
         #expect(result.mutatedDocumentIDs().count == 1)
+
+        // A read reports none.
+        let selected = try await peer.ditto.store.execute(query: "SELECT * FROM cars")
+        #expect(selected.mutatedDocumentIDs().isEmpty)
     }
 
     @Test("a transaction returning .commit persists its writes")

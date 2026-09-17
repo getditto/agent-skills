@@ -27,8 +27,9 @@ let attachment = try await ditto.store.newAttachment(
 
 `DittoAttachment` exposes `id` (base64, unpadded), `len`, `metadata: [String: String]`,
 `data() throws -> Data` and `copy(toPath:) throws`. Metadata values are `String`s only.
-**Executed**: `attachment.len` equals the byte count, and `try attachment.data()` returns
-the original bytes for a file-backed attachment.
+**Executed on all three lines** via the file-backed path: `len` equals the byte count,
+`metadata` round-trips, `id` is non-empty, and both `data()` and `copy(toPath:)` return
+the original bytes.
 
 ### Storing it in a document
 
@@ -117,7 +118,7 @@ it until the fetch completes or you intentionally stop it, and call `stop()` to 
 `ditto.store.attachmentFetchers` is the set of fetchers currently running.
 
 Unlike a store observer, a fetcher holds a `weak` reference to `Ditto`
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoAttachmentFetcher.swift:11`) and its
+(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoAttachmentFetcher.swift:12`) and its
 `stop()` routes back through the store, so stopping one after the `Ditto` instance is gone
 is a no-op rather than a crash.
 
@@ -127,4 +128,4 @@ Attachments are the mechanism for anything that would otherwise blow the per-doc
 size budget — which 5.1.0 enforces at 5 242 880 bytes
 ([versions.md](versions.md#the-5-mib-per-document-limit-is-new-in-510)). When to reach for
 an attachment versus a field is `data-modeling`'s topic
-(<https://docs.ditto.com/key-concepts>).
+(<https://docs.ditto.live/key-concepts>).

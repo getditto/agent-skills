@@ -2,7 +2,7 @@
   "mcpServers": {
     "ditto-docs": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://docs.ditto.com/mcp"]
+      "args": ["-y", "mcp-remote", "https://docs.ditto.live/mcp"]
     },
     "ditto-inkeep": {
       "command": "npx",

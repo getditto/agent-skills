@@ -1,6 +1,6 @@
 # Store: DQL, transactions, indexing and eviction — Ditto Swift SDK
 
-DQL *grammar and semantics* belong to the `dql` skill, or <https://docs.ditto.com/dql/dql>.
+DQL *grammar and semantics* belong to the `dql` skill, or <https://docs.ditto.live/dql/dql>.
 This file is the Swift call shape and the Swift-side decoding rules.
 
 ## CAP-08 Querying the store: executing DQL
@@ -132,11 +132,10 @@ try await ditto.store.execute(query: "DROP INDEX cars_mileage ON cars")
 
 `SELECT * FROM system:indexes` lists them. Which columns deserve an index, composite
 indexes (5.1.x), `EXPLAIN`, `ADVISE` and `#profile` belong to the `dql` skill or
-<https://docs.ditto.com/dql/indexing>.
+<https://docs.ditto.live/dql/indexing>.
 
-An index created by 4.14.6 was still present after opening the same store with 5.0.3 and
-5.1.0, and after rolling back again — see
-[versions.md](versions.md#upgrade-and-rollback).
+An index created by one version survives being opened by another, in both directions —
+see [versions.md](storage.md#upgrade-and-rollback), where each pair is run directly.
 
 ## CAP-17 Device storage management and eviction
 
@@ -152,10 +151,10 @@ try await ditto.store.execute(
 
 **Executed**: the evicted documents are gone from local `SELECT` results.
 
-Evicting a document that an active subscription still matches invites it straight back
-from the mesh. Cancel or narrow the subscription first — the semantics are
-`sync-subscriptions`' and `dql`'s
-(<https://docs.ditto.com/sdk/latest/sync/device-storage-management>).
+Cancel or narrow any subscription that still matches the documents before evicting them.
+Why that matters, and what eviction means for the rest of the mesh, belong to the
+`sync-subscriptions` skill or
+<https://docs.ditto.live/sdk/latest/sync/device-storage-management>.
 
 How much disk the store is using is `ditto.diskUsage` — see
 [observability.md](observability.md).

@@ -93,7 +93,7 @@ The repo provides MCP server endpoints for enhanced Ditto assistance:
 
 | Server | Endpoint | Description |
 |--------|----------|-------------|
-| `ditto-docs` | <https://docs.ditto.com/mcp> | Access Ditto documentation directly |
+| `ditto-docs` | <https://docs.ditto.live/mcp> | Access Ditto documentation directly |
 
 - **Claude Code / Claude-format tools**: `.mcp.json` at the repo root is
   picked up automatically (via `mcp-remote`).
@@ -116,7 +116,7 @@ server or constant cloud connectivity using:
 - **DQL** — a SQL-like query language
 - **Offline-first** architecture
 
-Learn more at [docs.ditto.com](https://docs.ditto.com).
+Learn more at [docs.ditto.live](https://docs.ditto.live).
 
 ## License
 

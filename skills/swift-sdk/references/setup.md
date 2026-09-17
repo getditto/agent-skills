@@ -72,7 +72,7 @@ see [connect.md](connect.md).
 The declarations below are build configuration and belong to this skill. *Why* each
 radio needs a permission, and which platforms carry which radios, belongs to the
 `ditto-mesh-networking` skill, or
-<https://docs.ditto.com/sdk/latest/sync/customizing-transport-configurations>.
+<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>.
 
 ### iOS, iPadOS and Mac Catalyst `Info.plist`
 

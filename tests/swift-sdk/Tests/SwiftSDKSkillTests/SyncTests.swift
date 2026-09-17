@@ -123,6 +123,15 @@ struct SyncTests {
         )
         #expect(inserted.commitID != nil)
 
+        for mutation in [
+            "UPDATE cars SET make = 'Honda' WHERE _id = 'commit-1'",
+            "EVICT FROM cars WHERE _id = 'commit-1'",
+            "DELETE FROM cars WHERE _id = 'nothing-matches'",
+        ] {
+            let result = try await peer.ditto.store.execute(query: mutation)
+            #expect(result.commitID != nil, "\(mutation) should carry a commitID")
+        }
+
         let selected = try await peer.ditto.store.execute(query: "SELECT * FROM cars")
         #expect(selected.commitID == nil)
 

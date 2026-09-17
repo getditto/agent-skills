@@ -58,13 +58,19 @@ facts — it travels with every presence update, to every peer.
 
 ```swift
 switch peer.os {
-case .iOS, .macOS: …
-case .android, .linux, .windows, .generic: …
-case .tvOS: …              // deprecated in 5.1.0, still reachable
-case .unknown(let name): … // any value this SDK version does not recognise
-case .none: …              // `os` is Optional
+case .iOS, .macOS: break
+case .android, .linux, .windows, .generic: break
+case .tvOS: break               // deprecated in 5.1.0, still reachable
+case .unknown(let name): _ = name  // a value this SDK version does not recognise
+case .none: break               // `os` is Optional
+@unknown default: break         // required: non-frozen enum from another module
 }
 ```
+
+**`@unknown default` is mandatory.** Without it the compiler rejects the switch with
+*"switch covers known cases, but 'DittoPeerOS?' may have additional unknown values"* —
+verified against 5.1.0. The same is true of `DittoConfigConnect`,
+`DittoAttachmentFetchEvent` and `DittoError`.
 
 **Executed**: `DittoPeerOS(from: "Fuchsia")` is `.unknown(os: "Fuchsia")`, so an
 unrecognised peer OS never crashes a switch — but it does mean `.unknown` must be handled.
@@ -94,4 +100,4 @@ Setting the handler while `ditto` has already been released is a silent no-op
 types other than the local peer's, and the connection-request path are read from source
 and the published documentation rather than executed. Mesh formation and which transports
 produce which `DittoConnectionType` belong to `ditto-mesh-networking`, or
-<https://docs.ditto.com/sdk/latest/sync/using-mesh-presence>.
+<https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>.

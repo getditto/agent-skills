@@ -14,8 +14,8 @@ the rest name the SDK source file or documentation page they came from.
 
 This skill owns the *API form Swift uses on each line* and the *measured on-disk
 behaviour*. It does not author a migration procedure — the published step-by-step guides
-are <https://docs.ditto.com/sdk/latest/migration-guides/swift-v4> (API) and
-<https://docs.ditto.com/sdk/latest/migration-guides/swift-dql> (queries), and this skill
+are <https://docs.ditto.live/sdk/latest/migration-guides/swift-v4> (API) and
+<https://docs.ditto.live/sdk/latest/migration-guides/swift-dql> (queries), and this skill
 recommends the same initialization, sync and observation forms they do.
 
 ---
@@ -102,7 +102,7 @@ migration guide gets it wrong for 5.1.0. All of these were checked with an HTTP 
 | 5.0.3 | `…/cocoa/DittoSwift/5.0.3/api-reference/documentation/dittoswift/` | `…/cocoa/DittoSwift/5.0.3/api-reference/data/documentation/dittoswift/<symbol>.json` |
 | 4.14.6 | `…/cocoa/DittoSwift/4.14.6/api-reference/` | **not published** — 404 |
 
-Host: `https://software.ditto.live`. `swift-v4.mdx:28` tells the reader to use `/cocoa/`
+Host: `https://software.ditto.live`. `swift-v4.mdx:28-29` tells the reader to use `/cocoa/`
 for *"any later `5.x` release"*, which 404s on 5.1.0 — the line this skill emits by
 default. 4.14.6 publishes no DocC JSON at all, so the source tree is the symbol evidence
 for that line. Resolve a member by fetching the **parent type's** JSON and reading the
@@ -170,9 +170,10 @@ runtime — or until the compiler refuses code that works on the next line up.
 
 ### `Sendable` conformances: v4 has none
 
-**Executed.** Compiling the same v5-shaped source against 4.14.6 in Swift 6 language mode
-fails with `error: sending 'ditto' risks causing data races` (and the same for
-`ditto.store`). 5.0 *"Marked most public types as `Sendable`"*
+**Reproduced by hand** (a negative-compile check is not something the fixture can carry,
+since it must build on all three lines). Compiling the same v5-shaped source against
+4.14.6 in Swift 6 language mode fails with `error: sending 'ditto' risks causing data
+races` (and the same for `ditto.store`). 5.0 *"Marked most public types as `Sendable`"*
 (`5-0-capabilities/swift-specific-changelog.mdx:26`), so `Ditto` and `DittoStore` cross
 isolation boundaries freely on both v5 lines
 (`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:541`, `DittoStore.swift:719`).
@@ -204,9 +205,14 @@ source is correct on all three lines — see [observers.md](observers.md).
 
 `DittoStoreObservationHandler`, `DittoStoreObservationHandlerWithSignalNext` and
 `DittoSignalNext` are plain closures at 5.0.3
-(`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoStoreObserver.swift:8-17`) and `@Sendable`
-at 5.1.0 (`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStoreObserver.swift:16-27`). This
-is the same ticket as the `deliverOn` fix, #SDKS-3856 — one change, not two.
+(`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoStoreObserver.swift:16,20,27`) and
+`@Sendable` at 5.1.0
+(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStoreObserver.swift:16,20,27`). This is
+the same ticket as the `deliverOn` fix, #SDKS-3856 — one change, not two.
+
+*Evidence: `source`.* This is a compile-time property, and the fixture compiles one
+source tree for all three lines, so it is not covered by a test — an assertion that
+passed on 5.0.3 would be vacuous and one that failed would break that leg's build.
 
 So the axis is **v4-vs-v5 for type conformances** and **5.0-vs-5.1 for closure
 annotations**. `5-0-capabilities/additional-improvements.mdx:37` advertises *"Full Swift 6
@@ -224,18 +230,19 @@ support with Sendable conformance"* for 5.0; the 5.1 handler fix contradicts it.
 | Attachment token in a query result | `DittoAttachmentToken` | `[String: Any]` | `[String: Any]` |
 | `DiskUsage` / `DiskUsageItem` / `.exec` | present, deprecated | `DittoDiskUsage` / `DittoDiskUsageItem` / `.item` | same as 5.0 |
 | `DiskUsageObserverHandle` (nested) | present | `DittoDiskUsageObserver` (standalone) | same as 5.0 |
-| `DittoLogger.enabled` | deprecated | `DittoLogger.isEnabled` | same as 5.0 |
+| `DittoLogger.isEnabled` | **present**; `enabled` is a deprecated alias | `isEnabled` only | `isEnabled` only |
 | `DittoHTTPListenConfig.webSocketSync` default | `true` | **`false`** | **`false`** |
 | `DittoConnectionType.multicast` | absent | absent | **present** |
 | Per-document size limit enforced | **no** | **no** | **yes, 5 242 880 bytes** |
-| Use after the owning `Ditto` is released | `throws DittoError.useAfterCloseError` | **`fatalError`** | **`fatalError`** |
+| Use after release: `store.registerObserver` / `store.execute` | `throws useAfterCloseError` | **`fatalError`** | **`fatalError`** |
+| Use after release: `sync.*`, `presence.*`, `smallPeerInfo.*`, `store.fetchAttachment` | **`fatalError`** | **`fatalError`** | **`fatalError`** |
 
 `DittoDiskUsageItem`'s *property* names are unchanged; only the type was renamed.
 
 ### The 5 MiB per-document limit is new in 5.1.0
 
-**Executed.** 4.14.6 and 5.0.3 accept 5, 6, 8 and 16 MiB documents without complaint.
-5.1.0 rejects a 5 MiB document:
+**Executed at 5, 6, 8 and 16 MiB on all three lines.** 4.14.6 and 5.0.3 accept every
+one of them without complaint. 5.1.0 rejects all four; at 5 MiB:
 
 ```
 DittoError.unknownError(message: "<dql> Query failed: `DQL Internal execution error:
@@ -246,7 +253,7 @@ DittoError.unknownError(message: "<dql> Query failed: `DQL Internal execution er
 An app that writes documents this large works on 5.0.x and starts failing on 5.1.x. Note
 the error case: this is `unknownError`, **not** `validationError(.sizeLimitExceeded)` —
 match on the message, not the case. For why documents should be far smaller than the
-limit anyway, see the `data-modeling` skill or <https://docs.ditto.com/key-concepts>.
+limit anyway, see the `data-modeling` skill or <https://docs.ditto.live/key-concepts>.
 
 ### Use after the owning `Ditto` is released: v5 is strictly worse
 
@@ -255,14 +262,21 @@ executing a query after `Ditto` has been deallocated now throws a recoverable er
 instead of crashing."* Confirmed at
 `sdk-release-4.14.6:cocoa/DittoSwift/Store/DittoStore.swift:206-209`.
 
-**That fix was not carried into v5.** At
-`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStore.swift:230` the same guard is
-`fatalError(…)`, repeated at `:285`, `:537`, `:626` and for `execute` at `:732`;
-identical at `sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoStore.swift`. `DittoSync`,
-`DittoPresence` and `DittoSmallPeerInfo` behave the same way.
+**Read the scope of that fix literally: it is observer registration and query execution,
+and nothing else.** At `sdk-release-4.14.6` every other aggregate already crashed —
+`cocoa/DittoSwift/DittoSync.swift:27,37,46,87` (`start`, `stop`, `isActive`,
+`registerSubscription`), `Transport/DittoPresence.swift:68,93,108`,
+`DittoSmallPeerInfo.swift:29,109`, and `Store/DittoStore.swift:438`
+(`fetchAttachment`) are all `fatalError`.
 
-On v5, dropping the last strong reference to `Ditto` and then touching `store`, `sync` or
-`presence` is an **unrecoverable crash**, not a `throws` an app can catch. That is why
+**The fix was then not carried into v5 at all.** At
+`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStore.swift:231` the observer guard is
+`fatalError(…)`, repeated at `:285`, `:537`, `:626` and for `execute` at `:732`;
+identical at `sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoStore.swift`.
+
+So the practical rule is the same on all three lines — dropping the last strong reference
+to `Ditto` and then touching an aggregate is an **unrecoverable crash** — and v5 merely
+removes the two paths that were recoverable on 4.14.6. That is why
 [`SKILL.md`](../SKILL.md) promotes the ownership rule into its always-loaded body.
 
 ### Deprecated error cases in 5.1.0
@@ -330,61 +344,19 @@ Other line-specific facts:
 
 ---
 
-## On-disk store: upgrade, rollback and the persistence directory
+## On-disk store
 
-All of the following was **executed** with `tests/swift-sdk/scripts/persistence-matrix.sh`
-on macOS 27.0 / arm64.
-
-### Default persistence directory
-
-| Opened with | Default directory |
-|---|---|
-| 4.14.x `Ditto(identity:)` (deprecated) | `<Documents>/ditto` |
-| 4.14.x `Ditto.open(config:)` | `<Application Support>/ditto-{databaseID}` |
-| 5.0.x / 5.1.x `Ditto.open(config:)` | `<Application Support>/ditto-{databaseID}` |
-
-"The default directory changed from `ditto` to `ditto-{databaseID}` in v5" is about the
-**identity initializer**, not about `Ditto.open`. An app already using
-`Ditto.open(config:)` on 4.14.x is already on the v5 default path — measured, both
-versions reported the same absolute directory.
-
-**An upgrading app does not silently get an empty database.** When
-`persistenceDirectory` is `nil`, `DittoConfig.encode(to:)` also sends the v4 default path
-as `legacy_persistence_directory`
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoConfig.swift:172-191`, byte-identical at
-`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoConfig.swift:171-179`), and Core checks
-both, preferring the non-legacy path. Executed: a database written by 4.14.6's
-`Ditto(identity:)` into `<Documents>/ditto` was found and read by 5.1.0 with no
-`persistenceDirectory` set, and `absolutePersistenceDirectory` reported that legacy path.
-
-Setting `persistenceDirectory` explicitly removes the ambiguity, and is what
-[connect.md](connect.md) recommends.
-
-### Upgrade and rollback
-
-| Written by | Read by | Result |
-|---|---|---|
-| 4.14.6 | 5.0.3 | document and index present |
-| 4.14.6 | 5.1.0 | document and index present |
-| 5.1.0 | 5.0.3 | document and index present |
-| 5.1.0 | 4.14.6 | document and index present |
-
-This matches the published contract in
-`snippets/common-release-notes/5-1-capabilities/upgrade-considerations.mdx`: 5.1 changes
-the on-disk index format, and a downgrade must route through **5.0.2+ or 4.14.6+**, which
-recognise the new format and revert it. During the downgrade a composite index is
-replaced by one single-field index per key.
-
-**Not verified here:** downgrading below 5.0.2 / 4.14.6, and the composite-index split —
-the fixture creates a single-field index only. Composite indexes are a DQL feature; see
-the `dql` skill or <https://docs.ditto.com/dql/indexing#migration>.
+The persistence directory, the upgrade path and the documented rollback route have
+their own file: [storage.md](storage.md).
 
 ---
 
 ## The environment trap that affects every line
 
-**Executed on 4.14.6, 5.0.3 and 5.1.0.** If `NO_COLOR=1` is in the process environment,
-the SDK's Rust core panics during initialization, before any Ditto API returns:
+**Reproduced by hand on 4.14.6, 5.0.3 and 5.1.0** (not by a committed test — the
+harness clears the variable rather than asserting the panic). If `NO_COLOR=1` is in the
+process environment, the SDK's Rust core panics during initialization, before any Ditto
+API returns:
 
 ```
 thread '<unnamed>' panicked at crates/tracing-config/src/lib.rs:

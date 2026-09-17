@@ -3,13 +3,17 @@
 # Executes the cross-version persistence claims in
 # ../../skills/swift-sdk/references/versions.md:
 #
-#   * data written by 4.14.6 is readable by 5.0.3 and 5.1.0 (upgrade)
-#   * data written by 5.1.0 is readable by 5.0.3 and 4.14.6 (documented rollback path)
+#   * data written by 4.14.6 is readable by 5.0.3 and 5.1.0 (upgrade), both chained
+#     and as direct pairs
+#   * data written by 5.1.0 is readable by 5.0.3 and 4.14.6 (documented rollback path),
+#     both chained and as a DIRECT 5.1.0 -> 4.14.6 downgrade with no intermediate 5.0.x
 #   * an upgrading app that never set `persistenceDirectory` still finds its v4
 #     database through the v5 legacy-path fallback
 #
-# Each leg builds the PersistenceProbe executable at one version pin and runs it
-# against a shared directory.
+# Each leg builds the PersistenceProbe executable at one version pin and runs it against
+# a shared directory. `PersistenceProbe read` exits non-zero when the document or the
+# index did not survive, and this script runs under `set -e`, so a leg that loses data
+# fails the run.
 #
 set -euo pipefail
 
@@ -23,6 +27,12 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
     value="${line#*=}"
     [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
     [[ -n "${!key:-}" ]] && continue
+    value="${value#"${value%%[![:space:]]*}"}"
+    if [[ "$value" == \"*\" && ${#value} -ge 2 ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && ${#value} -ge 2 ]]; then
+      value="${value:1:${#value}-2}"
+    fi
     export "$key=$value"
   done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$REPO_ROOT/.env" || true)
 fi
@@ -47,7 +57,9 @@ probe() {
     name="$(basename "$framework" .framework)"
     /usr/bin/codesign --force --sign - "$framework/Versions/A/$name"
   done
-  env -u NO_COLOR DYLD_FRAMEWORK_PATH="$bin" "$bin/PersistenceProbe" "$@" 2>/dev/null
+  # stderr is kept: PersistenceProbe reports assertion failures there.
+  env -u NO_COLOR DYLD_FRAMEWORK_PATH="$bin" "$bin/PersistenceProbe" "$@" \
+    2> >(grep -vE '  (INFO|WARN|DEBUG|ERROR|TRACE) ' >&2)
 }
 
 banner() { echo; echo "### $*"; }
@@ -64,6 +76,19 @@ probe 5.1.0  write rollback-1 "$ROLLBACK_DIR"
 probe 5.0.3  read  rollback-1 "$ROLLBACK_DIR"
 probe 4.14.6 read  rollback-1 "$ROLLBACK_DIR"
 
+# The chains above route every read through the adjacent version, which is exactly the
+# step the published contract says reverts the 5.1 index format. These legs remove that
+# step so each pair is tested directly.
+banner "direct pairs: no intermediate version between writer and reader"
+for pair in "4.14.6 5.1.0 direct-up" "5.1.0 4.14.6 direct-down" "4.14.6 5.0.3 direct-up-50" "5.1.0 5.0.3 direct-down-50"; do
+  set -- $pair
+  writer="$1"; reader="$2"; label="$3"
+  dir="$WORK/$label"
+  echo "  -- $writer writes, $reader reads"
+  probe "$writer" write "$label" "$dir"
+  probe "$reader" read  "$label" "$dir"
+done
+
 banner "default directory: 4.14.6 Ditto.open writes with no persistenceDirectory, 5.1.0 reads"
 # CFFIXED_USER_HOME redirects Foundation's home-relative directories, so the default
 # path is exercised without touching the real ~/Library.
@@ -76,4 +101,5 @@ banner "legacy fallback: 4.14.6 Ditto(identity:) writes to <Documents>/ditto, 5.
 export CFFIXED_USER_HOME="$WORK/legacy-home"
 mkdir -p "$CFFIXED_USER_HOME/Library/Application Support" "$CFFIXED_USER_HOME/Documents"
 probe 4.14.6 legacy-write legacy-1
-probe 5.1.0  read         legacy-1
+# The legacy initializer does not create an index, so do not require one here.
+probe 5.1.0  read         legacy-1 --no-index

@@ -185,7 +185,11 @@ def check_links(skill_dir: str, relative_path: str) -> None:
                 fail(f"{path}: anchor '#{anchor}' not found in {file_part}")
 
 
-CITATION_RE = re.compile(r"`(skills/[^`]+|\.\./\.\./[^`]+)`")
+# §12.1 item 9 says "grep for `skills/` or `../..` in a citation". Markdown links are
+# navigation and are allowed; everything else that names a path inside this repository is
+# a citation, whether or not it is in backticks.
+CITATION_RE = re.compile(r"(?<![\w/(])(skills/[\w./-]+|\.\./\.\.(?:/[\w./-]+)?)")
+MARKDOWN_LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
 
 
 def check_no_self_citation(skill_dir: str, relative_path: str) -> None:
@@ -197,11 +201,21 @@ def check_no_self_citation(skill_dir: str, relative_path: str) -> None:
     """
     path = os.path.join(skill_dir, relative_path)
     for line_number, line in enumerate(read(path).split("\n"), 1):
+        # Strip markdown link targets before looking for citations.
+        line = MARKDOWN_LINK_TARGET_RE.sub("](…)", line)
         for match in CITATION_RE.findall(line):
             fail(
                 f"{path}:{line_number}: cites a path inside this repository as a "
                 f"source: `{match}`. Cite the SDK or the documentation instead."
             )
+
+
+def all_markdown(skill_dir: str) -> list[str]:
+    found: list[str] = []
+    for root, dirs, files in os.walk(skill_dir):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        found.extend(os.path.join(root, f) for f in files if f.endswith(".md"))
+    return found
 
 
 def validate_every_skill() -> None:
@@ -317,12 +331,13 @@ def validate_sdk_skill(name: str) -> None:
             f"README.md's map has non-yes Support for {sorted(exceptions_in_map) or 'nothing'}"
         )
 
-    # §12.1 items 7 and 9.
-    for relative in REQUIRED_FILES:
-        path = os.path.join(skill_dir, relative)
-        if os.path.isfile(path):
-            check_links(skill_dir, relative)
-            check_no_self_citation(skill_dir, relative)
+    # §12.1 items 7 and 9 — over EVERY markdown file in the skill. §3 permits extra
+    # references/ and examples/ files, and an unchecked extra file is exactly where a
+    # broken link or a self-citation hides.
+    for path in sorted(all_markdown(skill_dir)):
+        relative = os.path.relpath(path, skill_dir)
+        check_links(skill_dir, relative)
+        check_no_self_citation(skill_dir, relative)
 
 
 def extract_section(body: str, heading: str) -> str:
@@ -338,6 +353,10 @@ def extract_section(body: str, heading: str) -> str:
 
 
 ROW_RE = re.compile(r"^\|\s*(CAP-\d\d)\s*\|(.*)$")
+TARGETS_VOCAB_RE = re.compile(r"\*\*Targets vocabulary for this SDK:\*\*\s*(.+)")
+# §7: api-dump / source / inference evidence "each require the path and ref inline".
+EVIDENCE_NEEDS_CITATION = {"api-dump", "source", "inference"}
+CITATION_TOKEN_RE = re.compile(r"[\w./-]+\.(swift|kt|kts|java|ts|js|cs|cpp|h|rs|dart|go|mdx|md|api)\b|sdk-release-[\w.-]+")
 
 
 def validate_capability_map(readme: str) -> set[str]:
@@ -351,6 +370,20 @@ def validate_capability_map(readme: str) -> set[str]:
         if len(cells) != 5:
             continue  # a prose table that happens to start with a CAP id
         rows.append((cells[0], cells))
+
+    text = read(readme)
+
+    # The Targets vocabulary is declared once, in README.md, and every row must use it.
+    vocabulary: set[str] = set()
+    match = TARGETS_VOCAB_RE.search(text)
+    if match:
+        vocabulary = {
+            token.strip().strip("`")
+            for token in re.split(r"[|,]", match.group(1).split(".")[0])
+            if token.strip().strip("`") and " " not in token.strip().strip("`")
+        }
+    if not vocabulary:
+        fail(f"{readme}: no '**Targets vocabulary for this SDK:**' line found ({SPEC} §7)")
 
     if len(rows) != len(CAPABILITIES):
         fail(
@@ -376,9 +409,57 @@ def validate_capability_map(readme: str) -> set[str]:
             fail(f"{readme}: {cap_id} Evidence '{evidence}' is not one of {sorted(EVIDENCE_VALUES)}")
         if not targets:
             fail(f"{readme}: {cap_id} has an empty Targets value")
+        elif vocabulary and targets not in vocabulary:
+            fail(
+                f"{readme}: {cap_id} Targets '{targets}' is not in the vocabulary this "
+                f"skill declares ({', '.join(sorted(vocabulary))})"
+            )
+
+        # §7: a non-`yes` Support and citation-bearing Evidence each owe extra detail.
+        # The detail lives in prose below the map, keyed by the capability ID.
+        detail = capability_detail(text, cap_id)
         if support != "yes":
             exceptions.add(cap_id)
+            if len(detail) < 80:
+                fail(
+                    f"{readme}: {cap_id} has Support '{support}' but no explanation "
+                    f"below the map. {SPEC} §7 requires the reason, and for 'preview' "
+                    f"the opt-in mechanism, the version, and the stability warning."
+                )
+        if evidence in EVIDENCE_NEEDS_CITATION and not CITATION_TOKEN_RE.search(detail):
+            fail(
+                f"{readme}: {cap_id} has Evidence '{evidence}', which {SPEC} §7 requires "
+                f"to carry the path and ref inline; none found in its explanation."
+            )
     return exceptions
+
+
+def capability_detail(text: str, cap_id: str) -> str:
+    """Prose about one capability outside the map row itself — the bullets under the map
+    where §7's extra-information requirements live.
+
+    A bullet is multi-line, and only its first line names the capability, so collect
+    from each mention until the next bullet or blank line.
+    """
+    lines = text.split("\n")
+    detail: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if cap_id in line and not line.strip().startswith("|"):
+            detail.append(line)
+            index += 1
+            while index < len(lines):
+                following = lines[index]
+                if not following.strip():
+                    break
+                if following.lstrip().startswith(("- ", "* ", "|", "#")):
+                    break
+                detail.append(following)
+                index += 1
+            continue
+        index += 1
+    return " ".join(detail)
 
 
 def main() -> int:

@@ -17,9 +17,9 @@ idiomatic mechanism for expressing "one, app-lived, reachable everywhere".
 
 | Framework | Mechanism | Why this one |
 |---|---|---|
-| **SwiftUI** | A `@MainActor final class` app model holding the instance, created once with `@StateObject` on the `App`, injected with `.environmentObject(…)`. | `@EnvironmentObject` gives the singleton experience without a global: one property wrapper in any view, no shared static to import, `@StateObject` guarantees exactly one instance across re-renders, and because it is injected rather than looked up, previews and tests can substitute a different instance. |
+| **SwiftUI** | A `@MainActor` app model holding the instance, created once with `@StateObject` (or `@State` with `@Observable`) at the app root and injected down the tree. | Injection gives the singleton experience without a global: one property wrapper in any view, no shared static to import, exactly one instance across re-renders, and because it is injected rather than looked up, previews and tests can substitute a different instance. |
 | **UIKit** | An app-scoped service owned by `AppDelegate`/`SceneDelegate` and injected into view controllers — **or a `static let shared` singleton**, which is a legitimate choice here. | UIKit has no environment-injection mechanism, so a singleton façade is the pragmatic path, not a compromise. Keep it a *thin* façade over an injectable service so a test can substitute one. |
-| **AppKit** | Same as UIKit. **Window controllers own only window-scoped handles.** | The multi-window case is the hazard: closing one window must not deallocate an app-wide instance, and must not leave that window's observers running. |
+| **AppKit** | Same as UIKit. **Window controllers own only window-scoped handles.** | The multi-window case is the hazard: closing one window must not deallocate an app-wide instance, and must not leave that window's observers running. Hold the instance with a plain `let`, not `unowned` — `unowned` is not weak, it *traps* on access after deallocation, and there is no cycle to break because Ditto holds nothing back to your controller. |
 
 **`@EnvironmentObject` in SwiftUI and a `shared` singleton in UIKit/AppKit solve the same
 problem** — app-wide reach to one long-lived instance. They are not different
@@ -32,11 +32,32 @@ second instance; losing a screen or a window does not stop app-required sync; ob
 cancelled at their owning scope's boundary; and a test or preview can substitute an
 instance without editing production code.
 
-`@Observable` is an optional variant, not the baseline: the v5 minimum is iOS 15 / macOS 12,
-where `ObservableObject` / `@StateObject` / `@EnvironmentObject` are available and
-`@Observable` is not. Gate any `@Observable` model to iOS 17+ / macOS 14+.
+**Which observation mechanism.** The SDK's minimum is not the app's deployment target.
+For a new app targeting **iOS 17+ / macOS 14+, `@Observable` with `@State` and
+`.environment(_:)` is the default** — it invalidates only the views that read a changed
+property, where `ObservableObject` + `@Published` invalidates every observing view on
+every change, which on a busy car list is the difference between a smooth and a janky
+screen. `ObservableObject` / `@StateObject` / `@EnvironmentObject` is the back-deployment
+path for iOS 15–16, which is what the compiled samples use so they build at the SDK's own
+floor.
 
-Compiled examples: `tests/swift-sdk/Sources/UIPatterns/`.
+**`@EnvironmentObject`'s one sharp edge**, which the table above does not: a view resolved
+without the object having been injected crashes at runtime with *"No ObservableObject of
+type DittoAppModel found. A View.environmentObject(_:) for DittoAppModel may be missing
+as an ancestor of this view."* It is a fatal crash, not a compile error, and the usual
+places to hit it are exactly where a Ditto app goes — a `.sheet`, a `UIHostingController`
+created from UIKit, a second `WindowGroup` on macOS, and previews. Inject at every
+presentation root, not only at the app root. (`@Observable` + `.environment(_:)` has the
+same failure mode.)
+
+**Opening Ditto is `async`, and a SwiftUI `App` cannot await in `init()`.** Model the
+launch as a phase — `loading` / `ready(model)` / `failed(message)` — open the instance in
+`.task`, and render the phase. Do not reach for `openSync` to dodge the async: on an iOS
+app's main thread that is a launch-watchdog termination waiting for a large store
+([connect.md](references/connect.md#open-versus-opensync)).
+
+Compiled examples of all of this live in the `getditto/agent-skills` repository under
+`tests/swift-sdk/Sources/UIPatterns/`.
 
 ## Structuring async work
 
@@ -49,6 +70,10 @@ Compiled examples: `tests/swift-sdk/Sources/UIPatterns/`.
   background queue or in the callback itself; only the final assignment is main-actor work.
   A large result set decoded inside a main-thread callback is the usual cause of a janky
   Ditto app.
+- **Hop with one consumer, not one `Task` per delivery.** Unstructured `Task`s have no
+  ordering guarantee between them, so a burst of deliveries can apply out of order and
+  leave the UI showing an older result. Yield into a bounded `AsyncStream`
+  (`.bufferingNewest(1)`) and drain it from a single long-lived `@MainActor` task.
 - **Do not wrap `Ditto` in an actor.** `Ditto` and `DittoStore` are `Sendable` on v5; an
   actor wrapper adds hops without adding safety. Reserve actors for application-owned
   mutable async state — a token store, a serialized upload queue.
@@ -65,6 +90,9 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   it, and cancel at that scope's boundary: `deinit`, `viewDidDisappear`, `.onDisappear`.
 - Use `[weak self]` in callback closures. A strong `self` capture keeps a dead view
   controller alive for the life of the instance, because the observer is still running.
+- Set `continuation.onTermination` when bridging an observer into an `AsyncStream`, so
+  cancelling the consumer cancels the observer instead of leaving it yielding into a dead
+  stream.
 - Retain an attachment fetcher until its fetch completes or you stop it.
 - **Read `ditto.sync.subscriptions` and `ditto.store.observers` fresh.** They are computed
   in v5; a cached snapshot never updates.
@@ -142,3 +170,6 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   deallocates it.
 - Assuming an observer callback is on the main queue. It is not on 5.0.x, and the same code
   is then correct on two lines and crashes on the third.
+- Reporting failures with `print`. A `registerObserver` that throws during screen setup
+  means the screen silently never populates; use `os.Logger` and surface the failure into
+  the model's state so the UI can show it.

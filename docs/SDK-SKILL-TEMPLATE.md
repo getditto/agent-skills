@@ -22,7 +22,7 @@ reject a PR that does not.
 
 > **Internal paths.** §8 and the appendices cite `mintlify-docs/` and `ditto/`, which
 > are Ditto-internal checkouts. External contributors should substitute the published
-> documentation at <https://docs.ditto.com> and the public API references in
+> documentation at <https://docs.ditto.live> and the public API references in
 > [Appendix A](#appendix-a--the-nine-sdks). Path structure is the same.
 
 ---
@@ -107,7 +107,7 @@ hand-off must therefore name a public documentation URL alongside the skill name
 way `ditto-mesh-networking` already does:
 
 > For DQL syntax see the `dql` skill if installed, otherwise
-> <https://docs.ditto.com/dql/dql>.
+> <https://docs.ditto.live/dql/dql>.
 
 ---
 

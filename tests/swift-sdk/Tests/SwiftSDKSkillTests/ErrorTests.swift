@@ -35,23 +35,27 @@ struct ErrorTests {
         }
     }
 
-    @Test("the 5 MiB per-document limit is enforced from 5.1.0 and not before")
-    func oversizedDocumentBehaviourIsVersionGated() async throws {
+    @Test(
+        "the 5 MiB per-document limit is enforced from 5.1.0 and not before",
+        arguments: [5, 6, 8, 16]
+    )
+    func oversizedDocumentBehaviourIsVersionGated(megabytes: Int) async throws {
         let peer = try await TestPeer.open()
         defer { peer.tearDown() }
 
-        let oversized = String(repeating: "x", count: 5 * 1024 * 1024)
+        let identifier = "oversized-\(megabytes)"
+        let oversized = String(repeating: "x", count: megabytes * 1024 * 1024)
         let insert = {
             try await peer.ditto.store.execute(
                 query: "INSERT INTO cars DOCUMENTS (:car)",
-                arguments: ["car": ["_id": "oversized", "blob": oversized]]
+                arguments: ["car": ["_id": identifier, "blob": oversized]]
             )
         }
 
         if Ditto.version.hasPrefix("5.1.") {
             do {
                 try await insert()
-                Issue.record("expected the insert of an oversized document to fail on 5.1.x")
+                Issue.record("expected a \(megabytes) MiB document to be rejected on 5.1.x")
             } catch let error as DittoError {
                 // The per-document limit surfaces from the query engine as
                 // `unknownError` carrying the byte counts — not as
@@ -65,9 +69,57 @@ struct ErrorTests {
             try await insert()
             let result = try await peer.ditto.store.execute(
                 query: "SELECT _id FROM cars WHERE _id = :id",
-                arguments: ["id": "oversized"]
+                arguments: ["id": identifier]
             )
             #expect(result.items.count == 1)
+        }
+    }
+
+    /// Pins what the SDK *actually* returns for statements that are well-formed but
+    /// wrong. All four come back as `.queryInvalid`, not `.queryError` — which is why
+    /// references/errors.md marks `.queryError` as source-evidenced rather than
+    /// executed.
+    @Test(
+        "well-formed but wrong statements throw storeError(.queryInvalid)",
+        arguments: [
+            // A scalar where INSERT requires a document.
+            ("INSERT INTO cars DOCUMENTS (:car)", "is an invalid insert expression"),
+            // A placeholder with no bound argument.
+            ("SELECT * FROM cars WHERE mileage > :missing", "was not provided"),
+            // A function that does not exist.
+            ("SELECT nosuchfunction(mileage) FROM cars", "not found"),
+        ]
+    )
+    func wellFormedButWrongStatementsThrow(query: String, fragment: String) async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        do {
+            try await peer.ditto.store.execute(query: query, arguments: ["car": 42])
+            Issue.record("expected \(query) to fail")
+        } catch let error as DittoError {
+            guard case .queryInvalid(let message) = error.storeReason else {
+                Issue.record("expected queryInvalid, got \(error)")
+                return
+            }
+            #expect(message.contains(fragment))
+        }
+    }
+
+    @Test("oversized presence peer metadata throws validationError(.sizeLimitExceeded)")
+    func oversizedPresenceMetadataThrows() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        let oversized = String(repeating: "x", count: 1024 * 1024)
+        do {
+            try peer.ditto.presence.setPeerMetadata(["blob": oversized])
+            Issue.record("expected a validation error for oversized peer metadata")
+        } catch let error as DittoError {
+            guard case .validationError = error else {
+                Issue.record("expected validationError, got \(error)")
+                return
+            }
         }
     }
 

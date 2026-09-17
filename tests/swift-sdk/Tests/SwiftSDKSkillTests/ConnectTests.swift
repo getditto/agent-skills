@@ -17,9 +17,16 @@ import DittoSwift
 @Suite("Connect and lifecycle")
 struct ConnectTests {
 
-    @Test("the build is pinned to the version it claims")
+    @Test(
+        "the build is pinned to the version it claims",
+        .enabled(if: SkillTestEnvironment.expectedVersion != nil,
+                 "DITTO_SWIFT_VERSION is unset — run through scripts/run.sh")
+    )
     func versionMatchesPin() throws {
-        guard let expected = SkillTestEnvironment.expectedVersion else { return }
+        // `#require`, not `guard … else { return }`: a silently-skipped guard turns the
+        // suite's only stale-build check into a green no-op whenever the harness is
+        // invoked outside scripts/run.sh.
+        let expected = try #require(SkillTestEnvironment.expectedVersion)
         #expect(Ditto.version == expected)
     }
 
@@ -89,8 +96,16 @@ struct ConnectTests {
             persistenceDirectory: peer.directory
         )
 
-        await #expect(throws: (any Error).self) {
+        // Assert the specific reason, not merely "something threw" — otherwise an
+        // unopenable path or a bad license would satisfy this test just as well.
+        do {
             _ = try await Ditto.open(config: config)
+            Issue.record("expected persistenceDirectoryLocked")
+        } catch let error as DittoError {
+            guard case .persistenceDirectoryLocked = error.storeReason else {
+                Issue.record("expected persistenceDirectoryLocked, got \(error)")
+                return
+            }
         }
     }
 
@@ -178,6 +193,42 @@ struct ConnectTests {
                 return
             }
         }
+    }
+
+    @Test(
+        "a server-backed instance must have its expiration handler cleared before release",
+        .enabled(if: SkillTestEnvironment.serverURL != nil && SkillTestEnvironment.developmentToken != nil,
+                 "needs DITTO_URL and DITTO_TOKEN")
+    )
+    func serverTeardownClearsExpirationHandler() async throws {
+        let directory = TestPeer.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let config = DittoConfig(
+            databaseID: SkillTestEnvironment.databaseID,
+            connect: .server(url: SkillTestEnvironment.serverURL!),
+            persistenceDirectory: directory
+        )
+        let token = SkillTestEnvironment.developmentToken!
+
+        var ditto: Ditto! = try await Ditto.open(config: config)
+        ditto.auth?.expirationHandler = { ditto, _ in
+            ditto.auth?.login(token: token, provider: .development) { _, _ in }
+        }
+        try ditto.sync.start()
+
+        // The handler outlives the last strong reference; a login it submits during
+        // teardown aborts the process with "Panic: Attempted to submit auth request
+        // after the Ditto instance was closed". Clearing it first is the fix, and this
+        // test exists so a regression in that ordering is caught rather than shipped.
+        ditto.auth?.expirationHandler = nil
+        ditto.sync.stop()
+        ditto = nil
+
+        // Reopening proves the previous instance released the directory cleanly.
+        let reopened = try await Ditto.open(config: config)
+        #expect(reopened.auth != nil)
+        reopened.auth?.expirationHandler = nil
     }
 
     @Test("an explicit persistence directory is the resolved absolute directory")

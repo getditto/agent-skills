@@ -28,7 +28,7 @@ let observer = try ditto.store.registerObserver(
 
 > *"You'll have to keep it to be able to cancel the observation. Otherwise it will remain
 > active until the owning `Ditto` object goes out of scope."*
-> — `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStore.swift:212-216`
+> — `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStore.swift:209-211`
 
 Dropping a `DittoStoreObserver` does **not** stop it. It keeps firing, and it keeps
 everything its closure captured alive, for the whole life of the `Ditto` instance. The
@@ -39,8 +39,10 @@ observer.cancel()
 observer.isCancelled   // true
 ```
 
-**Executed**: after `cancel()`, a subsequent write produced no further delivery, and the
-observer disappeared from `ditto.store.observers`.
+**Executed**, against a second uncancelled observer on the same query as a positive
+control: once that control had seen a write made *after* the cancellation, the cancelled
+observer's delivery count was unchanged, and it had disappeared from
+`ditto.store.observers`.
 
 `ditto.store.observers` is **computed** in v5, so a cached snapshot goes stale — read it
 at the point of use. See [sync.md](sync.md#dittosyncsubscriptions-is-computed-do-not-cache-it).
@@ -84,13 +86,19 @@ nothing further until you call it.
 ```swift
 let observer = try ditto.store.registerObserver(
     query: "SELECT * FROM cars"
-) { result, signalNext in
-    Task { @MainActor in
-        defer { signalNext() }      // every exit path, exactly once
-        apply(result.items)
+) { [weak self] result, signalNext in
+    Task { @MainActor [weak self] in
+        // FIRST statement in the body, so nothing below can skip it.
+        defer { signalNext() }
+        self?.apply(result.items)
     }
 }
 ```
+
+The invariant is **exactly one signal per delivery, from whichever context finishes the
+work** — not "before the handler returns". Signalling after the UI work is the whole
+point of the back-pressure form. Putting the `defer` at the top of the hopped body is
+what makes an early return or a thrown error unable to wedge the observer.
 
 Use `handlerWithSignalNext` whenever the handler does real work — decoding a large result
 set, writing to another database, driving an animation. It converts *"fire as fast as
@@ -143,8 +151,26 @@ one insertion at its index, and an in-place field change reports one update (all
 
 | | Use `DittoDiffer` | Skip it |
 |---|---|---|
-| **UIKit / AppKit** | **Yes — this is what it is for.** Batch updates need exactly these index sets. Without them you `reloadData()` on every change and lose scroll position, selection and animation. | Only for small, rarely-changing lists where a reload is genuinely cheap. |
+| **UIKit / AppKit** | Only when something that is *not* a diffable data source needs raw index sets. | **Usually skip at the skill's iOS 15 minimum.** `UITableViewDiffableDataSource` / `NSTableViewDiffableDataSource` compute the diff from a snapshot themselves, which makes the desynchronisation hazard below structurally impossible. |
 | **SwiftUI** | Rarely. | **Usually skip.** `ForEach` over `Identifiable` data already diffs and animates. Running `DittoDiffer` and then handing SwiftUI an array makes the framework diff a second time — you pay twice and use neither result. |
+
+**Two rules when you do use it, and both are easy to get wrong:**
+
+1. **The array you hand the data source must be 1:1 with the array you handed the
+   differ.** The index sets are computed over the raw `[DittoQueryResultItem]`. Drop one
+   row between the two — a `compactMap` whose element initializer is failable is the
+   usual way — and `performBatchUpdates` raises *"Invalid update: invalid number of rows
+   in section 0"*. A malformed document can arrive from any peer at any schema version,
+   so **map, never filter**.
+2. **Reloads do not belong inside the batch.** `performBatchUpdates` treats deletes and
+   inserts as one atomic transition, and a reload of a row that also moved is undefined.
+   Apply `diff.updates` in the completion handler, against post-update indices.
+   `NSTableView.reloadData(forRowIndexes:columnIndexes:)` is not a batch operation at
+   all and must run after `endUpdates()`.
+
+**Reset the differ whenever you re-register the observer.** Its baseline is the last
+array it saw, so a differ reused across a cancel/re-register computes the first new diff
+against stale state and produces index sets that do not match the view.
 
 Costs, stated plainly:
 
@@ -161,10 +187,15 @@ Costs, stated plainly:
 - **Robustness.** `diff(_:)` decodes its result with `try!`
   (`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoDiffer.swift:43`), so a decode failure is
   a crash rather than a throw.
+- **Thread safety.** `DittoDiffer` conforms to `Sendable`, so the compiler will let you
+  call `diff(_:)` from two isolation domains — but it is mutable, stateful and not
+  thread-safe. Call it from exactly one. The same caveat applies to
+  `DittoQueryResultItem`, which is `Sendable` with a lazily materialized cache.
 
-The compiled UIKit and AppKit examples are
-`tests/swift-sdk/Sources/UIPatterns/CarTableViewController.swift` and
-`CarTableController.swift`.
+Compiled examples of both shapes — the diffable-data-source default and the corrected
+`DittoDiffer` variant — live in the `getditto/agent-skills` repository under
+`tests/swift-sdk/Sources/UIPatterns/`, and are built for iOS, the iOS Simulator, Mac
+Catalyst and macOS against all three supported versions.
 
 ### There is no DQL observation publisher in Combine
 
@@ -186,13 +217,30 @@ it into SwiftUI or Combine state by hand is the intended pattern, not a workarou
 
 ```swift
 // Bridging an observer into an AsyncStream is the idiomatic hand-rolled form.
-let (updates, continuation) = AsyncStream<[Car]>.makeStream()
+// `.bufferingNewest(1)` is not optional: the default is `.unbounded`, and an observer
+// that fires faster than the consumer drains will queue every intermediate result and
+// then process a backlog that is already stale.
+let (updates, continuation) = AsyncStream<[Car]>.makeStream(
+    bufferingPolicy: .bufferingNewest(1)
+)
 let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
-    continuation.yield(result.items.compactMap { Car($0.value) })
+    continuation.yield(result.items.map { item in
+        defer { item.dematerialize() }
+        return Car(item.value)
+    })
+}
+// Tie the two lifetimes together, or a cancelled consumer leaves the observer firing
+// into a dead stream for the life of the `Ditto` instance.
+continuation.onTermination = { _ in observer.cancel() }
+
+// ONE consumer task. A `Task { @MainActor in … }` per delivery has no ordering
+// guarantee between deliveries, so an older result can land last and pin the UI to
+// stale data. A single `for await` loop is ordered by construction.
+let consumer = Task { @MainActor [weak model] in
+    for await cars in updates { model?.cars = cars }
 }
 // … later
-continuation.finish()
-observer.cancel()
+consumer.cancel()   // onTermination cancels the observer
 ```
 
 Cancellation differs between the two styles: a Combine subscription is cancelled by

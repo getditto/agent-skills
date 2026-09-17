@@ -41,10 +41,10 @@ skill ships as a separate plugin and may not be installed:
 
 | Question | Skill, if installed | Otherwise |
 |---|---|---|
-| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.com/dql/dql> |
-| Which CRDT type, embed vs split, document size | `data-modeling` | <https://docs.ditto.com/key-concepts> |
-| What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.com/sdk/latest/sync/syncing-data> |
-| Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.com/sdk/latest/sync/customizing-transport-configurations> |
+| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.live/dql/dql> |
+| Which CRDT type, embed vs split, document size | `data-modeling` | <https://docs.ditto.live/key-concepts> |
+| What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
+| Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
 
 See `docs/SDK-SKILL-TEMPLATE.md` §1 for who owns contested topics such as platform
 permissions and transport-condition values.

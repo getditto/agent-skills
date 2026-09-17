@@ -18,6 +18,7 @@ cd "$FIXTURE_DIR"
 
 build_for() {
   local version="$1" label="$2" destination="$3"
+  local log=".build/xcodebuild-$version-${label// /-}.log"
   echo "--- $version : $label"
   # A per-version derived-data path: Xcode caches the resolved package graph and the
   # built module, and reusing one path across version pins fails with
@@ -31,7 +32,12 @@ build_for() {
     -quiet \
     CODE_SIGNING_ALLOWED=NO \
     ARCHS=arm64 \
-    build >/dev/null
+    build > "$log" 2>&1 || {
+      echo "    FAILED — diagnostics:"
+      grep -E 'error:|warning:|BUILD FAILED' "$log" | head -40
+      echo "    (full log: $FIXTURE_DIR/$log)"
+      return 1
+    }
   echo "    ok"
 }
 

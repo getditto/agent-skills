@@ -88,7 +88,19 @@ struct AttachmentTests {
             path: fileURL.path,
             metadata: ["name": fileURL.lastPathComponent]
         )
+        // Asserted here as well as on the in-memory path, because the in-memory test is
+        // skipped on 4.14.x — otherwise `len` would never be checked on that line.
+        #expect(attachment.len == UInt64(payload.count))
+        #expect(attachment.metadata["name"] == fileURL.lastPathComponent)
+        #expect(attachment.id.isEmpty == false)
         #expect(try attachment.data() == payload)
+
+        // `copy(toPath:)` is the other way out of an attachment.
+        let copyURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("skill-attachment-copy-\(UUID().uuidString).txt")
+        defer { try? FileManager.default.removeItem(at: copyURL) }
+        try attachment.copy(toPath: copyURL.path)
+        #expect(try Data(contentsOf: copyURL) == payload)
     }
 
     @Test(

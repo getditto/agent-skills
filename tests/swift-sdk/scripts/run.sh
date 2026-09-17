@@ -20,12 +20,20 @@ REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 if [[ -f "$REPO_ROOT/.env" ]]; then
   # Environment variables already set take precedence, matching tests/lib/load-env.mjs.
   # Split on the FIRST "=" only, and never with IFS: base64 license tokens end in "=",
-  # which `IFS== read` silently strips as a trailing delimiter.
+  # which `IFS== read` silently strips as a trailing delimiter. Surrounding quotes are
+  # stripped so a `.env` written for the Node harnesses (which use
+  # `process.loadEnvFile`) behaves the same here.
   while read -r line; do
     key="${line%%=*}"
     value="${line#*=}"
     [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
     [[ -n "${!key:-}" ]] && continue
+    value="${value#"${value%%[![:space:]]*}"}"
+    if [[ "$value" == \"*\" && ${#value} -ge 2 ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && ${#value} -ge 2 ]]; then
+      value="${value:1:${#value}-2}"
+    fi
     export "$key=$value"
   done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$REPO_ROOT/.env" || true)
 fi
@@ -48,12 +56,33 @@ run_one() {
   cd "$FIXTURE_DIR"
   export DITTO_SWIFT_VERSION="$version"
 
-  # A stale build directory would silently keep the previous version's framework.
-  rm -rf .build/out
+  # A stale build directory keeps the previous version's framework, which produces
+  # either a wrong-version run or a dlopen failure. Clearing the build products is
+  # enough to force a relink; the downloaded artifacts are deliberately kept (they are
+  # ~100 MB per version) and the pin is verified explicitly below instead.
+  rm -rf .build/out Package.resolved
 
   swift build --build-tests
   local bin
   bin="$(swift build --show-bin-path)"
+
+  # Prove the framework that was linked is the one we asked for, rather than a stale
+  # artifact from a previous leg. `SwiftSDKSkillTests` also asserts this at runtime
+  # (`the build is pinned to the version it claims`), but failing here names the cause.
+  local resolved
+  resolved="$(python3 -c "
+import json, sys
+state = json.load(open('.build/workspace-state.json'))
+for artifact in state['object'].get('artifacts', []):
+    if artifact.get('packageRef', {}).get('identity') == 'dittoswiftpackage':
+        print(artifact.get('source', {}).get('url', ''))
+" 2>/dev/null || true)"
+  if [[ -n "$resolved" && "$resolved" != *"/$version/"* ]]; then
+    echo "Resolved artifact does not match the requested version $version:" >&2
+    echo "  $resolved" >&2
+    echo "Remove tests/swift-sdk/.build and retry." >&2
+    return 1
+  fi
 
   # The published DittoSwift.xcframework ships unsigned, and SwiftPM copies it out of
   # the artifact cache without signing it. macOS refuses to load an unsigned library
@@ -84,11 +113,21 @@ run_one() {
   if [[ "$run_app" == "yes" ]]; then
     echo
     echo "--- MinimalApp ---"
+    local app_output
     if [[ "$offline" == "yes" ]]; then
-      env -u NO_COLOR -u DITTO_URL -u DITTO_TOKEN DYLD_FRAMEWORK_PATH="$bin" "$bin/MinimalApp"
+      app_output="$(env -u NO_COLOR -u DITTO_URL -u DITTO_TOKEN DYLD_FRAMEWORK_PATH="$bin" "$bin/MinimalApp" 2>&1 | tee /dev/stderr)"
     else
-      env -u NO_COLOR DYLD_FRAMEWORK_PATH="$bin" "$bin/MinimalApp"
+      app_output="$(env -u NO_COLOR DYLD_FRAMEWORK_PATH="$bin" "$bin/MinimalApp" 2>&1 | tee /dev/stderr)"
     fi
+
+    # Exit code alone is not enough: the program would exit 0 having observed nothing.
+    for expected in "Ditto $version opened at" "observed 1 car(s): Toyota" "done"; do
+      if ! grep -qF "$expected" <<<"$app_output"; then
+        echo "MinimalApp output did not contain: $expected" >&2
+        return 1
+      fi
+    done
+    echo "--- MinimalApp output verified ---"
   fi
 }
 

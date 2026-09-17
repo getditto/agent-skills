@@ -132,25 +132,40 @@ struct ObserverTests {
         let peer = try await TestPeer.open()
         defer { peer.tearDown() }
 
-        let recorder = DeliveryRecorder<Int>()
+        let cancelled = DeliveryRecorder<Int>()
         let observer = try peer.ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
-            recorder.record(result.items.count)
+            cancelled.record(result.items.count)
         }
-        _ = try await firstElement(of: recorder.stream) { !$0.isEmpty }
+
+        // A second, never-cancelled observer on the same query is the positive control.
+        // Without it, "no delivery arrived" is indistinguishable from "no delivery had
+        // arrived yet", and the test passes even with the cancel() removed.
+        let control = DeliveryRecorder<Int>()
+        let controlObserver = try peer.ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
+            control.record(result.items.count)
+        }
+        defer { controlObserver.cancel() }
+
+        _ = try await firstElement(of: cancelled.stream) { !$0.isEmpty }
+        _ = try await firstElement(of: control.stream) { !$0.isEmpty }
 
         #expect(observer.isCancelled == false)
         observer.cancel()
         #expect(observer.isCancelled == true)
 
-        let deliveriesAtCancel = recorder.deliveries.count
+        let deliveriesAtCancel = cancelled.deliveries.count
         try await peer.ditto.store.execute(
             query: "INSERT INTO cars DOCUMENTS (:car)",
             arguments: ["car": ["_id": "after-cancel", "make": "Toyota"]]
         )
-        // Give any in-flight delivery a chance to land, then assert none did.
-        _ = try await peer.ditto.store.execute(query: "SELECT * FROM cars")
-        #expect(recorder.deliveries.count == deliveriesAtCancel)
-        recorder.finish()
+
+        // Wait until the control has SEEN the post-cancel write. Only then is the
+        // cancelled observer's silence evidence of anything.
+        _ = try await firstElement(of: control.stream) { $0.contains(1) }
+        #expect(cancelled.deliveries.count == deliveriesAtCancel)
+
+        cancelled.finish()
+        control.finish()
     }
 
     @Test("store.observers is computed, so a cancelled observer disappears from it")
@@ -195,6 +210,8 @@ struct ObserverTests {
                 arguments: ["car": ["_id": "gate-\(index)", "make": "Toyota"]]
             )
         }
+        // Unsynchronised on its own — the assertions after the release below are what
+        // actually prove the gating, by showing no intermediate state was ever seen.
         #expect(recorder.deliveries.count == deliveriesWhileHeld)
 
         // Releasing delivers the latest state, coalesced — not one callback per write.

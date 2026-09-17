@@ -18,12 +18,13 @@ let config = DittoConfig(
 
 `DittoConfig.experimental` carries the SDK's own warning:
 
-> *"Experimental features may change or be removed in future releases … Experimental
-> functionality should not be used in production applications as it may be changed or
-> removed at any time, and may not have the same security features."*
-> — `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoConfig.swift:62-70`
+> *"Experimental functionality should not be used in production applications as it may
+> be changed or removed at any time, and may not have the same security features."*
+> — the `- Warning:` on `DittoConfig.experimental`,
+> `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoConfig.swift:69-71`
 
-`passphrase` is the only field. `ditto.isEncrypted` reports the state, and mismatches
+`passphrase` is the only field on `DittoConfigExperimental`; the warning is carried by
+the enclosing `DittoConfig.experimental` property. `ditto.isEncrypted` reports the state, and mismatches
 throw `DittoError.encryptionError` ([errors.md](errors.md#encryptionerror_)). There is no
 documented way to change or rotate a passphrase on an existing store; treat the choice as
 permanent for that persistence directory.

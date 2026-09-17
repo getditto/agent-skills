@@ -35,7 +35,10 @@ struct Car: Identifiable, Sendable, Equatable {
     init?(_ value: [String: Any?]) {
         guard let id = value["_id"] as? String,
               let make = value["make"] as? String,
-              let mileage = value["mileage"] as? Int
+              // A stored number comes back as the narrowest CBOR type that holds it,
+              // so `as? Int` / `as? Double` silently drops rows. NSNumber bridges
+              // every width.
+              let mileage = (value["mileage"] as? NSNumber)?.intValue
         else { return nil }
         self.id = id
         self.make = make
@@ -68,7 +71,8 @@ enum MinimalApp {
 
         // 2. Open. `Ditto.open` is async; `Ditto.openSync` is the blocking form for a
         //    synchronous composition root such as `application(_:didFinishLaunching…)`.
-        let ditto = try await Ditto.open(config: config)
+        // Held as an Optional so it can be released before the directory is removed.
+        var ditto: Ditto! = try await Ditto.open(config: config)
         print("Ditto \(Ditto.version) opened at \(ditto.absolutePersistenceDirectory.path)")
         switch config.connect {
         case .server(let url): print("mode: server (\(url.absoluteString))")
@@ -117,14 +121,23 @@ enum MinimalApp {
         )
 
         // 5. Observe the local store. The observer fires once with the current result
-        //    and again on every change. Extract Sendable values inside the handler.
-        let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream()
+        //    and again on every change. Extract Sendable values inside the handler, and
+        //    do not pass `deliverOn:` — it is ignored on 5.0.x, so code that depends on
+        //    it is correct on two lines and wrong on the third. A bounded stream with a
+        //    single consumer gives ordering and back-pressure instead.
+        let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
+            bufferingPolicy: .bufferingNewest(1)
+        )
         let observer = try ditto.store.registerObserver(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
-            arguments: ["minimumMileage": 100],
-            deliverOn: .main
+            arguments: ["minimumMileage": 100]
         ) { result in
-            continuation.yield(result.items.compactMap { Car($0.value) })
+            continuation.yield(
+                result.items.compactMap { item in
+                    defer { item.dematerialize() }   // release the native copy
+                    return Car(item.value)
+                }
+            )
         }
 
         // 6. Write. `INSERT … DOCUMENTS` takes the document as a query argument, never
@@ -140,13 +153,34 @@ enum MinimalApp {
             break
         }
 
-        // 8. Tear down in the reverse order. Cancelling is what stops an observer —
+        // 8. Tear down in reverse order. Cancelling is what stops an observer —
         //    dropping the handle does not.
         continuation.finish()
         observer.cancel()
         subscription.cancel()
         ditto.sync.stop()
-        try? FileManager.default.removeItem(at: ditto.absolutePersistenceDirectory)
+
+        // Releasing a server-backed instance shortly after authenticating races the
+        // SDK's auth client, which aborts the process with
+        // "Panic: Attempted to submit auth request after the Ditto instance was
+        // closed" — observed on 5.1.0 in roughly 1 run in 4. Clearing the handler,
+        // logging out and letting the client settle avoided it in every run tried.
+        // A real app does not tear Ditto down mid-session, so this mostly affects
+        // tests and short-lived tools.
+        if case .server = config.connect {
+            ditto.auth?.expirationHandler = nil
+            ditto.auth?.logout()
+            // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: the latter is iOS 16+ and
+            // this package's floor is the SDK's own iOS 15.
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+
+        // The directory is only free once the last strong reference to `Ditto` is gone;
+        // there is no close(). Deleting it while the instance is alive would be
+        // deleting a live store's files out from under it.
+        let directory = ditto.absolutePersistenceDirectory
+        ditto = nil
+        try? FileManager.default.removeItem(at: directory)
         print("done")
     }
 

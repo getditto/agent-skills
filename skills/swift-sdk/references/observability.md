@@ -12,8 +12,9 @@ DittoLogger.isEnabled = true
 DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .verbose
 ```
 
-**Executed**: both round-trip. In v4 the flag is `DittoLogger.enabled`
-([versions.md](versions.md#store-results-and-errors)).
+**Executed on all three lines.** `isEnabled` exists un-deprecated on 4.14.6 too
+(`sdk-release-4.14.6:cocoa/DittoSwift/DittoLogger.swift:25`); the older `enabled`
+spelling is a deprecated alias there and is gone in v5.
 
 ### Routing logs into your own logger
 
@@ -66,11 +67,12 @@ observer.stop()
 ```
 
 **Executed**: after a single insert, `sizeInBytes` is greater than zero and `path` is
-non-empty. On 4.14.x this is `ditto.diskUsage.exec` on a `DiskUsage`
-([versions.md](versions.md#store-results-and-errors)).
+non-empty. The 4.14.x spelling is in
+[versions.md](versions.md#store-results-and-errors).
 
 `DittoDiskUsage.DiskUsagePublisher` (`diskUsage.diskUsagePublisher()`) is the Combine
-form. The observe handler is stopped with `stop()`, like the presence observer.
+form. `observe` returns a **`DittoDiskUsageObserver`**, not a `DittoObserver`; both are
+stopped with `stop()`.
 
 ### Small-peer info
 
@@ -85,13 +87,14 @@ ditto.smallPeerInfo.metadata      // [String: Any]
 `.notADictionary` are the other two validation failures this setter produces.
 
 This is the channel that feeds Ditto's device-observability tooling
-(<https://docs.ditto.com/sdk/latest/deployment/device-observability-and-ditto-logs>).
+(<https://docs.ditto.live/sdk/latest/deployment/device-observability-and-ditto-logs>).
 
 ### System information through DQL
 
 `SELECT * FROM system:collections`, `SELECT * FROM system:indexes` and `SHOW ALL` all run
-through `ditto.store.execute` like any other statement (**executed**). Statement grammar
-belongs to the `dql` skill or <https://docs.ditto.com/dql/dql>.
+through `ditto.store.execute` like any other statement, and each returns at least one
+item on a populated store (**executed**). Statement grammar
+belongs to the `dql` skill or <https://docs.ditto.live/dql/dql>.
 
 ### DittoSwiftTools
 

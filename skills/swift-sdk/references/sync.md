@@ -2,7 +2,7 @@
 
 *What* a subscription is, how it propagates through the mesh, and which queries a
 subscription accepts belong to the `sync-subscriptions` skill, or
-<https://docs.ditto.com/sdk/latest/sync/syncing-data>. This file is the Swift call shape.
+<https://docs.ditto.live/sdk/latest/sync/syncing-data>. This file is the Swift call shape.
 
 ## CAP-07 Sync subscriptions and sync scopes
 
@@ -75,10 +75,9 @@ intend (`sdk/latest/sync/sync-scopes.mdx`). Read the current value back with
 > `await ditto.store.execute(...)` with no `try` on a `throws` method, so it does not
 > compile. The form above is the corrected one and is exercised by the fixture.
 
-`ALTER SYSTEM` settings are held in memory and are not persisted to disk
-(`sdk/latest/sync/using-alter-system.mdx`), so they must be re-applied on every launch,
-before sync starts. Statement grammar belongs to the `dql` skill or
-<https://docs.ditto.com/dql/alter-system>.
+Re-apply sync scopes on every launch, before sync starts. Why — `ALTER SYSTEM` settings
+are not persisted — and the statement grammar both belong to the `dql` skill, or
+<https://docs.ditto.live/dql/alter-system>.
 
 ## CAP-14 Sync status and local commit tracking
 
@@ -105,11 +104,12 @@ on an offline-only peer with every radio off. For reachability, read the presenc
 | `SELECT` | `nil` |
 | any statement **inside** a transaction | `nil` |
 
-All three **executed**. Inside a transaction there is no commit yet, so an app that wants
-a commit identifier has to run the statement outside one.
+All three rows **executed**, with the first checked for all four mutating statements.
+Inside a transaction there is no commit yet, so an app that wants a commit identifier has
+to run the statement outside one.
 
 `DittoQueryResult.mutatedDocumentIDs()` returns the `DittoDocumentID`s a mutation touched
-— **executed**: one insert reports one ID. It is empty for a `SELECT`.
+— **executed**: one insert reports one ID, and a `SELECT` reports none.
 
 To observe *when* data arrives rather than when it was written locally, register a store
 observer ([observers.md](observers.md)); an observer fires on every change to its result

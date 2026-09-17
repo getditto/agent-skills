@@ -5,7 +5,7 @@ observe, write, and read the write back through the observer.
 
 Longer form of [`SKILL.md` § Minimum viable app](../SKILL.md#minimum-viable-app).
 
-**This is a copy of `tests/swift-sdk/Sources/MinimalApp/MinimalApp.swift`**, which is the
+**This is a copy of `Sources/MinimalApp/MinimalApp.swift` in the fixture**, which is the
 file CI compiles and runs. If the two ever disagree, the fixture is right.
 
 ## What it does
@@ -16,7 +16,8 @@ file CI compiles and runs. If the two ever disagree, the fixture is right.
 3. Authenticates: installs the `@Sendable async` expiration handler and awaits the first
    login (server mode), or sets the offline license token (offline mode).
 4. Starts sync, then registers a subscription.
-5. Registers a store observer and bridges it into an `AsyncStream` of `Sendable` values.
+5. Registers a store observer and bridges it into a **bounded** `AsyncStream` drained by
+   a single consumer — no `deliverOn:`, because it is ignored on 5.0.x.
 6. Writes a document with bound arguments.
 7. Waits for the observer to report the write, then tears everything down in reverse.
 
@@ -26,24 +27,40 @@ file CI compiles and runs. If the two ever disagree, the fixture is right.
 // Package.swift
 // swift-tools-version:6.0
 import PackageDescription
+import Foundation
+
+// One SPM URL serves all three supported lines; only the pin changes.
+let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ?? "5.1.0"
+
+// 4.14.x needs `@preconcurrency import DittoSwift` and `disableSyncWithV3()`, both of
+// which the program below selects with `#if DITTO_V4`. Without this setting, pinning
+// 4.14.6 compiles the v5 branch and fails.
+let versionFlags: [SwiftSetting] =
+    dittoVersion.hasPrefix("4.") ? [.define("DITTO_V4")] : []
 
 let package = Package(
     name: "MinimalApp",
     platforms: [.macOS(.v13), .iOS(.v15), .macCatalyst(.v15)],
     dependencies: [
-        .package(url: "https://github.com/getditto/DittoSwiftPackage", exact: "5.1.0")
+        .package(
+            url: "https://github.com/getditto/DittoSwiftPackage",
+            exact: Version(stringLiteral: dittoVersion)
+        )
     ],
     targets: [
         .executableTarget(
             name: "MinimalApp",
-            dependencies: [.product(name: "DittoSwift", package: "DittoSwiftPackage")]
+            dependencies: [.product(name: "DittoSwift", package: "DittoSwiftPackage")],
+            swiftSettings: versionFlags
         )
     ]
 )
 ```
 
-In Xcode, add the same package URL through **File → Add Package Dependencies…** and add
-the `DittoSwift` product to the target — see [setup.md](../references/setup.md).
+An app targeting only 5.1.x can drop the environment variable and the flag, and pin
+`from: "5.1.0"`. In Xcode, add the same package URL through **File → Add Package
+Dependencies…** and add the `DittoSwift` product to the target — see
+[setup.md](../references/setup.md).
 
 ## Program
 
@@ -71,7 +88,10 @@ struct Car: Identifiable, Sendable, Equatable {
     init?(_ value: [String: Any?]) {
         guard let id = value["_id"] as? String,
               let make = value["make"] as? String,
-              let mileage = value["mileage"] as? Int
+              // A stored number comes back as the narrowest CBOR type that holds it,
+              // so `as? Int` / `as? Double` silently drops rows. NSNumber bridges
+              // every width.
+              let mileage = (value["mileage"] as? NSNumber)?.intValue
         else { return nil }
         self.id = id
         self.make = make
@@ -104,7 +124,8 @@ enum MinimalApp {
 
         // 2. Open. `Ditto.open` is async; `Ditto.openSync` is the blocking form for a
         //    synchronous composition root such as `application(_:didFinishLaunching…)`.
-        let ditto = try await Ditto.open(config: config)
+        // Held as an Optional so it can be released before the directory is removed.
+        var ditto: Ditto! = try await Ditto.open(config: config)
         print("Ditto \(Ditto.version) opened at \(ditto.absolutePersistenceDirectory.path)")
         switch config.connect {
         case .server(let url): print("mode: server (\(url.absoluteString))")
@@ -153,14 +174,23 @@ enum MinimalApp {
         )
 
         // 5. Observe the local store. The observer fires once with the current result
-        //    and again on every change. Extract Sendable values inside the handler.
-        let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream()
+        //    and again on every change. Extract Sendable values inside the handler, and
+        //    do not pass `deliverOn:` — it is ignored on 5.0.x, so code that depends on
+        //    it is correct on two lines and wrong on the third. A bounded stream with a
+        //    single consumer gives ordering and back-pressure instead.
+        let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
+            bufferingPolicy: .bufferingNewest(1)
+        )
         let observer = try ditto.store.registerObserver(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
-            arguments: ["minimumMileage": 100],
-            deliverOn: .main
+            arguments: ["minimumMileage": 100]
         ) { result in
-            continuation.yield(result.items.compactMap { Car($0.value) })
+            continuation.yield(
+                result.items.compactMap { item in
+                    defer { item.dematerialize() }   // release the native copy
+                    return Car(item.value)
+                }
+            )
         }
 
         // 6. Write. `INSERT … DOCUMENTS` takes the document as a query argument, never
@@ -176,13 +206,34 @@ enum MinimalApp {
             break
         }
 
-        // 8. Tear down in the reverse order. Cancelling is what stops an observer —
+        // 8. Tear down in reverse order. Cancelling is what stops an observer —
         //    dropping the handle does not.
         continuation.finish()
         observer.cancel()
         subscription.cancel()
         ditto.sync.stop()
-        try? FileManager.default.removeItem(at: ditto.absolutePersistenceDirectory)
+
+        // Releasing a server-backed instance shortly after authenticating races the
+        // SDK's auth client, which aborts the process with
+        // "Panic: Attempted to submit auth request after the Ditto instance was
+        // closed" — observed on 5.1.0 in roughly 1 run in 4. Clearing the handler,
+        // logging out and letting the client settle avoided it in every run tried.
+        // A real app does not tear Ditto down mid-session, so this mostly affects
+        // tests and short-lived tools.
+        if case .server = config.connect {
+            ditto.auth?.expirationHandler = nil
+            ditto.auth?.logout()
+            // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: the latter is iOS 16+ and
+            // this package's floor is the SDK's own iOS 15.
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+
+        // The directory is only free once the last strong reference to `Ditto` is gone;
+        // there is no close(). Deleting it while the instance is alive would be
+        // deleting a live store's files out from under it.
+        let directory = ditto.absolutePersistenceDirectory
+        ditto = nil
+        try? FileManager.default.removeItem(at: directory)
         print("done")
     }
 
@@ -216,6 +267,7 @@ export DITTO_OFFLINE_LICENSE="REPLACE_ME_WITH_YOUR_OFFLINE_LICENSE"
 # export DITTO_TOKEN="REPLACE_ME_WITH_YOUR_DEVELOPMENT_TOKEN"
 # export DITTO_DATABASE_ID="REPLACE_ME_WITH_YOUR_DATABASE_ID"
 
+export DITTO_SWIFT_VERSION=5.1.0
 swift build --product MinimalApp
 BIN="$(swift build --product MinimalApp --show-bin-path)"
 
@@ -228,7 +280,7 @@ codesign --force --sign - "$BIN/DittoSwift.framework/Versions/A/DittoSwift"
 env -u NO_COLOR DYLD_FRAMEWORK_PATH="$BIN" "$BIN/MinimalApp"
 ```
 
-In this repository the same thing is one command:
+In the `getditto/agent-skills` repository the same thing is one command:
 
 ```bash
 cd tests/swift-sdk && ./scripts/run.sh 5.1.0 --app --offline
@@ -236,36 +288,49 @@ cd tests/swift-sdk && ./scripts/run.sh 5.1.0 --app --offline
 
 ## Expected output
 
-Real runs on macOS 27.0 / arm64, Apple Swift 6.4, offline mode. SDK log lines are
-omitted; the program's own output is verbatim.
+Real runs on macOS 27.0 / arm64, Apple Swift 6.4 (swiftlang-6.4.0.34.1). Ditto's own log
+lines are omitted; the build and program output is verbatim, and the only edit anywhere
+below is the redacted server hostname.
+
+Build, 5.1.0:
 
 ```
-Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-4A2499DD-BCA6-4BBA-A776-4E1903D8C530
+$ DITTO_SWIFT_VERSION=5.1.0 swift build --product MinimalApp
+Building for debugging...
+[75 / 81] SkillSupport
+[78 / 81] SkillSupport
+[79 / 81] MinimalApp-product
+Build complete! (5.92 sec)
+```
+
+Offline mode, all three lines:
+
+```
+Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-CE8DCEF3-C5EC-435F-AC4D-237797E134B1
 mode: smallPeersOnly
 observed 1 car(s): Toyota
 done
 ```
 
 ```
-Ditto 5.0.3 opened at /private/var/folders/g0/.../T/ditto-minimal-app-06D4F4BD-F341-4CBC-9AFD-5850778B89E2
+Ditto 5.0.3 opened at /private/var/folders/g0/.../T/ditto-minimal-app-9B1C4E7F-9524-4BB9-805B-4AE4BECC26AA
 mode: smallPeersOnly
 observed 1 car(s): Toyota
 done
 ```
 
 ```
-Ditto 4.14.6 opened at /private/var/folders/g0/.../T/ditto-minimal-app-955FFC47-39A0-4264-A4F0-ED9388209C98
+Ditto 4.14.6 opened at /private/var/folders/g0/.../T/ditto-minimal-app-D1A77786-3363-4799-A316-3A941D547B54
 mode: smallPeersOnly
 observed 1 car(s): Toyota
 done
 ```
 
-Server mode against a real Ditto Server, 5.1.0 (host redacted — it is the only line in
-these transcripts that was edited):
+Server mode against a real Ditto Server, 5.1.0 (host redacted):
 
 ```
-Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-2FA9D7B7-2132-491C-8FE8-C4DCDC51C211
-mode: server (https://REDACTED.cloud.dittolive.app/)
+Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-1F4E278A-EE23-4DA1-AECB-4AB3035F03D1
+mode: server (https://REDACTED.cloud.dittolive.app)
 observed 1 car(s): Toyota
 done
 ```
@@ -286,7 +351,9 @@ SDK 5.0. V3 sync is no longer supported.
 | 5.0.3 | macOS 27.0, arm64 | Apple Swift 6.4 (swiftlang-6.4.0.34.1) | offline and server |
 | 5.1.0 | macOS 27.0, arm64 | Apple Swift 6.4 (swiftlang-6.4.0.34.1) | offline and server |
 
+The run is checked, not just started: the harness fails unless the output contains the
+opened-at line for the requested version, `observed 1 car(s): Toyota`, and `done`.
+
 The same source also compiles for the iOS Simulator, an iOS device, and Mac Catalyst at
-all three versions — see `tests/swift-sdk/scripts/build-platforms.sh`. Nothing here was
-run on `x86_64`: 5.1.0 ships no Intel slice
+all three versions. Nothing here was run on `x86_64`: 5.1.0 ships no Intel slice
 ([versions.md](../references/versions.md#shipped-xcframework-slices)).

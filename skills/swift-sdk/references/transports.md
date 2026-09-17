@@ -3,7 +3,7 @@
 This file names Swift's transport **types, fields and update API**. *Which* transport to
 prefer, what each radio can do on each platform, and the cost of changing transports at
 runtime belong to the `ditto-mesh-networking` skill, or
-<https://docs.ditto.com/sdk/latest/sync/customizing-transport-configurations>.
+<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>.
 
 Permission and entitlement declarations are in [setup.md](setup.md).
 
@@ -33,15 +33,8 @@ ditto.updateTransportConfig { config in
 writes it back. Changes take effect immediately; sync itself still does not begin until
 `ditto.sync.start()`.
 
-**Never assign a freshly constructed `DittoTransportConfig()`.** A live instance has
-every peer-to-peer transport **enabled**; a default-constructed value has them all
-**disabled**. Both were measured:
-
-| | `ditto.transportConfig` on a live instance | `DittoTransportConfig()` |
-|---|---|---|
-| `peerToPeer.bluetoothLE.isEnabled` | `true` | `false` |
-| `peerToPeer.lan.isEnabled` | `true` | `false` |
-| `peerToPeer.awdl.isEnabled` | `true` | `false` |
+**Never assign a freshly constructed `DittoTransportConfig()`** — see the table below
+for why.
 
 ```swift
 // WRONG — silently turns the whole mesh off.
@@ -51,26 +44,33 @@ ditto.transportConfig = config
 ```
 
 **Symptom:** no compile error, no runtime error, `ditto.sync.isActive == true`, and the
-device never discovers a peer again.
+device never discovers a peer again. A live instance has every peer-to-peer transport
+enabled; a default-constructed value has them all disabled.
 
-### Measured defaults on a fresh instance
+### The one Swift-specific default that matters here
 
-| Field | Default |
-|---|---|
-| `peerToPeer.bluetoothLE.isEnabled` | `true` |
-| `peerToPeer.lan.isEnabled` | `true` |
-| `peerToPeer.lan.isMDNSEnabled` | `true` |
-| `peerToPeer.lan.isMulticastEnabled` | `true` |
-| `peerToPeer.awdl.isEnabled` | `true` |
-| `connect.tcpServers` / `connect.webSocketURLs` | empty |
-| `connect.retryInterval` | `5.0` seconds |
-| `listen.tcp.isEnabled` / `listen.http.isEnabled` | `false` |
-| `listen.tcp.port` / `listen.http.port` | `4040` / `80` |
-| `listen.http.webSocketSync` | `false` — **was `true` in v4** |
-| `global.syncGroup` / `global.routingHint` | `0` |
+**Which transports Ditto turns on by default, and why, belongs to
+`ditto-mesh-networking`** — see that skill, or
+<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>. The
+Swift-specific fact, and the reason for the anti-pattern above, is that *the two values
+disagree*:
 
-`listen.http.webSocketSync` flipping to `false` in v5 is the one that breaks a working v4
-app: anything that relied on the v4 default must now set it explicitly. See
+| Field | `ditto.transportConfig` on a live instance | `DittoTransportConfig()` |
+|---|---|---|
+| `peerToPeer.bluetoothLE.isEnabled` | `true` | `false` |
+| `peerToPeer.lan.isEnabled` | `true` | `false` |
+| `peerToPeer.lan.isMDNSEnabled` | `true` | `false` |
+| `peerToPeer.awdl.isEnabled` | `true` | `false` |
+
+All eight cells are **executed**. The remaining struct defaults —
+`connect.retryInterval` `5.0`, `listen.tcp.port` `4040`, `listen.http.port` `80`,
+`global.syncGroup`/`routingHint` `0`, empty `connect` collections — are read from
+`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoTransportConfig.swift` and are not measured
+on a live instance.
+
+One version-gated default is genuinely this skill's, because it breaks a working v4 app:
+**`listen.http.webSocketSync` flipped from `true` to `false` in v5** (**executed**).
+Anything that relied on the v4 default must now set it explicitly. See
 [versions.md](versions.md#store-results-and-errors).
 
 ### Disabling cloud sync while keeping the mesh

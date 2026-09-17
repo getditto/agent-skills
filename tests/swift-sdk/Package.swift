@@ -26,6 +26,14 @@ let versionFlags: [SwiftSetting] =
 let package = Package(
     name: "DittoSwiftSkillTests",
     platforms: [.macOS(.v13), .iOS(.v15), .macCatalyst(.v15)],
+    products: [
+        // `UIPatterns` MUST be a product. Without one, SwiftPM's auto-generated
+        // "-Package" scheme has nothing depending on it, and scripts/build-platforms.sh
+        // silently compiles none of the SwiftUI/UIKit/AppKit samples for iOS, the iOS
+        // Simulator or Mac Catalyst. Verified by introducing a type error into
+        // Sources/UIPatterns and watching the matrix stay green.
+        .library(name: "UIPatterns", targets: ["UIPatterns"]),
+    ],
     dependencies: [
         .package(
             url: "https://github.com/getditto/DittoSwiftPackage",

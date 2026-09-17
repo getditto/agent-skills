@@ -87,6 +87,27 @@ struct ObservabilityTests {
         #expect(peer.ditto.smallPeerInfo.metadata["deployment"] as? String == "fixture")
     }
 
+    @Test("system information is read through the same execute call as any DQL")
+    func systemQueriesExecute() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        try await peer.ditto.store.execute(
+            query: "INSERT INTO cars DOCUMENTS (:car)",
+            arguments: ["car": ["_id": "system-1", "make": "Toyota", "mileage": 1]]
+        )
+        try await peer.ditto.store.execute(query: "CREATE INDEX cars_mileage ON cars (mileage)")
+
+        let collections = try await peer.ditto.store.execute(query: "SELECT * FROM system:collections")
+        #expect(collections.items.isEmpty == false)
+
+        let indexes = try await peer.ditto.store.execute(query: "SELECT * FROM system:indexes")
+        #expect(indexes.items.isEmpty == false)
+
+        let all = try await peer.ditto.store.execute(query: "SHOW ALL")
+        #expect(all.items.isEmpty == false)
+    }
+
     @Test("logs export to a file")
     func logsExportToFile() async throws {
         let originalEnabled = DittoLogger.isEnabled

@@ -12,14 +12,14 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 
 # Ditto Swift SDK
 
-Ditto is an offline-first, peer-to-peer database. The Swift SDK puts it in an iOS,
-iPadOS, macOS or Mac Catalyst app: one app-lived `Ditto` instance owns a local store, a
-sync session and a mesh presence, and the app reads through DQL queries and store
-observers rather than network calls.
+Ditto is an offline-first, peer-to-peer database. The Swift SDK puts it in an iOS, iPadOS,
+macOS or Mac Catalyst app: one app-lived `Ditto` instance owns a local store, a sync
+session and a mesh presence, and the app reads through DQL queries and store observers
+rather than network calls.
 
 Three things make Swift different from the other eight SDKs, and are where this skill
 spends its budget: **object lifetime** (using an aggregate after its `Ditto` is released
-is a `fatalError` on v5), **Swift 6 concurrency** (observer callbacks are not
+is a `fatalError`), **Swift 6 concurrency** (observer callbacks are not
 main-actor-isolated, and `deliverOn:` is ignored on 5.0.x), and **result decoding**
 (`[String: Any?]` is not `Sendable`, and a number's Swift type depends on its value).
 
@@ -38,15 +38,15 @@ URL because the concept skill ships as a separate plugin and may not be installe
 
 | Question | Skill, if installed | Otherwise |
 |---|---|---|
-| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.com/dql/dql> |
-| Which CRDT type, embed vs split, document size | `data-modeling` | <https://docs.ditto.com/key-concepts> |
-| What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.com/sdk/latest/sync/syncing-data> |
-| Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.com/sdk/latest/sync/customizing-transport-configurations> |
-| The v4 → v5 migration procedure | — | <https://docs.ditto.com/sdk/latest/migration-guides/swift-v4> and <https://docs.ditto.com/sdk/latest/migration-guides/swift-dql> |
+| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.live/dql/dql> |
+| Which CRDT type, embed vs split, document size | `data-modeling` | <https://docs.ditto.live/key-concepts> |
+| What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
+| Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
+| The v4 → v5 migration procedure | — | <https://docs.ditto.live/sdk/latest/migration-guides/swift-v4> and <https://docs.ditto.live/sdk/latest/migration-guides/swift-dql> |
 
-This skill writes the `Info.plist` keys and entitlements an app needs — that is build
-configuration — but does not restate which platform carries which radio. Do **not** use
-it for the Kotlin, Java, JavaScript/React Native, C#, C++, Rust, Flutter or Go SDKs.
+This skill writes the `Info.plist` keys and entitlements an app needs — build
+configuration — but does not restate which platform carries which radio. Do **not** use it
+for the Kotlin, Java, JavaScript/React Native, C#, C++, Rust, Flutter or Go SDKs.
 
 ## Supported versions and packages
 
@@ -73,7 +73,6 @@ v5 are different APIs, not two versions of one.
 | CAP-13 | Presence graph and connection requests | partial | The graph, peer metadata and `presence.observe` are fully available and executed. The **connection-request path** (`presence.connectionRequestHandler`) needs a second peer and could not be executed here; it is documented from SDK source. |
 | CAP-20 | Preview and platform-specific APIs | preview | `DittoConfigExperimental.passphrase` carries the SDK's own "should not be used in production" warning; `DittoMulticastBetaConfig` / `DittoPeerToPeer.multicastBeta` are **5.1.0-only private beta**, off by default, iOS/macOS only, and need Apple's restricted `com.apple.developer.networking.multicast` entitlement. Data Streams is **not exposed by the Swift SDK** — `sdk/latest/sync/data-streams.mdx` is Kotlin-only. Detail: [references/preview.md](references/preview.md). |
 
-Full twenty-row capability map: [`README.md`](README.md).
 
 ## Minimum viable app
 
@@ -81,51 +80,70 @@ Full twenty-row capability map: [`README.md`](README.md).
 import DittoSwift
 import Foundation  // v5 does not re-export Foundation
 
-let ditto = try await Ditto.open(config: DittoConfig(
-    databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
-    connect: .server(url: URL(string: "REPLACE_ME_WITH_YOUR_CONNECT_URL")!)
-))
+@MainActor
+final class CarsModel: ObservableObject {
+    @Published private(set) var makes: [String] = []
+    private var ditto: Ditto?
+    private var subscription: DittoSyncSubscription?
+    private var observer: DittoStoreObserver?
+    private var consumer: Task<Void, Never>?
 
-// Install the handler BEFORE sync.start(), or start throws
-// DittoError.authenticationError(.expirationHandlerMissing).
-ditto.auth?.expirationHandler = { ditto, _ in
-    ditto.auth?.login(token: "REPLACE_ME_WITH_YOUR_TOKEN", provider: .development) { _, _ in }
-}
-try ditto.sync.start()
+    func start() async throws {   // call from SwiftUI's .task, not from App.init
+        let ditto = try await Ditto.open(config: DittoConfig(
+            databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
+            connect: .server(url: URL(string: "REPLACE_ME_WITH_YOUR_CONNECT_URL")!)
+        ))
+        self.ditto = ditto
 
-let query = "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage"
-let arguments: [String: Any?] = ["minimumMileage": 100]
+        // Install the handler BEFORE sync.start(), or start throws
+        // DittoError.authenticationError(.expirationHandlerMissing).
+        ditto.auth?.expirationHandler = { ditto, _ in
+            ditto.auth?.login(token: "REPLACE_ME_WITH_YOUR_TOKEN", provider: .development) { _, _ in }
+        }
+        try ditto.sync.start()
 
-let subscription = try ditto.sync.registerSubscription(query: query, arguments: arguments)
-let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
-    let makes = result.items.compactMap { item -> String? in
-        defer { item.dematerialize() }
-        return item.value["make"] as? String      // [String: Any?] is not Sendable
+        let query = "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage"
+        let arguments: [String: Any?] = ["minimumMileage": 100]
+        subscription = try ditto.sync.registerSubscription(query: query, arguments: arguments)
+
+        // One bounded stream, one consumer: ordered, unlike a Task per delivery.
+        let (updates, continuation) = AsyncStream<[String]>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
+            continuation.yield(result.items.compactMap { item in
+                defer { item.dematerialize() }
+                return item.value["make"] as? String   // [String: Any?] is not Sendable
+            })
+        }
+        self.observer = observer
+        continuation.onTermination = { _ in observer.cancel() }
+        consumer = Task { @MainActor [weak self] in
+            for await makes in updates { self?.makes = makes }
+        }
+
+        try await ditto.store.execute(
+            query: "INSERT INTO cars DOCUMENTS (:car)",
+            arguments: ["car": ["_id": "car-1", "make": "Toyota", "mileage": 120]]
+        )
     }
-    Task { @MainActor in model.makes = makes }    // hop explicitly; see §Concurrency
+
+    // Teardown is the reverse: consumer?.cancel(); observer?.cancel();
+    // subscription?.cancel(); ditto?.sync.stop(). See §Object lifetimes.
 }
-
-try await ditto.store.execute(
-    query: "INSERT INTO cars DOCUMENTS (:car)",
-    arguments: ["car": ["_id": "car-1", "make": "Toyota", "mileage": 120]]
-)
-
-// Retain ditto, subscription and observer for the owning scope's lifetime, then
-// observer.cancel(); subscription.cancel(); ditto.sync.stop()
 ```
 
-Complete, compiled and run program with real transcripts:
-[`examples/minimal-app.md`](examples/minimal-app.md).
+Complete program, twenty-row capability map, and real build-and-run transcripts:
+[`examples/minimal-app.md`](examples/minimal-app.md) and [`README.md`](README.md).
 
 ## Concurrency and threading model
 
 | API | Where its callback runs |
 |---|---|
 | `Ditto.open(config:)`, `store.execute(query:arguments:)` | `async throws`; resume on the caller's executor |
-| `Ditto.openSync(config:)` | `throws`; **blocks** the calling thread |
+| `Ditto.openSync(config:)` | `throws`; **blocks** — never on an iOS app's main thread |
 | `store.registerObserver(…, deliverOn:)`, `store.fetchAttachment(…, deliverOn:)` | the given `DispatchQueue`, default `.main` — **`registerObserver` ignores it on 5.0.x** |
 | `sync.registerSubscription` | synchronous, `throws`; no callback |
-| `presence.observe(didChangeHandler:)`, `auth.login(…, completion:)`, `DittoLogger.setCustomLogCallback` | an SDK thread; not `@Sendable`, not main-queue-guaranteed |
+| `presence.observe(didChangeHandler:)`, `DittoLogger.setCustomLogCallback` | an SDK thread; not `@Sendable`, not main-queue-guaranteed |
+| `auth.login(…, completion:)` | an SDK thread; the completion **is** `@Sendable` on 5.0.x and 5.1.x, and is not on 4.14.x |
 | `auth.expirationHandler`, `presence.connectionRequestHandler` | `@Sendable`, `async`, off the main actor |
 
 Rules that follow from that table:
@@ -138,36 +156,39 @@ Rules that follow from that table:
    is not `Sendable`. Extract into a value type *inside* the callback and send that.
 3. **Do the expensive work in the callback, not after the hop.** Decoding, diffing and
    sorting belong off the main actor; only the final assignment is main-actor work.
-4. **Do not wrap `Ditto` in an actor.** `Ditto` and `DittoStore` are `Sendable` on v5;
+4. **Hop with one consumer, not one `Task` per delivery.** Unstructured `Task`s have no
+   ordering guarantee, so a burst can apply out of order and leave the UI on a stale
+   result. Yield into an `AsyncStream(bufferingPolicy: .bufferingNewest(1))` and drain it
+   from a single long-lived `@MainActor` task.
+5. **Do not wrap `Ditto` in an actor.** `Ditto` and `DittoStore` are `Sendable` on v5;
    an actor adds hops without adding safety. Use actors for your own mutable async state.
-5. **On 4.14.x, `@preconcurrency import DittoSwift`** — that line predates the `Sendable`
+6. **On 4.14.x, `@preconcurrency import DittoSwift`** — that line predates the `Sendable`
    conformances, and Swift 6 language mode rejects the same code without it.
-6. **`signalNext()` must be called on every path out of a `handlerWithSignalNext`
-   handler**, exactly once. Put it in a `defer`.
-7. **`auth.expirationHandler` must not touch UI state.** It is `@Sendable` and `async`,
-   and it runs off the main actor.
+7. **`signalNext()` must be called exactly once per delivery**, from whichever context
+   finishes the work; put the `defer` first in the hopped body.
+8. **`auth.expirationHandler` must not touch UI state** — it is `@Sendable`, `async`, and
+   runs off the main actor.
 
 ## Object lifetimes and retention
 
 **Hold exactly one long-lived strong reference to `Ditto`, at the application composition
 root.** `store`, `sync`, `presence`, `auth`, `diskUsage`, `smallPeerInfo` and
-`experimental` are aggregate children holding a **weak** reference to their parent, so
-retaining only `ditto.store` does not keep `ditto` alive.
+`experimental` hold a **weak** reference to their parent, so retaining only `ditto.store`
+does not keep `ditto` alive.
 
 | Handle | Retain it | Symptom if you get it wrong |
 |---|---|---|
-| `Ditto` | for the app's lifetime | On v5 the next call through any aggregate is `fatalError("… the corresponding `Ditto` is `nil` …")` — a crash, not a catchable error. 4.14.6 throws `useAfterCloseError` instead. |
-| `DittoStoreObserver`, `DittoSyncSubscription` | for the scope that consumes it, **so you can cancel it** | Dropping the handle does **not** stop it. The observer keeps firing and keeps its closure's captures alive for the whole `Ditto` lifetime; the subscription stays registered. You have only lost the ability to cancel. |
-| `DittoAttachmentFetcher` | until the fetch completes or you `stop()` it | An abandoned fetch keeps running. Its parent reference is weak, so stopping it late is a no-op rather than a crash. |
-| `DittoObserver` (presence, auth status, disk usage) | for the scope that consumes it | Stopped with `stop()`, not `cancel()`. |
+| `Ditto` | for the app's lifetime | The next call through any aggregate is `fatalError("… the corresponding `Ditto` is `nil` …")` — a crash, not a catchable error. On 4.14.6 two of those paths, `store.registerObserver` and `store.execute`, throw `useAfterCloseError` instead; everything else crashes on every line. |
+| `DittoStoreObserver`, `DittoSyncSubscription` | for the scope that consumes it, **so you can cancel it** | Dropping the handle does **not** stop it: the observer keeps firing and keeps its closure's captures alive for the whole `Ditto` lifetime, and the subscription stays registered. You have only lost the ability to cancel. |
+| `DittoAttachmentFetcher` | until the fetch completes or you `stop()` it | An abandoned fetch keeps running. Its parent reference is weak, so stopping it late is a no-op, not a crash. |
+| `DittoObserver` (presence, auth status), `DittoDiskUsageObserver` | for the scope that consumes it | Stopped with `stop()`, not `cancel()` — and disk usage returns its own type. |
 | `AnyCancellable` (the four Combine publishers) | for the scope that consumes it | Releasing it *does* cancel — the opposite of the observer handles. |
 
-Cancel at the owning scope's boundary — `deinit`, `viewDidDisappear`, `.onDisappear` —
-and use `[weak self]` in callback closures so a dead view controller is not kept alive by
-a live observer. **Do not cache `ditto.sync.subscriptions` or `ditto.store.observers`**:
-both are *computed* in v5, so a snapshot taken once goes stale silently. There is no
-`close()` — releasing the last strong reference is what frees the persistence directory
-lock, and no second instance can open that directory until it does.
+Cancel at the owning scope's boundary — `deinit`, `viewDidDisappear`, `.onDisappear` — and
+use `[weak self]` in callback closures. **Do not cache `ditto.sync.subscriptions` or
+`ditto.store.observers`**: both are *computed* in v5, so a snapshot goes stale silently.
+There is no `close()` — releasing the last strong reference frees the persistence
+directory lock, and no second instance can open that directory until it does.
 
 ## Anti-patterns
 
@@ -182,61 +203,57 @@ struct Car: Codable { let price: Double }
 let car = try JSONDecoder().decode(Car.self, from: item.jsonData())
 ```
 
-**Symptom:** `nil` for some rows and a value for others *in the same column*. A value
-that fits binary32 (`19999.5`) comes back as `Float`; one that does not (`0.1`) comes
-back as `Double`. A `guard let` just skips the row — no error, no log.
+**Symptom:** `nil` for some rows and a value for others *in the same column* — a value
+that fits binary32 (`19999.5`) comes back as `Float`, one that does not (`0.1`) as
+`Double`. A `guard let` just skips the row: no error, no log.
 
 ### Forgetting `signalNext()` on an exit path
 
 ```swift
-try ditto.store.registerObserver(query: q) { result, signalNext in
+try ditto.store.registerObserver(query: q) { [weak self] result, signalNext in
     guard let self else { return }   // WRONG — signalNext is never called
     self.apply(result.items)
     signalNext()
 }
 
-try ditto.store.registerObserver(query: q) { result, signalNext in
+try ditto.store.registerObserver(query: q) { [weak self] result, signalNext in
     defer { signalNext() }           // CORRECT — every exit path, exactly once
     guard let self else { return }
     self.apply(result.items)
 }
 ```
 
-**Symptom:** the observer stops delivering forever, with no error, no log and no crash.
-The screen silently freezes on stale data.
+**Symptom:** the observer stops delivering forever — no error, no log, no crash. The
+screen silently freezes on stale data.
 
 ### Assigning a fresh `DittoTransportConfig()`
 
 ```swift
-// WRONG
-var config = DittoTransportConfig()
+var config = DittoTransportConfig()                                  // WRONG
 config.connect.webSocketURLs = ["wss://REPLACE_ME_WITH_YOUR_HOST"]
 ditto.transportConfig = config
 
-// CORRECT
-ditto.updateTransportConfig { config in
-    config.connect.webSocketURLs = ["wss://REPLACE_ME_WITH_YOUR_HOST"]
+ditto.updateTransportConfig {                                        // CORRECT
+    $0.connect.webSocketURLs = ["wss://REPLACE_ME_WITH_YOUR_HOST"]
 }
 ```
 
-**Symptom:** every peer-to-peer transport is turned off. A live instance defaults to
-`bluetoothLE`, `lan` and `awdl` all enabled; a default-constructed value has them all
+**Symptom:** every peer-to-peer transport is turned off — a live instance has
+`bluetoothLE`, `lan` and `awdl` enabled, a default-constructed value has them all
 `false`. No error, `sync.isActive == true`, and the device never finds a peer again.
 
 ### Dematerializing before diffing
 
 ```swift
-// CORRECT — diff first, then extract, then dematerialize. Reversing these two
-// statements is the mistake.
+// CORRECT — diff first, then extract. Reversing these two statements is the mistake.
 let diff = differ.diff(items)
-let cars = items.compactMap { item -> Car? in
-    defer { item.dematerialize() }
-    return Car(item.value)
-}
+let cars = items.map { item in defer { item.dematerialize() }; return Car(item.value) }
 ```
 
-**Symptom:** `DittoDiffer.diff(_:)` needs the items materialized and decodes its result
-with `try!`, so a failure here is a crash rather than a throw.
+**Symptom:** `DittoDiffer.diff(_:)` needs the items materialized and decodes with `try!`,
+so a failure is a crash, not a throw. `map`, never `compactMap`: the index sets are
+computed over `items`, so dropping a row desynchronises them from your data source and
+`performBatchUpdates` raises *"invalid number of rows in section 0"*.
 
 ### A retroactive `Sendable` shim on v5
 
@@ -249,18 +266,6 @@ the type's module 'DittoSwift'`. Delete the shim. On 4.14.x use
 `@preconcurrency import DittoSwift` instead; without it the compiler says
 `error: sending 'ditto' risks causing data races`.
 
-### `filter` on `[DittoConnection]` in v5
-
-```swift
-let mine = connections.filter { $0.peer1 == localKey }   // WRONG on v5
-let mine = connections.filter { (c: DittoConnection) in c.peer1 == localKey }  // CORRECT
-```
-
-**Symptom:** `error: trailing closure passed to parameter of type
-'Predicate<DittoConnection>'`. `DittoConnection` gains `Identifiable`/`Equatable`/
-`Hashable`/`Sendable` in v5, so `Foundation`'s predicate overload outranks
-`Sequence.filter`. An explicit closure parameter type disambiguates it.
-
 ### Treating `sync.isActive` as "connected"
 
 **Symptom:** a UI reporting "online" on an offline-only peer with every radio disabled.
@@ -272,8 +277,8 @@ let mine = connections.filter { (c: DittoConnection) in c.peer1 == localKey }  /
 `connect: .server(url: URL(string: "https://\(databaseID).cloud.ditto.live")!)`
 
 **Symptom:** authentication never succeeds. Copy the portal's *Connect via SDK* value
-verbatim — it is an `https://` URL and is not derived from the database ID. `.server(url:)`
-also takes a `URL`, not a `String`, and `databaseID` is spelled with an uppercase `ID`.
+verbatim — an `https://` URL, not derived from the database ID. `.server(url:)` takes a
+`URL`, not a `String`, and `databaseID` has an uppercase `ID`.
 
 ## Version differences
 
@@ -306,6 +311,7 @@ Full delta, including the on-disk upgrade and rollback results:
 | How do I turn on logs and see disk usage? | [references/observability.md](references/observability.md) |
 | What error is this and how do I recover? | [references/errors.md](references/errors.md) |
 | How do I test code that uses Ditto? | [references/testing.md](references/testing.md) |
-| What changed between 4.14.x and 5.x, on disk and in the API? | [references/versions.md](references/versions.md) |
+| What changed between 4.14.x and 5.x in the API? | [references/versions.md](references/versions.md) |
+| What happens to the store on disk when I upgrade or roll back? | [references/storage.md](references/storage.md) |
 | What is preview or platform-specific here? | [references/preview.md](references/preview.md) |
 | Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
