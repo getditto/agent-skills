@@ -155,7 +155,8 @@ identical:
 | `ADVISE AND PROVISION …` | `items[0].value["advice"]["createdIndexes"]` |
 
 Both also carry `advice.statement`, the echoed query. Reading `suggestedIndexes` after
-provisioning returns `nil`.
+provisioning returns `nil`. **Executed** — the fixture asserts each form's key is
+present and the other's is absent, so a future rename fails the harness.
 
 **Executed**: `ADVISE` leaves `system:indexes` empty, and `ADVISE AND PROVISION` does
 not. On 4.14.x and 5.0.x both forms are rejected by the parser with

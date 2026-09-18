@@ -41,6 +41,38 @@ struct ObserverBridgeTests {
         #expect(cars[0].mileage == 120)
     }
 
+    /// `references/observers.md` tells readers which paths run `onTermination` and which
+    /// do not. The Ditto-backed test below covers the cancellation path; this covers
+    /// `finish()` and the walked-away consumer, without needing an instance.
+    @Test("onTermination runs on finish() but not when a consumer merely stops reading")
+    func onTerminationFiresOnFinishOnly() async throws {
+        let terminated = Flag()
+        var (stream, continuation) = AsyncStream<Int>.makeStream()
+        continuation.onTermination = { _ in terminated.set() }
+
+        continuation.yield(1)
+        for await _ in stream { break }          // walk away, stream still alive
+        #expect(terminated.value == false, "breaking out of the loop must not terminate the stream")
+
+        continuation.finish()
+        for _ in 0..<50 where !terminated.value {
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        #expect(terminated.value == true, "finish() must run onTermination")
+
+        // Silences "never mutated"; `stream` is a `var` only because the pair is
+        // destructured together.
+        stream = AsyncStream { $0.finish() }
+        _ = stream
+    }
+
+    private final class Flag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var flag = false
+        func set() { lock.lock(); flag = true; lock.unlock() }
+        var value: Bool { lock.lock(); defer { lock.unlock() }; return flag }
+    }
+
     @Test("finishing the stream cancels the observer via onTermination")
     func terminationCancelsObserver() async throws {
         let peer = try await TestPeer.open()
@@ -67,12 +99,15 @@ struct ObserverBridgeTests {
 
     /// A bounded bridge must not accumulate results the consumer never gets to.
     ///
-    /// Deterministic by construction: **nothing consumes the stream while the writes
-    /// happen**, so the buffering policy alone decides how much survives. An earlier
-    /// version raced a 20 ms consumer sleep against local insert latency and caught the
-    /// `.unbounded` mutation only 2 runs in 4.
-    @Test("a bounded bridge drops superseded results; an unbounded one keeps them",
-          arguments: [true, false])
+    /// Asserts a **relation** — how many yields survived, against how many there were —
+    /// not an absolute count. An earlier version required the unbounded arm to retain at
+    /// least 5 results for 25 writes, which measured how often *Ditto* chose to fire
+    /// rather than what the buffering policy did: it failed 30 of 30 runs in isolation
+    /// and about 1 in 7 in the full suite.
+    ///
+    /// Nothing consumes the stream while the writes happen, so the policy alone decides
+    /// what survives.
+    @Test("the buffering policy decides how many yields survive", arguments: [true, false])
     func bufferingPolicyDecidesWhatSurvives(latestOnly: Bool) async throws {
         let peer = try await TestPeer.open()
         defer { peer.tearDown() }
@@ -94,26 +129,32 @@ struct ObserverBridgeTests {
         // Let the observer finish yielding before anything drains it.
         try await Task.sleep(nanoseconds: 1_000_000_000)
 
-        // Drain what the buffer actually retained, stopping when it goes quiet.
-        var deliveries: [Int] = []
-        while let cars = try? await firstElement(of: bridge.stream, timeout: .seconds(1)) {
-            deliveries.append(cars.count)
-            if cars.count == writes && latestOnly { break }
-            if deliveries.count > writes { break }
+        let yielded = bridge.yieldCount
+        #expect(yielded >= 1, "the observer never fired")
+
+        // Drain with a single iteration — `AsyncStream` supports one consumer.
+        var retained: [Int] = []
+        for await cars in bridge.stream {
+            retained.append(cars.count)
+            if cars.count == writes { break }
+            if retained.count >= yielded { break }
         }
 
-        #expect(deliveries.isEmpty == false)
-        #expect(deliveries.last == writes, "the consumer must end on the final state")
+        #expect(retained.contains(writes), "the final state must survive under either policy")
 
         if latestOnly {
+            // `.bufferingNewest(1)` keeps one pending result, so a consumer that starts
+            // late sees far fewer than were yielded.
             #expect(
-                deliveries.count <= 3,
-                "a bounded stream retained \(deliveries.count) results for \(writes) writes"
+                retained.count < yielded || yielded == 1,
+                "bounded retained \(retained.count) of \(yielded) yields"
             )
+            #expect(retained.count <= 2, "bounded retained \(retained.count) results")
         } else {
+            // `.unbounded` retains every yield, so the consumer walks the whole backlog.
             #expect(
-                deliveries.count >= 5,
-                "an unbounded stream should retain the backlog, not coalesce it (got \(deliveries.count))"
+                retained.count == yielded,
+                "unbounded retained \(retained.count) of \(yielded) yields"
             )
         }
     }
@@ -124,12 +165,13 @@ struct ObserverBridgeTests {
     ///
     /// **What this does NOT prove.** Replacing the bridge's `continuation.yield(...)`
     /// with `Task { continuation.yield(...) }` — the unordered anti-pattern the design
-    /// exists to avoid — still passes this test, measured 3 runs of 3. `AsyncStream`
-    /// serialises yields, so the reordering window is too small to provoke locally. The
-    /// ordering argument for `ObserverBridge` therefore rests on the structural
-    /// guarantee, not on this test, and README.md lists it under "Not verified".
-    @Test("a single consumer observes results in non-decreasing order")
-    func singleConsumerPreservesOrder() async throws {
+    /// exists to avoid — still passes this test, measured 3 of 3 and then 10 of 10.
+    /// `AsyncStream` serialises yields, so a single-process fixture does not provoke the
+    /// reordering. That the anti-pattern passes says nothing about its safety: a `Task`
+    /// per delivery has no ordering guarantee at all. The argument for `ObserverBridge`
+    /// is structural, and README.md lists this under "Not verified".
+    @Test("a single consumer never observes a growing store shrink")
+    func growingStoreIsNeverObservedShrinking() async throws {
         let peer = try await TestPeer.open()
         defer { peer.tearDown() }
 
@@ -243,26 +285,76 @@ struct DeadlineTests {
         }
         defer { subject.cancel() }
 
-        for _ in 0..<60 where await outcome.value == nil {
+        var waited = 0
+        while await outcome.value == nil && waited < 60 {
             try await Task.sleep(nanoseconds: 100_000_000)
+            waited += 1
         }
+        let observed = await outcome.value
         #expect(
-            await outcome.value == .timedOut,
+            observed == .timedOut,
             "Deadline.run did not release its caller — see the task-group note in Deadline.swift"
         )
     }
 
     private actor Outcome {
-        enum Value { case timedOut, returned, threw }
+        enum Value { case timedOut, returned, threw, cancelled }
         private(set) var value: Value?
         func record(_ value: Value) { if self.value == nil { self.value = value } }
     }
 
+    /// Only that the completion path wins. It cannot check that the timer was cancelled:
+    /// `Gate` makes a late timer a no-op, so `timer.cancel()` is a resource optimisation
+    /// rather than a guard, and deleting it leaves every test green (measured).
+    /// `lateCompletionIsHarmless` covers the invariant that actually protects this.
+    ///
+    /// The margin is wide on purpose. A tighter one (a 2s deadline asserting under 1s)
+    /// measured 1.3s and 2.1s under full-suite load — the suite runs tests in parallel
+    /// against real Ditto instances, so wall-clock here bounds nothing below a second.
     @Test("a completion that fires first wins and the deadline is discarded")
     func completionWins() async throws {
         let started = Date()
         try await Deadline.run(seconds: 30) { complete in complete(nil) }
-        #expect(Date().timeIntervalSince(started) < 5)
+        let elapsed = Date().timeIntervalSince(started)
+        #expect(elapsed < 10, "the completion should have won long before the deadline, took \(elapsed)s")
+    }
+
+
+    /// The other half of what `Deadline` promises. An unstructured `Task` does not
+    /// inherit cancellation, so without a `withTaskCancellationHandler` the caller stays
+    /// blocked for the full deadline and then reports `Exceeded` — measured at 10.4s
+    /// against a 10s deadline cancelled at 0.5s. That matters in `DittoLoader`, whose
+    /// bootstrap runs from SwiftUI's `.task`: a disappearing view would hold the `Ditto`
+    /// instance and its directory lock, and report "unreachable server" for a teardown.
+    @Test("cancelling the caller releases it promptly with CancellationError")
+    func cancellationReleasesTheCaller() async throws {
+        let outcome = Outcome()
+        let started = Date()
+
+        let subject = Task {
+            do {
+                try await Deadline.run(seconds: 30) { _ in
+                    // Never completes: only cancellation can end this.
+                }
+                await outcome.record(.returned)
+            } catch is CancellationError {
+                await outcome.record(.cancelled)
+            } catch is Deadline.Exceeded {
+                await outcome.record(.timedOut)
+            } catch {
+                await outcome.record(.threw)
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 300_000_000)
+        subject.cancel()
+        _ = await subject.value
+
+        let elapsed = Date().timeIntervalSince(started)
+        // Read the actor once: `#expect`'s autoclosure is nonisolated and cannot await.
+        let observed = await outcome.value
+        #expect(observed == .cancelled, "expected CancellationError, got \(String(describing: observed))")
+        #expect(elapsed < 5, "cancellation did not release the caller promptly (\(elapsed)s of a 30s deadline)")
     }
 
     @Test("an error from the completion is rethrown, not swallowed by the deadline")
@@ -273,6 +365,9 @@ struct DeadlineTests {
         }
     }
 
+    /// `Gate.finished` is the only thing enforcing "exactly one resumption", and deleting
+    /// it aborts this run with "tried to resume its continuation more than once" — so the
+    /// sleep at the end is the assertion, not padding.
     @Test("a late completion after a timeout does not double-resume")
     func lateCompletionIsHarmless() async throws {
         await #expect(throws: Deadline.Exceeded.self) {
@@ -286,5 +381,99 @@ struct DeadlineTests {
             }
         }
         try await Task.sleep(nanoseconds: 2_500_000_000)
+    }
+}
+
+/// `Retry` bounds the authentication expiration handler, which has no caller to rethrow
+/// to: a single failed attempt there means sync stops for the rest of the session.
+@Suite("Retry")
+struct RetryTests {
+
+    private actor Counter {
+        private(set) var count = 0
+        func increment() -> Int {
+            count += 1
+            return count
+        }
+    }
+
+    private struct Boom: Error, Equatable {
+        let attempt: Int
+    }
+
+    @Test("a body that succeeds first time is run exactly once")
+    func successRunsOnce() async throws {
+        let counter = Counter()
+        try await Retry.run(attempts: 3, firstBackoffSeconds: 0.01) {
+            _ = await counter.increment()
+        }
+        #expect(await counter.count == 1)
+    }
+
+    @Test("a body that fails then succeeds stops at the success")
+    func stopsAtFirstSuccess() async throws {
+        let counter = Counter()
+        try await Retry.run(attempts: 5, firstBackoffSeconds: 0.01) {
+            let attempt = await counter.increment()
+            if attempt < 3 { throw Boom(attempt: attempt) }
+        }
+        #expect(await counter.count == 3, "should have stopped at the first success")
+    }
+
+    @Test("the attempts are spent and the last error is rethrown")
+    func rethrowsAfterTheLastAttempt() async throws {
+        let counter = Counter()
+        let thrown = await #expect(throws: Boom.self) {
+            try await Retry.run(attempts: 3, firstBackoffSeconds: 0.01) {
+                throw Boom(attempt: await counter.increment())
+            }
+        }
+        #expect(await counter.count == 3, "expected exactly 3 attempts")
+        // The LAST error, not the first: a caller logging it should see the most recent
+        // reason, and an unchanged first error would hide a changing failure.
+        #expect(thrown == Boom(attempt: 3))
+    }
+
+    @Test("backoff grows rather than hammering")
+    func backoffGrows() async throws {
+        let counter = Counter()
+        let started = Date()
+        _ = await #expect(throws: Boom.self) {
+            // 0.2 + 0.4 = 0.6s of backoff across three attempts.
+            try await Retry.run(attempts: 3, firstBackoffSeconds: 0.2) {
+                throw Boom(attempt: await counter.increment())
+            }
+        }
+        // A LOWER bound only. This suite runs in parallel against real Ditto instances,
+        // so an upper bound in the low seconds measures machine load, not the code —
+        // `elapsed < 3` here failed at 3.0s+ under `--all`. It also caught nothing: every
+        // mutation that breaks the backoff (`backoff *= 1`, a fixed 1µs sleep, `throw` on
+        // the first failure) makes the run FASTER, which only a lower bound sees.
+        let elapsed = Date().timeIntervalSince(started)
+        #expect(elapsed >= 0.6, "backoff did not grow: \(elapsed)s for 0.2 + 0.4")
+    }
+
+    /// Without this the handler runs out its remaining attempts and their backoff after a
+    /// teardown has already begun — at the defaults, up to 51 seconds of a process that
+    /// is trying to exit.
+    @Test("cancelling during the backoff abandons the remaining attempts")
+    func cancellationAbandonsRemainingAttempts() async throws {
+        let counter = Counter()
+
+        let subject = Task {
+            try await Retry.run(attempts: 10, firstBackoffSeconds: 5) {
+                throw Boom(attempt: await counter.increment())
+            }
+        }
+        // Let the first attempt fail and the 5-second backoff begin.
+        try await Task.sleep(nanoseconds: 300_000_000)
+        subject.cancel()
+
+        // The error type and the attempt count are what decide this, and neither depends
+        // on machine load. A wall-clock bound looks like the natural assertion here and is
+        // not one: swallowing the cancellation (`try?` around the sleep) makes the backoff
+        // collapse to nothing, so the ten attempts run FASTER than the correct one.
+        await #expect(throws: CancellationError.self) { try await subject.value }
+        #expect(await counter.count == 1, "should not have started a second attempt")
     }
 }

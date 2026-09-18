@@ -21,27 +21,7 @@ FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 cd "$FIXTURE_DIR"
 
-# Serialise against another run sharing this .build directory. Two concurrent
-# swift/xcodebuild invocations here produce confusing failures — "build.db: database is
-# locked", and dlopen crashes from a half-written framework — that look like SDK bugs.
-#
-# `mkdir` rather than `flock`: flock is not present on macOS, where this fixture runs,
-# so a flock-based guard would be a silent no-op on the only platform that needs it.
-acquire_build_lock() {
-  local lock="$FIXTURE_DIR/.build.lock" waited=0
-  until mkdir "$lock" 2>/dev/null; do
-    if [[ $waited -ge 600 ]]; then
-      echo "another run has held $lock for 10 minutes; remove it if that run is gone" >&2
-      exit 1
-    fi
-    # `${lock}`, braced: bash absorbs the following multi-byte character into the
-    # variable name otherwise, and `set -u` then reports it as unbound.
-    [[ $waited -eq 0 ]] && echo "waiting for another run to release ${lock}" >&2
-    sleep 2
-    waited=$((waited + 2))
-  done
-  # persistence-matrix.sh installs its own composite EXIT trap below.
-}
+. "$(dirname "${BASH_SOURCE[0]}")/lib/build-lock.sh"
 acquire_build_lock
 
 if [[ -f "$REPO_ROOT/.env" ]]; then
@@ -66,8 +46,8 @@ if [[ -z "${DITTO_OFFLINE_LICENSE:-}" ]]; then
 fi
 
 WORK="$(mktemp -d)"
-# Compose with the build lock's trap rather than replacing it.
-trap 'rm -rf "$WORK"; rmdir "$FIXTURE_DIR/.build.lock" 2>/dev/null || true' EXIT
+# Replaces the build lock's own EXIT trap, so it has to release the lock too.
+trap 'rm -rf "$WORK" "$FIXTURE_DIR/.build.lock"' EXIT
 
 probe() {
   local version="$1"; shift

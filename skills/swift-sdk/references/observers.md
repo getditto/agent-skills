@@ -72,11 +72,25 @@ This is the shape to use; everything below explains a part of it.
 struct Car: Identifiable, Sendable, Equatable {
     let id: String, make: String, mileage: Int
     init(_ value: [String: Any?]) {
-        // `_id` need not be a String — a composite (map) `_id` is a supported pattern —
-        // and a positional fallback is not an identity.
-        self.id = (value["_id"] as? String) ?? String(describing: value["_id"] ?? "")
+        self.id = Car.identity(of: value["_id"] ?? nil)
         self.make = value["make"] as? String ?? "Unknown"
         self.mileage = (value["mileage"] as? NSNumber)?.intValue ?? 0
+    }
+
+    /// `_id` need not be a `String` — a composite (map) `_id` is a supported Ditto
+    /// pattern — and a positional fallback is not an identity.
+    ///
+    /// Switch rather than `as? String ?? String(describing:)`: a `[String: Any?]`
+    /// subscript yields `Any??`, so the shorter form stringifies the inner optional and
+    /// every non-`String` id comes out as `Optional(…)`. **Executed** — see
+    /// `tests/swift-sdk` (`Car derives identity from a non-String _id`).
+    static func identity(of rawID: Any?) -> String {
+        switch rawID {
+        case let string as String: return string
+        case let number as NSNumber: return number.stringValue
+        case .none: return ""
+        case .some(let other): return String(describing: other)
+        }
     }
 }
 
@@ -116,9 +130,13 @@ all, because it yields `[Car?]`. Where there is no differ — as in
 [`examples/minimal-app.md`](../examples/minimal-app.md) — a failable initializer with
 `compactMap` is fine.
 
-**`onTermination` only fires on cancellation while suspended.** A consumer that `break`s
-out of the loop, returns, or is never started leaves the observer running; those paths
-still need an explicit `cancel()`.
+**`onTermination` fires when the stream terminates — not when the consumer walks away.**
+It runs on `continuation.finish()` (**executed**), on cancellation while the consumer is
+suspended in the loop (**executed**), and when the last reference to the stream is
+released. It does **not** run because a consumer `break`s out of the loop, returns early,
+or never starts iterating (**executed**): the stream is still alive and the observer keeps
+firing into it. Those paths need an explicit `cancel()`, or a scope that releases the
+stream.
 
 ### Back-pressure: `handler` versus `handlerWithSignalNext`
 

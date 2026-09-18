@@ -109,8 +109,12 @@ with `DittoError.authenticationError(.expirationHandlerMissing(message:))`.
 ```swift
 ditto.auth?.expirationHandler = { ditto, _ in
     let token = await tokenStore.current()      // actor-owned, not UI state
-    ditto.auth?.login(token: token, provider: .development) { _, error in
-        if let error { print("Ditto login failed: \(error)") }
+    do {
+        try await retrying(attempts: 3, firstBackoffSeconds: 2) {
+            try await login(ditto, token: token, timeoutSeconds: 15)
+        }
+    } catch {
+        logger.error("Ditto re-authentication gave up: \(error.localizedDescription)")
     }
 }
 try ditto.sync.start()
@@ -119,6 +123,18 @@ try ditto.sync.start()
 The handler runs off the main actor. It must not touch `@Published` properties, view
 controllers or any other main-actor state directly — hop with `await MainActor.run { … }`
 or a `Task { @MainActor in … }` if it needs to report status to the UI.
+
+**Retry inside the handler, and bound both the login and the retries.** Nothing calls the
+handler again until the token next expires, so one attempt lost to a captive portal or a
+server blip leaves the instance unauthenticated for the rest of the session: sync stops
+and nothing reports why. Because the handler is awaited, the cost is real —
+`attempts × timeout` plus backoff, 51 seconds at the values above — so pick the numbers
+deliberately rather than retrying forever. The awaited launch login is the opposite case:
+it should fail fast and let the UI offer a button.
+
+`AuthCoordinator` and `Retry` in `tests/swift-sdk/Sources/UIPatterns/` are the worked
+form. `Retry` is **executed**, including that a cancelled caller is released during the
+backoff instead of running out its remaining attempts.
 
 `.development` is the development-token provider. Any other provider is named by string:
 `DittoAuthenticationProvider("my-provider")`.
@@ -172,6 +188,22 @@ That is the switch to use for a "work offline" mode, not tearing down the instan
 
 There is no `close()`. A `Ditto` instance is released when its last strong reference goes
 away, and releasing it is what frees the persistence directory lock.
+
+**A failed startup must still release the instance, and not on the main actor.** If
+`Ditto.open` succeeds and a later step throws — activation, login, the first query — the
+instance is live and holding the directory lock, so a retry that does not release it first
+fails with `storeError(.persistenceDirectoryLocked)`. Dropping that last reference from a
+`@MainActor` error path is the debug-build stall described below. Hand it to a detached
+task instead:
+
+```swift
+private nonisolated static func release(_ ditto: Ditto) {
+    Task.detached { withExtendedLifetime(ditto) {} }
+}
+```
+
+`DittoLoader` in `tests/swift-sdk/Sources/UIPatterns/CarListView.swift` does this on its
+bootstrap failure path.
 
 **Releasing a server-backed instance shortly after it authenticates can abort the
 process.** Observed on 5.1.0 in roughly one run in four:

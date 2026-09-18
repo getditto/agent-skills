@@ -249,37 +249,74 @@ enum MinimalApp {
     /// task group does not return until every child finishes, and a child suspended in
     /// `withCheckedThrowingContinuation` is not cancellable — so a "timeout" task beside
     /// it produces the error and then blocks forever waiting for its sibling. `Gate`
-    /// makes exactly one of the two resumptions win.
+    /// makes exactly one of the resumptions win.
+    ///
+    /// `withTaskCancellationHandler` is the other half: an unstructured `Task` does not
+    /// inherit cancellation, so without it a cancelled caller stays blocked for the full
+    /// timeout and then reports `timedOut` — measured at 31.9s against a 30s deadline
+    /// cancelled at 0.3s.
+    ///
+    /// `Gate` below mirrors `Deadline.Gate` in `tests/swift-sdk/Sources/UIPatterns`,
+    /// which is where its test coverage lives. The duplication is deliberate — this
+    /// file has to compile on its own when a reader pastes it into an empty project —
+    /// and `scripts/validate-sdk-skills.py` fails the build if the two actors drift.
     private static func login(_ ditto: Ditto, token: String, timeoutSeconds: UInt64) async throws {
         guard let auth = ditto.auth else { throw LoginError.noAuthenticator }
 
         let gate = Gate()
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let deadline = Task {
-                try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
-                if await gate.claim() { continuation.resume(throwing: LoginError.timedOut) }
-            }
-            auth.login(token: token, provider: .development) { _, error in
-                Task {
-                    guard await gate.claim() else { return }
-                    deadline.cancel()
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                Task { await gate.install(continuation) }
+
+                let timer = Task {
+                    // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is iOS
+                    // 16+ and the SDK's own floor is iOS 15.
+                    try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                    await gate.finish(LoginError.timedOut)
+                }
+
+                auth.login(token: token, provider: .development) { _, error in
+                    Task {
+                        timer.cancel()
+                        await gate.finish(error)
                     }
                 }
             }
+        } onCancel: {
+            Task { await gate.finish(CancellationError()) }
         }
     }
 
-    /// Ensures a continuation is resumed exactly once when two paths can resume it.
+    /// Ensures a continuation is resumed exactly once when the completion, the deadline
+    /// and cancellation can all resume it.
     private actor Gate {
-        private var claimed = false
-        func claim() -> Bool {
-            if claimed { return false }
-            claimed = true
-            return true
+        private var continuation: CheckedContinuation<Void, Error>?
+        private var outcome: Error?
+        private var finished = false
+
+        func install(_ continuation: CheckedContinuation<Void, Error>) {
+            // A resumption can arrive before `install` runs, since both are scheduled
+            // onto this actor: replay it rather than dropping it.
+            if finished {
+                resume(continuation)
+                return
+            }
+            self.continuation = continuation
+        }
+
+        func finish(_ error: Error?) {
+            guard !finished else { return }
+            finished = true
+            outcome = error
+            if let continuation { resume(continuation) }
+        }
+
+        private func resume(_ continuation: CheckedContinuation<Void, Error>) {
+            if let outcome {
+                continuation.resume(throwing: outcome)
+            } else {
+                continuation.resume()
+            }
         }
     }
 

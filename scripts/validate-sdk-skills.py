@@ -26,6 +26,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import textwrap
 
 SKILLS_DIR = "skills"
 SPEC = "docs/SDK-SKILL-TEMPLATE.md"
@@ -514,9 +515,127 @@ def capability_detail(text: str, cap_id: str) -> str:
 # stops checking when a fixture is renamed — both of which were demonstrated.
 FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
 
+
+def within(root: str, path: str) -> bool:
+    """True when `path` is `root` or lives underneath it.
+
+    The paths checked here are derived from prose in the skill, so `../../../etc/passwd`
+    resolves to a readable file and would otherwise be compared happily. Proven: a
+    declaration of `../../../README.md` passed before this guard existed.
+    """
+    root = os.path.realpath(root)
+    path = os.path.realpath(path)
+    return root == path or path.startswith(root + os.sep)
+
+
+# A fixture source may restate a type that is defined and tested elsewhere in the same
+# harness, when the file has to compile standalone (the minimal app is pasted into an
+# empty project, so it cannot `import` the harness's own modules). Declaring the mirror
+# in prose makes the duplication checkable instead of a place for the two to drift —
+# which is the failure mode this skill hit repeatedly: the tested copy was fixed and the
+# pasted copy was not.
+MIRROR_DECL_RE = re.compile(r"mirrors `([\w.]+)` in `([^`]+)`")
+
+DECL_KINDS = ("actor", "struct", "final class", "class", "enum")
+
 # Everything below this marker in the fixture is the documented program. Declared rather
 # than inferred, so the boundary does not depend on Swift syntax.
 PROGRAM_MARKER = "// MARK: - begin documented program"
+
+
+def extract_declaration(text: str, type_name: str):
+    """Returns the source of `type_name`'s declaration, including its leading keyword.
+
+    Brace-matched rather than parsed. Braces inside string literals would confuse it, so
+    a failure to extract is reported as an error rather than treated as "no mirror here".
+    """
+    pattern = re.compile(
+        r"^[ \t]*(?:public |internal |private |fileprivate )*"
+        r"(?:" + "|".join(k.replace(" ", r"\s+") for k in DECL_KINDS) + r")\s+"
+        + re.escape(type_name) + r"\b[^\n{]*\{",
+        re.M,
+    )
+    match = pattern.search(text)
+    if not match:
+        return None
+    depth = 0
+    for index in range(text.index("{", match.start()), len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return textwrap.dedent(text[match.start():index + 1])
+    return None
+
+
+def check_mirrored_declarations(name: str) -> None:
+    """Every "mirrors `A.B` in `<path>`" claim must be byte-identical to its original."""
+    harness = os.path.join("tests", name)
+    if not os.path.isdir(harness):
+        return
+
+    for directory, subdirectories, files in os.walk(harness):
+        # `.build` holds SwiftPM's checkouts of every dependency. Walking it is slow and
+        # a claim found inside a vendored source would report on a file nobody here owns.
+        subdirectories[:] = [entry for entry in subdirectories if not entry.startswith(".")]
+        for filename in sorted(files):
+            if not filename.endswith(".swift"):
+                continue
+            copy_path = os.path.join(directory, filename)
+            text = read(copy_path)
+            for qualified, target in MIRROR_DECL_RE.findall(text):
+                type_name = qualified.split(".")[-1]
+                resolved = os.path.join(harness, os.path.relpath(target, harness)) \
+                    if target.startswith(harness) else os.path.join(harness, target)
+                if not within(harness, resolved) or not os.path.exists(resolved):
+                    fail(
+                        f"{copy_path}: claims to mirror `{qualified}` in `{target}`, "
+                        f"which does not resolve inside {harness}/."
+                    )
+                    continue
+
+                candidates = []
+                if os.path.isfile(resolved):
+                    candidates = [resolved]
+                else:
+                    for sub, nested, names in os.walk(resolved):
+                        nested[:] = [entry for entry in nested if not entry.startswith(".")]
+                        candidates += [
+                            os.path.join(sub, entry)
+                            for entry in sorted(names)
+                            if entry.endswith(".swift")
+                            and os.path.join(sub, entry) != copy_path
+                        ]
+
+                originals = [
+                    (candidate, extract_declaration(read(candidate), type_name))
+                    for candidate in candidates
+                ]
+                originals = [(path, decl) for path, decl in originals if decl]
+                if not originals:
+                    fail(
+                        f"{copy_path}: claims to mirror `{qualified}`, but no "
+                        f"declaration of `{type_name}` was found under {target}. A "
+                        f"renamed original must not silently disable this check."
+                    )
+                    continue
+
+                copy = extract_declaration(text, type_name)
+                if copy is None:
+                    fail(
+                        f"{copy_path}: declares a mirror of `{qualified}` but has no "
+                        f"`{type_name}` declaration of its own."
+                    )
+                    continue
+
+                if not any(decl == copy for _, decl in originals):
+                    origin = originals[0][0]
+                    fail(
+                        f"{copy_path}: its `{type_name}` has drifted from `{qualified}` "
+                        f"in {origin}. The original is the copy that is tested — port "
+                        f"the change, or drop the 'mirrors' claim."
+                    )
 
 
 def check_minimal_app_matches_fixture(name: str) -> None:
@@ -538,6 +657,13 @@ def check_minimal_app_matches_fixture(name: str) -> None:
         return
 
     fixture = os.path.join(harness, declaration.group(1))
+    if not within(harness, fixture):
+        fail(
+            f"{example}: declares a copy of `{declaration.group(1)}`, which resolves "
+            f"outside {harness}/. A declaration must not be able to point this check at "
+            f"an arbitrary file."
+        )
+        return
     if not os.path.isfile(fixture):
         fail(
             f"{example}: declares a copy of `{declaration.group(1)}`, which does not "
@@ -558,6 +684,20 @@ def check_minimal_app_matches_fixture(name: str) -> None:
             f"documented program."
         )
         return
+    # The marker declares "everything below is the documented program". If code sits
+    # above it, the published sample silently omits a part the fixture compiled — the
+    # reader gets a program that does not build. Only comments and blank lines may
+    # precede it.
+    preamble = source.split(PROGRAM_MARKER, 1)[0].splitlines()
+    for number, line in enumerate(preamble, start=1):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("//"):
+            fail(
+                f"{fixture}:{number}: code above '{PROGRAM_MARKER}' is excluded from "
+                f"the published sample, so the sample would not compile: {stripped!r}"
+            )
+            break
+
     expected = source.split(PROGRAM_MARKER, 1)[1].lstrip("\n")
 
     if match.group(1) != expected:
@@ -582,6 +722,7 @@ def main() -> int:
     for name in sdk_skills:
         validate_sdk_skill(name)
         check_minimal_app_matches_fixture(name)
+        check_mirrored_declarations(name)
 
     for message in warnings:
         print(f"WARNING: {message}")

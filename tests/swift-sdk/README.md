@@ -109,11 +109,20 @@ the single file you edited.
 | …and the AppKit region | a type error inside `#if canImport(AppKit)` | only the macOS leg fails |
 | Persistence legs assert | reading a document that was never written | probe exits 1 with three `FAIL:` lines |
 | …and run the right SDK | `--expect-version` naming another version | `FAIL: expected SDK X, running Y` |
+| …and open where they claim | `--expect-directory` naming another path | `FAIL: expected directory X, opened Y` |
 | Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails |
-| Bounded stream coalesces | forcing `.unbounded` | `bufferingPolicyDecidesWhatSurvives` fails on both arms |
+| Bounded stream coalesces | forcing `.unbounded` | `bufferingPolicyDecidesWhatSurvives(latestOnly: true)` fails |
+| …and an unbounded one does not | forcing `.bufferingNewest(1)` | `bufferingPolicyDecidesWhatSurvives(latestOnly: false)` fails |
 | The login deadline releases its caller | restoring the task-group shape in `Deadline.swift` | `neverCompletingBodyTimesOut` fails (in ~8s, not a hang) |
+| …and honours cancellation | deleting `withTaskCancellationHandler` | `cancellationReleasesTheCaller` fails: blocked 31.9s of a 30s deadline, reports `timedOut` |
+| …exactly once | deleting `guard !finished` from `Gate` | the run aborts: `tried to resume its continuation more than once` |
+| The pasted copy keeps up | drifting `Gate` in `MinimalApp.swift` | `validate-sdk-skills.py` reports it has drifted from `Deadline.Gate` |
 | `onTermination` cancels | deleting the `onTermination` assignment | `terminationCancelsObserver` fails |
+| …and does not fire when a consumer just stops reading | `finish()`ing right after the `break` | `onTerminationFiresOnFinishOnly` fails |
 | Identity is not positional | returning `""` from `Car.identity(of:)` | `carIdentityHandlesNonStringIDs` fails |
+| Re-authentication retries | `throw error` on every attempt instead of the last | `rethrowsAfterTheLastAttempt` and `cancellationAbandonsRemainingAttempts` fail |
+| …with growing backoff | `backoff *= 1` | `backoffGrows` fails |
+| …and gives up when cancelled | `try?` around the backoff sleep | `cancellationAbandonsRemainingAttempts` fails: 10 attempts and a `Boom`, not 1 and a `CancellationError` |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
 
 ## What is not covered

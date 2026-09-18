@@ -546,8 +546,29 @@ with `versions.md`", "citations name real paths at named refs".
   run** against each supported version line. Its *Expected output* section must contain
   a **pasted real build-and-run transcript** naming the patch version — that is the one
   part of "it compiles" a reviewer can actually check without nine toolchains.
-- Keep the program as a **real source file** under `tests/<lang>-sdk/` and have
-  `examples/minimal-app.md` reference it, rather than restating it.
+- Keep the program as a **real source file** under `tests/<lang>-sdk/`. A plugin user
+  has no `tests/` tree to open, so `examples/minimal-app.md` has to restate it; make the
+  duplication checkable rather than leaving it to drift:
+
+  1. In the fixture source, put `// MARK: - begin documented program` (or the language's
+     comment form) above the part the markdown publishes. Everything below it is the
+     documented program; only comments and blank lines may appear above it, since
+     anything else is code the published sample would silently omit.
+  2. In `examples/minimal-app.md`, state the source in prose — *This is a copy of
+     `<path>` in the fixture* — with `<path>` relative to `tests/<skill>/`, and put the
+     program in the single fenced block under `## Program`.
+
+  `scripts/validate-sdk-skills.py` derives the fixture from that sentence and fails the
+  build when the two differ by a byte. It is declaration-driven on purpose: a hard-coded
+  table silently skips a skill nobody registered, and silently stops checking when a
+  fixture is renamed.
+
+- **A fixture file that restates a type defined elsewhere in the same harness** — the
+  minimal app cannot `import` the harness's own modules, because a reader pastes it into
+  an empty project — declares it the same way: *mirrors `Type.Nested` in `<path>`*. The
+  validator compares the two declarations and fails on drift. Without it the tested copy
+  gets fixed and the pasted copy does not, which is the single most common way these
+  skills ship a known-wrong sample.
 - **Before the third SDK skill merges**, CI must compile that file for the languages
   merged so far. "Encouraged" is not sufficient for the one property this template
   exists to guarantee.

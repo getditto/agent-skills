@@ -129,8 +129,15 @@ public final class DittoLoader: ObservableObject {
         }
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
+            // Held outside the `do` so a failure after `open` succeeded does not drop the
+            // last reference HERE. This body is `@MainActor`, and in debug builds
+            // `Ditto.shouldWaitForCleanupOnClose` is `true`, so that release would block
+            // the main thread for up to `deinitTimeoutSeconds` — the hazard
+            // `references/connect.md` documents, in the sample that documents it.
+            var opened: Ditto?
             do {
                 let ditto = try await Ditto.open(config: self.configuration.config)
+                opened = ditto
                 if let token = self.configuration.offlineLicenseToken {
                     try ditto.setOfflineOnlyLicenseToken(token)
                 }
@@ -138,6 +145,7 @@ public final class DittoLoader: ObservableObject {
                 let model = DittoAppModel(ditto: ditto)
                 try model.start()
                 self.phase = .ready(model)
+                opened = nil        // the model owns it now
             } catch {
                 uiPatternsLogger.error("Ditto bootstrap failed: \(error.localizedDescription, privacy: .public)")
                 self.phase = .failed(error.localizedDescription)
@@ -145,10 +153,24 @@ public final class DittoLoader: ObservableObject {
                 // launch failure — no network, a server blip, a login timeout — permanent
                 // for the life of the process, with force-quit as the only recovery.
                 self.bootstrapTask = nil
+                if let failed = opened {
+                    opened = nil
+                    Self.release(failed)
+                }
             }
         }
         bootstrapTask = task
         await task.value
+    }
+
+    /// Drops the last reference to a half-started instance **off** the main actor.
+    ///
+    /// Releasing `Ditto` is what frees its persistence-directory lock, so a failed
+    /// bootstrap must release it or `retry()` opens onto a locked directory. Doing that
+    /// on the main actor is the debug-build main-thread stall described above; a detached
+    /// task owns the reference instead and lets it go on the cooperative pool.
+    private nonisolated static func release(_ ditto: Ditto) {
+        Task.detached { withExtendedLifetime(ditto) {} }
     }
 
     /// Re-attempts a failed bootstrap. Offline-first apps hit transient launch failures

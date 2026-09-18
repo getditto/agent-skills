@@ -323,10 +323,20 @@ struct StoreTests {
         let before = try await peer.ditto.store.execute(query: "SELECT * FROM system:indexes")
         #expect(before.items.isEmpty)
 
-        // AND PROVISION runs the recommendation.
-        try await peer.ditto.store.execute(
+        // AND PROVISION runs the recommendation, and reports what it created under a
+        // DIFFERENT key. The skill said `suggestedIndexes` for both forms, which is wrong
+        // and unfalsifiable without this assertion.
+        let provisioned = try await peer.ditto.store.execute(
             query: "ADVISE AND PROVISION SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
         )
+        let provisionedItem = try #require(provisioned.items.first)
+        let provisionedJSON = try #require(String(data: provisionedItem.jsonData(), encoding: .utf8))
+        #expect(provisionedJSON.contains("createdIndexes"), "AND PROVISION reported: \(provisionedJSON)")
+        #expect(
+            provisionedJSON.contains("suggestedIndexes") == false,
+            "AND PROVISION should report what it created, not what it suggests: \(provisionedJSON)"
+        )
+
         let after = try await peer.ditto.store.execute(query: "SELECT * FROM system:indexes")
         #expect(after.items.isEmpty == false)
     }

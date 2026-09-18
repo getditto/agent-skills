@@ -75,14 +75,28 @@ extension Array where Element == DittoQueryResultItem {
 /// Bridges a store observer into an ordered, bounded stream of value types.
 ///
 /// This is the shape the skill recommends everywhere, factored out so it can be tested
-/// without a UI: `ObserverBridgeTests` exercises the ordering, the bounded buffer, the
-/// `onTermination` teardown, and `Car`'s identity rules.
+/// without a UI: `ObserverBridgeTests` exercises the bounded buffer under each policy,
+/// the `onTermination` teardown, and `Car`'s identity rules.
+///
+/// Ordering is **structural, not measured**. A single `for await` consumer takes one
+/// element at a time in yield order; that is what `AsyncStream` guarantees, and no test
+/// here can add to it — substituting the `Task`-per-delivery anti-pattern still passes
+/// the ordering test, because a single-process fixture never provokes the reordering.
+/// See README.md, "Not verified".
 /// **Iterate `stream` exactly once.** `AsyncStream` supports a single consumer and
 /// traps on concurrent iteration; this is a value type only so it can be stored
 /// alongside a `Task` without a reference dance.
 public struct ObserverBridge: Sendable {
     public let stream: AsyncStream<[Car]>
     private let observer: DittoStoreObserver
+
+    /// How many results the observer yielded into the stream.
+    ///
+    /// Exposed so a test can assert what the buffering policy did — how many yields
+    /// survived, relative to how many there were — rather than an absolute count, which
+    /// depends on how often the SDK chose to fire and is not the property under test.
+    public var yieldCount: Int { counter.value }
+    private let counter: YieldCounter
 
     /// - Parameter latestOnly: `true` keeps only the newest pending result. The default
     ///   `AsyncStream` policy is `.unbounded`, which lets a fast observer queue a
@@ -97,7 +111,10 @@ public struct ObserverBridge: Sendable {
             bufferingPolicy: latestOnly ? .bufferingNewest(1) : .unbounded
         )
         self.stream = stream
+        let counter = YieldCounter()
+        self.counter = counter
         let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
+            counter.increment()
             continuation.yield(result.items.cars())
         }
         self.observer = observer
@@ -110,6 +127,14 @@ public struct ObserverBridge: Sendable {
 
     public func cancel() { observer.cancel() }
     public var isCancelled: Bool { observer.isCancelled }
+
+    /// Counts yields from the observer's callback, which runs on an SDK thread.
+    final class YieldCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var count = 0
+        func increment() { lock.lock(); count += 1; lock.unlock() }
+        var value: Int { lock.lock(); defer { lock.unlock() }; return count }
+    }
 }
 
 @MainActor

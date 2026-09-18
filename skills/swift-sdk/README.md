@@ -140,15 +140,19 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   rejection, indexing, `ADVISE` and `ADVISE AND PROVISION` (and their parse error before
   5.1), eviction, observer delivery, cancellation against an uncancelled positive
   control, `signalNext` coalescing, `DittoDiffer` statefulness, `deliverOn:` behaviour
-  per line, the recommended observer bridge (bounded buffering, `onTermination` teardown,
-  non-decreasing delivery order), `Car` identity for non-`String` `_id`s, the login
-  deadline that bounds a non-cancellable completion handler, attachments, presence,
-  logging, disk usage, small-peer and presence metadata limits, system queries, and the
-  documented error cases.
+  per line, the recommended observer bridge (bounded buffering under each policy,
+  `onTermination` teardown, and that a single consumer never observes a growing store
+  shrink), `Car` identity for non-`String` `_id`s, the login deadline that bounds a
+  non-cancellable completion handler and releases it on cancellation, attachments,
+  presence, logging, disk usage, small-peer and presence metadata limits, system queries,
+  the bounded retry the expiration handler needs (including that cancellation abandons
+  the remaining attempts), and the documented error cases.
 
-  Each of those guards has a **negative control** — the table in
-  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) lists how to break each
-  one and what should then fail.
+  The load-bearing ones carry a **negative control**: the table in
+  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names eighteen guards,
+  how to break each and what should then fail. It does not cover every assertion above —
+  where a claim rests on structure rather than on a measurement, this file says so under
+  "Not verified".
 - **`examples/minimal-app.md`** is compiled and run on all three lines in both offline
   and server modes, the latter against a real Ditto Server. The run is **checked**: the
   harness fails unless the output names the expected version and reports the observed
@@ -164,8 +168,10 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   verified by negative control.
 
 **How to read the citations.** Paths beginning `sdk/` or `snippets/` are pages of the
-published documentation at <https://docs.ditto.live>, at the path shown.
-`sdk-release-<version>:<path>` is a tag in Ditto's SDK repository.
+published documentation at <https://docs.ditto.live>, at the path shown. A bare
+`<N>-<N>-capabilities/<file>.mdx` is the same documentation, abbreviated from
+`snippets/common-release-notes/<N>-<N>-capabilities/…` — the release-notes set for that
+minor version. `sdk-release-<version>:<path>` is a tag in Ditto's SDK repository.
 
 **Verified from source:** the aggregate `fatalError` paths, the `deliverOn:` mechanism,
 the `@Sendable` typealias change, the Combine publisher inventory, the `preview` labels,
@@ -211,13 +217,16 @@ repository, at the Swift source path that exists at each tag.
 - **The UIKit and AppKit samples' runtime behaviour.** They are compiled on every
   platform and version, and the observer bridge underneath them is tested, but no test
   drives a real table view.
-- **That a `Task` per delivery actually reorders.** `ObserverBridge`'s single-consumer
-  loop is ordered by construction, and a test pins that deliveries never arrive out of
-  order — but substituting the unordered anti-pattern still passes it (measured 3 of 3),
-  because `AsyncStream` serialises yields and the window is too small to provoke
-  locally. The argument for the bridge is structural, not measured.
+- **That a `Task` per delivery actually reorders.** A `Task` per delivery has **no
+  ordering guarantee at all** — that is a statement about what the concurrency model
+  promises, not about how often it misbehaves, and code relying on it is wrong even
+  where it happens to work. `ObserverBridge`'s single-consumer loop is ordered by
+  construction, and a test pins that a growing store is never observed shrinking, but
+  substituting the anti-pattern still passes that test (measured 3 of 3, then 10 of 10):
+  `AsyncStream` serialises yields, so a single-process fixture does not provoke the
+  reordering. Do not read the passing test as evidence the anti-pattern is safe.
 
-**Last verified:** 2026-09-17.
+**Last verified:** 2026-09-18.
 
 ## Installation
 

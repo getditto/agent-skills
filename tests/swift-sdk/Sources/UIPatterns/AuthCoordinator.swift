@@ -39,15 +39,23 @@ public struct AuthCoordinator: Sendable {
     private let tokens: TokenStore
     private let provider: DittoAuthenticationProvider
     private let timeoutSeconds: UInt64
+    private let reauthenticationAttempts: Int
 
+    /// - Parameter reauthenticationAttempts: how many times the **expiration handler**
+    ///   retries. The SDK awaits that handler, so the worst case it costs is
+    ///   `reauthenticationAttempts × timeoutSeconds` plus backoff — 51 seconds at the
+    ///   defaults. The explicit `login(_:)` used at launch does not retry: there the
+    ///   caller is a UI that should show a failure and offer a button, not stall.
     public init(
         tokens: TokenStore,
         provider: DittoAuthenticationProvider = .development,
-        timeoutSeconds: UInt64 = 15
+        timeoutSeconds: UInt64 = 15,
+        reauthenticationAttempts: Int = 3
     ) {
         self.tokens = tokens
         self.provider = provider
         self.timeoutSeconds = timeoutSeconds
+        self.reauthenticationAttempts = reauthenticationAttempts
     }
 
     /// Installs the handler and performs the first login. Call before `sync.start()`.
@@ -63,18 +71,37 @@ public struct AuthCoordinator: Sendable {
     /// dispatching one and returning. There is no caller to rethrow to, so failure goes
     /// to `os.Logger` at error level — which is what a sysdiagnose and a crash reporter
     /// pick up. It must not touch UI state: it runs off the main actor.
+    ///
+    /// **It retries.** This is the only chance to re-authenticate: nothing calls the
+    /// handler again until the token next expires, so a single attempt lost to a captive
+    /// portal or a server blip leaves the instance unauthenticated for the rest of the
+    /// session — sync stops and nothing reports why. See `reauthenticationAttempts` for
+    /// what that costs.
     public func install(on ditto: Ditto) {
         let tokens = self.tokens
         let provider = self.provider
         let timeoutSeconds = self.timeoutSeconds
+        let attempts = self.reauthenticationAttempts
+        let logger = Logger(subsystem: "live.ditto.skill-samples", category: "auth")
         ditto.auth?.expirationHandler = { ditto, _ in
             do {
-                try await Self.performLogin(
-                    ditto, tokens: tokens, provider: provider, timeoutSeconds: timeoutSeconds
-                )
+                try await Retry.run(
+                    attempts: attempts,
+                    firstBackoffSeconds: 2,
+                    onFailure: { attempt, error in
+                        logger.warning(
+                            "Ditto re-authentication attempt \(attempt, privacy: .public) failed: \(error.localizedDescription, privacy: .public)"
+                        )
+                    }
+                ) {
+                    try await Self.performLogin(
+                        ditto, tokens: tokens, provider: provider, timeoutSeconds: timeoutSeconds
+                    )
+                }
             } catch {
-                Logger(subsystem: "live.ditto.skill-samples", category: "auth")
-                    .error("Ditto re-authentication failed: \(error.localizedDescription, privacy: .public)")
+                logger.error(
+                    "Ditto re-authentication gave up after \(attempts, privacy: .public) attempts: \(error.localizedDescription, privacy: .public)"
+                )
             }
         }
     }
