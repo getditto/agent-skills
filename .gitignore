@@ -7,3 +7,7 @@
 # deleted so the issue owner decides — but this repo is destined to be public, and it
 # carries internal checkout paths and internal reasoning that should not ship.
 docs/DA-281-*.md
+
+# Python bytecode, e.g. from importing scripts/validate-sdk-skills.py in a check.
+__pycache__/
+*.pyc
