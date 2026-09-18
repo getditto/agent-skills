@@ -95,6 +95,17 @@ opening a store whose encryption state does not match the config
 `.notFound`, `.permissionDenied`, `.alreadyExists`, `.operationFailed` — file-system
 failures against the persistence directory or an attachment path.
 
+## Failures that are not `DittoError`
+
+Not every way this SDK fails produces a catchable error. These surface as a build that
+works and a process that does not.
+
+| Symptom | Cause |
+|---|---|
+| `dyld: Library not loaded: @rpath/DittoSwift.framework/DittoSwift` … `Trying to load an unsigned library` | The XCFramework ships unsigned and nothing re-signed it — typically `CODE_SIGNING_ALLOWED = NO`. [setup.md](setup.md#code-signing-and-the-embedded-xcframework) |
+| The Rust core aborts before any test runs, complaining about `--disable-color` | `NO_COLOR` is set to something other than `true`/`false`; SwiftPM exports `NO_COLOR=1`. [testing.md](testing.md) |
+| A transport silently never comes up, while `sync.isActive` stays `true` | A missing `Info.plist` usage description or background mode. [setup.md](setup.md#cap-02-platform-permissions-entitlements-build-config) |
+
 ## Errors you cannot catch
 
 These are `fatalError`, so `try` and `catch` do nothing. They are API-misuse assertions,

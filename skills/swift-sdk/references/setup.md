@@ -140,6 +140,35 @@ from Apple's sandbox, not from Ditto's documentation.
 `com.apple.developer.networking.multicast` entitlement, which Apple grants per app on
 request. See [preview.md](preview.md) before using it at all.
 
+### Code signing and the embedded XCFramework
+
+**Never disable code signing on a target that embeds DittoSwift.** The published
+XCFramework ships **unsigned**, and neither SwiftPM nor Xcode re-signs a binary
+dependency on its own — signing the app is what signs the frameworks it embeds. Turn that
+off and the build still succeeds; the app dies at launch:
+
+```
+dyld[…]: Library not loaded: @rpath/DittoSwift.framework/DittoSwift
+  Reason: tried: … not valid for use in process: Trying to load an unsigned library
+```
+
+`CODE_SIGNING_ALLOWED = NO` is the usual way in — it is the obvious setting for a
+Simulator-only target with no signing identity, and a common CI default. For the
+Simulator, ad-hoc signing is enough and costs nothing:
+
+```
+CODE_SIGN_IDENTITY = "-"
+CODE_SIGNING_REQUIRED = YES
+CODE_SIGNING_ALLOWED = YES
+```
+
+A clean build followed by a `dyld` abort is the signature of this, and it looks nothing
+like a signing problem until you read the reason string.
+
+Command-line tools built with `swift build` have the same problem and no app target to
+fix it — there, sign the framework yourself after building. See
+[`examples/minimal-app.md`](../examples/minimal-app.md#running-it).
+
 ### Crash reporting
 
 Release builds need Ditto's symbols uploaded alongside your own, or a crash inside the

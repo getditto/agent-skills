@@ -431,7 +431,9 @@ swift build --product MinimalApp
 BIN="$(swift build --product MinimalApp --show-bin-path)"
 
 # The published XCFramework ships unsigned and SwiftPM copies it without signing;
-# macOS will not load an unsigned library. Xcode app targets sign automatically.
+# macOS will not load an unsigned library. An Xcode app target signs its embedded
+# frameworks for you ONLY while signing is enabled — `CODE_SIGNING_ALLOWED = NO`
+# builds cleanly and then aborts at launch. See references/setup.md.
 codesign --force --sign - "$BIN/DittoSwift.framework/Versions/A/DittoSwift"
 
 # Ditto's core reads NO_COLOR as a --disable-color flag that accepts only true/false,

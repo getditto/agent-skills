@@ -155,7 +155,8 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   presence, logging, disk usage, small-peer and presence metadata limits, system queries,
   the bounded retry the expiration handler needs (including that cancellation abandons
   the remaining attempts), the rollback that keeps a half-failed `start()` from
-  double-registering a subscription, and the documented error cases.
+  double-registering a subscription, that a boolean round-trips as a plain `Bool` rather
+  than an `NSNumber`, and the documented error cases.
 
   It also settles where `Ditto.open` runs, because the skill got that wrong in both
   directions before measuring it. `ExecutorTests` asserts that SE-0338 holds in this
@@ -173,6 +174,11 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   and server modes, the latter against a real Ditto Server. The run is **checked**: the
   harness fails unless the output names the expected version and reports the observed
   write.
+- **`examples/swiftui-app.md`** — the two-screen SwiftUI app, including the per-selection
+  observer — is **compiled** on all twelve platform/version legs, and is byte-identical to
+  the fixture source that gets compiled. It is **not executed**: no test drives a real
+  SwiftUI view. The pieces it composes are (observer bridge, bounded buffer,
+  `onTermination`, cancel-releases-a-suspended-consumer).
 - **Platform compile matrix** (`scripts/build-platforms.sh --all`): macOS, iOS Simulator,
   iOS device and Mac Catalyst × all three versions — 12 builds, including the SwiftUI,
   UIKit and AppKit samples in `Sources/UIPatterns/`. Verified non-vacuous by introducing
@@ -230,9 +236,14 @@ repository, at the Swift source path that exists at each tag.
   mismatch documented in `references/observers.md` is reasoned from both frameworks'
   contracts and a measured `DittoDiffer` output; the AppKit sample avoids the question by
   using a diffable data source, so the broken form is not exercised.
-- **The UIKit and AppKit samples' runtime behaviour.** They are compiled on every
-  platform and version, and the observer bridge underneath them is tested, but no test
-  drives a real table view.
+- **The UIKit, AppKit and SwiftUI samples' runtime behaviour.** They are compiled on
+  every platform and version, and the observer bridge underneath them is tested, but no
+  test drives a real table view or a real SwiftUI view. In particular, that the
+  per-selection observer in `examples/swiftui-app.md` cancels on `.onDisappear` is
+  argued from the observer-lifetime rules, not asserted by a UI test.
+- **Code signing.** That disabling it produces a `dyld` "unsigned library" abort at launch
+  is reproduced by hand and read from the shipped XCFramework, not asserted here: the
+  fixture is a SwiftPM package, and the failure is a property of an Xcode app target.
 - **The SwiftUI composition root.** `DittoLoader` (its idempotence across suspension, the
   off-main-actor release, and `retry()` awaiting that release), `DittoAppModel`,
   `CarListView`, `AuthCoordinator` and `TokenStore` are **compile-only**: no test

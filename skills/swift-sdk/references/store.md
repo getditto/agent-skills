@@ -31,6 +31,20 @@ typed form does not compile on the LTS line — see
 
 ### Reading values out of a result item
 
+**Subscripting yields a DOUBLE optional.** `value` is `[String: Any?]`, so
+`value["name"]` has type `Any??` — the outer optional is "was the key present", the inner
+one is "was the stored value null". `value["name"] as? String` casts the *outer* optional
+and is `nil` for a field that is present and perfectly valid. Collapse it first:
+
+```swift
+let name = (value["name"] ?? nil) as? String        // correct
+let name = value["name"] as? String                 // WRONG — nil for a present field
+```
+
+This applies to **every** field, not just `_id`. It is the same class of trap as reading a
+number with `as? Double`, and it fails the same way: no error, no log, a row that renders
+empty or gets dropped by a `guard let`.
+
 `DittoQueryResultItem.value` is `[String: Any?]`. It materializes lazily on first access,
 and `dematerialize()` releases the cached Swift representation. **The item stays usable**
 — `value` re-materializes on the next read (**executed**).
@@ -75,6 +89,11 @@ struct Car: Codable { let _id: String; let make: String; let price: Double }
 let car = try JSONDecoder().decode(Car.self, from: item.jsonData())
 ```
 
+**Booleans are the exception, and are simpler than you would guess from the above.** A
+stored `true`/`false` comes back as a plain Swift `Bool` on all three lines, so
+`(value["isDone"] ?? nil) as? Bool` is correct and sufficient — no `NSNumber` dance
+(**executed**). Only numbers need the widening treatment.
+
 `item.jsonData()` and `item.cborData()` give the raw encodings. `jsonData()` plus
 `Codable` is the recommended path for anything with a real schema: it is type-safe, it
 handles the numeric widths, and it produces a `Sendable` value in one step.
@@ -84,6 +103,17 @@ handles the numeric widths, and it produces a `Sendable` value in one step.
 **Executed.** Passing a `Date` does not throw. It is stored as
 `{"__type": "date_epoch_timestamp", "__value": <seconds>}`, which will not compare
 against anything a query expects. Store an ISO-8601 `String` or an integer epoch instead.
+
+**Format it with `Date.ISO8601FormatStyle`, not a stored `ISO8601DateFormatter`.** The
+obvious way to write that conversion is a `static let` formatter, and in Swift 6 language
+mode that is a compile ERROR, not a warning: *"static property … is not concurrency-safe
+because non-'Sendable' type 'ISO8601DateFormatter' may have shared mutable state"*. The
+format style is a value type and needs no shared instance:
+
+```swift
+let stamp = Date.now.formatted(.iso8601)                    // String, Swift 6 clean
+let date  = try Date(stamp, strategy: .iso8601)             // back again
+```
 
 An argument type the SDK genuinely cannot encode — an arbitrary `NSObject` subclass, for
 instance — throws `DittoError.storeError(.queryArgumentsInvalid)` (**executed**).

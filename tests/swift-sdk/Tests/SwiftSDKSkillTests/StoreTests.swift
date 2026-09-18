@@ -341,6 +341,34 @@ struct StoreTests {
         #expect(after.items.isEmpty == false)
     }
 
+    /// `store.md` documents numeric widths carefully and said nothing about booleans,
+    /// so `examples/swiftui-app.md` had to guess. This pins the answer.
+    @Test("a boolean round-trips as Bool, and is not an NSNumber in disguise")
+    func booleanDecoding() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        try await peer.ditto.store.execute(
+            query: "INSERT INTO flags DOCUMENTS (:doc)",
+            arguments: ["doc": ["_id": "flag-1", "on": true, "off": false]]
+        )
+
+        let result = try await peer.ditto.store.execute(query: "SELECT * FROM flags")
+        let value = try #require(result.items.first).value
+
+        // `?? nil` because a `[String: Any?]` subscript yields `Any??`.
+        let on = (value["on"] ?? nil)
+        let off = (value["off"] ?? nil)
+
+        #expect(on as? Bool == true, "`on` did not decode as Bool: \(String(describing: on))")
+        #expect(off as? Bool == false, "`off` did not decode as Bool: \(String(describing: off))")
+
+        // The distinction that matters for decoding code: unlike numbers — which arrive
+        // as the narrowest CBOR type and need NSNumber to read safely — a boolean is a
+        // plain `Bool`, so `as? Bool` is correct and sufficient.
+        #expect(on is Bool, "expected a Bool, got \(type(of: on as Any))")
+    }
+
     @Test("EVICT removes documents locally without deleting them for other peers")
     func evictRemovesLocally() async throws {
         let peer = try await TestPeer.open()

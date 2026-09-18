@@ -674,10 +674,21 @@ def check_mirrored_declarations(name: str) -> None:
                     )
 
 
-def check_minimal_app_matches_fixture(name: str) -> None:
-    example = os.path.join(SKILLS_DIR, name, "examples", "minimal-app.md")
-    if not os.path.isfile(example):
+def check_examples_match_fixture(name: str) -> None:
+    """Every published example that declares a fixture copy must match it byte for byte.
+
+    Iterates `examples/*.md` rather than naming one file: the skill grew a second example
+    and a hard-coded filename would have checked the old one and silently ignored the new.
+    """
+    directory = os.path.join(SKILLS_DIR, name, "examples")
+    if not os.path.isdir(directory):
         return
+    for entry in sorted(os.listdir(directory)):
+        if entry.endswith(".md"):
+            check_one_example(name, os.path.join(directory, entry))
+
+
+def check_one_example(name: str, example: str) -> None:
     text = read(example)
 
     declaration = FIXTURE_DECL_RE.search(text)
@@ -685,7 +696,7 @@ def check_minimal_app_matches_fixture(name: str) -> None:
     if not declaration:
         # No declaration and no harness is fine — the skill has no fixture yet. A harness
         # with no declaration is a gap, not a pass.
-        if os.path.isdir(harness):
+        if os.path.isdir(harness) and "```swift" in text:
             fail(
                 f"{example}: {harness}/ exists but the file does not declare which "
                 f"fixture it copies. Add: This is a copy of `<path>` in the fixture."
@@ -757,7 +768,7 @@ def main() -> int:
     )
     for name in sdk_skills:
         validate_sdk_skill(name)
-        check_minimal_app_matches_fixture(name)
+        check_examples_match_fixture(name)
         check_mirrored_declarations(name)
 
     for message in warnings:

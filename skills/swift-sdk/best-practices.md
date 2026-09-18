@@ -91,7 +91,10 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
 - Hold one long-lived strong `Ditto` reference at the composition root. Never retain only
   `store`, `sync`, `presence` or `auth` — they are aggregate children with weak parents.
 - Keep an observer or subscription handle for exactly as long as the scope that consumes
-  it, and cancel at that scope's boundary: `deinit`, `viewDidDisappear`, `.onDisappear`.
+  it, and cancel at that scope's boundary: `.onDisappear` (SwiftUI), `viewDidDisappear`
+  (UIKit), or `deinit` where the owner is not actor-isolated — see
+  [observers.md](references/observers.md#an-observer-scoped-to-a-selection) for why
+  `deinit` is usually not available in SwiftUI.
 - Use `[weak self]` in callback closures. A strong `self` capture keeps a dead view
   controller alive for the life of the instance, because the observer is still running.
 - Set `continuation.onTermination = { [weak observer] _ in observer?.cancel() }` when

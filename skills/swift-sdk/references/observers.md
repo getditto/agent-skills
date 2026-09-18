@@ -138,6 +138,57 @@ or never starts iterating (**executed**): the stream is still alive and the obse
 firing into it. Those paths need an explicit `cancel()`, or a scope that releases the
 stream.
 
+### An observer scoped to a selection
+
+The common shape in a real app: a list screen observes everything, and a detail screen
+observes **one** selected thing. The detail observer has to be created when the selection
+happens and cancelled when the screen goes away — it cannot be app-lived, because its
+query depends on what the user tapped.
+
+A complete, compiled version is [`examples/swiftui-app.md`](../examples/swiftui-app.md).
+Four things about it are not obvious:
+
+**1. The owner starts empty and is started on appear.** `@Observable` + `@State` requires
+a no-argument `init`, but the `Ditto` handle and the selected id only exist once a row is
+tapped. So the store is constructed by `@State` and given its inputs in `.onAppear`:
+
+```swift
+@State private var tasks = ProjectTasksStore()      // no arguments available yet
+…
+.onAppear { try? tasks.start(ditto: store.ditto, projectID: project.id) }
+.onDisappear { tasks.stop() }
+```
+
+**2. `start` must be idempotent.** `.onAppear` can run more than once for the same
+screen. Registering twice leaves the first observer running forever with nothing
+cancelling it. Guard on the identity you are already observing, and re-target rather than
+stack when it differs:
+
+```swift
+if self.projectID == projectID, observer != nil { return }
+stop()
+```
+
+**3. You usually cannot cancel from `deinit`.** A `@MainActor @Observable` owner has
+actor-isolated stored properties, and `deinit` is nonisolated — so touching the observer
+handle there does not compile under Swift 6 without isolated-deinit gymnastics. This is
+why `.onDisappear` is the practical answer in SwiftUI, not merely one of three equals.
+`deinit` remains correct for a non-isolated owner, and `viewDidDisappear` for UIKit.
+
+**4. `.task(id:)` is the alternative, and it cancels for you.** If the screen keeps the
+selection in state rather than being pushed per-selection, key the work to the id and let
+SwiftUI tear it down on change or disappearance:
+
+```swift
+.task(id: project.id) {
+    // cancelled automatically when project.id changes or the view goes away
+    for await next in bridge.stream { tasks = next }
+}
+```
+
+Use `.onAppear`/`.onDisappear` when the observer handle outlives a single `await`, and
+`.task(id:)` when the whole consumption loop is the unit of work.
+
 ### Back-pressure: `handler` versus `handlerWithSignalNext`
 
 The `handler:` form signals for the next result automatically when the closure returns.

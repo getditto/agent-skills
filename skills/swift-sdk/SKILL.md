@@ -36,6 +36,9 @@ AppKit.
 Use it for Swift Ditto code. Hand off rather than restating; each row names a public docs
 URL because the concept skill ships as a separate plugin and may not be installed:
 
+These are **separate skills**, each installed on its own. If you only have `swift-sdk`,
+install the one you need — or all of them at once — rather than working from the URL:
+
 | Question | Skill, if installed | Otherwise |
 |---|---|---|
 | DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.live/dql/dql> |
@@ -212,7 +215,8 @@ alive.
 | `DittoObserver` (presence, auth status), `DittoDiskUsageObserver` | for the scope that consumes it | Stopped with `stop()`, not `cancel()` — and disk usage returns its own type. |
 | `AnyCancellable` (the four Combine publishers) | for the scope that consumes it | Releasing it *does* cancel — the opposite of the observer handles. |
 
-Cancel at the owning scope's boundary — `deinit`, `viewDidDisappear`, `.onDisappear` — and
+Cancel at the owning scope's boundary — `.onDisappear` in SwiftUI, `viewDidDisappear` in
+UIKit, `deinit` only where the owner is not actor-isolated — and
 use `[weak self]` in callback closures. **Do not cache `ditto.sync.subscriptions` or
 `ditto.store.observers`**: both are *computed* in v5, so a snapshot goes stale silently.
 There is no `close()` — releasing the last strong reference frees the persistence
@@ -345,3 +349,5 @@ Full delta, including the on-disk upgrade and rollback results:
 | What happens to the store on disk when I upgrade or roll back? | [references/storage.md](references/storage.md) |
 | What is preview or platform-specific here? | [references/preview.md](references/preview.md) |
 | Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
+| Show me a working SwiftUI app, with a per-selection observer | [examples/swiftui-app.md](examples/swiftui-app.md) |
+| Show me the smallest complete program | [examples/minimal-app.md](examples/minimal-app.md) |
