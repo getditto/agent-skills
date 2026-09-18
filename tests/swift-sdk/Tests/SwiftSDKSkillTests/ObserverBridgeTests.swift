@@ -73,6 +73,40 @@ struct ObserverBridgeTests {
         var value: Bool { lock.lock(); defer { lock.unlock() }; return flag }
     }
 
+    /// `cancel()` is the teardown every sample calls. If it only cancelled the observer,
+    /// a consumer suspended in `for await` would never be released — it would hold its
+    /// captures for the life of the process, which is the leak this type exists to avoid.
+    @Test("cancel() releases a consumer suspended in for-await")
+    func cancelReleasesASuspendedConsumer() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        let bridge = try ObserverBridge(ditto: peer.ditto, query: "SELECT * FROM cars")
+        let finished = Flag()
+        // The ONLY consumer — `AsyncStream` traps on a second one, so this test cannot
+        // also await a first element to synchronise.
+        let consumer = Task {
+            for await _ in bridge.stream {}
+            finished.set()                 // only reachable once the stream ENDS
+        }
+
+        // Let the consumer reach its suspension point.
+        try await Task.sleep(nanoseconds: 300_000_000)
+        bridge.cancel()
+
+        // Polled, NOT `withTaskGroup` racing `await consumer.value`: awaiting a
+        // non-throwing `Task.value` is not cancellation-aware, so the group would not
+        // return until the consumer did — a test that hangs instead of failing, which is
+        // the trap Deadline.swift's header documents. (Measured: it hung.)
+        var waited = 0
+        while !finished.value && waited < 50 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            waited += 1
+        }
+        #expect(finished.value, "cancel() left the consumer suspended in for-await")
+        _ = consumer
+    }
+
     @Test("finishing the stream cancels the observer via onTermination")
     func terminationCancelsObserver() async throws {
         let peer = try await TestPeer.open()
@@ -130,7 +164,10 @@ struct ObserverBridgeTests {
         try await Task.sleep(nanoseconds: 1_000_000_000)
 
         let yielded = bridge.yieldCount
-        #expect(yielded >= 1, "the observer never fired")
+        // `>= 2`, not `>= 1`: with a single yield every assertion below is trivially true
+        // on both arms, so the test would pass green-and-empty rather than fail if the
+        // SDK ever coalesced this hard. Observed: 10-12 yields for 25 writes.
+        #expect(yielded >= 2, "only \(yielded) yield(s) — nothing for the policy to decide")
 
         // Drain with a single iteration — `AsyncStream` supports one consumer.
         var retained: [Int] = []
@@ -434,23 +471,72 @@ struct RetryTests {
         #expect(thrown == Boom(attempt: 3))
     }
 
-    @Test("backoff grows rather than hammering")
+    /// Asserts the DELAYS THE POLICY CHOSE, reported through `onFailure`, not the wall
+    /// clock.
+    ///
+    /// An earlier version measured total elapsed time and asserted `>= 0.6s` for an
+    /// intended 0.2 + 0.4. That could not fail: under the full parallel suite this test's
+    /// own wall clock is 1.1-2.4s, so scheduling latency alone cleared the bound, and
+    /// `backoff *= 1` passed it — measured, twice. An upper bound had been removed for
+    /// being load-dependent, which is what left the assertion vacuous. Delays that the
+    /// code computed are the thing under test and are not a clock at all.
+    @Test("backoff doubles between attempts and stops at the last")
     func backoffGrows() async throws {
         let counter = Counter()
-        let started = Date()
+        let delays = Delays()
+
         _ = await #expect(throws: Boom.self) {
-            // 0.2 + 0.4 = 0.6s of backoff across three attempts.
-            try await Retry.run(attempts: 3, firstBackoffSeconds: 0.2) {
+            try await Retry.run(
+                attempts: 4,
+                firstBackoffSeconds: 0.01,
+                onFailure: { _, _, nextDelay in delays.record(nextDelay) }
+            ) {
                 throw Boom(attempt: await counter.increment())
             }
         }
-        // A LOWER bound only. This suite runs in parallel against real Ditto instances,
-        // so an upper bound in the low seconds measures machine load, not the code —
-        // `elapsed < 3` here failed at 3.0s+ under `--all`. It also caught nothing: every
-        // mutation that breaks the backoff (`backoff *= 1`, a fixed 1µs sleep, `throw` on
-        // the first failure) makes the run FASTER, which only a lower bound sees.
-        let elapsed = Date().timeIntervalSince(started)
-        #expect(elapsed >= 0.6, "backoff did not grow: \(elapsed)s for 0.2 + 0.4")
+
+        // Three failures with a retry to come, then a fourth with none.
+        #expect(delays.values == [0.01, 0.02, 0.04, nil], "reported delays: \(delays.values)")
+    }
+
+    /// A rejected credential is a verdict, not a blip: retrying spends the caller's whole
+    /// deadline to reach the answer it already had.
+    @Test("an error classified as non-retryable stops immediately")
+    func nonRetryableStopsAtOnce() async throws {
+        let counter = Counter()
+
+        _ = await #expect(throws: Boom.self) {
+            try await Retry.run(
+                attempts: 5,
+                firstBackoffSeconds: 0.01,
+                isRetryable: { _ in false }
+            ) {
+                throw Boom(attempt: await counter.increment())
+            }
+        }
+        let attempts = await counter.count
+        #expect(attempts == 1, "should not have retried a permanent failure")
+    }
+
+    @Test("an already-cancelled caller does not get one free attempt")
+    func alreadyCancelledRunsNothing() async throws {
+        let counter = Counter()
+        let subject = Task {
+            try await Retry.run(attempts: 3, firstBackoffSeconds: 0.01) {
+                _ = await counter.increment()
+            }
+        }
+        subject.cancel()
+        _ = try? await subject.value
+        let attempts = await counter.count
+        #expect(attempts == 0, "ran \(attempts) attempts after cancellation")
+    }
+
+    private final class Delays: @unchecked Sendable {
+        private let lock = NSLock()
+        private var recorded: [Double?] = []
+        func record(_ delay: Double?) { lock.lock(); recorded.append(delay); lock.unlock() }
+        var values: [Double?] { lock.lock(); defer { lock.unlock() }; return recorded }
     }
 
     /// Without this the handler runs out its remaining attempts and their backoff after a

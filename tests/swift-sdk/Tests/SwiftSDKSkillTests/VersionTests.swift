@@ -81,10 +81,12 @@ struct VersionTests {
     // carried as `source` evidence in references/versions.md and listed under "Not
     // verified" in README.md.
 
-    @Test("the default persistence directory name is derived from the database ID in v5")
-    func defaultPersistenceDirectoryNaming() async throws {
-        // Ditto.defaultRootDirectory is the Application Support directory on both v4
-        // and v5; only the leaf name changed (`ditto` -> `ditto-{databaseID}`).
+    /// Named for what it asserts. The `ditto-{databaseID}` LEAF is not observable from
+    /// `defaultRootDirectory`, which is the container above it — that claim is covered by
+    /// `scripts/persistence-matrix.sh`'s default-directory leg, which opens with no
+    /// `persistenceDirectory` and asserts the resulting path with `--expect-directory`.
+    @Test("Ditto.defaultRootDirectory is under Application Support on every line")
+    func defaultRootDirectoryIsUnderApplicationSupport() async throws {
         #expect(Ditto.defaultRootDirectory.path.contains("Application Support"))
     }
 

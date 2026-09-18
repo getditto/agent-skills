@@ -312,8 +312,14 @@ def validate_sdk_skill(name: str) -> None:
             f"{skill_md}: body is {body_lines} lines, over the {SKILL_BODY_HARD_LIMIT}-line "
             f"hard limit in {SPEC} §11"
         )
-    elif body_lines > 300:
-        warn(f"{skill_md}: body is {body_lines} lines; {SPEC} §11 targets 300")
+    else:
+        # §11 allows 350 for a skill spanning three version lines, because each
+        # version-gated rule costs lines a single-line skill does not pay. Derived from
+        # the skill's own declared versions, not a per-skill exception list, so it cannot
+        # quietly become blanket slack.
+        target = 350 if len(declared_versions(body)) >= 3 else 300
+        if body_lines > target:
+            warn(f"{skill_md}: body is {body_lines} lines; {SPEC} §11 targets {target}")
 
     # §11 — reference size.
     if os.path.isdir(references):
@@ -516,6 +522,15 @@ def capability_detail(text: str, cap_id: str) -> str:
 FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
 
 
+def declared_versions(text: str) -> set:
+    """The distinct `major.minor` SDK lines a skill says it supports.
+
+    Read from the frontmatter description and the version table, which is where a skill
+    states its scope. Used only to pick the §11 line-budget target.
+    """
+    return {match.group(1) for match in re.finditer(r"\b(\d+\.\d+)\.[\dx]+\b", text)}
+
+
 def within(root: str, path: str) -> bool:
     """True when `path` is `root` or lives underneath it.
 
@@ -537,6 +552,15 @@ def within(root: str, path: str) -> bool:
 MIRROR_DECL_RE = re.compile(r"mirrors `([\w.]+)` in `([^`]+)`")
 
 DECL_KINDS = ("actor", "struct", "final class", "class", "enum")
+
+# Mirror claims are declaration-driven, which leaves one hole: the claim sits INSIDE the
+# program text that the byte-compare protects, so a single edit can drift the code and
+# delete its own guard, and the validator stays green. Proven. This is the floor — a
+# mirror that must exist. Add a row when you add a mirror; it is three fields, and the
+# alternative is a guard that can delete itself.
+REQUIRED_MIRRORS = {
+    "swift-sdk": [("Sources/MinimalApp/MinimalApp.swift", "Deadline.Gate")],
+}
 
 # Everything below this marker in the fixture is the documented program. Declared rather
 # than inferred, so the boundary does not depend on Swift syntax.
@@ -574,6 +598,18 @@ def check_mirrored_declarations(name: str) -> None:
     harness = os.path.join("tests", name)
     if not os.path.isdir(harness):
         return
+
+    for relative, qualified in REQUIRED_MIRRORS.get(name, []):
+        required = os.path.join(harness, relative)
+        if not os.path.isfile(required):
+            fail(f"{required}: required by REQUIRED_MIRRORS but does not exist.")
+            continue
+        if f"mirrors `{qualified}` in `" not in read(required):
+            fail(
+                f"{required}: lost its \"mirrors `{qualified}` in `<path>`\" declaration. "
+                f"That sentence is what makes the duplicated `{qualified.split('.')[-1]}` "
+                f"checkable; removing it silently disables the check."
+            )
 
     for directory, subdirectories, files in os.walk(harness):
         # `.build` holds SwiftPM's checkouts of every dependency. Walking it is slow and

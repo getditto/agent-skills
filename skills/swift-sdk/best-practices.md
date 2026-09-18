@@ -50,11 +50,15 @@ created from UIKit, a second `WindowGroup` on macOS, and previews. Inject at eve
 presentation root, not only at the app root. (`@Observable` + `.environment(_:)` has the
 same failure mode.)
 
-**Opening Ditto is `async`, and a SwiftUI `App` cannot await in `init()`.** Model the
-launch as a phase — `loading` / `ready(model)` / `failed(message)` — open the instance in
-`.task`, and render the phase. Do not reach for `openSync` to dodge the async: on an iOS
-app's main thread that is a launch-watchdog termination waiting for a large store
-([connect.md](references/connect.md#open-versus-opensync)).
+**Opening Ditto blocks, and a SwiftUI `App` cannot await in `init()`.** Model the launch
+as a phase — `loading` / `ready(model)` / `failed(message)` — open the instance from
+`.task`, and render the phase.
+
+`Ditto.open` is `async` but does its work on the caller's executor, so `await`ing it from
+a `@MainActor` model still opens the store on the main thread — a launch-watchdog
+termination waiting for a large store. Wrap the open in `Task.detached` and await *that*
+([connect.md](references/connect.md#open-versus-opensync)). Switching to `openSync`
+changes nothing on its own; what matters is which executor the call runs on.
 
 Compiled examples of all of this live in the `getditto/agent-skills` repository under
 `tests/swift-sdk/Sources/UIPatterns/`.
@@ -91,11 +95,14 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
 - Use `[weak self]` in callback closures. A strong `self` capture keeps a dead view
   controller alive for the life of the instance, because the observer is still running.
 - Set `continuation.onTermination = { [weak observer] _ in observer?.cancel() }` when
-  bridging an observer into an `AsyncStream`, so cancelling the consumer cancels the
-  observer instead of leaving it yielding into a dead stream. Capture the observer
+  bridging an observer into an `AsyncStream`, so ending the stream cancels the observer
+  instead of leaving it yielding into a dead one. Which paths actually run it — and which
+  look like they should and do not — is in
+  [observers.md](references/observers.md#where-the-callback-runs). Capture the observer
   **weakly**: the handler holds the continuation, whose storage holds `onTermination`, so
-  a strong capture closes the loop. And note that `onTermination` fires on cancellation
-  while suspended — a consumer that `break`s out still needs an explicit `cancel()`.
+  a strong capture closes the loop. Note that a consumer which `break`s out of the loop
+  does **not** run `onTermination` — the stream is still alive — so that path needs an
+  explicit `cancel()`.
 - Retain an attachment fetcher until its fetch completes or you stop it.
 - **Read `ditto.sync.subscriptions` and `ditto.store.observers` fresh.** They are computed
   in v5; a cached snapshot never updates.

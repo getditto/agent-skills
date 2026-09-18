@@ -161,6 +161,15 @@ work** — not "before the handler returns". Signalling after the UI work is the
 point of the back-pressure form. Putting the `defer` at the top of the hopped body is
 what makes an early return or a thrown error unable to wedge the observer.
 
+**This is the one place a `Task` per delivery is correct**, and it is worth being explicit
+about why, because the rule above and [`SKILL.md`](../SKILL.md#concurrency-and-threading-model)
+rule 4 both forbid the shape. Holding `signalNext` *inside* the hopped body means the SDK
+does not deliver again until that task has finished, so there is never more than one in
+flight and there is nothing to reorder. Take the `defer { signalNext() }` out of the
+hopped body — signal in the outer handler instead — and the guarantee is gone: deliveries
+overlap, and you are back to the unordered anti-pattern with no warning. With the plain
+`handler:` form there is no such interlock, so use the single-consumer stream above.
+
 Use `handlerWithSignalNext` whenever the handler does real work — decoding a large result
 set, writing to another database, driving an animation. It converts *"fire as fast as
 changes arrive"* into *"fire as fast as this app can keep up"*.
@@ -179,7 +188,7 @@ Consequences to design for:
   error paths cannot skip it, and call it exactly once.
 
 `DittoSignalNext` is `@Sendable` from 5.1.0 and a plain closure at 5.0.3 and 4.14.6 — see
-[versions.md](versions.md#sendable-closure-aliases-arrive-in-510).
+[versions.md](versions.md#sendable-closure-aliases-two-arrive-in-50-the-rest-in-510).
 
 ### `DittoDiffer`
 

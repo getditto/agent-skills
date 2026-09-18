@@ -18,6 +18,13 @@ import DittoSwift
 
 /// Owns the mutable token state. This is what an actor is for — not for wrapping
 /// `Ditto`, which is already `Sendable` on v5 and gains nothing from an actor hop.
+///
+/// **A real app replaces this with a call to its own backend.** The expiration handler
+/// runs *because the token expired*, so re-submitting the cached one cannot succeed —
+/// see `AuthCoordinator.init(fetchToken:)`. This type is the shape of the seam, with a
+/// literal behind it so the samples compile; it is not a credential store. In particular
+/// it does not persist anything, and a shipped app should keep the token in the Keychain
+/// rather than in a `String` in the app binary.
 public actor TokenStore {
     private var token: String
 
@@ -36,7 +43,7 @@ public struct AuthCoordinator: Sendable {
         case timedOut
     }
 
-    private let tokens: TokenStore
+    private let fetchToken: @Sendable () async throws -> String
     private let provider: DittoAuthenticationProvider
     private let timeoutSeconds: UInt64
     private let reauthenticationAttempts: Int
@@ -47,15 +54,50 @@ public struct AuthCoordinator: Sendable {
     ///   defaults. The explicit `login(_:)` used at launch does not retry: there the
     ///   caller is a UI that should show a failure and offer a button, not stall.
     public init(
+        fetchToken: @escaping @Sendable () async throws -> String,
+        provider: DittoAuthenticationProvider = .development,
+        timeoutSeconds: UInt64 = 15,
+        reauthenticationAttempts: Int = 3
+    ) {
+        self.fetchToken = fetchToken
+        self.provider = provider
+        self.timeoutSeconds = timeoutSeconds
+        self.reauthenticationAttempts = reauthenticationAttempts
+    }
+
+    /// Convenience for a fixed token — tests, and a server whose token outlives the
+    /// session. Anything with a real expiry must use `init(fetchToken:)`.
+    public init(
         tokens: TokenStore,
         provider: DittoAuthenticationProvider = .development,
         timeoutSeconds: UInt64 = 15,
         reauthenticationAttempts: Int = 3
     ) {
-        self.tokens = tokens
-        self.provider = provider
-        self.timeoutSeconds = timeoutSeconds
-        self.reauthenticationAttempts = reauthenticationAttempts
+        self.init(
+            fetchToken: { await tokens.current() },
+            provider: provider,
+            timeoutSeconds: timeoutSeconds,
+            reauthenticationAttempts: reauthenticationAttempts
+        )
+    }
+
+    /// Whether another attempt could plausibly succeed.
+    ///
+    /// A rejected credential and an expired license are verdicts, not blips: retrying
+    /// spends the caller's whole deadline to arrive at the answer it already had, and
+    /// buries it under two more identical log lines.
+    public static func isRetryable(_ error: Error) -> Bool {
+        guard let error = error as? DittoError else { return true }
+        switch error {
+        case .authenticationError(.failedToAuthenticate):
+            return false
+        case .activationError(.licenseTokenExpired),
+             .activationError(.licenseTokenVerificationFailed),
+             .activationError(.licenseTokenUnsupportedFutureVersion):
+            return false
+        default:
+            return true
+        }
     }
 
     /// Installs the handler and performs the first login. Call before `sync.start()`.
@@ -78,7 +120,7 @@ public struct AuthCoordinator: Sendable {
     /// session — sync stops and nothing reports why. See `reauthenticationAttempts` for
     /// what that costs.
     public func install(on ditto: Ditto) {
-        let tokens = self.tokens
+        let fetchToken = self.fetchToken
         let provider = self.provider
         let timeoutSeconds = self.timeoutSeconds
         let attempts = self.reauthenticationAttempts
@@ -88,19 +130,30 @@ public struct AuthCoordinator: Sendable {
                 try await Retry.run(
                     attempts: attempts,
                     firstBackoffSeconds: 2,
-                    onFailure: { attempt, error in
+                    isRetryable: Self.isRetryable,
+                    onFailure: { attempt, error, nextDelay in
+                        let retrying = nextDelay.map { "retrying in \($0)s" } ?? "giving up"
                         logger.warning(
-                            "Ditto re-authentication attempt \(attempt, privacy: .public) failed: \(error.localizedDescription, privacy: .public)"
+                            "Ditto re-authentication attempt \(attempt, privacy: .public) failed (\(retrying, privacy: .public)): \(error.localizedDescription, privacy: .public)"
                         )
                     }
                 ) {
+                    // Fetched inside the retry, not once outside it: the handler runs
+                    // BECAUSE the token expired, so every attempt needs a fresh one.
                     try await Self.performLogin(
-                        ditto, tokens: tokens, provider: provider, timeoutSeconds: timeoutSeconds
+                        ditto,
+                        token: fetchToken(),
+                        provider: provider,
+                        timeoutSeconds: timeoutSeconds
                     )
                 }
+            } catch is CancellationError {
+                // A teardown, not a failure. Logging it at error level would put a
+                // spurious auth failure in every sysdiagnose taken after a clean exit.
+                logger.debug("Ditto re-authentication cancelled")
             } catch {
                 logger.error(
-                    "Ditto re-authentication gave up after \(attempts, privacy: .public) attempts: \(error.localizedDescription, privacy: .public)"
+                    "Ditto re-authentication gave up: \(error.localizedDescription, privacy: .public)"
                 )
             }
         }
@@ -108,9 +161,15 @@ public struct AuthCoordinator: Sendable {
 
     /// The same login, awaited — for launch, where the app should not proceed until the
     /// first login has succeeded, failed, or timed out.
+    ///
+    /// Deliberately does NOT retry. Here there is a caller and a UI: report the failure
+    /// and offer a button, rather than stalling launch behind three attempts.
     public func login(_ ditto: Ditto) async throws {
         try await Self.performLogin(
-            ditto, tokens: tokens, provider: provider, timeoutSeconds: timeoutSeconds
+            ditto,
+            token: try await fetchToken(),
+            provider: provider,
+            timeoutSeconds: timeoutSeconds
         )
     }
 
@@ -132,12 +191,11 @@ public struct AuthCoordinator: Sendable {
     /// local store works without authentication.
     private static func performLogin(
         _ ditto: Ditto,
-        tokens: TokenStore,
+        token: String,
         provider: DittoAuthenticationProvider,
         timeoutSeconds: UInt64
     ) async throws {
         guard let auth = ditto.auth else { throw AuthError.noAuthenticator }
-        let token = await tokens.current()
 
         do {
             try await Deadline.run(seconds: timeoutSeconds) { complete in

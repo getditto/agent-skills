@@ -89,6 +89,7 @@ extension Array where Element == DittoQueryResultItem {
 public struct ObserverBridge: Sendable {
     public let stream: AsyncStream<[Car]>
     private let observer: DittoStoreObserver
+    private let continuation: AsyncStream<[Car]>.Continuation
 
     /// How many results the observer yielded into the stream.
     ///
@@ -111,6 +112,7 @@ public struct ObserverBridge: Sendable {
             bufferingPolicy: latestOnly ? .bufferingNewest(1) : .unbounded
         )
         self.stream = stream
+        self.continuation = continuation
         let counter = YieldCounter()
         self.counter = counter
         let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
@@ -125,7 +127,16 @@ public struct ObserverBridge: Sendable {
         continuation.onTermination = { [weak observer] _ in observer?.cancel() }
     }
 
-    public func cancel() { observer.cancel() }
+    /// Stops the observer AND ends the stream.
+    ///
+    /// Both halves are needed. `observer.cancel()` alone leaves the stream open, so a
+    /// consumer suspended in `for await` waits forever and keeps its captures alive;
+    /// `continuation.finish()` alone leaves the observer firing into a dead stream.
+    /// `finish()` also runs `onTermination`, which is idempotent with the cancel above.
+    public func cancel() {
+        observer.cancel()
+        continuation.finish()
+    }
     public var isCancelled: Bool { observer.isCancelled }
 
     /// Counts yields from the observer's callback, which runs on an SDK thread.

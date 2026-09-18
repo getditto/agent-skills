@@ -22,8 +22,12 @@ store** and does not wait for a subscription to catch up; use an observer for th
 name without the leading `:`. Interpolating values into the query string is how a
 malformed identifier becomes a `queryInvalid` at runtime, and is never necessary.
 
-There is a `Codable` overload on `registerObserver` and `registerSubscription` for typed
-arguments; `execute` itself takes the dictionary form.
+**On v5 only**, there is a `Codable` overload on `registerObserver` and
+`registerSubscription` for typed arguments; `execute` itself always takes the dictionary
+form. 4.14.6 ships the dictionary overloads alone
+(`sdk-release-4.14.6:cocoa/DittoSwift/Store/DittoStore.swift:155,200`), so code using the
+typed form does not compile on the LTS line — see
+[versions.md](versions.md#store-results-and-errors).
 
 ### Reading values out of a result item
 

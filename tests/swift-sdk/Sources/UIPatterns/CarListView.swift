@@ -113,6 +113,7 @@ public final class DittoLoader: ObservableObject {
 
     private let configuration: Configuration
     private var bootstrapTask: Task<Void, Never>?
+    private var releaseTask: Task<Void, Never>?
 
     public init(configuration: Configuration) {
         self.configuration = configuration
@@ -127,6 +128,15 @@ public final class DittoLoader: ObservableObject {
             await bootstrapTask.value
             return
         }
+        // A previous failure may still be releasing its instance. Releasing is what frees
+        // the persistence-directory lock, so reopening before it finishes fails with
+        // `storeError(.persistenceDirectoryLocked)` — and in debug builds that release
+        // blocks on SDK cleanup for up to `Ditto.deinitTimeoutSeconds` (10), so the
+        // window is seconds wide, not microseconds.
+        if let releaseTask {
+            await releaseTask.value
+            self.releaseTask = nil
+        }
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             // Held outside the `do` so a failure after `open` succeeded does not drop the
@@ -136,7 +146,16 @@ public final class DittoLoader: ObservableObject {
             // `references/connect.md` documents, in the sample that documents it.
             var opened: Ditto?
             do {
-                let ditto = try await Ditto.open(config: self.configuration.config)
+                // `Ditto.open` is `async` in call shape only: it wraps the synchronous
+                // initializer in a continuation it resumes inline, on all three lines
+                // (`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:115-124`). This
+                // closure is `@MainActor`, so awaiting it directly would open the store
+                // on the main thread — seconds, for a large store or 5.1's index
+                // migration, which is a launch-watchdog kill. Get off the actor.
+                let config = self.configuration.config
+                let ditto = try await Task.detached(priority: .userInitiated) {
+                    try Ditto.openSync(config: config)
+                }.value
                 opened = ditto
                 if let token = self.configuration.offlineLicenseToken {
                     try ditto.setOfflineOnlyLicenseToken(token)
@@ -153,9 +172,15 @@ public final class DittoLoader: ObservableObject {
                 // launch failure — no network, a server blip, a login timeout — permanent
                 // for the life of the process, with force-quit as the only recovery.
                 self.bootstrapTask = nil
-                if let failed = opened {
+                if opened != nil {
+                    // Hand the reference to the box, THEN drop the main actor's own, so
+                    // the detached task holds the last one. Binding `if let failed =
+                    // opened` instead would leave a second strong reference on this actor
+                    // whose release could be the final one — running `Ditto.deinit` on
+                    // the main thread, which is the stall this exists to avoid.
+                    let handoff = Handoff(opened)
                     opened = nil
-                    Self.release(failed)
+                    self.releaseTask = Task.detached { handoff.clear() }
                 }
             }
         }
@@ -163,14 +188,16 @@ public final class DittoLoader: ObservableObject {
         await task.value
     }
 
-    /// Drops the last reference to a half-started instance **off** the main actor.
+    /// Carries a `Ditto` across an isolation boundary so the LAST release happens there.
     ///
-    /// Releasing `Ditto` is what frees its persistence-directory lock, so a failed
-    /// bootstrap must release it or `retry()` opens onto a locked directory. Doing that
-    /// on the main actor is the debug-build main-thread stall described above; a detached
-    /// task owns the reference instead and lets it go on the cooperative pool.
-    private nonisolated static func release(_ ditto: Ditto) {
-        Task.detached { withExtendedLifetime(ditto) {} }
+    /// `Ditto` is `Sendable` on v5 and this file is `@preconcurrency`-imported on 4.14.x,
+    /// so the box only has to be `Sendable` itself; the lock guards `clear()` against the
+    /// main actor dropping the box concurrently.
+    private final class Handoff: @unchecked Sendable {
+        private let lock = NSLock()
+        private var ditto: Ditto?
+        init(_ ditto: Ditto?) { self.ditto = ditto }
+        func clear() { lock.lock(); ditto = nil; lock.unlock() }
     }
 
     /// Re-attempts a failed bootstrap. Offline-first apps hit transient launch failures

@@ -136,7 +136,10 @@ enum MinimalApp {
         //    and again on every change. Extract Sendable values inside the handler, and
         //    do not pass `deliverOn:` — it is ignored on 5.0.x, so code that depends on
         //    it is correct on two lines and wrong on the third. A bounded stream with a
-        //    single consumer gives ordering and back-pressure instead.
+        //    single consumer gives ordering, and coalesces to the newest result. That is
+        //    NOT back-pressure: `yield` never suspends under any policy, so
+        //    `.bufferingNewest(1)` DROPS intermediate results rather than slowing the
+        //    producer. Real back-pressure is `handlerWithSignalNext`.
         let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
             bufferingPolicy: .bufferingNewest(1)
         )
@@ -269,11 +272,20 @@ enum MinimalApp {
                 Task { await gate.install(continuation) }
 
                 let timer = Task {
-                    // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is iOS
-                    // 16+ and the SDK's own floor is iOS 15.
-                    try? await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                    do {
+                        // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is
+                        // iOS 16+ and the SDK's own floor is iOS 15.
+                        try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                    } catch {
+                        // `try?` here would be a BUG. A cancelled sleep returns
+                        // immediately, so swallowing its error would send this task on
+                        // to report a timeout — making `cancel()` below a race with the
+                        // completion that just won, rather than a way to stop the timer.
+                        return
+                    }
                     await gate.finish(LoginError.timedOut)
                 }
+                Task { await gate.adopt(timer) }
 
                 auth.login(token: token, provider: .development) { _, error in
                     Task {
@@ -293,6 +305,16 @@ enum MinimalApp {
         private var continuation: CheckedContinuation<Void, Error>?
         private var outcome: Error?
         private var finished = false
+        private var timer: Task<Void, Never>?
+
+        /// Lets whoever finishes first stop the deadline, including `onCancel`.
+        func adopt(_ timer: Task<Void, Never>) {
+            if finished {
+                timer.cancel()
+                return
+            }
+            self.timer = timer
+        }
 
         func install(_ continuation: CheckedContinuation<Void, Error>) {
             // A resumption can arrive before `install` runs, since both are scheduled
@@ -308,6 +330,8 @@ enum MinimalApp {
             guard !finished else { return }
             finished = true
             outcome = error
+            timer?.cancel()
+            timer = nil
             if let continuation { resume(continuation) }
         }
 

@@ -121,17 +121,20 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
 
-- **77 test cases** (`scripts/run.sh --all`). Not all run on every line, because some
-  describe a specific one:
+- **87 test cases** (`scripts/run.sh --all`). The harness reports
+  `Test run with 87 tests in 12 suites` on every line; the number does not vary, because
+  a test that does not apply is *skipped*, never silently passed. What skips, and why:
 
-  | Line | Run | Skipped |
-  |---|---:|---|
-  | 4.14.6 | 74 | the two v5-only attachment tests, and `isActivated` |
-  | 5.0.3 | 75 | the two 4.14.x-only tests |
-  | 5.1.0 | 75 | the two 4.14.x-only tests |
+  | Line | Skipped |
+  |---|---|
+  | 4.14.6 | the two v5-only attachment tests, and `isActivated` (4.14.x has only the deprecated `activated`) |
+  | 5.0.3, 5.1.0 | `disableSyncWithV3` (no v3 sync to disable) and `useAfterCloseError` (v5 calls `fatalError` on that path instead) |
 
-  One further test needs `DITTO_URL` + `DITTO_TOKEN` and skips without them, which is how
-  CI runs — so CI executes 73 / 74 / 74. Skipped is reported as skipped, never as passed.
+  Tests needing `DITTO_URL` + `DITTO_TOKEN` are `.enabled(if:)` and report as skipped
+  without them, which is how CI runs; the reported total is unchanged.
+
+  Counts here are from `grep -c '@Test'` and the harness's own summary line. An earlier
+  revision carried a per-line breakdown that no run produced.
 
   Coverage: opening and activation, persistence-directory exclusivity (matching the
   error case, not merely "something threw") and reuse, sync start/stop, subscriptions and
@@ -149,7 +152,7 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   the remaining attempts), and the documented error cases.
 
   The load-bearing ones carry a **negative control**: the table in
-  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names eighteen guards,
+  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names twenty-one guards,
   how to break each and what should then fail. It does not cover every assertion above —
   where a claim rests on structure rather than on a measurement, this file says so under
   "Not verified".
@@ -217,6 +220,17 @@ repository, at the Swift source path that exists at each tag.
 - **The UIKit and AppKit samples' runtime behaviour.** They are compiled on every
   platform and version, and the observer bridge underneath them is tested, but no test
   drives a real table view.
+- **The SwiftUI composition root.** `DittoLoader` (its idempotence across suspension, the
+  off-main-actor release, and `retry()` awaiting that release), `DittoAppModel`,
+  `CarListView`, `AuthCoordinator` and `TokenStore` are **compile-only**: no test
+  constructs them. `Retry` and `Deadline` — the primitives `AuthCoordinator` composes —
+  are tested directly, but the wiring between them is not.
+- **That `Ditto.open` blocks the caller's executor.** Read from SDK source at all three
+  tags (`Ditto.swift`: the `async` factory wraps the synchronous initializer in a
+  continuation it resumes inline, under the SDK's own
+  `// REFACTOR: asyncify properly at the FFI level.`). Not measured here: a timing test
+  for "the main actor was blocked" is load-dependent, and this suite has already shipped
+  two assertions that measured machine load rather than behaviour.
 - **That a `Task` per delivery actually reorders.** A `Task` per delivery has **no
   ordering guarantee at all** — that is a statement about what the concurrency model
   promises, not about how often it misbehaves, and code relying on it is wrong even

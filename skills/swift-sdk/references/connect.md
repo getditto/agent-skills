@@ -32,21 +32,54 @@ Four details that cost a build or a support ticket if missed:
 
 ### `open` versus `openSync`
 
+**`open` is `async` in its call shape only. It does the same blocking work, on whatever
+executor you call it from** (`source`). It wraps the synchronous `Ditto(config)`
+initializer in a continuation and resumes it inline, with no suspension point in between:
+
+```swift
+public static func open(config: DittoConfig = .default) async throws -> Ditto {
+    // REFACTOR: asyncify properly at the FFI level.
+    return try await withCheckedThrowingContinuation { continuation in
+        do { let ditto = try Ditto(config); continuation.resume(returning: ditto) }
+        catch { continuation.resume(throwing: error) }
+    }
+}
+```
+
+Identical on all three lines: `sdk-release-4.14.6:cocoa/DittoSwift/Ditto.swift:56-66`,
+`sdk-release-5.0.3:sdks/cocoa/DittoSwift/Ditto.swift:115-125`,
+`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:115-124`. The SDK's own doc comment
+still says *"In Ditto version 4.x, this method is only partially async … It will become
+fully async starting with Ditto 5.0"* — that is stale; 5.1.0 has not asyncified it.
+
 | | Use when |
 |---|---|
-| `Ditto.open(config:)` — `async throws` | The composition root is already async: SwiftUI `.task`, an `async` app-model initializer, an `async` test. |
-| `Ditto.openSync(config:)` — `throws` | A genuinely synchronous entry point that cannot await — a command-line tool, or a test helper. |
+| `Ditto.open(config:)` — `async throws` | The call site is already async and is **not** the main actor. |
+| `Ditto.openSync(config:)` — `throws` | A genuinely synchronous entry point — a command-line tool, or a test helper. |
 
-They produce the same instance.
+They produce the same instance and cost the same.
 
-**Do not call `openSync` on an iOS app's main thread.** It blocks while the store opens,
-and that is unbounded: a large store, a cold flash cache, or 5.1's automatic index
+**Neither form may run on an iOS app's main thread.** Opening blocks while the store
+opens, and that is unbounded: a large store, a cold flash cache, or 5.1's automatic index
 migration can all take seconds. On the main thread of
 `application(_:didFinishLaunchingWithOptions:)` that is a launch-watchdog termination
-(`0x8badf00d`) that only reproduces on a real device with real data. Open Ditto
-asynchronously and render a loading phase — the pattern in
+(`0x8badf00d`) that only reproduces on a real device with real data.
+
+`await`ing `open` from a `@MainActor` type does **not** avoid this — that is the trap,
+because the code reads as if it does. Get off the actor explicitly:
+
+```swift
+// In a @MainActor app model. `Ditto` is Sendable on v5; 4.14.x needs
+// `@preconcurrency import DittoSwift`, which the minimal app shows.
+let ditto = try await Task.detached(priority: .userInitiated) {
+    try Ditto.openSync(config: config)
+}.value
+```
+
+Then render a loading phase while that runs — the pattern in
 [best-practices.md](../best-practices.md#instance-ownership). Also do not call `openSync`
-from a cooperative-concurrency thread, where blocking starves the pool.
+directly on a cooperative-concurrency thread, where blocking starves the pool;
+`Task.detached` is what keeps it off both.
 
 ### Offline-only instances
 
@@ -155,6 +188,20 @@ try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<V
 Resume the continuation on **every** path, including the `ditto.auth == nil` path, or the
 task hangs forever.
 
+**That bridge is not enough on its own, and must not be shipped as written.** It is
+neither bounded nor cancellable: if the completion never fires — unreachable server,
+captive portal, DNS black hole — the awaiting task suspends forever, and at launch that
+is an iOS watchdog termination. A task group does **not** fix it: a group does not return
+until every child finishes, and a child suspended in `withCheckedThrowingContinuation` is
+not cancellable, so the timeout child produces an error and the group then blocks forever
+waiting for its sibling (measured: a 2-second timeout still blocked after 8 seconds).
+
+The deadline has to resume the **same** continuation, with a gate admitting exactly one
+resumption, plus a `withTaskCancellationHandler` so a cancelled caller is released rather
+than waiting out the full timeout. The complete, tested implementation is `Deadline` in
+`tests/swift-sdk/Sources/UIPatterns/`, and
+[`examples/minimal-app.md`](../examples/minimal-app.md) carries a self-contained copy.
+
 ### Status
 
 `ditto.auth?.status` is a `DittoAuthenticationStatus` with `isAuthenticated` and
@@ -189,21 +236,37 @@ That is the switch to use for a "work offline" mode, not tearing down the instan
 There is no `close()`. A `Ditto` instance is released when its last strong reference goes
 away, and releasing it is what frees the persistence directory lock.
 
-**A failed startup must still release the instance, and not on the main actor.** If
-`Ditto.open` succeeds and a later step throws — activation, login, the first query — the
-instance is live and holding the directory lock, so a retry that does not release it first
-fails with `storeError(.persistenceDirectoryLocked)`. Dropping that last reference from a
-`@MainActor` error path is the debug-build stall described below. Hand it to a detached
-task instead:
+**A failed startup must still release the instance, not on the main actor, and the retry
+must wait for that release.** If `Ditto.open` succeeds and a later step throws —
+activation, login, the first query — the instance is live and holding the directory lock,
+so a retry that reopens before it is released fails with
+`storeError(.persistenceDirectoryLocked)`. Dropping that last reference from a `@MainActor`
+error path is also the debug-build stall described below, and that stall is what makes the
+window wide: `shouldWaitForCleanupOnClose` is `true` in debug, so the release blocks on SDK
+cleanup for up to `Ditto.deinitTimeoutSeconds` (10). Three things have to be true:
 
 ```swift
-private nonisolated static func release(_ ditto: Ditto) {
-    Task.detached { withExtendedLifetime(ditto) {} }
+// 1. A box carries the instance across, so the LAST release happens off this actor.
+private final class Handoff: @unchecked Sendable {
+    private let lock = NSLock()
+    private var ditto: Ditto?
+    init(_ ditto: Ditto?) { self.ditto = ditto }
+    func clear() { lock.lock(); ditto = nil; lock.unlock() }
 }
+
+// 2. Hand off, THEN drop this actor's own reference — `if let failed = opened` would
+//    leave a second strong reference here whose release could be the final one.
+let handoff = Handoff(opened)
+opened = nil
+releaseTask = Task.detached { handoff.clear() }
+
+// 3. The next open awaits it. Without this the Retry button races the release.
+if let releaseTask { await releaseTask.value; self.releaseTask = nil }
 ```
 
-`DittoLoader` in `tests/swift-sdk/Sources/UIPatterns/CarListView.swift` does this on its
-bootstrap failure path.
+`DittoLoader` in `tests/swift-sdk/Sources/UIPatterns/CarListView.swift` is the worked form.
+It is compiled on every platform and version but **not executed** — see the "Not verified"
+list in [`README.md`](../README.md).
 
 **Releasing a server-backed instance shortly after it authenticates can abort the
 process.** Observed on 5.1.0 in roughly one run in four:

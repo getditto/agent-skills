@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              77 Swift Testing cases
+Tests/SwiftSDKSkillTests/              87 Swift Testing cases
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -105,12 +105,13 @@ the single file you edited.
 
 | Guard | Break it by | Expected |
 |---|---|---|
-| Platform matrix compiles `UIPatterns` | a type error inside the `#if canImport(UIKit)` region | only the iOS legs fail |
-| …and the AppKit region | a type error inside `#if canImport(AppKit)` | only the macOS leg fails |
+| Platform matrix compiles `UIPatterns` | a type error inside the `#if canImport(UIKit)` region | an iOS leg fails and the run stops |
+| …and the AppKit region | a type error inside `#if canImport(AppKit)` | the macOS leg fails and the run stops |
 | Persistence legs assert | reading a document that was never written | probe exits 1 with three `FAIL:` lines |
 | …and run the right SDK | `--expect-version` naming another version | `FAIL: expected SDK X, running Y` |
-| …and open where they claim | `--expect-directory` naming another path | `FAIL: expected directory X, opened Y` |
-| Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails |
+| …and open where they claim | `--expect-directory` naming another path | `FAIL: expected directory X, got Y` |
+| Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails on `isCancelled` — the delivery-count assertion after it is a positive control, not separately falsifiable |
+| `ObserverBridge.cancel()` ends the stream | deleting `continuation.finish()` from it | `cancelReleasesASuspendedConsumer` fails in ~6s (bounded, not a hang) |
 | Bounded stream coalesces | forcing `.unbounded` | `bufferingPolicyDecidesWhatSurvives(latestOnly: true)` fails |
 | …and an unbounded one does not | forcing `.bufferingNewest(1)` | `bufferingPolicyDecidesWhatSurvives(latestOnly: false)` fails |
 | The login deadline releases its caller | restoring the task-group shape in `Deadline.swift` | `neverCompletingBodyTimesOut` fails (in ~8s, not a hang) |
@@ -121,7 +122,9 @@ the single file you edited.
 | …and does not fire when a consumer just stops reading | `finish()`ing right after the `break` | `onTerminationFiresOnFinishOnly` fails |
 | Identity is not positional | returning `""` from `Car.identity(of:)` | `carIdentityHandlesNonStringIDs` fails |
 | Re-authentication retries | `throw error` on every attempt instead of the last | `rethrowsAfterTheLastAttempt` and `cancellationAbandonsRemainingAttempts` fail |
-| …with growing backoff | `backoff *= 1` | `backoffGrows` fails |
+| …with growing backoff | `backoff *= 1` | `backoffGrows` fails: reported delays `[0.01, 0.01, 0.01, nil]` |
+| …and stops on a permanent failure | `isRetryable` ignored | `nonRetryableStopsAtOnce` fails |
+| …and does not run when already cancelled | delete `Task.checkCancellation()` | `alreadyCancelledRunsNothing` fails |
 | …and gives up when cancelled | `try?` around the backoff sleep | `cancellationAbandonsRemainingAttempts` fails: 10 attempts and a `Boom`, not 1 and a `CancellationError` |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
 

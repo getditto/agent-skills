@@ -201,7 +201,22 @@ then touches main-actor state is correct on 4.14.6 and 5.1.0 and faults on 5.0.3
 **Write code that does not depend on it.** Hop explicitly inside the handler and the same
 source is correct on all three lines — see [observers.md](observers.md).
 
-### `@Sendable` closure aliases arrive in 5.1.0
+### `@Sendable` closure aliases: two arrive in 5.0, the rest in 5.1.0
+
+Not one axis. `DittoAuthenticationExpirationHandler` and `DittoConnectionRequestHandler`
+gained `@Sendable` at **5.0**, not 5.1:
+
+| Alias | 4.14.6 | 5.0.3 | 5.1.0 |
+|---|---|---|---|
+| `DittoAuthenticationExpirationHandler` | plain | `@Sendable` | `@Sendable` |
+| `DittoConnectionRequestHandler` | plain | `@Sendable` | `@Sendable` |
+
+(`sdk-release-4.14.6:cocoa/DittoSwift/DittoAuthenticator.swift:28-29` and
+`DittoConnectionRequest.swift:17`, versus
+`sdk-release-5.0.3:sdks/cocoa/DittoSwift/DittoAuthenticator.swift:25-26` and
+`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoConnectionRequest.swift:17`.)
+
+The observer aliases are the ones that wait for 5.1.0:
 
 `DittoStoreObservationHandler`, `DittoStoreObservationHandlerWithSignalNext` and
 `DittoSignalNext` are plain closures at 5.0.3

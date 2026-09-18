@@ -36,17 +36,25 @@ public enum Deadline {
                 Task { await gate.install(continuation) }
 
                 let timer = Task {
-                    // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is iOS
-                    // 16+ and this package's floor is the SDK's own iOS 15.
-                    try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                    do {
+                        // `Task.sleep(nanoseconds:)`, not `sleep(for:)`: `Duration` is
+                        // iOS 16+ and this package's floor is the SDK's own iOS 15.
+                        try await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                    } catch {
+                        // `try?` here would be a BUG, not a shortcut. A cancelled sleep
+                        // returns IMMEDIATELY, so swallowing its error would send this
+                        // task straight on to report `Exceeded` — turning `cancel()`
+                        // below from "stop the timer" into "start a race with the
+                        // completion that just won". Returning is what makes cancelling
+                        // the timer mean anything.
+                        return
+                    }
                     await gate.finish(Exceeded())
                 }
+                Task { await gate.adopt(timer) }
 
                 body { error in
                     Task {
-                        // Not required for correctness — `Gate` already ignores the
-                        // later of the two. It stops the sleeping task early so the
-                        // deadline does not outlive the call it was bounding.
                         timer.cancel()
                         await gate.finish(error)
                     }
@@ -56,7 +64,8 @@ public enum Deadline {
             // An unstructured `Task` does NOT inherit cancellation, so the timer above
             // cannot observe it — without this handler a cancelled caller stays blocked
             // for the full deadline and then reports `Exceeded`, mistaking a deliberate
-            // teardown for an unreachable server.
+            // teardown for an unreachable server. `finish` also stops the timer, which
+            // would otherwise sleep out the full deadline after the caller had gone.
             Task { await gate.finish(CancellationError()) }
         }
     }
@@ -72,6 +81,16 @@ public enum Deadline {
         private var continuation: CheckedContinuation<Void, Error>?
         private var outcome: Error?
         private var finished = false
+        private var timer: Task<Void, Never>?
+
+        /// Lets whoever finishes first stop the deadline, including `onCancel`.
+        func adopt(_ timer: Task<Void, Never>) {
+            if finished {
+                timer.cancel()
+                return
+            }
+            self.timer = timer
+        }
 
         func install(_ continuation: CheckedContinuation<Void, Error>) {
             // A resumption can arrive before `install` runs, since both are scheduled
@@ -87,6 +106,8 @@ public enum Deadline {
             guard !finished else { return }
             finished = true
             outcome = error
+            timer?.cancel()
+            timer = nil
             if let continuation { resume(continuation) }
         }
 

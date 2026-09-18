@@ -15,7 +15,7 @@ let subscription = try ditto.sync.registerSubscription(
 )
 ```
 
-There is a `Codable` overload for typed arguments:
+**On v5 only**, there is a `Codable` overload for typed arguments:
 
 ```swift
 struct CarFilter: Codable { let minimumMileage: Int }
@@ -25,6 +25,10 @@ let subscription = try ditto.sync.registerSubscription(
     arguments: CarFilter(minimumMileage: 100)
 )
 ```
+
+4.14.6 has only the `[String: Any?]` overload
+(`sdk-release-4.14.6:cocoa/DittoSwift/DittoSync.swift:82-85`), so this does not compile
+there. If one source tree must build against all three lines, use the dictionary form.
 
 `registerSubscription` is `@discardableResult`, which makes it easy to drop the handle by
 accident. Keep it: **the handle is the only way to cancel**, not the thing that keeps the

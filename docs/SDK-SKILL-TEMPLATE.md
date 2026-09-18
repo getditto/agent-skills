@@ -501,12 +501,20 @@ eventually coexist. For calibration: `skills/dql/SKILL.md` is 84 lines and
 | File | Target | Hard limit |
 |---|---|---|
 | `description` | ~400 characters | 1024 |
-| `SKILL.md` body | ≤ 300 lines | 400 lines |
+| `SKILL.md` body | ≤ 300 lines, or ≤ 350 for a skill spanning three version lines | 400 lines |
 | Each `references/*.md` | ≤ 400 lines | split instead (§3) |
 
 The budget is achievable because §4 carries exceptions rather than the full map, and §5
 carries a short excerpt rather than the whole program. If you are over, those are the
 two places to look first — do not delete a capability from the `README.md` map.
+
+**The 350 allowance is for version spread, not for slack.** Every rule in §6-§8 that is
+version-gated costs a line or two that a single-line skill does not pay: `swift-sdk`
+covers 4.14.x, 5.0.x and 5.1.x, and its concurrency table alone carries four rows that
+exist only because an annotation or a default differs between them. A skill covering one
+version line that needs more than 300 lines is over budget, not entitled to 350. The
+validator warns above the applicable target, and a warning that fires on every run stops
+being read — so if yours fires, either cut or record here why the target moved.
 
 ---
 
