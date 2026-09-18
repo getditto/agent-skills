@@ -121,9 +121,10 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
 
-- **87 test cases** (`scripts/run.sh --all`). The harness reports
-  `Test run with 87 tests in 12 suites` on every line; the number does not vary, because
-  a test that does not apply is *skipped*, never silently passed. What skips, and why:
+- **89 `@Test` declarations** (`scripts/run.sh --all`), which expand to more cases —
+  three are parameterized. The harness reports `Test run with 89 tests in 13 suites` on
+  every line; the number does not vary, because a test that does not apply to a line is
+  *skipped* rather than silently passed. What skips, and why:
 
   | Line | Skipped |
   |---|---|
@@ -131,10 +132,13 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   | 5.0.3, 5.1.0 | `disableSyncWithV3` (no v3 sync to disable) and `useAfterCloseError` (v5 calls `fatalError` on that path instead) |
 
   Tests needing `DITTO_URL` + `DITTO_TOKEN` are `.enabled(if:)` and report as skipped
-  without them, which is how CI runs; the reported total is unchanged.
+  without them, which is how CI runs; the reported total is unchanged. **`DITTO_OFFLINE_LICENSE`
+  is different — it is required, not optional.** Without it roughly eighty tests *fail*
+  rather than skip, because `TestPeer.open()` cannot activate an instance. The skip
+  discipline above is about version and server gating, not about missing configuration.
 
   Counts here are from `grep -c '@Test'` and the harness's own summary line. An earlier
-  revision carried a per-line breakdown that no run produced.
+  revision claimed 77 and carried a per-line breakdown that no run produced.
 
   Coverage: opening and activation, persistence-directory exclusivity (matching the
   error case, not merely "something threw") and reuse, sync start/stop, subscriptions and
@@ -152,7 +156,7 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   the remaining attempts), and the documented error cases.
 
   The load-bearing ones carry a **negative control**: the table in
-  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names twenty-one guards,
+  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names twenty-three guards,
   how to break each and what should then fail. It does not cover every assertion above —
   where a claim rests on structure rather than on a measurement, this file says so under
   "Not verified".
@@ -225,6 +229,14 @@ repository, at the Swift source path that exists at each tag.
   `CarListView`, `AuthCoordinator` and `TokenStore` are **compile-only**: no test
   constructs them. `Retry` and `Deadline` — the primitives `AuthCoordinator` composes —
   are tested directly, but the wiring between them is not.
+- **The authentication status surface.** `auth.status`, `isAuthenticated`, `userID`,
+  `observeStatus(_:)`, `DittoAuthenticator.StatusPublisher`,
+  `Notification.Name.dittoAuthenticationStatusDidChange` and `logout(cleanup:)` are
+  documented in `references/connect.md` from SDK source; no test touches any of them.
+- **The server-authentication leg in CI.** It runs only where `DITTO_URL` and
+  `DITTO_TOKEN` are set, which is a local developer's machine. CI leaves both unset, so
+  every claim about `.server` connect, login and the expiration handler is verified by
+  local runs recorded here, not by a green check on a pull request.
 - **That `Ditto.open` blocks the caller's executor.** Read from SDK source at all three
   tags (`Ditto.swift`: the `async` factory wraps the synchronous initializer in a
   continuation it resumes inline, under the SDK's own

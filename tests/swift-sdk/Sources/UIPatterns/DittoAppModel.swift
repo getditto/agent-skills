@@ -173,6 +173,20 @@ public final class DittoAppModel: ObservableObject {
     public func start(minimumMileage: Int = 0) throws {
         guard bridge == nil else { return }
 
+        // `bridge` is the completion flag, so a throw part-way leaves sync started and a
+        // subscription registered while `bridge` is still nil — and a caller that retries
+        // then registers a SECOND subscription for the same query. Roll back instead.
+        defer {
+            if bridge == nil {
+                subscription?.cancel()
+                subscription = nil
+                if isSyncStarted {
+                    ditto.sync.stop()
+                    isSyncStarted = false
+                }
+            }
+        }
+
         try ditto.sync.start()
         isSyncStarted = ditto.sync.isActive
 

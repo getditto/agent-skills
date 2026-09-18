@@ -54,11 +54,11 @@ same failure mode.)
 as a phase — `loading` / `ready(model)` / `failed(message)` — open the instance from
 `.task`, and render the phase.
 
-`Ditto.open` is `async` but does its work on the caller's executor, so `await`ing it from
-a `@MainActor` model still opens the store on the main thread — a launch-watchdog
-termination waiting for a large store. Wrap the open in `Task.detached` and await *that*
-([connect.md](references/connect.md#open-versus-opensync)). Switching to `openSync`
-changes nothing on its own; what matters is which executor the call runs on.
+`Ditto.open` is nonisolated, so `await`ing it from a `@MainActor` model leaves the actor
+and the main thread stays responsive — measured. What you must not do is reach for
+`Ditto.openSync` to dodge the `await`: that blocks the calling thread for the whole open,
+and on the main thread it is a launch-watchdog termination waiting for a large store
+([connect.md](references/connect.md#open-versus-opensync)).
 
 Compiled examples of all of this live in the `getditto/agent-skills` repository under
 `tests/swift-sdk/Sources/UIPatterns/`.

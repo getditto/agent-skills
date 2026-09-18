@@ -88,22 +88,28 @@ final class CarsModel: ObservableObject {
     private var observer: DittoStoreObserver?
     private var consumer: Task<Void, Never>?
 
-    // Call from SwiftUI's .task, not from App.init. `.task` can run more than once,
-    // and a second open on the same directory throws
-    // storeError(.persistenceDirectoryLocked) — so this is idempotent.
-    func start() async throws {
-        guard ditto == nil else { return }
+    // Call from SwiftUI's .task, not from App.init. `.task` can run more than once, and
+    // a second open on the same directory throws storeError(.persistenceDirectoryLocked).
+    // A `guard` alone does NOT prevent that — it is checked before the first `await`, so
+    // two callers both pass it. Store the task synchronously and await that instead.
+    private var startTask: Task<Void, Error>?
 
+    func start() async throws {
+        if let startTask { return try await startTask.value }
+        let task = Task { try await self.reallyStart() }   // no await before this line
+        startTask = task
+        try await task.value
+    }
+
+    private func reallyStart() async throws {
         let config = DittoConfig(
             databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
             connect: .server(url: URL(string: "REPLACE_ME_WITH_YOUR_CONNECT_URL")!)
         )
-        // `Ditto.open` is async in call shape ONLY — it does its work on the caller's
-        // executor, so awaiting it here would open the store on the main thread and risk
-        // a launch-watchdog kill. See references/connect.md#open-versus-opensync.
-        let ditto = try await Task.detached(priority: .userInitiated) {
-            try Ditto.openSync(config: config)
-        }.value
+        // `await`, not `openSync`: `Ditto.open` is nonisolated, so it leaves this actor
+        // and the main thread stays responsive. `Ditto.openSync(config:)` here would
+        // block the main thread for the whole open.
+        let ditto = try await Ditto.open(config: config)
         self.ditto = ditto
 
         // Install the handler BEFORE sync.start(), or start throws
@@ -154,9 +160,9 @@ Complete program, twenty-row capability map, and real build-and-run transcripts:
 
 | API | Where its callback runs |
 |---|---|
-| `Ditto.open(config:)` | `async throws`, but it does **not** get off the caller's executor: it wraps the synchronous initializer in a continuation it resumes inline. `await` from `@MainActor` opens the store on the main thread. |
-| `Ditto.openSync(config:)` | `throws`; blocks. Same work as `open`, minus the `async` call shape. |
-| `store.execute(query:arguments:)` | `async throws`; resumes on the caller's executor |
+| `Ditto.open(config:)` | `async throws`, and **nonisolated**, so it runs on the cooperative pool rather than the caller's actor. Awaiting it from `@MainActor` does not block the main thread (**executed**). |
+| `Ditto.openSync(config:)` | `throws`; blocks the calling thread for the whole open — on the main thread that is a launch-watchdog risk (**executed**). |
+| `store.execute(query:arguments:)` | `async throws` and nonisolated, like `open`: it leaves your actor, then occupies one cooperative-pool thread for the whole statement — there is no suspension point inside it. Fine for ordinary statements; a very large one is worth keeping off a saturated pool. |
 | `store.registerObserver(…, deliverOn:)`, `store.fetchAttachment(…, deliverOn:)` | the given `DispatchQueue`, default `.main` — **`registerObserver` ignores it on 5.0.x** |
 | `sync.registerSubscription` | synchronous, `throws`; no callback |
 | `presence.observe(didChangeHandler:)`, `DittoLogger.setCustomLogCallback` | an SDK thread; not `@Sendable`, not main-queue-guaranteed |

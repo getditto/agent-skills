@@ -316,9 +316,14 @@ enum MinimalApp {
     /// cancelled at 0.3s.
     ///
     /// `Gate` below mirrors `Deadline.Gate` in `tests/swift-sdk/Sources/UIPatterns`,
-    /// which is where its test coverage lives. The duplication is deliberate — this
-    /// file has to compile on its own when a reader pastes it into an empty project —
-    /// and `scripts/validate-sdk-skills.py` fails the build if the two actors drift.
+    /// which is where its test coverage lives. The duplication is deliberate — this file
+    /// has to compile on its own when a reader pastes it into an empty project — and
+    /// `scripts/validate-sdk-skills.py` fails the build if the two ACTORS drift.
+    ///
+    /// That check does not extend to this function. The orchestration around the gate —
+    /// the `adopt` hand-off, the timer's `catch { return }`, the `onCancel` body — is
+    /// duplicated and unchecked, so a fix to `Deadline.run` has to be ported here by
+    /// hand. Keep the two bodies in step; the validator will not do it for you.
     private static func login(_ ditto: Ditto, token: String, timeoutSeconds: UInt64) async throws {
         guard let auth = ditto.auth else { throw LoginError.noAuthenticator }
 

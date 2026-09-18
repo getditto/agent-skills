@@ -38,7 +38,7 @@ public actor TokenStore {
 }
 
 public struct AuthCoordinator: Sendable {
-    public enum AuthError: Error {
+    public enum AuthError: Error, Equatable {
         case noAuthenticator
         case timedOut
     }
@@ -87,6 +87,9 @@ public struct AuthCoordinator: Sendable {
     /// spends the caller's whole deadline to arrive at the answer it already had, and
     /// buries it under two more identical log lines.
     public static func isRetryable(_ error: Error) -> Bool {
+        // `auth` is nil for the whole lifetime of a `.smallPeersOnly` instance, so this
+        // one is a configuration mistake, not a transient failure.
+        if let error = error as? AuthError, error == .noAuthenticator { return false }
         guard let error = error as? DittoError else { return true }
         switch error {
         case .authenticationError(.failedToAuthenticate):
@@ -142,7 +145,7 @@ public struct AuthCoordinator: Sendable {
                     // BECAUSE the token expired, so every attempt needs a fresh one.
                     try await Self.performLogin(
                         ditto,
-                        token: fetchToken(),
+                        fetchToken: fetchToken,
                         provider: provider,
                         timeoutSeconds: timeoutSeconds
                     )
@@ -167,7 +170,7 @@ public struct AuthCoordinator: Sendable {
     public func login(_ ditto: Ditto) async throws {
         try await Self.performLogin(
             ditto,
-            token: try await fetchToken(),
+            fetchToken: fetchToken,
             provider: provider,
             timeoutSeconds: timeoutSeconds
         )
@@ -191,11 +194,21 @@ public struct AuthCoordinator: Sendable {
     /// local store works without authentication.
     private static func performLogin(
         _ ditto: Ditto,
-        token: String,
+        fetchToken: @escaping @Sendable () async throws -> String,
         provider: DittoAuthenticationProvider,
         timeoutSeconds: UInt64
     ) async throws {
         guard let auth = ditto.auth else { throw AuthError.noAuthenticator }
+
+        // Inside the deadline, not passed in as an already-evaluated argument.
+        // `fetchToken` is the app's own network call — behind a captive portal it can
+        // suspend for its own timeout or forever, and an argument is evaluated BEFORE
+        // this function's body runs, so a deadline set up below could never have bounded
+        // it. The SDK awaits the expiration handler, so an unbounded fetch there parks
+        // re-authentication permanently on the first attempt.
+        let token = try await withDeadline(seconds: timeoutSeconds, AuthError.timedOut) {
+            try await fetchToken()
+        }
 
         do {
             try await Deadline.run(seconds: timeoutSeconds) { complete in
@@ -203,6 +216,31 @@ public struct AuthCoordinator: Sendable {
             }
         } catch is Deadline.Exceeded {
             throw AuthError.timedOut
+        }
+    }
+
+    /// Bounds an `async` call that has no deadline of its own.
+    ///
+    /// `Deadline.run` bounds a completion handler; this bounds an `await`. A task group
+    /// works here where it does not for a continuation, because the child is a normal
+    /// async call and `cancelAll()` can actually end it — provided the call is
+    /// cancellation-aware. `URLSession`'s async API is; an app's own `fetchToken` may not
+    /// be, which is why `init(fetchToken:)` documents that requirement.
+    private static func withDeadline<T: Sendable>(
+        seconds: UInt64,
+        _ timeoutError: AuthError,
+        _ work: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T?.self) { group in
+            group.addTask { try await work() }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                return nil
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next() else { throw timeoutError }
+            guard let value = first else { throw timeoutError }
+            return value
         }
     }
 }

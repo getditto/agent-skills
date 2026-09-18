@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              87 Swift Testing cases
+Tests/SwiftSDKSkillTests/              89 @Test declarations (3 parameterized)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -126,6 +126,8 @@ the single file you edited.
 | …and stops on a permanent failure | `isRetryable` ignored | `nonRetryableStopsAtOnce` fails |
 | …and does not run when already cancelled | delete `Task.checkCancellation()` | `alreadyCancelledRunsNothing` fails |
 | …and gives up when cancelled | `try?` around the backoff sleep | `cancellationAbandonsRemainingAttempts` fails: 10 attempts and a `Boom`, not 1 and a `CancellationError` |
+| `await Ditto.open` stays off the main thread | opening with `Ditto.openSync` instead | `openSyncBlocksTheMainThreadAndOpenDoesNot` fails: stall equals the open duration |
+| …and SE-0338 is why | marking the probe `@MainActor` | `nonisolatedAsyncLeavesTheCallersActor` fails |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
 
 ## What is not covered

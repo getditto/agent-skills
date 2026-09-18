@@ -32,9 +32,8 @@ Four details that cost a build or a support ticket if missed:
 
 ### `open` versus `openSync`
 
-**`open` is `async` in its call shape only. It does the same blocking work, on whatever
-executor you call it from** (`source`). It wraps the synchronous `Ditto(config)`
-initializer in a continuation and resumes it inline, with no suspension point in between:
+`Ditto.open` wraps the synchronous `Ditto(config)` initializer in a continuation and
+resumes it inline, with no suspension point inside the closure:
 
 ```swift
 public static func open(config: DittoConfig = .default) async throws -> Ditto {
@@ -48,38 +47,49 @@ public static func open(config: DittoConfig = .default) async throws -> Ditto {
 
 Identical on all three lines: `sdk-release-4.14.6:cocoa/DittoSwift/Ditto.swift:56-66`,
 `sdk-release-5.0.3:sdks/cocoa/DittoSwift/Ditto.swift:115-125`,
-`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:115-124`. The SDK's own doc comment
-still says *"In Ditto version 4.x, this method is only partially async … It will become
-fully async starting with Ditto 5.0"* — that is stale; 5.1.0 has not asyncified it.
+`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:115-124`.
+
+**That does not mean it runs on your actor.** `open` is declared **nonisolated**, and a
+nonisolated `async` function does not inherit the caller's executor
+([SE-0338](https://github.com/apple/swift-evolution/blob/main/proposals/0338-clarify-execution-non-actor-async.md));
+it hops to the cooperative pool. All three shipped frameworks are built with a Swift 6
+compiler, so the rule applies on every line — check any of them with
+`head -2 DittoSwift.framework/Modules/DittoSwift.swiftmodule/*.swiftinterface`.
 
 | | Use when |
 |---|---|
-| `Ditto.open(config:)` — `async throws` | The call site is already async and is **not** the main actor. |
+| `Ditto.open(config:)` — `async throws` | Anywhere you can `await`. This is the default, and it is safe on the main actor. |
 | `Ditto.openSync(config:)` — `throws` | A genuinely synchronous entry point — a command-line tool, or a test helper. |
 
-They produce the same instance and cost the same.
+**`await Ditto.open(...)` from `@MainActor` does not block the main thread. Calling
+`Ditto.openSync(...)` there does.** Measured on 5.1.0 with a 5 ms main-queue timer
+recording how long the main thread went unresponsive (**executed**):
 
-**Neither form may run on an iOS app's main thread.** Opening blocks while the store
-opens, and that is unbounded: a large store, a cold flash cache, or 5.1's automatic index
-migration can all take seconds. On the main thread of
-`application(_:didFinishLaunchingWithOptions:)` that is a launch-watchdog termination
-(`0x8badf00d`) that only reproduces on a real device with real data.
+| Call, from `@MainActor` | Open took | Main thread blocked |
+|---|---|---|
+| `await Ditto.open(config:)` | 59-203 ms | 6 ms — the timer interval; not blocked |
+| `Ditto.openSync(config:)` | 48-67 ms | equal to the open, every run |
 
-`await`ing `open` from a `@MainActor` type does **not** avoid this — that is the trap,
-because the code reads as if it does. Get off the actor explicitly:
+Opening is unbounded — a large store, a cold flash cache, or 5.1's automatic index
+migration can all take seconds — so on the main thread of
+`application(_:didFinishLaunchingWithOptions:)` `openSync` is a launch-watchdog
+termination (`0x8badf00d`) that only reproduces on a real device with real data. Use
+`await` and render a loading phase, the pattern in
+[best-practices.md](../best-practices.md#instance-ownership).
+
+**Do not reach for `Task.detached` here.** It schedules on the same cooperative pool
+`open` already uses, so it moves nothing; it only costs you a `Sendable` warning on
+4.14.x, where `Ditto` predates the conformance. What `open` *does* occupy for the
+duration is one cooperative-pool thread. That matters only if you open many instances at
+once — and if you must, get off the pool properly rather than deeper into it:
 
 ```swift
-// In a @MainActor app model. `Ditto` is Sendable on v5; 4.14.x needs
-// `@preconcurrency import DittoSwift`, which the minimal app shows.
-let ditto = try await Task.detached(priority: .userInitiated) {
-    try Ditto.openSync(config: config)
-}.value
+let ditto: Ditto = try await withCheckedThrowingContinuation { continuation in
+    DispatchQueue.global(qos: .userInitiated).async {
+        continuation.resume(with: Result { try Ditto.openSync(config: config) })
+    }
+}
 ```
-
-Then render a loading phase while that runs — the pattern in
-[best-practices.md](../best-practices.md#instance-ownership). Also do not call `openSync`
-directly on a cooperative-concurrency thread, where blocking starves the pool;
-`Task.detached` is what keeps it off both.
 
 ### Offline-only instances
 
@@ -141,11 +151,23 @@ with `DittoError.authenticationError(.expirationHandlerMissing(message:))`.
 
 ```swift
 ditto.auth?.expirationHandler = { ditto, _ in
-    let token = await tokenStore.current()      // actor-owned, not UI state
     do {
-        try await retrying(attempts: 3, firstBackoffSeconds: 2) {
+        try await Retry.run(
+            attempts: 3,
+            firstBackoffSeconds: 2,
+            isRetryable: AuthCoordinator.isRetryable,
+            onFailure: { attempt, error, nextDelay in
+                let next = nextDelay.map { "retrying in \($0)s" } ?? "giving up"
+                logger.warning("Ditto re-auth attempt \(attempt) failed (\(next)): \(error)")
+            }
+        ) {
+            // INSIDE the closure. The handler runs because the token expired, so
+            // hoisting the fetch out re-submits the same dead credential three times.
+            let token = try await fetchToken()          // your backend, not UI state
             try await login(ditto, token: token, timeoutSeconds: 15)
         }
+    } catch is CancellationError {
+        logger.debug("Ditto re-authentication cancelled")   // a teardown, not a failure
     } catch {
         logger.error("Ditto re-authentication gave up: \(error.localizedDescription)")
     }
@@ -153,17 +175,32 @@ ditto.auth?.expirationHandler = { ditto, _ in
 try ditto.sync.start()
 ```
 
-The handler runs off the main actor. It must not touch `@Published` properties, view
-controllers or any other main-actor state directly — hop with `await MainActor.run { … }`
-or a `Task { @MainActor in … }` if it needs to report status to the UI.
+`Retry` and `AuthCoordinator` are in `tests/swift-sdk/Sources/UIPatterns/`; `login` is the
+bounded bridge below. The handler runs off the main actor and must not touch `@Published`
+properties, view controllers or any other main-actor state directly — hop with
+`await MainActor.run { … }` or a `Task { @MainActor in … }` to report status to the UI.
 
-**Retry inside the handler, and bound both the login and the retries.** Nothing calls the
-handler again until the token next expires, so one attempt lost to a captive portal or a
-server blip leaves the instance unauthenticated for the rest of the session: sync stops
-and nothing reports why. Because the handler is awaited, the cost is real —
-`attempts × timeout` plus backoff, 51 seconds at the values above — so pick the numbers
-deliberately rather than retrying forever. The awaited launch login is the opposite case:
-it should fail fast and let the UI offer a button.
+Four things that sample is doing deliberately:
+
+- **Fetch the token inside the retry.** Nothing else calls this handler until the token
+  next expires. Fetching once outside means all three attempts submit the credential the
+  server has already rejected.
+- **Classify the error.** A rejected credential or an expired license is a verdict, not a
+  blip: retrying spends the whole budget to reach the answer you already had. Retry
+  transport failures; stop on `authenticationError(.failedToAuthenticate)` and the
+  `activationError` license cases.
+- **Separate cancellation from failure.** `CancellationError` is a teardown. Logging it at
+  error level puts a spurious auth failure in every sysdiagnose taken after a clean exit.
+- **Bound everything inside, including the token fetch.** The SDK *awaits* this handler, so
+  an unbounded `fetchToken` — a `URLSession` call behind a captive portal — parks
+  re-authentication permanently on the first attempt, and no retry budget saves you. Bound
+  the fetch as well as the login: `attempts × (fetch + login)` plus backoff is the real
+  worst case, and it is what the user waits through.
+
+Retrying at all is the point: one attempt lost to a captive portal leaves the instance
+unauthenticated for the rest of the session — sync stops and nothing reports why. The
+awaited launch login is the opposite case, and `AuthCoordinator.login(_:)` deliberately
+does **not** retry: there is a caller and a UI, so fail fast and offer a button.
 
 `AuthCoordinator` and `Retry` in `tests/swift-sdk/Sources/UIPatterns/` are the worked
 form. `Retry` is **executed**, including that a cancelled caller is released during the

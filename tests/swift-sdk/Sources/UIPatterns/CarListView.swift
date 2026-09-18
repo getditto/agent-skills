@@ -128,16 +128,20 @@ public final class DittoLoader: ObservableObject {
             await bootstrapTask.value
             return
         }
-        // A previous failure may still be releasing its instance. Releasing is what frees
-        // the persistence-directory lock, so reopening before it finishes fails with
-        // `storeError(.persistenceDirectoryLocked)` — and in debug builds that release
-        // blocks on SDK cleanup for up to `Ditto.deinitTimeoutSeconds` (10), so the
-        // window is seconds wide, not microseconds.
-        if let releaseTask {
-            await releaseTask.value
-            self.releaseTask = nil
-        }
+        // A previous failure may still be releasing its instance, and the directory lock
+        // is not free until it finishes — in debug that release blocks on SDK cleanup for
+        // up to `Ditto.deinitTimeoutSeconds` (10), so the window is seconds wide.
+        //
+        // The wait happens INSIDE the task, never before `bootstrapTask` is assigned.
+        // Awaiting out here would suspend with `bootstrapTask` still nil, so a second
+        // caller would walk through the guard above and open a second instance on the
+        // same directory — the exact `persistenceDirectoryLocked` failure this guard
+        // exists to prevent. There must be no suspension point between the guard and the
+        // assignment.
+        let pendingRelease = releaseTask
+        releaseTask = nil
         let task = Task { @MainActor [weak self] in
+            await pendingRelease?.value
             guard let self else { return }
             // Held outside the `do` so a failure after `open` succeeded does not drop the
             // last reference HERE. This body is `@MainActor`, and in debug builds
@@ -146,16 +150,13 @@ public final class DittoLoader: ObservableObject {
             // `references/connect.md` documents, in the sample that documents it.
             var opened: Ditto?
             do {
-                // `Ditto.open` is `async` in call shape only: it wraps the synchronous
-                // initializer in a continuation it resumes inline, on all three lines
-                // (`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:115-124`). This
-                // closure is `@MainActor`, so awaiting it directly would open the store
-                // on the main thread — seconds, for a large store or 5.1's index
-                // migration, which is a launch-watchdog kill. Get off the actor.
-                let config = self.configuration.config
-                let ditto = try await Task.detached(priority: .userInitiated) {
-                    try Ditto.openSync(config: config)
-                }.value
+                // `await`, even though this closure is `@MainActor`: `Ditto.open` is
+                // nonisolated, so it hops to the cooperative pool and the main thread
+                // stays responsive (measured — see references/connect.md). Using
+                // `Ditto.openSync` here instead would block the main thread for the whole
+                // open, and `Task.detached` around it would buy nothing, because that is
+                // the same pool `open` already uses.
+                let ditto = try await Ditto.open(config: self.configuration.config)
                 opened = ditto
                 if let token = self.configuration.offlineLicenseToken {
                     try ditto.setOfflineOnlyLicenseToken(token)
