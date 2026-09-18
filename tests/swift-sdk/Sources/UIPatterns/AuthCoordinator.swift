@@ -48,11 +48,15 @@ public struct AuthCoordinator: Sendable {
     private let timeoutSeconds: UInt64
     private let reauthenticationAttempts: Int
 
+    /// - Parameter fetchToken: fetches a CURRENT token, called once per attempt. It is
+    ///   bounded by `timeoutSeconds`, but that bound only releases this caller — it
+    ///   cannot stop work that does not observe cancellation. Make it cancellation-aware
+    ///   (`URLSession`'s async API is) or the abandoned attempt keeps running.
     /// - Parameter reauthenticationAttempts: how many times the **expiration handler**
     ///   retries. The SDK awaits that handler, so the worst case it costs is
-    ///   `reauthenticationAttempts × timeoutSeconds` plus backoff — 51 seconds at the
-    ///   defaults. The explicit `login(_:)` used at launch does not retry: there the
-    ///   caller is a UI that should show a failure and offer a button, not stall.
+    ///   `reauthenticationAttempts × (fetch + login) timeouts` plus backoff. The explicit
+    ///   `login(_:)` used at launch does not retry: there the caller is a UI that should
+    ///   show a failure and offer a button, not stall.
     public init(
         fetchToken: @escaping @Sendable () async throws -> String,
         provider: DittoAuthenticationProvider = .development,
@@ -206,8 +210,11 @@ public struct AuthCoordinator: Sendable {
         // this function's body runs, so a deadline set up below could never have bounded
         // it. The SDK awaits the expiration handler, so an unbounded fetch there parks
         // re-authentication permanently on the first attempt.
-        let token = try await withDeadline(seconds: timeoutSeconds, AuthError.timedOut) {
-            try await fetchToken()
+        let token: String
+        do {
+            token = try await Deadline.value(seconds: timeoutSeconds) { try await fetchToken() }
+        } catch is Deadline.Exceeded {
+            throw AuthError.timedOut
         }
 
         do {
@@ -219,28 +226,4 @@ public struct AuthCoordinator: Sendable {
         }
     }
 
-    /// Bounds an `async` call that has no deadline of its own.
-    ///
-    /// `Deadline.run` bounds a completion handler; this bounds an `await`. A task group
-    /// works here where it does not for a continuation, because the child is a normal
-    /// async call and `cancelAll()` can actually end it — provided the call is
-    /// cancellation-aware. `URLSession`'s async API is; an app's own `fetchToken` may not
-    /// be, which is why `init(fetchToken:)` documents that requirement.
-    private static func withDeadline<T: Sendable>(
-        seconds: UInt64,
-        _ timeoutError: AuthError,
-        _ work: @escaping @Sendable () async throws -> T
-    ) async throws -> T {
-        try await withThrowingTaskGroup(of: T?.self) { group in
-            group.addTask { try await work() }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
-                return nil
-            }
-            defer { group.cancelAll() }
-            guard let first = try await group.next() else { throw timeoutError }
-            guard let value = first else { throw timeoutError }
-            return value
-        }
-    }
 }

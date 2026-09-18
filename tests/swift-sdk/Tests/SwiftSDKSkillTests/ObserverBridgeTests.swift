@@ -385,7 +385,16 @@ struct DeadlineTests {
 
         try await Task.sleep(nanoseconds: 300_000_000)
         subject.cancel()
-        _ = await subject.value
+
+        // Polled, NOT `await subject.value`: awaiting a non-throwing `Task.value` is not
+        // cancellation-aware, so when this regresses the suite HANGS instead of failing.
+        // Measured: restoring the task-group shape in Deadline.swift left this running
+        // past 90 seconds. Same reason `cancelReleasesASuspendedConsumer` polls.
+        var waited = 0
+        while await outcome.value == nil && waited < 80 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            waited += 1
+        }
 
         let elapsed = Date().timeIntervalSince(started)
         // Read the actor once: `#expect`'s autoclosure is nonisolated and cannot await.
@@ -401,6 +410,56 @@ struct DeadlineTests {
             try await Deadline.run(seconds: 30) { complete in complete(Boom()) }
         }
     }
+
+    /// The property a task group cannot provide, and the reason `Deadline.value` is not
+    /// built on one: `work` here is a bare continuation that is never resumed, so it is
+    /// NOT cancellation-aware. A `withThrowingTaskGroup` version of this — which shipped
+    /// briefly — was measured still blocked at 8.5s against a 2s deadline, having leaked
+    /// its continuation, because the group waits for every child.
+    ///
+    /// Bounded by polling, never by `await task.value`: a regression here must fail, not
+    /// hang the suite.
+    @Test("Deadline.value releases its caller even when the work cannot be cancelled")
+    func valueBoundsNonCancellableWork() async throws {
+        let outcome = Outcome()
+
+        let subject = Task {
+            do {
+                _ = try await Deadline.value(seconds: 1) {
+                    try await withCheckedThrowingContinuation { (_: CheckedContinuation<Int, Error>) in
+                        // Never resumed, and nothing observes cancellation.
+                    }
+                }
+                await outcome.record(.returned)
+            } catch is Deadline.Exceeded {
+                await outcome.record(.timedOut)
+            } catch {
+                await outcome.record(.threw)
+            }
+        }
+
+        var waited = 0
+        while await outcome.value == nil && waited < 80 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            waited += 1
+        }
+        subject.cancel()
+
+        let observed = await outcome.value
+        #expect(observed == .timedOut, "Deadline.value did not release its caller; got \(String(describing: observed))")
+    }
+
+    @Test("Deadline.value returns the work's value, and rethrows its error")
+    func valuePassesThroughSuccessAndFailure() async throws {
+        let value = try await Deadline.value(seconds: 30) { 41 + 1 }
+        #expect(value == 42)
+
+        await #expect(throws: Boom.self) {
+            _ = try await Deadline.value(seconds: 30) { () throws -> Int in throw Boom(attempt: 1) }
+        }
+    }
+
+    private struct Boom: Error, Equatable { let attempt: Int }
 
     /// `Gate.finished` is the only thing enforcing "exactly one resumption", and deleting
     /// it aborts this run with "tried to resume its continuation more than once" — so the
@@ -561,5 +620,37 @@ struct RetryTests {
         // collapse to nothing, so the ten attempts run FASTER than the correct one.
         await #expect(throws: CancellationError.self) { try await subject.value }
         #expect(await counter.count == 1, "should not have started a second attempt")
+    }
+}
+
+/// `DittoAppModel.start()` does several things that each need undoing if a later one
+/// throws. Without the rollback, a caller that retries after a failure registers a SECOND
+/// subscription for the same query and leaves sync running — silently, because the model
+/// looks unstarted.
+@Suite("App model start rollback")
+struct AppModelStartTests {
+
+    @MainActor
+    @Test("a throw part-way through start() leaves nothing behind, and a retry is clean")
+    func partialStartRollsBack() async throws {
+        let peer = try await TestPeer.open()
+        defer { peer.tearDown() }
+
+        let model = DittoAppModel(ditto: peer.ditto)
+
+        // `start()` runs sync.start() and registers a subscription BEFORE building the
+        // observer bridge. An unparsable observer query makes the last step throw.
+        await #expect(throws: (any Error).self) {
+            try model.start(observerQueryOverride: "SELECT * FROM")
+        }
+
+        #expect(model.isSyncStarted == false, "sync was left running after a failed start()")
+        #expect(peer.ditto.sync.isActive == false, "sync.isActive true after a failed start()")
+        #expect(peer.ditto.sync.subscriptions.isEmpty, "a subscription survived a failed start()")
+
+        // The retry must not double-register.
+        try model.start()
+        #expect(peer.ditto.sync.subscriptions.count == 1, "retry registered \(peer.ditto.sync.subscriptions.count) subscriptions")
+        model.stop()
     }
 }

@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              89 @Test declarations (3 parameterized)
+Tests/SwiftSDKSkillTests/              92 @Test declarations (3 parameterized)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -110,7 +110,7 @@ the single file you edited.
 | Persistence legs assert | reading a document that was never written | probe exits 1 with three `FAIL:` lines |
 | …and run the right SDK | `--expect-version` naming another version | `FAIL: expected SDK X, running Y` |
 | …and open where they claim | `--expect-directory` naming another path | `FAIL: expected directory X, got Y` |
-| Cancellation is real | deleting `observer.cancel()` | `cancelStopsDelivery` fails on `isCancelled` — the delivery-count assertion after it is a positive control, not separately falsifiable |
+| Cancellation is real | deleting `observer.cancel()` (test setup, so this proves the assertion is live, not that the SDK is pinned) | `cancelStopsDelivery` fails on `isCancelled` — the delivery-count assertion after it is a positive control, not separately falsifiable |
 | `ObserverBridge.cancel()` ends the stream | deleting `continuation.finish()` from it | `cancelReleasesASuspendedConsumer` fails in ~6s (bounded, not a hang) |
 | Bounded stream coalesces | forcing `.unbounded` | `bufferingPolicyDecidesWhatSurvives(latestOnly: true)` fails |
 | …and an unbounded one does not | forcing `.bufferingNewest(1)` | `bufferingPolicyDecidesWhatSurvives(latestOnly: false)` fails |
@@ -119,7 +119,7 @@ the single file you edited.
 | …exactly once | deleting `guard !finished` from `Gate` | the run aborts: `tried to resume its continuation more than once` |
 | The pasted copy keeps up | drifting `Gate` in `MinimalApp.swift` | `validate-sdk-skills.py` reports it has drifted from `Deadline.Gate` |
 | `onTermination` cancels | deleting the `onTermination` assignment | `terminationCancelsObserver` fails |
-| …and does not fire when a consumer just stops reading | `finish()`ing right after the `break` | `onTerminationFiresOnFinishOnly` fails |
+| …and does not fire when a consumer just stops reading | `finish()`ing right after the `break` (test setup, as above) | `onTerminationFiresOnFinishOnly` fails |
 | Identity is not positional | returning `""` from `Car.identity(of:)` | `carIdentityHandlesNonStringIDs` fails |
 | Re-authentication retries | `throw error` on every attempt instead of the last | `rethrowsAfterTheLastAttempt` and `cancellationAbandonsRemainingAttempts` fail |
 | …with growing backoff | `backoff *= 1` | `backoffGrows` fails: reported delays `[0.01, 0.01, 0.01, nil]` |
@@ -128,6 +128,8 @@ the single file you edited.
 | …and gives up when cancelled | `try?` around the backoff sleep | `cancellationAbandonsRemainingAttempts` fails: 10 attempts and a `Boom`, not 1 and a `CancellationError` |
 | `await Ditto.open` stays off the main thread | opening with `Ditto.openSync` instead | `openSyncBlocksTheMainThreadAndOpenDoesNot` fails: stall equals the open duration |
 | …and SE-0338 is why | marking the probe `@MainActor` | `nonisolatedAsyncLeavesTheCallersActor` fails |
+| `Deadline.value` releases a caller whose work cannot be cancelled | rebuilding it on `withThrowingTaskGroup` | `valueBoundsNonCancellableWork` fails in ~10s (the group shape hangs; this test polls so it cannot) |
+| A half-failed `start()` leaves nothing behind | deleting the rollback `defer` in `DittoAppModel.start()` | `partialStartRollsBack` fails 3 assertions, including `retry registered 2 subscriptions` |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
 
 ## What is not covered

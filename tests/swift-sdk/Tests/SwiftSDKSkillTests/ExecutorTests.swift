@@ -89,13 +89,23 @@ struct ExecutorTests {
     @MainActor
     func openSyncBlocksTheMainThreadAndOpenDoesNot() async throws {
         let stall = MainQueueStall()
+        // 1ms, not 5ms: the timer's own period is the floor for every measurement here,
+        // so a 5ms timer reports ~6ms for `await open` no matter how little it blocks —
+        // it is measuring the timer, not the open. At 1ms the floor drops ~3x.
         let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(5))
+        timer.schedule(deadline: .now(), repeating: .milliseconds(1))
         timer.setEventHandler { stall.tick() }
         timer.resume()
         defer { timer.cancel() }
 
         try await Task.sleep(nanoseconds: 200_000_000)   // let the timer settle
+
+        // A control window with no Ditto call at all, so the printed numbers are read
+        // against a measured baseline for THIS machine under THIS load rather than an
+        // assumed one.
+        stall.reset()
+        try await Task.sleep(nanoseconds: 250_000_000)
+        let idleStall = stall.value
 
         stall.reset()
         let asyncStarted = Date()
@@ -109,6 +119,10 @@ struct ExecutorTests {
         let syncDuration = Date().timeIntervalSince(syncStarted)
         let syncStall = stall.value
 
+        print(String(
+            format: "  control    : %6.1fms idle, %6.1fms main-queue stall",
+            250.0, idleStall * 1000
+        ))
         print(String(
             format: "  await open : %6.1fms open, %6.1fms main-queue stall",
             asyncDuration * 1000, asyncStall * 1000

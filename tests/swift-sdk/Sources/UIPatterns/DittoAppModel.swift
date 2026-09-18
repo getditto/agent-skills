@@ -170,7 +170,10 @@ public final class DittoAppModel: ObservableObject {
     }
 
     /// Starts sync and begins observing. Safe to call once per app launch.
-    public func start(minimumMileage: Int = 0) throws {
+    /// - Parameter observerQueryOverride: test seam. The rollback below only matters
+    ///   when a step AFTER `sync.start()` throws, and the observer registration is the
+    ///   only such step — so a test needs a way to make exactly that one fail.
+    public func start(minimumMileage: Int = 0, observerQueryOverride: String? = nil) throws {
         guard bridge == nil else { return }
 
         // `bridge` is the completion flag, so a throw part-way leaves sync started and a
@@ -200,7 +203,8 @@ public final class DittoAppModel: ObservableObject {
         // deliveries, so an older result can land last and pin the UI to stale data.
         let bridge = try ObserverBridge(
             ditto: ditto,
-            query: "SELECT * FROM cars WHERE mileage >= :minimumMileage ORDER BY mileage",
+            query: observerQueryOverride
+                ?? "SELECT * FROM cars WHERE mileage >= :minimumMileage ORDER BY mileage",
             arguments: ["minimumMileage": minimumMileage]
         )
         self.bridge = bridge

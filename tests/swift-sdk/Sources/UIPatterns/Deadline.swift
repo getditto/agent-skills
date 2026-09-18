@@ -70,6 +70,58 @@ public enum Deadline {
         }
     }
 
+    /// The same bound, for an `async` call that returns a value.
+    ///
+    /// Built on `run(seconds:_:)` rather than on a task group. A task group does NOT
+    /// bound this: it does not return until every child finishes, so a `work` that is not
+    /// cancellation-aware keeps the group alive and the timeout never escapes. Measured
+    /// on exactly that shape — a 2-second deadline still blocked at 8.5s, having leaked
+    /// its continuation. The gate below owns the continuation and resumes it, so the
+    /// caller is released whether or not `work` can be cancelled.
+    ///
+    /// The abandoned `work` is cancelled on the way out, which only helps if it observes
+    /// cancellation; if it does not, it runs to completion in the background and its
+    /// result is discarded. **Releasing the caller is the guarantee, not stopping the
+    /// work.**
+    public static func value<T: Sendable>(
+        seconds: UInt64,
+        _ work: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        let outcome = Box<Result<T, Error>>()
+        let worker = Box<Task<Void, Never>>()
+
+        do {
+            try await run(seconds: seconds) { complete in
+                worker.value = Task {
+                    do {
+                        outcome.value = .success(try await work())
+                        complete(nil)
+                    } catch {
+                        outcome.value = .failure(error)
+                        complete(error)
+                    }
+                }
+            }
+        } catch {
+            worker.value?.cancel()
+            throw error
+        }
+
+        guard let result = outcome.value else { throw Exceeded() }
+        return try result.get()
+    }
+
+    /// Minimal thread-safe cell. `run`'s body is a synchronous closure, so a result has
+    /// to cross back through shared storage rather than an actor hop.
+    final class Box<Value>: @unchecked Sendable {
+        private let lock = NSLock()
+        private var stored: Value?
+        var value: Value? {
+            get { lock.lock(); defer { lock.unlock() }; return stored }
+            set { lock.lock(); stored = newValue; lock.unlock() }
+        }
+    }
+
     /// Owns the continuation so that the deadline, the completion and cancellation can
     /// all resume it, and exactly one of them wins.
     ///

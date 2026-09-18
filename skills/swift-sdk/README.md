@@ -121,8 +121,8 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
 
-- **89 `@Test` declarations** (`scripts/run.sh --all`), which expand to more cases —
-  three are parameterized. The harness reports `Test run with 89 tests in 13 suites` on
+- **92 `@Test` declarations** (`scripts/run.sh --all`), which expand to more cases —
+  three are parameterized. The harness reports `Test run with 92 tests in 14 suites` on
   every line; the number does not vary, because a test that does not apply to a line is
   *skipped* rather than silently passed. What skips, and why:
 
@@ -133,8 +133,9 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 
   Tests needing `DITTO_URL` + `DITTO_TOKEN` are `.enabled(if:)` and report as skipped
   without them, which is how CI runs; the reported total is unchanged. **`DITTO_OFFLINE_LICENSE`
-  is different — it is required, not optional.** Without it roughly eighty tests *fail*
-  rather than skip, because `TestPeer.open()` cannot activate an instance. The skip
+  is different — it is required, not optional.** Without it 66 tests *fail* rather than
+  skip (measured: 66 failed, 21 passed, 3 skipped), because `TestPeer.open()` cannot
+  activate an instance. The skip
   discipline above is about version and server gating, not about missing configuration.
 
   Counts here are from `grep -c '@Test'` and the harness's own summary line. An earlier
@@ -153,10 +154,18 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   non-cancellable completion handler and releases it on cancellation, attachments,
   presence, logging, disk usage, small-peer and presence metadata limits, system queries,
   the bounded retry the expiration handler needs (including that cancellation abandons
-  the remaining attempts), and the documented error cases.
+  the remaining attempts), the rollback that keeps a half-failed `start()` from
+  double-registering a subscription, and the documented error cases.
+
+  It also settles where `Ditto.open` runs, because the skill got that wrong in both
+  directions before measuring it. `ExecutorTests` asserts that SE-0338 holds in this
+  build configuration — a nonisolated `async` function leaves the caller's actor, no
+  clock involved — and that `Ditto.openSync` on the main actor stalls the main queue for
+  its whole duration, which is structural rather than a timing race. `await Ditto.open`
+  stalls it *less than an idle control window* on the same machine.
 
   The load-bearing ones carry a **negative control**: the table in
-  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names twenty-three guards,
+  [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md) names twenty-five guards,
   how to break each and what should then fail. It does not cover every assertion above —
   where a claim rests on structure rather than on a measurement, this file says so under
   "Not verified".
@@ -237,12 +246,10 @@ repository, at the Swift source path that exists at each tag.
   `DITTO_TOKEN` are set, which is a local developer's machine. CI leaves both unset, so
   every claim about `.server` connect, login and the expiration handler is verified by
   local runs recorded here, not by a green check on a pull request.
-- **That `Ditto.open` blocks the caller's executor.** Read from SDK source at all three
-  tags (`Ditto.swift`: the `async` factory wraps the synchronous initializer in a
-  continuation it resumes inline, under the SDK's own
-  `// REFACTOR: asyncify properly at the FFI level.`). Not measured here: a timing test
-  for "the main actor was blocked" is load-dependent, and this suite has already shipped
-  two assertions that measured machine load rather than behaviour.
+- **How long `await Ditto.open` occupies a cooperative-pool thread.** That it does *not*
+  block the main thread **is** measured — see the Coverage note above — but the pool cost
+  is printed, not asserted, because an upper bound in the low milliseconds measures
+  machine load. This suite has shipped two assertions that did exactly that.
 - **That a `Task` per delivery actually reorders.** A `Task` per delivery has **no
   ordering guarantee at all** — that is a statement about what the concurrency model
   promises, not about how often it misbehaves, and code relying on it is wrong even
