@@ -353,9 +353,23 @@ a Claude-Code-only field breaks the skill everywhere else.
 ### Keep SKILL.md lean
 
 Agent tools load the body whenever the skill triggers, so it competes with the
-user's actual conversation for context. Target **under 500 lines**; push depth
-into `references/`. Keep references **one level deep** from `SKILL.md` — agents
-often only partially read files reached through a chain of links.
+user's actual conversation for context. Anthropic's published ceiling is 500
+lines, but target **~14,000 characters (~3,500 tokens)** — Claude Code re-attaches
+only the first 5,000 tokens of each invoked skill after auto-compaction, so a
+larger body silently loses its tail, usually the section that routes everything
+else.
+
+Push depth into `references/`, which cost nothing until read. What stays in
+`SKILL.md` is the **punchline** — the one clause that changes what an agent emits,
+plus the observable symptom; the worked code and the reference tables go behind the
+link. Keep references **one level deep** from `SKILL.md` — agents often only
+partially read files reached through a chain of links — and give any reference over
+200 lines a `## Contents` list, since a partial read otherwise hides its scope.
+
+Resist splitting a skill in two to make each smaller: every skill adds a listing
+entry, the listing is budgeted at 1% of the context window, and overflow drops
+descriptions. Fan out *within* the skill. Full numbers, CI-enforced for SDK
+skills: [`docs/SDK-SKILL-TEMPLATE.md`](docs/SDK-SKILL-TEMPLATE.md) §11.
 
 ### Wire up packaging
 

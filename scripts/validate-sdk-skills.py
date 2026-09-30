@@ -107,10 +107,29 @@ REQUIRED_FILES = [
     "references/testing.md",
     "references/versions.md",
     "references/preview.md",
+    # Not capability files: these three hold the explanation behind the SKILL.md sections
+    # that carry only a punchline inline (§5). Required for the same reason those sections
+    # are — that material is where correct-looking code fails at runtime.
+    "references/concurrency.md",
+    "references/lifetimes.md",
+    "references/anti-patterns.md",
 ]
 
-SKILL_BODY_HARD_LIMIT = 400  # §11
-REFERENCE_HARD_LIMIT = 400  # §3 / §11 — split instead of exceeding
+# §11 — the SKILL.md body budget is in CHARACTERS, not lines, because lines are a poor
+# proxy: the four-row capability-exceptions table is 4 lines carrying ~2 KB. The number
+# that matters is how the body survives auto-compaction, which re-attaches only the first
+# 5,000 tokens of each invoked skill. At ~4 chars/token that slice is ~20,000 characters,
+# so a body over it loses its tail — in practice the References section, which is the part
+# that routes everything else.
+SKILL_BODY_CHAR_TARGET = 14_000  # ~3,500 tokens
+SKILL_BODY_CHAR_HARD_LIMIT = 18_000  # ~4,500 tokens — still inside the compaction slice
+
+# §3 / §11 — references cost zero context until read, so they are budgeted far more
+# loosely than SKILL.md. Above TOC_REQUIRED_LINES a file needs a `## Contents` list:
+# partial reads (`head -100`) must still reveal the file's full scope.
+REFERENCE_LINE_TARGET = 600
+REFERENCE_LINE_HARD_LIMIT = 800
+TOC_REQUIRED_LINES = 200
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -305,33 +324,48 @@ def validate_sdk_skill(name: str) -> None:
             f"    found:    {found}"
         )
 
-    # §11 — SKILL.md body size.
-    body_lines = len(body.strip("\n").split("\n"))
-    if body_lines > SKILL_BODY_HARD_LIMIT:
+    # §11 — SKILL.md body size, measured in characters. See the constants for why not
+    # lines. There is no version-spread allowance: §5's punchline-in/detail-out rule means
+    # a version-gated fact costs one clause inline and its explanation lives in
+    # references/versions.md, so covering three lines does not buy extra budget.
+    body_chars = len(body.strip())
+    if body_chars > SKILL_BODY_CHAR_HARD_LIMIT:
         fail(
-            f"{skill_md}: body is {body_lines} lines, over the {SKILL_BODY_HARD_LIMIT}-line "
-            f"hard limit in {SPEC} §11"
+            f"{skill_md}: body is {body_chars:,} characters, over the "
+            f"{SKILL_BODY_CHAR_HARD_LIMIT:,}-character hard limit in {SPEC} §11. Move "
+            f"explanation into references/ and keep the one-line punchline here."
         )
-    else:
-        # §11 allows 350 for a skill spanning three version lines, because each
-        # version-gated rule costs lines a single-line skill does not pay. Derived from
-        # the skill's own declared versions, not a per-skill exception list, so it cannot
-        # quietly become blanket slack.
-        target = 350 if len(declared_versions(body)) >= 3 else 300
-        if body_lines > target:
-            warn(f"{skill_md}: body is {body_lines} lines; {SPEC} §11 targets {target}")
+    elif body_chars > SKILL_BODY_CHAR_TARGET:
+        warn(
+            f"{skill_md}: body is {body_chars:,} characters; {SPEC} §11 targets "
+            f"{SKILL_BODY_CHAR_TARGET:,}"
+        )
 
-    # §11 — reference size.
+    # §3 / §11 — reference size, and the table of contents that a long one owes.
     if os.path.isdir(references):
         for entry in sorted(os.listdir(references)):
             if not entry.endswith(".md"):
                 continue
             path = os.path.join(references, entry)
-            line_count = len(read(path).rstrip("\n").split("\n"))
-            if line_count > REFERENCE_HARD_LIMIT:
+            text = read(path)
+            line_count = len(text.rstrip("\n").split("\n"))
+            if line_count > REFERENCE_LINE_HARD_LIMIT:
                 fail(
-                    f"{path}: {line_count} lines, over the {REFERENCE_HARD_LIMIT}-line "
+                    f"{path}: {line_count} lines, over the {REFERENCE_LINE_HARD_LIMIT}-line "
                     f"limit in {SPEC} §3 — split it instead"
+                )
+            elif line_count > REFERENCE_LINE_TARGET:
+                warn(
+                    f"{path}: {line_count} lines; {SPEC} §3 targets "
+                    f"{REFERENCE_LINE_TARGET}"
+                )
+            if line_count > TOC_REQUIRED_LINES and not re.search(
+                r"^## Contents\s*$", text, re.M
+            ):
+                fail(
+                    f"{path}: {line_count} lines with no '## Contents' list. {SPEC} §3 "
+                    f"requires one above {TOC_REQUIRED_LINES} lines, so a partial read "
+                    f"still shows the file's full scope."
                 )
 
     # §6/§7 — the capability map in README.md.
@@ -520,15 +554,6 @@ def capability_detail(text: str, cap_id: str) -> str:
 # hard-coded map silently skips any skill nobody remembered to register, and silently
 # stops checking when a fixture is renamed — both of which were demonstrated.
 FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
-
-
-def declared_versions(text: str) -> set:
-    """The distinct `major.minor` SDK lines a skill says it supports.
-
-    Read from the frontmatter description and the version table, which is where a skill
-    states its scope. Used only to pick the §11 line-budget target.
-    """
-    return {match.group(1) for match in re.finditer(r"\b(\d+\.\d+)\.[\dx]+\b", text)}
 
 
 def within(root: str, path: str) -> bool:

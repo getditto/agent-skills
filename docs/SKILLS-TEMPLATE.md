@@ -29,8 +29,8 @@ Rules:
   frontmatter `name` in `SKILL.md`.
 - `SKILL.md` is the only file every tool parses. Everything else is linked
   from it and loaded on demand.
-- Keep `SKILL.md` under ~500 lines. Long material goes in `references/` or
-  `examples/`.
+- Keep `SKILL.md` small — see [Token budget](#token-budget). Long material goes
+  in `references/` or `examples/`, which cost nothing until read.
 
 ## SKILL.md frontmatter
 
@@ -79,10 +79,29 @@ Every skill body should include:
 Agent tools inject the skill name + description into every session; the body
 is loaded when triggered, and `references/`/`examples/` on demand.
 
-- Description: 1–3 sentences, ≤ ~500 chars.
-- SKILL.md body: aim ≤ 300 lines of active guidance.
+- **Description: 1–3 sentences, ≤ ~500 chars.** Claude Code budgets the whole
+  skill listing at 1% of the model's context window and caps each entry at
+  1,536 characters, dropping least-used descriptions when it overflows. A long
+  description crowds out other skills' trigger keywords and loses its own tail.
+- **SKILL.md body: aim ≤ 14,000 characters (~3,500 tokens).** Anthropic's
+  published ceiling is 500 lines, but that is a ceiling, not a target: Apple's
+  published Xcode skills run 16–37 line `SKILL.md` files routing to 1,000–3,400
+  lines of references. The operative constraint is that Claude Code re-attaches
+  only the first 5,000 tokens of each invoked skill after auto-compaction, so a
+  larger body silently loses its tail — usually the routing section.
+- **Promote the punchline, demote the explanation.** The one clause that changes
+  what an agent emits, plus the observable symptom, belongs in `SKILL.md`. The
+  worked code and the reference tables belong behind a link.
 - One `references/<topic>.md` file per concern; an agent should rarely need
-  to load all of them at once.
+  to load all of them at once. Give any reference over 200 lines a
+  `## Contents` list, so a partial read still shows its full scope.
+- **Do not split one skill into several to make each smaller.** More skills means
+  more listing entries competing for that 1% budget, which makes discovery worse
+  for every skill. Fan out *within* a skill instead. A new skill is justified by a
+  different task mode, not by a file having grown long.
+
+Per-language SDK skills have stricter, CI-enforced versions of these numbers:
+[`SDK-SKILL-TEMPLATE.md`](SDK-SKILL-TEMPLATE.md) §11.
 
 ## Tests
 

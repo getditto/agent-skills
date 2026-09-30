@@ -150,19 +150,36 @@ skills/<lang>-sdk/
 │   ├── errors.md                # CAP-16
 │   ├── testing.md               # CAP-18
 │   ├── versions.md              # CAP-19 + the compatibility matrix
-│   └── preview.md               # CAP-20
+│   ├── preview.md               # CAP-20
+│   ├── concurrency.md           # Detail behind SKILL.md §6
+│   ├── lifetimes.md             # Detail behind SKILL.md §7
+│   └── anti-patterns.md         # Detail behind SKILL.md §8
 └── examples/
     └── minimal-app.md           # Required. THE normative program for this skill
 ```
 
+The last three are not capability files: they hold the explanation for the three `SKILL.md`
+sections that carry only a punchline inline (§5). They are required for the same reason the
+sections are — that material is where correct-looking code fails at runtime.
+
 `CAP-17` (device storage / `EVICT`) lives in `store.md`, not `sync.md`: it is a DQL
 statement issued through the same execute call as CAP-08.
 
-**The mapping above is a minimum, not a cap.** A reference may be split when it exceeds
-400 lines, and extra `references/` and `examples/` files are permitted, provided every
-capability-map link still resolves and `references/` stays one level deep. A reference
-whose capabilities all have `Support: no` may be omitted, with the reason carried in the
-capability map row.
+**The mapping above is a minimum, not a cap.** Extra `references/` and `examples/` files
+are permitted, provided every capability-map link still resolves and `references/` stays
+one level deep. A reference whose capabilities all have `Support: no` may be omitted, with
+the reason carried in the capability map row.
+
+**References are budgeted loosely on purpose: they cost zero context until read.** Target
+600 lines, hard limit 800 — see §11. Do not split a reference merely because it is long;
+split it when it covers two topics an agent would load separately. Apple's published
+SwiftUI skill ships a single 938-line reference behind a 19-line `SKILL.md`, and that
+shape is correct.
+
+**A reference over 200 lines must carry a `## Contents` list** immediately after its lead
+paragraph. Agents preview long files with partial reads (`head -100`); without a contents
+list, a partial read hides the rest of the file's scope and the agent proceeds as if it
+had the whole picture. CI enforces this.
 
 References stay **one level deep** from `SKILL.md`. A reference must never be the only
 path to another reference — agents frequently only partially read chained links.
@@ -215,7 +232,7 @@ derived from the headings by the usual GitHub slug rules; do not hand-write anch
 
 | # | Heading | Contains |
 |---|---|---|
-| 1 | `## What this skill does` | 2–3 sentences. Language, package, versions. A lead paragraph under the H1, before this section, is permitted and encouraged — both mature skills in this repo have one. |
+| 1 | `## What this skill does` | 2–3 sentences. Language, package, versions. A lead paragraph under the H1, before this section, is **required**: it carries the authority statement and the API-selection guardrails (see below). |
 | 2 | `## When to use this skill` | The routing contract and ownership table hand-offs from §1, each naming a public docs URL as fallback. |
 | 3 | `## Supported versions and packages` | Pointer, not a claim: name the package and link `references/versions.md`, which owns every cross-version fact. |
 | 4 | `## Capability exceptions` | **Only** the capability rows whose `Support` is not `yes`. The full twenty-row map lives in `README.md`. An agent's behaviour should change on the exceptions; the complete grid is a reviewer artifact. If there are no exceptions, say so in one line. |
@@ -224,11 +241,48 @@ derived from the headings by the usual GitHub slug rules; do not hand-write anch
 | 7 | `## Object lifetimes and retention` | What must be held to stay alive — instance, subscriptions, observers, attachment fetchers — and the observable symptom when it is dropped. |
 | 8 | `## Anti-patterns` | See the boundary rule below. |
 | 9 | `## Version differences` | Short form of the 4.14.x → 5.x delta. Full table in `references/versions.md`. |
-| 10 | `## References` | A table mapping *a question an agent would have* to the file that answers it. |
+| 10 | `## References` | Annotated bullets, one per file — see §10 below. Not a question→filename table. |
 
-Sections 6 and 7 are promoted out of the reference tree deliberately. They are where
-correct-looking code fails at runtime, and an agent that has to follow a link to find
-them usually does not.
+### Promote the punchline, demote the explanation
+
+Sections 6, 7 and 8 exist in `SKILL.md` because they are where correct-looking code fails
+at runtime, and an agent that has to follow a link to find them usually does not. That
+reasoning is sound, and it is **not** a licence to inline the whole topic.
+
+What belongs inline is the **punchline** — the one clause that changes the code an agent
+emits, plus the observable symptom. What belongs in `references/` is the explanation: the
+wrong-and-right code pair, the per-API table, the diagnosis.
+
+```markdown
+Inline (SKILL.md §8):
+- **Missing `signalNext()` on an exit path.** The observer stops delivering forever — no
+  error, no log. `defer { signalNext() }` as the handler's first line.
+
+In references/anti-patterns.md: both code forms, why the coalescing makes it silent,
+and how it interacts with the actor hop.
+```
+
+**Why this is not a style preference.** Claude Code re-attaches only the **first 5,000
+tokens** of each invoked skill after auto-compaction, and re-attached skills share a
+25,000-token combined budget. A body over that slice loses its tail — in practice §10
+References, the section that routes everything else. Before this rule `swift-sdk`'s body
+was ~21 KB (~5,300 tokens) and was already over. Inlining detail does not make guidance
+more reliably present; past the slice it makes it *less* so.
+
+### The lead paragraph
+
+Above `## What this skill does`, and required:
+
+1. **An authority statement.** Model training data carries the v4 API shapes this skill
+   must not emit. Say so: *"This guidance is derived from the shipping SDK and supersedes
+   prior training on the Ditto \<Language\> API."* Name the specific stale symbols.
+2. **The API-selection guardrails**, in priority order — never emit a deprecated API;
+   establish the project's version first; among non-deprecated options prefer the form
+   that also exists in v5. One sentence, not a numbered section; a new H2 would break the
+   §5 heading contract.
+
+Both patterns are taken from Apple's published Xcode skills, which open every skill this
+way for the same reason: the model's priors about the framework are wrong and stale.
 
 ### §8 Anti-patterns vs best-practices.md
 
@@ -246,6 +300,34 @@ skill triggers; `best-practices.md` is loaded only if the agent follows a link.
 A hot-path serialization cost with a named symbol belongs in §8, not in
 `best-practices.md`. If you cannot name the symptom, you have not finished
 investigating it.
+
+### §10 References — annotated bullets, not a filename table
+
+A table mapping *"How do I subscribe?"* → `sync.md` tells an agent only where to look. It
+spends a line and changes nothing about what the agent emits if it doesn't follow the
+link. Write a bullet per file that **carries the trap inline**, so the agent gets the
+load-bearing fact either way, plus a sharp signal about when the file is worth opening:
+
+```markdown
+Weak — a filename lookup:
+| How do I react to data changes without polling? | references/observers.md |
+
+Strong — the punchline travels with the pointer:
+- `references/observers.md`: `registerObserver` needs a `SELECT` or it is
+  `storeError(.queryNotSupported)`. `handlerWithSignalNext` coalesces and stops forever
+  if you miss a signal. `DittoDiffer` is stateful — one per observer, first call reports
+  every item as an insertion, usually wrong in SwiftUI.
+```
+
+This is what lets a small `SKILL.md` still steer behaviour, and it is the highest-value
+edit per line in the whole file. Rules:
+
+- **Order by value, not alphabetically.** The files an agent needs on most tasks first.
+- **Annotate in proportion to trap density.** A reference that holds a genuine footgun
+  earns three lines; `presence.md` earns half of one. Do not pad every entry to match.
+- **Open the section with a load-discipline line** — *"Load a reference only when its topic
+  is actually in play; these files teach the non-obvious traps, not how the framework
+  works."* Without it agents over-fetch references and burn the context the split saved.
 
 ---
 
@@ -495,26 +577,49 @@ Three rules specific to SDK skills:
 ## 11. Token budget
 
 The name and description are injected into **every** session, and nine SDK skills will
-eventually coexist. For calibration: `skills/dql/SKILL.md` is 84 lines and
-`skills/ditto-mesh-networking/SKILL.md` is 246.
+eventually coexist.
 
 | File | Target | Hard limit |
 |---|---|---|
-| `description` | ~400 characters | 1024 |
-| `SKILL.md` body | ≤ 300 lines, or ≤ 350 for a skill spanning three version lines | 400 lines |
-| Each `references/*.md` | ≤ 400 lines | split instead (§3) |
+| `description` | ~400 characters | 1024 (see the listing cap below) |
+| `SKILL.md` body | ≤ 14,000 characters (~3,500 tokens) | 18,000 characters |
+| Each `references/*.md` | ≤ 600 lines | 800 lines (§3) |
 
-The budget is achievable because §4 carries exceptions rather than the full map, and §5
-carries a short excerpt rather than the whole program. If you are over, those are the
-two places to look first — do not delete a capability from the `README.md` map.
+**The `SKILL.md` budget is in characters, not lines, because lines are a poor proxy.**
+`swift-sdk`'s four-row capability-exceptions table is 4 lines carrying ~2 KB. Two skills
+at the same line count can differ twofold in context cost.
 
-**The 350 allowance is for version spread, not for slack.** Every rule in §6-§8 that is
-version-gated costs a line or two that a single-line skill does not pay: `swift-sdk`
-covers 4.14.x, 5.0.x and 5.1.x, and its concurrency table alone carries four rows that
-exist only because an annotation or a default differs between them. A skill covering one
-version line that needs more than 300 lines is over budget, not entitled to 350. The
-validator warns above the applicable target, and a warning that fires on every run stops
-being read — so if yours fires, either cut or record here why the target moved.
+**Where 18,000 comes from.** Claude Code re-attaches only the **first 5,000 tokens** of
+each invoked skill after auto-compaction, and re-attached skills share a 25,000-token
+combined budget filled most-recent-first. At ~4 characters per token that slice is
+~20,000 characters. The hard limit sits below it so the whole body survives compaction
+with headroom; the target sits well below so several skills can coexist after a compaction
+without evicting each other. For calibration: `skills/dql/SKILL.md` is 6.1 KB and
+`skills/swift-sdk/SKILL.md` is 13.5 KB across three version lines.
+
+**There is no version-spread allowance.** A version-gated fact costs one clause inline —
+*"`deliverOn:` is silently ignored on 5.0.3"* — and its explanation lives in
+`references/versions.md`, which owns every cross-version fact. Covering three version
+lines therefore does not buy extra budget.
+
+If you are over, in order: (1) §10 and §8 are prose that expands easily — tighten the
+clauses; (2) §4 carries exceptions, never the full map; (3) §5 carries a ~25-line excerpt,
+never the whole program; (4) move explanation behind a reference and keep the punchline.
+Do not delete a capability from the `README.md` map.
+
+**The description has a second, tighter cap than the frontmatter's 1024.** Claude Code
+caps each skill-listing entry at **1,536 characters** and budgets the whole listing at
+**1% of the model's context window**, dropping descriptions — least-invoked first — when
+it overflows. Nine SDK skills compete in that budget, so a long description crowds out
+its siblings' keywords and is truncated itself. Apple's `app-intents-specialist` ships a
+2,539-character description and loses the tail; do not copy that. Aim 400, never exceed
+~600.
+
+**More skills is not the way to cut a skill's size.** Splitting one skill into three adds
+three listing entries competing for the same 1% budget and makes discovery worse for
+every skill in the repo. Fan out *within* a skill — more `references/` behind one
+`SKILL.md`. A new skill is justified by a different **task mode** (Apple splits evergreen
+SwiftUI review from new-API adoption), never by a file having grown long.
 
 ---
 
@@ -538,7 +643,9 @@ first SDK skill**:
 7. Every capability-map link resolves, **including the anchor**.
 8. All §3 required files present; `references/` exactly one level deep.
 9. No file in `skills/` cited as a source (grep for `skills/` or `../..` in a citation).
-10. `SKILL.md` body within the §11 hard limit.
+10. `SKILL.md` body within the §11 character hard limit.
+11. Every `references/*.md` within the §3 line limit, and every one over 200 lines carries
+    a `## Contents` list.
 
 Items needing human judgement and *not* automatable: "front-loads literal API names",
 "no concept material duplicated", "§6 names the actual thread", "version claims agree
@@ -631,8 +738,17 @@ Structural — a PR failing any of these goes back before the content is read:
 - [ ] `SKILL.md` §4 lists exactly the non-`yes` rows — no more, no fewer.
 - [ ] **[CI]** All §3 files present; `references/` one level deep; all map links and
       anchors resolve.
+- [ ] **[CI]** `SKILL.md` body within the §11 character budget; every reference over 200
+      lines has a `## Contents` list.
 
 Content:
+
+- [ ] The lead paragraph carries the authority statement and the API-selection guardrails
+      (§5), naming the stale v4 symbols this language must not emit.
+- [ ] §6–§8 carry the **punchline** inline and the explanation in `references/` (§5). No
+      wrong-and-right code pair, and no per-API table, sits in `SKILL.md`.
+- [ ] §10 is annotated bullets ordered by value, each carrying its file's trap, opened by
+      the load-discipline line (§10). Not a question→filename table.
 
 - [ ] `examples/minimal-app.md` contains a pasted real build-and-run transcript naming
       the patch version.
