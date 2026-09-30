@@ -3,6 +3,13 @@
 DQL *grammar and semantics* belong to the `dql` skill, or <https://docs.ditto.live/dql/dql>.
 This file is the Swift call shape and the Swift-side decoding rules.
 
+## Contents
+
+- CAP-08 Querying the store: executing DQL
+- CAP-09 Transactions
+- CAP-10 Indexing
+- CAP-17 Device storage management and eviction
+
 ## CAP-08 Querying the store: executing DQL
 
 ```swift

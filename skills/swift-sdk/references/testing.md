@@ -1,5 +1,11 @@
 # Testing — Ditto Swift SDK
 
+## Contents
+
+- CAP-18 Testing
+- Two things that break a command-line Swift test run
+- What a unit test cannot cover
+
 ## CAP-18 Testing
 
 The rules that make a Ditto test suite deterministic are the same three every time: a

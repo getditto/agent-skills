@@ -4,6 +4,16 @@ This is where most Ditto Swift apps live, and where correct-looking code leaks, 
 janks. Read [`SKILL.md` § Concurrency and threading model](../SKILL.md#concurrency-and-threading-model)
 first; this file is the detail.
 
+## Contents
+
+- Registering
+- Retaining the handle is about cancelling, not about staying alive
+- Where the callback runs
+- An observer scoped to a selection
+- Back-pressure: `handler` versus `handlerWithSignalNext`
+- `DittoDiffer`
+- There is no DQL observation publisher in Combine
+
 ## CAP-11 Observers, diffing and back-pressure
 
 ### Registering

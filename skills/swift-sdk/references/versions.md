@@ -10,6 +10,19 @@ the rest name the SDK source file or documentation page they came from.
 
 ---
 
+## Contents
+
+- CAP-19 v4 to v5 migration, API and on-disk store
+- Package and toolchain
+- Initialization and lifecycle
+- Swift concurrency
+- Store, results and errors
+- Presence and peers
+- Combine
+- Fixes that skip a line
+- On-disk store
+- The environment trap that affects every line
+
 ## CAP-19 v4 to v5 migration, API and on-disk store
 
 This skill owns the *API form Swift uses on each line* and the *measured on-disk

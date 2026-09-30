@@ -3,6 +3,12 @@
 Everything here is the **5.1.x** form. The 4.14.x differences are in
 [versions.md](versions.md#initialization-and-lifecycle).
 
+## Contents
+
+- CAP-03 Connecting: config, opening, persistence directory
+- CAP-04 Authentication and identity
+- CAP-05 Lifecycle: start/stop sync, shutdown, ownership
+
 ## CAP-03 Connecting: config, opening, persistence directory
 
 A `Ditto` instance is built from a `DittoConfig` and opened with a factory method.
