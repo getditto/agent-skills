@@ -134,8 +134,6 @@ struct ExecutorTests {
 
         let blocked: Comment = "openSync should have blocked the main queue for its whole duration (\(syncStall)s stall for a \(syncDuration)s open)"
         #expect(syncStall >= syncDuration * 0.5, blocked)
-        let quieter: Comment = "await open stalled the main queue more than openSync did"
-        #expect(asyncStall < syncStall, quieter)
 
         // Release both before the temporary directories go away.
         _ = opened

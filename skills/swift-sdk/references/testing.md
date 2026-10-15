@@ -179,6 +179,10 @@ env -u NO_COLOR \
   "$HELPER" --test-bundle-path "$BUNDLE" "$BUNDLE" --testing-library swift-testing
 ```
 
+Use the actual bundle and executable names under `$BIN`: native SwiftPM commonly
+uses `<PackageName>PackageTests`, while Swift Build may use the test target's name.
+The fixture runner discovers the built bundle and fails if there is not exactly one.
+
 Setting `NO_COLOR=false` in your own shell is enough for a plain `swift run`, but not for
 `swift test`, which overwrites it.
 

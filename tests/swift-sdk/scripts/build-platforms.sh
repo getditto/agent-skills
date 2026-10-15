@@ -18,6 +18,7 @@ cd "$FIXTURE_DIR"
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib/build-lock.sh"
 acquire_build_lock
+mkdir -p .build
 
 build_for() {
   local version="$1" label="$2" destination="$3"

@@ -127,7 +127,9 @@ PYEOF
   local helper platform bundle
   helper="$(dirname "$(xcrun --find swift)")/../libexec/swift/pm/swiftpm-testing-helper"
   platform="$(xcrun --sdk macosx --show-sdk-platform-path)"
-  bundle="$bin/SwiftSDKSkillTests.xctest/Contents/MacOS/SwiftSDKSkillTests"
+  # Native SwiftPM names the bundle after the package; Swift Build can name it
+  # after the test target. Discover the actual product instead of assuming either.
+  bundle="$(python3 "$FIXTURE_DIR/scripts/lib/find-test-bundle.py" "$bin")"
 
   env -u NO_COLOR \
     DYLD_FRAMEWORK_PATH="$bin:$platform/Developer/Library/Frameworks" \

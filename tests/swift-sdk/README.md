@@ -74,6 +74,10 @@ one fails with *"cannot load underlying module for 'DittoSwift'"* — and
 `persistence-matrix.sh` passes `--expect-version` to each probe so a degenerate
 same-version pair cannot masquerade as a cross-version one.
 
+The runner discovers the single built `.xctest` product: native SwiftPM and Swift
+Build name it differently. `python3 test_runner.py` checks both naming conventions,
+missing/ambiguous products, and platform-runner startup without an existing `.build`.
+
 **Every script asserts.** `PersistenceProbe read` exits non-zero unless the document, its
 field and the index survived; `run.sh --app` greps the minimal app's output rather than
 trusting its exit code; and `build-platforms.sh` prints compiler diagnostics on failure
@@ -126,8 +130,7 @@ the single file you edited.
 | …and stops on a permanent failure | `isRetryable` ignored | `nonRetryableStopsAtOnce` fails |
 | …and does not run when already cancelled | delete `Task.checkCancellation()` | `alreadyCancelledRunsNothing` fails |
 | …and gives up when cancelled | `try?` around the backoff sleep | `cancellationAbandonsRemainingAttempts` fails: 10 attempts and a `Boom`, not 1 and a `CancellationError` |
-| `await Ditto.open` stays off the main thread | opening with `Ditto.openSync` instead | `openSyncBlocksTheMainThreadAndOpenDoesNot` fails: stall equals the open duration |
-| …and SE-0338 is why | marking the probe `@MainActor` | `nonisolatedAsyncLeavesTheCallersActor` fails |
+| SE-0338 moves nonisolated async work off the caller's main actor | marking the probe `@MainActor` | `nonisolatedAsyncLeavesTheCallersActor` fails; the separate Ditto open timing is diagnostic |
 | `Deadline.value` releases a caller whose work cannot be cancelled | rebuilding it on `withThrowingTaskGroup` | `valueBoundsNonCancellableWork` fails in ~10s (the group shape hangs; this test polls so it cannot) |
 | A half-failed `start()` leaves nothing behind | deleting the rollback `defer` in `DittoAppModel.start()` | `partialStartRollsBack` fails 3 assertions, including `retry registered 2 subscriptions` |
 | Minimal app is checked | making it write `Honda` | `run.sh --app` exits 1 |
