@@ -5,6 +5,12 @@ description: The expert process for reviewing or designing a Ditto data model. I
 
 # Data-modeling workflow
 
+## Contents
+
+- [§1 Intake — ask before designing](#1-intake--ask-before-designing)
+- [§2 The JSON review rubric](#2-the-json-review-rubric)
+- [§3 Output contract](#3-output-contract)
+
 Three phases. Phase 1 gathers context, phase 2 walks the user's JSON with the rubric, phase 3 produces the deliverable. The finding IDs in §2 (`ARRAY_LWW`, `COUNTER_CANDIDATE`, …) are stable identifiers — use them verbatim in findings so reviews are comparable (positive confirmations and free-form hygiene notes are fine alongside them; only rubric findings need IDs).
 
 ## §1 Intake — ask before designing
@@ -59,7 +65,7 @@ Ditto `_id`s can be **objects**, not just strings, and this is the single most D
 
 **Why an object beats a string.** Ditto's permission system can only see `_id` — sync permissions and Big Peer / auth-webhook rules are expressed as queries over it, and nothing else in the document is visible to them. So **any value you will ever want to scope permissions by must be a subfield of `_id`.** With `{ "store_id": 42, "order_id": … }`, a store's device can be granted exactly the orders where `_id.store_id = 42`. With `"order-2026-00042"`, it cannot — the scope isn't there to filter on, and retrofitting it means rewriting every document under a new `_id`, which is an offline-mesh migration, not a config change.
 
-**The `_id` subfields are real, first-class fields — don't copy them into the body.** `WHERE _id.store_id = 42`, `CREATE INDEX … ON orders (_id.store_id)`, composite indexes over `(_id.store_id, status)` (5.1+), and `JOIN … ON child.order_id = parent._id.order_id` (5.1+) all work directly against the path. A body copy buys nothing, costs a field's worth of CRDT metadata on every document, and creates two values that can disagree. Verified on 4.14.6, 5.0.3, and 5.1.0.
+**The `_id` subfields are real, first-class fields — don't copy them into the body.** `WHERE _id.store_id = 42`, `CREATE INDEX … ON orders (_id.store_id)`, composite indexes over `(_id.store_id, status)` (5.1+) all work directly against the path. A body copy buys nothing, costs a field's worth of CRDT metadata on every document, and creates two values that can disagree. Verified on 4.14.6, 5.0.3, and 5.1.0.
 
 Three more things a composite object buys you, all verified on 4.14.6, 5.0.3, and 5.1.0:
 
@@ -75,7 +81,7 @@ Three more things a composite object buys you, all verified on 4.14.6, 5.0.3, an
 
 **Practical notes.**
 
-- **A child's back-reference to its parent is a normal body field** and is not what this rule is about — `comments.ticket_id` pointing at a parent ticket is the documented split pattern. What to avoid is a document restating *its own* `_id` subfields in its own body.
+- **A child's back-reference to its parent is a normal body field.** Store the complete parent identity, including its scope: for a parent `_id` of `{store_id, order_id}`, use that object as `child.parent_id`. On 5.1+, `FROM children child JOIN parents parent ON child.parent_id = parent._id` matches the indexed right-side `_id`. A join against only `parent._id.order_id` can mix stores and needs a right-side subfield index; avoid that abbreviated shape. This parent reference is distinct from restating a document's *own* `_id` subfields in its body.
 - You may see connector-oriented examples that do duplicate `_id` subfields into the body. That is an accommodation for MongoDB Connector ID mapping, not a Ditto modeling pattern — don't generalize it to collections the connector doesn't touch.
 - Map keys inside a composite `_id` must be strings, and **floats are rejected anywhere in an `_id`** — use integers or strings.
 - `_id` is immutable, so a composite `_id` is a one-way decision per collection. Choose it at design time; changing it later means rewriting documents under new IDs.
@@ -126,7 +132,7 @@ INSERT INTO COLLECTION orders (receipt ATTACHMENT, stock COUNTER) …
 ```
 
 ## Split decisions
-- items → child collection `order_items` keyed by order_id … (JOIN on 5.1+ / two fetches on 4.14.x)
+- items → child collection `order_items` with unique line IDs and a complete parent-ID reference … (JOIN on 5.1+ / two fetches on 4.14.x)
 
 ## Budget
 - Estimated size: ~3–6 KiB/doc … BLE implication … observer scope …

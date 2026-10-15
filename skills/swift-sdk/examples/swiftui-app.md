@@ -1,5 +1,13 @@
 # A SwiftUI app — Ditto Swift SDK
 
+## Contents
+
+- [What it shows](#what-it-shows)
+- [Requirements](#requirements)
+- [Program](#program)
+- [Wiring it to an `App`](#wiring-it-to-an-app)
+- [Verified on](#verified-on)
+
 Two screens. The list is driven by an **app-lived** observer; the detail screen creates
 its observer **when a project is selected** and cancels it **when the screen goes away**.
 That per-selection lifetime is the shape most Ditto apps need and the one most often got

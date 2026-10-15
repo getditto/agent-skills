@@ -1,0 +1,274 @@
+---
+title: DQL movies cookbook
+description: 18 end-to-end DQL tasks against a sample movies dataset. Every statement here is verified to work on Ditto SDK 4.14.x, 5.0.x, and 5.1.x (with v4 fallbacks shown where features differ).
+---
+
+# DQL Movies Cookbook
+
+## Contents
+
+- [Dataset](#dataset)
+- [Seeding](#seeding)
+- [Read patterns](#read-patterns)
+- [Mutations](#mutations)
+- [Cross-collection queries (JOIN — SDK 5.1+)](#cross-collection-queries-join--sdk-51)
+- [Diagnosing performance](#diagnosing-performance)
+
+A practical walkthrough of every major DQL capability the v5.0.x SDK line supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
+
+> **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
+>
+> **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`types-mutators.md`](../references/types-mutators.md) §7.
+
+## Dataset
+
+The cookbook uses two collections: `movies` and `reviews`.
+
+### `movies` schema
+
+| Field | Type | CRDT | Notes |
+|---|---|---|---|
+| `_id` | string | REGISTER | IMDb id, e.g. `"tt0111161"` |
+| `title` | string | REGISTER | |
+| `year` | integer | REGISTER | |
+| `runtime_minutes` | integer | REGISTER | |
+| `genres` | array<string> | REGISTER | JSON array of genre names |
+| `director` | object | **MAP** | `{name, born}` |
+| `cast` | array<object> | REGISTER | `[{name, role}, ...]` |
+| `ratings` | object | **MAP** | `{imdb, rotten_tomatoes, metacritic}` |
+| `box_office_millions` | number | REGISTER | |
+| `tags` | array<string> | REGISTER | |
+| `watch_count` | integer | **COUNTER** | distributed counter |
+| `is_classic` | boolean | REGISTER | |
+| `released` | string | REGISTER | ISO-8601 `YYYY-MM-DD` |
+
+### `reviews` schema
+
+| Field | Type | CRDT | Notes |
+|---|---|---|---|
+| `_id` | string | REGISTER | auto |
+| `movie_id` | string | REGISTER | FK to `movies._id` |
+| `user_id` | string | REGISTER | |
+| `score` | integer | REGISTER | 1–5 |
+| `comment` | string | REGISTER | |
+| `created_at` | string | REGISTER | ISO-8601 timestamp |
+
+## Seeding
+
+### Task 1 — Load movies with conflict-tolerant upserts
+
+> **Available in:** Ditto SDK 4.14+ (COUNTER)
+
+**Goal:** Insert a batch of movies, treating an existing `_id` as an update rather than an error.
+
+**Query:**
+
+```sql
+INSERT INTO COLLECTION movies (watch_count COUNTER)
+DOCUMENTS
+  ({ '_id': 'tt0111161', 'title': 'The Shawshank Redemption', 'year': 1994,
+     'runtime_minutes': 142, 'genres': ['Drama'],
+     'director': { 'name': 'Frank Darabont', 'born': 1959 },
+     'cast': [
+       { 'name': 'Tim Robbins',    'role': 'Andy Dufresne' },
+       { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd "Red" Redding' }
+     ],
+     'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },
+     'box_office_millions': 73, 'watch_count': 0, 'is_classic': true,
+     'released': '1994-09-23' }),
+  ({ '_id': 'tt1375666', 'title': 'Inception', 'year': 2010,
+     'runtime_minutes': 148, 'genres': ['Action', 'Sci-Fi', 'Thriller'],
+     'director': { 'name': 'Christopher Nolan', 'born': 1970 },
+     'ratings': { 'imdb': 8.8, 'rotten_tomatoes': 87 },
+     'box_office_millions': 836, 'watch_count': 0, 'is_classic': false,
+     'released': '2010-07-16' })
+ON ID CONFLICT DO UPDATE;
+```
+
+**Notes:** Only `watch_count` is declared — inference can't guess a `COUNTER` from a plain integer, and seeding one without the declaration would create a REGISTER that never merges increments. `director` and `ratings` carry **no** `MAP` keyword: with `dql_strict_mode = false` (assumed everywhere) bare objects infer MAP automatically, so the declaration would be boilerplate. The one peer population that still needs explicit MAP declarations is un-migrated 4.14.x strict-mode peers — migrate them to `false` rather than declaring for them. `COUNTER` requires SDK 4.14+; on older SDKs, drop it and store `watch_count` as a plain REGISTER. See [`statements.md`](../references/statements.md) §1 for the full `INSERT` grammar and [`types-mutators.md`](../references/types-mutators.md) for the CRDT-type declarations.
+
+### Task 2 — Seed reviews with auto-generated ids
+
+**Goal:** Insert review documents without specifying `_id` — Ditto generates one per row.
+
+**Query:**
+
+```sql
+INSERT INTO reviews DOCUMENTS
+  ({ 'movie_id': 'tt0111161', 'user_id': 'u-42',
+     'score': 5, 'comment': 'Hope is a good thing.',
+     'created_at': '2024-03-15T10:00:00Z' }),
+  ({ 'movie_id': 'tt0111161', 'user_id': 'u-7',
+     'score': 4, 'comment': 'A slow burn that pays off.',
+     'created_at': '2024-03-18T09:15:00Z' }),
+  ({ 'movie_id': 'tt1375666', 'user_id': 'u-7',
+     'score': 4, 'comment': 'Everyone should watch it twice.',
+     'created_at': '2024-04-02T22:31:00Z' });
+```
+
+**Notes:** Omitting `_id` is fine — Ditto assigns a unique string id per inserted document. No `INTO COLLECTION` clause is needed because every field on `reviews` is a `REGISTER`. See [`statements.md`](../references/statements.md) §1.2.
+
+---
+
+## Read patterns
+
+See [movie-reads.md](movie-reads.md#read-patterns) for this topic.
+
+## Mutations
+
+See [movie-mutations.md](movie-mutations.md#mutations) for this topic.
+
+## Cross-collection queries (JOIN — SDK 5.1+)
+
+> **Available in:** Ditto SDK **5.1+**. On 4.14.x / 5.0.x, reach the same result with the two-query patterns this cookbook used before JOINs (read parents, then `WHERE _id IN (...)` the children, merge in app code) — that's what the denormalized `movies` / `reviews` fields in this dataset were for.
+
+All five tasks below join `reviews` to `movies`. The dataset's `review.movie_id → movies._id` edge is the canonical join key. Remember: **the right-side match key must be `_id` or an indexed field**, or the engine rejects the join (`Joining to "r" disallowed without appropriate index support. Please run ADVISE for recommendations.`).
+
+### Task 19 — Reviews joined to their movie (INNER JOIN)
+
+> **Available in:** SDK **5.1+**.
+
+**Goal:** Show each recent review with the movie's title and year.
+
+**Query:**
+
+```sql
+SELECT r._id, r.score, r.user_id, m.title, m.year
+FROM reviews r
+INNER JOIN movies m ON r.movie_id = m._id
+ORDER BY r.created_at DESC
+LIMIT 10;
+```
+
+**Notes:** joining onto `m._id` needs no extra index. Unmatched rows (review without movie) are simply absent — the inner join drops them.
+
+### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)
+
+Here the right side is `reviews` matched on `movie_id`, which needs an index on 5.1+:
+
+```sql
+CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id);
+```
+
+> **Available in:** SDK **5.1+**.
+
+**Goal:** One row per movie with its review count and average score — including movies nobody reviewed.
+
+**Query:**
+
+```sql
+SELECT m._id, m.title,
+       COUNT(r._id)      AS review_count,
+       coalesce(AVG(r.score), 0) AS avg_score
+FROM movies m
+LEFT OUTER JOIN reviews r ON r.movie_id = m._id
+GROUP BY m._id, m.title
+ORDER BY review_count DESC, m.title ASC
+LIMIT 10;
+```
+
+**Notes:** unmatched right-side fields are `MISSING` in an outer join — `COUNT(r._id)` skips them, and `coalesce` turns a `MISSING` average into `0`. See [`select.md`](../references/select.md) §14.3.
+
+### Task 21 — Only well-reviewed movies (JOIN + HAVING)
+
+> **Available in:** SDK **5.1+**.
+
+**Goal:** Movies whose average review score is at least 8, best first.
+
+**Query:**
+
+```sql
+SELECT m._id, m.title, AVG(r.score) AS avg_score
+FROM movies m
+INNER JOIN reviews r ON r.movie_id = m._id
+GROUP BY m._id, m.title
+HAVING AVG(r.score) >= 8.0
+ORDER BY avg_score DESC
+LIMIT 10;
+```
+
+### Task 22 — Movies with no reviews (anti-join)
+
+> **Available in:** SDK **5.1+**.
+
+**Goal:** Find the catalogue gaps — movies that have never been reviewed.
+
+**Query:**
+
+```sql
+SELECT m._id, m.title, m.year
+FROM movies m
+LEFT OUTER JOIN reviews r ON r.movie_id = m._id
+WHERE r._id IS MISSING
+ORDER BY m.year DESC
+LIMIT 10;
+```
+
+**Notes:** the `IS MISSING` filter on a right-side key is the DQL idiom for "exists on the left, absent on the right". See [`select.md`](../references/select.md) §14.5.
+
+### Task 23 — Composite index for the review feed
+
+> **Available in:** SDK **5.1+** (composite `CREATE INDEX` and `JOIN`).
+
+**Goal:** Support "highest recent reviews first" for a movie detail page, indexed.
+
+**Query:**
+
+```sql
+CREATE INDEX IF NOT EXISTS reviews_movie_created
+  ON reviews (movie_id ASC, created_at DESC);
+```
+
+```sql
+SELECT r._id, r.score, r.user_id, m.title
+FROM reviews r
+INNER JOIN movies m ON r.movie_id = m._id
+WHERE r.movie_id = 'tt0111161'
+ORDER BY r.created_at DESC
+LIMIT 20;
+```
+
+**Notes:** composite (multi-column) `CREATE INDEX` is also **5.1+**; the planner uses this index both for the join's match key and for the `ORDER BY` (equality on `movie_id`, sort on `created_at` — the ESR rule, see [`indexing.md`](../references/indexing.md) §8.1).
+
+---
+
+## Diagnosing performance
+
+Slow query? Walk this loop:
+
+1. **Get the plan** with `EXPLAIN`:
+
+   ```sql
+   EXPLAIN SELECT title FROM movies
+   WHERE year BETWEEN 1990 AND 2000
+   ORDER BY ratings.imdb DESC;
+   ```
+
+   Look for `CollectionScan` (a full document scan — expensive) versus `IndexScan` (a hit on a named index). For the full operator catalog see [`indexing.md`](../references/indexing.md) §6.
+
+2. **Capture timings** (SDK 5.0+ only):
+
+   ```sql
+   -- Directive form
+   SELECT /*+ {"#profile": true} */ title FROM movies
+   WHERE year BETWEEN 1990 AND 2000
+   ORDER BY ratings.imdb DESC;
+
+   -- Leading-keyword form (PROFILE)
+   PROFILE SELECT title FROM movies
+   WHERE year BETWEEN 1990 AND 2000
+   ORDER BY ratings.imdb DESC;
+   ```
+
+   Both attach per-operator profiling data to the result on 5.0+. v4 has no profiling syntax — fall back to `EXPLAIN` plus wall-clock timing in your application. See [`indexing.md`](../references/indexing.md) §7.
+
+3. **Add the missing index.** Apply the ESR rule (equality keys first, sort keys next, range last):
+
+   ```sql
+   CREATE INDEX IF NOT EXISTS movies_year_imdb
+     ON movies (year ASC, ratings.imdb DESC);
+   ```
+
+   Then re-run `EXPLAIN` and confirm the plan now reports `IndexScan` against `movies_year_imdb`. See [`indexing.md`](../references/indexing.md) §8 for the ESR rule and worked examples.
+
+4. **If the plan didn't change**, the planner may have rejected the index because the query isn't covering or the cost model preferred a scan. Force the comparison with `USE INDEX ''` to disable indexes, then re-enable and check again. See [`indexing.md`](../references/indexing.md) §6.3.

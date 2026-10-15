@@ -14,7 +14,7 @@ Every documented feature is tagged with its minimum SDK version. See [`reference
 
 ### `write-dql` skill
 
-A routing entry point that detects your project's Ditto SDK version, then directs the agent to the relevant reference and example material. The skill lives at `skills/dql/` in this repo and covers:
+A routing entry point that detects your project's Ditto SDK version, then directs the agent to the relevant reference and example material. The skill lives at `skills/write-dql/` in this repo and covers:
 
 - SELECT queries, filtering, sorting, aggregations, and subscription patterns
 - INSERT / UPDATE / DELETE / EVICT semantics
@@ -28,7 +28,7 @@ A subagent (`agents/ditto-dql/dql-expert.md`) that uses the `write-dql` skill to
 
 ### Reference catalog
 
-Located in [`references/`](references/):
+Located in [`references/`](references):
 
 | File | Covers |
 |------|--------|

@@ -31,7 +31,7 @@ agent-skills/
 ├── CONTRIBUTING.md                # contributor guide + skill authoring rules
 ├── README.md                      # tool-agnostic overview + install matrix
 ├── skills/
-│   └── dql/                       # moved from plugins/ditto-dql/skills/dql (unchanged content)
+│   └── dql/                       # moved from plugins/ditto-dql/skills/write-dql (unchanged content)
 │       ├── SKILL.md
 │       ├── references/
 │       ├── examples/
@@ -52,7 +52,7 @@ agent-skills/
 ## Phases
 
 ### Phase 1 — Move skills to canonical location
-1. `git mv plugins/ditto-dql/skills/dql skills/dql`
+1. `git mv plugins/ditto-dql/skills/write-dql skills/write-dql`
 2. `git mv plugins/ditto-dql/tests tests/dql` (keep it namespaced per-skill so
    future skills get their own test dirs, e.g. `tests/<skill>/`)
 3. `git mv plugins/ditto-dql/agents agents/` (agents are also portable markdown)
@@ -88,7 +88,7 @@ agent-skills/
 
 ### Phase 5 — Validation
 - CI green on the new paths.
-- Manual smoke test: load `skills/dql` in opencode and in Claude Code and
+- Manual smoke test: load `skills/write-dql` in opencode and in Claude Code and
   confirm the skill surfaces.
 
 ## Decisions made during implementation

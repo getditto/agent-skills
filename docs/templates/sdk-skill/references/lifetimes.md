@@ -9,7 +9,7 @@
   lifetimes and retention holds the instance rule plus the most surprising retention
   fact, and links here. Spec §5.
 
-  Add a `## Contents` list once this file passes 200 lines — CI enforces it (spec §3).
+  Add a `## Contents` list once this file passes 8,000 characters or 200 lines — CI enforces it (spec §3).
 -->
 
 What must be held to stay alive, what happens when it is dropped, and where to cancel.

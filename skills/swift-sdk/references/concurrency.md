@@ -1,16 +1,16 @@
 # Concurrency and threading
 
+## Contents
+
+- [Where each callback runs](#where-each-callback-runs)
+- [The eight rules](#the-eight-rules)
+- [Starting Ditto exactly once from SwiftUI](#starting-ditto-exactly-once-from-swiftui)
+- [Crossing the actor boundary without losing ordering](#crossing-the-actor-boundary-without-losing-ordering)
+
 Which thread or actor every SDK callback arrives on, and what that forces the calling
 code to do. The load-bearing rules are summarised in
 [`SKILL.md` § Concurrency and threading model](../SKILL.md#concurrency-and-threading-model);
 this file carries the per-API table and the reasoning.
-
-## Contents
-
-- Where each callback runs
-- The eight rules
-- Starting Ditto exactly once from SwiftUI
-- Crossing the actor boundary without losing ordering
 
 ## Where each callback runs
 

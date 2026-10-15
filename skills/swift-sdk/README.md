@@ -1,5 +1,14 @@
 # Ditto Swift SDK Skill
 
+## Contents
+
+- [Scope](#scope)
+- [Supported versions](#supported-versions)
+- [Capability map](#capability-map)
+- [Verification](#verification)
+- [Installation](#installation)
+- [Maintenance](#maintenance)
+
 Agent skill for writing and reviewing Ditto **Swift** SDK code — iOS, iPadOS,
 macOS (AppKit) and Mac Catalyst, with SwiftUI, UIKit and AppKit.
 
@@ -119,12 +128,12 @@ Rows that are not `Support: yes`:
 
 **Executed against:** Ditto **4.14.6**, **5.0.3** and **5.1.0**, on macOS 27.0 / arm64
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
-[`tests/swift-sdk/`](../../tests/swift-sdk/), and its README explains how to run it.
+[`tests/swift-sdk/`](../../tests/swift-sdk), and its README explains how to run it.
 
-- **92 `@Test` declarations** (`scripts/run.sh --all`), which expand to more cases —
-  three are parameterized. The harness reports `Test run with 92 tests in 14 suites` on
-  every line; the number does not vary, because a test that does not apply to a line is
-  *skipped* rather than silently passed. What skips, and why:
+- **93 current `@Test` declarations** (`scripts/run.sh --all`), including three
+  parameterized declarations. The earlier recorded run reported 92 tests in 14 suites;
+  that historical total is not a fresh run of the current 93 declarations. Tests that
+  do not apply to a line are skipped rather than silently passed:
 
   | Line | Skipped |
   |---|---|

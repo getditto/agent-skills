@@ -5,6 +5,19 @@ description: Retail dataset recipipes using only the single-collection DQL surfa
 
 # Retail cookbook — the pre-5.1 (no JOIN) way
 
+## Contents
+
+- [Task R1 — An order with its store details](#task-r1--an-order-with-its-store-details)
+- [Task R2 — Recent orders with customer names](#task-r2--recent-orders-with-customer-names)
+- [Task R3 — The items of an order, with product names](#task-r3--the-items-of-an-order-with-product-names)
+- [Task R4 — Revenue per store](#task-r4--revenue-per-store)
+- [Task R5 — Stores above a revenue threshold](#task-r5--stores-above-a-revenue-threshold)
+- [Task R6 — Customers who have never ordered](#task-r6--customers-who-have-never-ordered)
+- [Task R7 — Projection discipline without joins](#task-r7--projection-discipline-without-joins)
+- [Task R8 — Inventory value by product](#task-r8--inventory-value-by-product)
+- [Non-JOIN summary — when to use what](#non-join-summary--when-to-use-what)
+- [Cross references](#cross-references)
+
 Same retail dataset as [`retail-joins-cookbook.md`](retail-joins-cookbook.md): `orders`, `order_items`, `customers`, `stores`, `products`, `product_types`, `categories`, `inventory`. Every task below is solvable without `JOIN` — that's how production code on 4.14.x and 5.0.x does it today. Each task links to its JOIN counterpart so you can compare the two styles directly.
 
 The non-JOIN toolbelt for cross-collection reads:

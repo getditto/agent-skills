@@ -14,7 +14,7 @@
   line naming the exact compiler error, exception, profiler symbol, or measured factor.
   Never the word "slow".
 
-  Add a `## Contents` list once this file passes 200 lines — CI enforces it (spec §3).
+  Add a `## Contents` list once this file passes 8,000 characters or 200 lines — CI enforces it (spec §3).
 -->
 
 Each of these compiles. Most produce no error at runtime either — the symptom is a silent

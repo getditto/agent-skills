@@ -1,16 +1,16 @@
 # Object lifetimes and retention
 
+## Contents
+
+- [The one strong reference](#the-one-strong-reference)
+- [What to retain, and the symptom if you don't](#what-to-retain-and-the-symptom-if-you-dont)
+- [Where to cancel, per UI framework](#where-to-cancel-per-ui-framework)
+- [Two collections that must never be cached](#two-collections-that-must-never-be-cached)
+
 What must be held to stay alive, what happens when it is dropped, and where to cancel.
 The rule that changes code by default is in
 [`SKILL.md` § Object lifetimes and retention](../SKILL.md#object-lifetimes-and-retention);
 this file carries the per-handle table and the cancellation detail.
-
-## Contents
-
-- The one strong reference
-- What to retain, and the symptom if you don't
-- Where to cancel, per UI framework
-- Two collections that must never be cached
 
 ## The one strong reference
 

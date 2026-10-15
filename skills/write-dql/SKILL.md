@@ -1,6 +1,6 @@
 ---
 name: write-dql
-description: Use when writing DQL (Ditto Query Language) — SELECT/INSERT/UPDATE/EVICT/TOMBSTONE/DELETE statements, subscriptions, CRDT types, query optimization (EXPLAIN/#profile), or ALTER SYSTEM/SHOW config. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x (5.1 adds JOIN, composite indexes, RETURNING, ADVISE). Confirm the user's SDK version before answering — feature support varies.
+description: Use when writing or reviewing Ditto DQL queries, mutations, subscriptions, CRDT declarations, indexes, EXPLAIN/ADVISE or system configuration. Covers SDK 4.14.x, 5.0.x and 5.1.x; confirm the target version because JOINs and other features are version-gated. Schema design belongs to data-modeling.
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 
 DQL is Ditto's SQL-like language for querying and mutating documents in a CRDT-aware, peer-to-peer database. It looks like SQL, but the semantics are different in three ways that matter every day:
 
-1. **No joins, no subqueries, no UNION.** One `FROM` per statement.
+1. **SQL compatibility is version-gated.** Check the target SDK before using a SQL construct; JOINs require 5.1.x.
 2. **`NULL` and `MISSING` are distinct.** `NULL` = field exists, value is null. `MISSING` = field is absent. They behave differently in every operator.
 3. **Every field is a CRDT.** The CRDT type (REGISTER, MAP, COUNTER, PN_COUNTER, ATTACHMENT) controls how concurrent edits merge.
 
@@ -28,22 +28,43 @@ If the user explicitly says "give me the latest" or "use the newest" without pic
 
 ## Where to look
 
-> **First time reading an example?** Every operator, function, statement, expression, and cookbook task in this skill queries the same two collections (`movies`, `reviews`). The full schema — field names, types, and CRDT designations — lives in [`references/schema.md`](references/schema.md). Open that alongside any reference file the first time you read it.
+Read only the reference section matching the task. For a long file, read its contents
+first, then the selected section; do not load every reference or the README. In large
+matrices or catalogs, find the relevant feature row and its version notes. Open
+[`references/schema.md`](references/schema.md) only when adapting the movies/reviews
+examples and their field names or types are unclear; it is not needed for a query
+against the user's own schema.
 
-| If you're doing this... | Read |
+| Task | Read |
 |---|---|
-| Wondering what a field in an example means | `references/schema.md` |
-| Picking which features apply to your SDK version | `references/versions.md` |
-| Writing a `SELECT` | `references/select.md` |
-| Writing `INSERT` / `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE` / `ALTER SYSTEM` / `SHOW` / `SYNC CONTEXT` | `references/statements.md` |
-| Looking up an operator's precedence or NULL/MISSING behaviour | `references/operators.md` |
-| Looking up a built-in function | `references/functions.md` |
-| Writing `CASE`, `ANY ... SATISFIES`, `ARRAY FOR`, parameter binding | `references/expressions.md` |
-| Declaring CRDT types in `INSERT`, picking COUNTER vs PN_COUNTER, using ATTACHMENT | `references/types-mutators.md` |
-| `CREATE INDEX`, `EXPLAIN`, profiling with `#profile`, planner directives | `references/indexing.md` |
-| Designing schemas, schema versioning, strict mode, timestamps | `best-practices.md` |
-| Want a runnable end-to-end example | `examples/movies-cookbook.md` |
-| Compare non-JOIN vs JOIN implementations of the same retail tasks | `examples/retail-cookbook.md` and `examples/retail-joins-cookbook.md` |
+| Identify fields in supplied examples | [schema.md](references/schema.md) only when needed |
+| Version overview/defaults | [versions.md](references/versions.md) |
+| Statement/index compatibility | [compatibility-statements.md](references/compatibility-statements.md) |
+| Expression/operator/function compatibility | [compatibility-expressions.md](references/compatibility-expressions.md) |
+| CRDT/subscription compatibility | [compatibility-types-sync.md](references/compatibility-types-sync.md) |
+| SELECT, filtering, sorting, grouping | [select-basics.md](references/select-basics.md) |
+| JOIN queries (5.1+) | [joins.md](references/joins.md) |
+| SELECT USE IDS/INDEX/DIRECTIVES | [select-access.md](references/select-access.md) |
+| Subscription query restrictions | [subscription-queries.md](references/subscription-queries.md) |
+| INSERT/UPDATE/EVICT/DELETE/TOMBSTONE | [statements.md](references/statements.md) |
+| ALTER SYSTEM/SHOW/SYNC CONTEXT/PROFILE | [system-statements.md](references/system-statements.md) |
+| Operator precedence or NULL/MISSING | [operators.md](references/operators.md) |
+| Scalar/aggregate functions | [functions.md](references/functions.md) |
+| String functions | [string-functions.md](references/string-functions.md) |
+| Date/time/duration functions | [date-time-functions.md](references/date-time-functions.md) |
+| CASE, quantifiers, comprehensions, parameters | [expressions.md](references/expressions.md) |
+| REGISTER/MAP/COUNTER/ATTACHMENT | [types-mutators.md](references/types-mutators.md) |
+| PN_COUNTER or strict-mode declarations | [legacy-types.md](references/legacy-types.md) |
+| CREATE/DROP INDEX or index strategy | [indexing.md](references/indexing.md) |
+| Planner directives/hints | [planner-hints.md](references/planner-hints.md) |
+| EXPLAIN, #profile, ADVISE | [query-diagnostics.md](references/query-diagnostics.md) |
+| Schema evolution and model patterns | [modeling-patterns.md](references/modeling-patterns.md); use data-modeling for a complete design |
+| Query performance | [query-performance.md](references/query-performance.md) |
+| Strict-mode migration or query safety | [strict-mode-safety.md](references/strict-mode-safety.md) |
+| Timestamp design | [timestamps.md](references/timestamps.md) |
+| Worked movie reads or mutations | [movie-reads.md](examples/movie-reads.md) or [movie-mutations.md](examples/movie-mutations.md) |
+| Complete movie dataset/setup and JOIN/performance tasks | [movies-cookbook.md](examples/movies-cookbook.md) |
+| Compare retail tasks with/without JOIN | [retail-cookbook.md](examples/retail-cookbook.md) or [retail-joins-cookbook.md](examples/retail-joins-cookbook.md) |
 
 ## Five things that bite people
 

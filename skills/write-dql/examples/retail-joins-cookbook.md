@@ -5,6 +5,12 @@ description: JOIN recipes against the retail dataset (orders, customers, stores,
 
 # Retail joins cookbook
 
+## Contents
+
+- [The dataset](#the-dataset)
+- [When JOINs beat the old pattern — measured](#when-joins-beat-the-old-pattern--measured)
+- [Cross references](#cross-references)
+
 Task-by-task JOIN recipes for the **retail dataset**: 8 collections — `orders`, `order_items`, `customers`, `stores`, `products`, `product_types`, `categories`, `inventory` — a classic star schema with foreign keys everywhere.
 
 > **Available in:** Ditto SDK **5.1+**. Every query below fails to parse on 4.14.x / 5.0.x — see [`retail-cookbook.md`](retail-cookbook.md) for the same tasks written without JOINs so you can compare the two styles side by side.

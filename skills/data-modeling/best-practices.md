@@ -1,5 +1,15 @@
 # Data Modeling Best Practices
 
+## Contents
+
+- [The default pattern](#the-default-pattern)
+- [When to split into a separate collection](#when-to-split-into-a-separate-collection)
+- [Patterns](#patterns)
+- [Anti-patterns](#anti-patterns)
+- [Attachments — and the one place base64 is still the answer](#attachments--and-the-one-place-base64-is-still-the-answer)
+- [Schema evolution (short version)](#schema-evolution-short-version)
+- [Strict mode: the mesh discipline](#strict-mode-the-mesh-discipline)
+
 **Read this file when:** choosing embed-vs-split, designing `_id`s, modeling status/history, deletions, or evolving a live schema. For the per-field CRDT choice see [`references/crdt-types.md`](references/crdt-types.md); for running the intake + review process see [`references/workflow.md`](references/workflow.md).
 
 ---
@@ -111,7 +121,7 @@ Full rule, including when to flag it in a review: [`references/workflow.md`](ref
 | `SET views = views + 1` on a REGISTER | one increment silently wins on merge | `COUNTER` + `APPLY … INCREMENT BY` |
 | Flipping `dql_strict_mode` ad hoc, per peer — or leaving 4.x peers at the strict `true` default | mismatched peers store and read the same field differently — strict peers silently drop undeclared MAP/COUNTER fields from query results entirely | `false` everywhere: the 5.x default, and the 4.x migration target (mesh-wide, before upgrading to v5) |
 | Flipping the SDK peers to lenient but leaving backends on the Big Peer's `/api/v4/store/execute` | the v4 HTTP endpoint **is** a strict peer — it keeps writing bare objects as whole-object REGISTERs into collections your devices merge per-field, and no `ALTER SYSTEM` on a device can fix it | migrate HTTP callers to `/api/v5/store/execute` in the *same* coordinated change ([`references/versions.md`](references/versions.md)) |
-| base64 image inline in a document | blows the size budget; every edit re-syncs the blob's register | `ATTACHMENT`, lazy fetch — **except behind the MongoDB Connector**, see below |
+| base64 image inline in a document | exceeds the size budget; initial transfer and blob changes send its whole value, while unrelated edits still pay whole-document merge/storage cost | `ATTACHMENT`, lazy fetch — **except behind the MongoDB Connector**, see below |
 | JSON-string-encoding a sub-object into one field "to keep it simple" | unqueryable, unindexable, unmergeable | real MAP |
 | Watching the whole collection with a live observer | observers re-emit the full result set per change; held state is substantially larger than the raw bytes (directionally an order of magnitude) | narrow observer + LIMIT |
 | Changing a field's type in a schema migration | breaks old app versions in the mesh | add a new field; keep the old one |
@@ -134,7 +144,7 @@ If the images don't need to be in MongoDB at all, keep them as attachments and d
 
 ## Schema evolution (short version)
 
-The golden rule in a live mesh: **never change a field's type, never remove a field** — add new fields (with defaults), bump a `schema_version` discriminator, and keep old app versions reading cleanly. The full treatment (backward/forward compatibility strategies, migration statements, version-window queries) is in the `write-dql` skill's [`../dql/best-practices.md`](../dql/best-practices.md) — same rules, this skill doesn't repeat them.
+The golden rule in a live mesh: **never change a field's type, never remove a field** — add new fields (with defaults), bump a `schema_version` discriminator, and keep old app versions reading cleanly. The full treatment (backward/forward compatibility strategies, migration statements, version-window queries) is in the `write-dql` skill's [`../write-dql/best-practices.md`](../write-dql/best-practices.md) — same rules, this skill doesn't repeat them.
 
 ## Strict mode: the mesh discipline
 

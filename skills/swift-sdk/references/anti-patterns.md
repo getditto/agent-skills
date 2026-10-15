@@ -1,19 +1,19 @@
 # Anti-patterns — the wrong form, the right form, and the symptom
 
+## Contents
+
+- [Assuming a floating-point field is `Double`](#assuming-a-floating-point-field-is-double)
+- [Forgetting `signalNext()` on an exit path](#forgetting-signalnext-on-an-exit-path)
+- [Assigning a fresh `DittoTransportConfig()`](#assigning-a-fresh-dittotransportconfig)
+- [Dematerializing before diffing](#dematerializing-before-diffing)
+- [A retroactive `Sendable` shim on v5](#a-retroactive-sendable-shim-on-v5)
+- [Treating `sync.isActive` as "connected"](#treating-syncisactive-as-connected)
+- [Building the server URL from the database ID](#building-the-server-url-from-the-database-id)
+
 Each of these compiles. Most produce no error at runtime either — the symptom is a
 silent wrong result, a frozen screen, or a device that never finds a peer again. The
 one-line rules are in [`SKILL.md` § Anti-patterns](../SKILL.md#anti-patterns); this file
 carries the code and the diagnosis.
-
-## Contents
-
-- Assuming a floating-point field is `Double`
-- Forgetting `signalNext()` on an exit path
-- Assigning a fresh `DittoTransportConfig()`
-- Dematerializing before diffing
-- A retroactive `Sendable` shim on v5
-- Treating `sync.isActive` as "connected"
-- Building the server URL from the database ID
 
 ## Assuming a floating-point field is `Double`
 

@@ -49,6 +49,9 @@ jobs:
 
           echo "All SKILL.md files valid"
 
+      - name: Check skill context guard negative controls
+        run: python3 tests/skill-context/test_contract.py
+
       - name: Check plugin references in marketplace
         run: |
           echo "Checking plugin sources exist..."
@@ -141,7 +144,7 @@ jobs:
 
                   # Shape (b): a real directory whose entries are symlinks into
                   # the canonical tree, e.g.
-                  #   plugins/ditto-dql/skills/dql -> ../../../skills/dql
+                  #   plugins/ditto-dql/skills/write-dql -> ../../../skills/write-dql
                   entries = [e for e in sorted(os.listdir(wrapper)) if not e.startswith('.')]
                   if not entries:
                       errors.append(f"{wrapper} is empty")
@@ -160,6 +163,12 @@ jobs:
                           continue
                       if suffix and not os.path.isfile(os.path.join(target, suffix)):
                           errors.append(f"{path} has no {suffix}")
+                          continue
+                      if suffix and entry != os.path.basename(target):
+                          errors.append(
+                              f"{path} must use the canonical skill directory name "
+                              f"'{os.path.basename(target)}' for portable discovery"
+                          )
                           continue
                       ships_anything = True
                       shipped[canonical].add(os.path.basename(target))

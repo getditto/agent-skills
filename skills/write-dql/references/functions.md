@@ -5,6 +5,21 @@ description: Complete built-in function catalog for Ditto DQL (math, string, arr
 
 # DQL functions reference
 
+## Contents
+
+- [1. Mathematical](#1-mathematical)
+- [2. Conditional / null-handling](#2-conditional--null-handling)
+- [3. Type / conversion](#3-type--conversion)
+- [4. String](#4-string)
+- [5. Array](#5-array)
+- [6. Object](#6-object)
+- [7. Date / time](#7-date--time)
+- [8. Duration](#8-duration)
+- [9. Miscellaneous](#9-miscellaneous)
+- [10. Aggregates](#10-aggregates)
+- [11. Alphabetical function index](#11-alphabetical-function-index)
+- [See also](#see-also)
+
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
 Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
@@ -121,127 +136,7 @@ SELECT deserialize_json('{"label":"hit","year":1994}') AS parsed;
 
 ## 4. String
 
-| Signature                                  | Returns      | Notes                                                                                       |
-| ------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------- |
-| `byte_length(str)`                         | `integer`    | UTF-8 byte count (up to 4 per char)                                                          |
-| `char_length(str)` / `character_length(str)` | `integer`  | Character count                                                                              |
-| `length(str)`                              | `integer`    | Deprecated alias of `byte_length`                                                            |
-| `concat(s1, s2, ...)`                      | `string`     | Multi-arg concatenation; same engine as the `||` operator                                    |
-| `contains(str, substr)`                    | `bool`       | Substring test                                                                               |
-| `starts_with(str, substr)`                 | `bool`       | Prefix test                                                                                  |
-| `ends_with(str, substr)`                   | `bool`       | Suffix test                                                                                  |
-| `ltrim(str[, chars])`                      | `string`     | Trim from start                                                                              |
-| `rtrim(str[, chars])`                      | `string`     | Trim from end                                                                                |
-| `` `trim`(str[, chars]) ``                 | `string`     | Trim from both ends. **The bare name `trim` is a SQL keyword** — backtick the identifier when calling the function form, or use `TRIM(...)` syntax below. |
-| `upper(str)` / `lower(str)`                | `string`     | Case conversion                                                                              |
-| `repeat(char, count)`                      | `string`     | Repeat first character of `char` `count` times                                               |
-| `split(str, delim)`                        | `array<str>` | Empty `delim` splits per character                                                            |
-| `joinstr(sep, v, ...)`                     | `string`     | Joins values with `sep`; non-strings coerced; nested arrays flattened. First `NULL`/`MISSING` short-circuits to that. |
-| `substr(str, start[, len])`                | `string`     | Zero-based index                                                                              |
-| `pos(str, substr)`                         | `integer`    | Zero-based index of first match; `-1` if not found                                            |
-| `lpad(str, len[, char])`                   | `string`     | Left-pad with first char of `char` (default space)                                            |
-| `rpad(str, len[, char])`                   | `string`     | Right-pad with first char of `char` (default space)                                           |
-| `regexp_like(src, pattern[, flags])`       | `bool`       | Regex match. Flag table below.                                                                |
-
-### 4.1 SQL keyword forms
-
-DQL accepts SQL-flavoured alternatives for three string operations. They are aliases of the function-form entries above.
-
-```sql
--- POSITION(substr IN str) is alternative syntax for pos(str, substr)
-SELECT title, POSITION('The' IN title) AS where_the FROM movies;
-SELECT title, pos(title, 'The')        AS where_the FROM movies;
-```
-
-```sql
--- TRIM([LEADING | TRAILING | BOTH] [chars FROM] expr) covers ltrim/rtrim/trim
-SELECT TRIM(LEADING  '0' FROM '00042')  AS no_leading;     -- '42'
-SELECT TRIM(TRAILING ' ' FROM 'hi   ')   AS no_trailing;    -- 'hi'
-SELECT TRIM(BOTH     '*' FROM '**core**') AS no_stars;      -- 'core'
-SELECT TRIM('  hello  ')                 AS trimmed;        -- 'hello' (BOTH ' ' is default)
-```
-
-If you want the function form rather than the keyword form, quote the identifier:
-
-```sql
--- bare `trim` clashes with the SQL keyword — backtick it
-SELECT `trim`('  hello  ') AS trimmed FROM movies LIMIT 1;
-```
-
-### 4.2 `regexp_like` flags
-
-`regexp_like(src, pattern[, flags])` — `flags` is a string of single-character switches; if a flag and its opposite both appear, the rightmost wins.
-
-| Flag      | Meaning                                                                  |
-| --------- | ------------------------------------------------------------------------ |
-| `c`       | Case sensitive (default)                                                  |
-| `i`       | Case insensitive                                                          |
-| `m`       | Multi-line — `^` and `$` also match at `\n` boundaries                    |
-| `n` / `s` | `.` matches `\n` as well                                                  |
-| `x`       | Ignore whitespace in pattern (unless escaped)                             |
-
-```sql
--- Reviews mentioning any of three positive adjectives, case-insensitively
-SELECT _id, score FROM reviews
-WHERE regexp_like(comment, '(amaz|fantast|brilliant)', 'i');
-```
-
-### 4.3 String examples
-
-```sql
--- Movies whose title starts with "The "
-SELECT title FROM movies WHERE starts_with(title, 'The ');
-```
-
-```sql
--- Build a display label two ways (functionally equivalent)
-SELECT concat(title, ' (', cast(year, 'string'), ')') AS label FROM movies;
-SELECT       title || ' (' || cast(year, 'string') || ')' AS label FROM movies;
-```
-
-```sql
--- Comment length stats — beware: byte_length counts UTF-8 bytes, char_length counts characters
-SELECT _id,
-    byte_length(comment) AS bytes,
-    char_length(comment) AS chars
-FROM reviews;
-```
-
-```sql
--- Substring & case
-SELECT title, upper(substr(title, 0, 3)) AS prefix FROM movies;
-```
-
-```sql
--- Joinstr is friendlier than chained || for mixed types
-SELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies;
-```
-
-```sql
--- repeat: build a star-rating indicator from the IMDb score.
--- cast(... , 'integer') truncates, which is all this display needs and keeps
--- the example runnable on every supported SDK version.
-SELECT title, repeat('★', cast(ratings.imdb, 'integer')) AS stars FROM movies;
-```
-
-> `round()` would read more naturally here, but it is **SDK 5.1+ only** and is not part of the catalogue in §11 — see [`versions.md`](versions.md) §4.6. On 5.1.x you can write `cast(round(ratings.imdb), 'integer')` instead.
-
-```sql
--- lpad: zero-pad the year for fixed-width display
-SELECT title, lpad(cast(year, 'string'), 4, '0') AS year_padded FROM movies;
-```
-
-```sql
--- rpad: right-pad the title to a fixed width with dots
-SELECT rpad(title, 30, '.') AS title_padded FROM movies;
-```
-
-```sql
--- split: tokenise a comment on whitespace
-SELECT split(comment, ' ') AS tokens FROM reviews LIMIT 1;
-```
-
----
+See [string-functions.md](string-functions.md#4-string) for this topic.
 
 ## 5. Array
 
@@ -338,103 +233,11 @@ There is no `object_size` in v5.0.x.
 
 ## 7. Date / time
 
-Dates are either **epoch milliseconds (UTC, integer)** or **ISO-style strings**. Functions that take a `format` accept either percent-style (`%F %T%.f %z`) or SQL-style (`YYYY-MM-DD hh:mm:ss.sss TZD`).
-
-**Parts** (used by `date_add`, `date_sub`, `date_diff`, `date_trunc`):
-`year` · `mon`/`month` · `day` · `hour` · `min`/`minute` · `sec`/`second` · `ms`/`millis`/`millisecond`.
-
-`date_part` accepts everything above **plus**: `weekday` (ISO8601, Monday=1), `monthname` (English full name), `tz`/`timezone` (string `±hh:mm`).
-
-| Signature                                                 | Returns                                                          | Notes                                                              |
-| --------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `date_cast(string[, format])`                             | `integer` (epoch ms, UTC)                                        | String → epoch                                                      |
-| `tz_offset(string[, format])`                             | `integer` (minutes)                                              | TZ offset from a date string                                        |
-| `clock([format[, tz]])`                                   | `integer` (epoch ms) or `string` (when `format` given)           | Current wall-clock time                                             |
-| `date_format(date, format[, tz])`                         | `string`                                                         | Date → formatted string                                              |
-| `date_add(date, part, count[, format[, tz]])`             | `integer` or `string` (matches input, or `format` if given)      | Add `count` of `part`; negative subtracts                            |
-| `date_sub(date, part, count[, format[, tz]])`             | same as above                                                    | Sign-flipped `date_add`                                              |
-| `date_diff(d1, d2, part)`                                 | `integer`                                                        | Number of `part`s between. Result is `d2 - d1` (positive when `d2` is later than `d1`) |
-| `date_range(start, end, part, count[, format[, tz]])`     | `array<date>`                                                    | Half-open `[start, end)` stepping by `count`-`part`s                 |
-| `date_part(date, part)`                                   | `integer` or `string`                                            | Extract one part                                                     |
-| `date_trunc(date, part)`                                  | `integer` (epoch input) or `string` (ISO output for string input)| Zero subsequent fields                                               |
-
-```sql
--- Movies released this year
-SELECT title FROM movies
-WHERE date_part(date_cast(released), 'year')
-    = date_part(clock(), 'year');
-```
-
-```sql
--- date_add: warranty expires 90 days after each review
-SELECT _id,
-    date_format(
-        date_add(date_cast(created_at), 'day', 90),
-        'YYYY-MM-DD'
-    ) AS warranty_end
-FROM reviews;
-```
-
-```sql
--- date_format: render the release date in a human-readable form
-SELECT title,
-    date_format(date_cast(released), 'YYYY-MM-DD') AS d
-FROM movies WHERE _id = 'tt0111161';
-```
-
-```sql
--- Days since release
-SELECT title,
-    date_diff(date_cast(released), clock(), 'day') AS days_since_release
-FROM movies
-ORDER BY days_since_release ASC LIMIT 10;
-```
-
-```sql
--- Every Monday between two dates (date_range)
-SELECT date_range('2024-03-01', '2024-04-01', 'day', 1) AS march_days;
-```
-
-```sql
--- date_sub mirrors date_add with sign flipped
-SELECT title,
-    date_format(
-        date_sub(date_cast(released), 'year', 10),
-        'YYYY'
-    ) AS released_minus_decade
-FROM movies WHERE _id = 'tt0111161';
-```
-
-```sql
--- date_trunc to the start of the year
-SELECT date_trunc(date_cast(released), 'year') AS year_start FROM movies;
-```
-
-```sql
--- TZ offset (in minutes) embedded in an ISO timestamp
-SELECT _id, tz_offset('2024-06-15T14:00:00-05:00') AS minutes_off FROM reviews LIMIT 1;
-```
-
----
+See [date-time-functions.md](date-time-functions.md#7-date--time) for this topic.
 
 ## 8. Duration
 
-| Signature                              | Returns    | Notes                                                                                                                                                |
-| -------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `duration_cast(str[, unit])`           | `integer`  | Parse a duration string like `1h23m54.07s`; return count in `unit` (default ms). Units: `seconds`/`sec`, `milliseconds`/`ms`, `microseconds`/`us`/`μs`, `nanoseconds`/`ns`. |
-| `duration_format(value[, unit])`       | `string`   | Format a number (treated as `unit`, default ms) as a duration string.                                                                                |
-
-```sql
--- A runtime hint stored as "2h22m" → seconds
-SELECT duration_cast('2h22m', 'seconds');                  -- 8520
-```
-
-```sql
--- Render watch_count as a fake "duration" string (illustrative)
-SELECT title, duration_format(watch_count, 'ms') AS watched_for FROM movies;
-```
-
----
+See [date-time-functions.md](date-time-functions.md#8-duration) for this topic.
 
 ## 9. Miscellaneous
 

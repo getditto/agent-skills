@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              92 @Test declarations (3 parameterized)
+Tests/SwiftSDKSkillTests/              93 @Test declarations (3 parameterized)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output

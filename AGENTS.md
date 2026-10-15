@@ -18,7 +18,7 @@ skills or content that are not appropriate for customer use.**
 
 ```
 skills/                        # Canonical skills — the portable unit
-├── dql/
+├── write-dql/
 │   ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
 │   ├── references/            # Detailed reference docs loaded on demand
 │   ├── examples/              # Worked examples
@@ -31,7 +31,7 @@ agents/                        # Portable agent definitions (markdown)
     └── dql-expert.md
 
 tests/                         # Per-skill test harnesses
-├── dql/                       # DQL: name-matched subdirectory
+├── dql/                       # Historical DQL harness directory (skill: write-dql)
 │   ├── catalog/  scripts/  runner/  fixtures/  sdks/
 │   └── README.md
 ├── data-modeling/             # data-modeling: live-model JSON-review evals
@@ -44,7 +44,7 @@ tests/                         # Per-skill test harnesses
 plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-dql/                 # One plugin per skill it ships
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/dql -> ../../../skills/dql        (symlinked dir)
+│   ├── skills/write-dql -> ../../../skills/write-dql        (symlinked dir)
 │   └── agents -> ../../agents/ditto-dql         (symlinked dir)
 ├── ditto-mesh/
 │   ├── .claude-plugin/plugin.json
@@ -116,7 +116,7 @@ plugin installs for everyone who already has it. CI enforces the scoping.
 ## Tests
 
 `tests/<skill>/` holds executable verification for a skill's documented
-examples. For DQL: `tests/dql` runs every ```sql block in `skills/dql/`
+examples. For DQL: `tests/dql` runs every ```sql block in `skills/write-dql/`
 against real Ditto SDK versions (see `tests/dql/README.md`). For
 data-modeling: `tests/data-modeling` feeds raw-JSON cases plus the skill to
 live AI models and deterministically scores the recommendations against the
@@ -127,7 +127,7 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
   frontmatter, checks marketplace `source` targets exist, and enforces that
   each plugin wrapper only symlinks the skills/agents it declares.
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
-  harness; triggers on changes to `skills/dql/**` or `tests/dql/**`.
+  harness; triggers on changes to `skills/write-dql/**` or `tests/dql/**`.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;

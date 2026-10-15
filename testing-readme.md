@@ -8,7 +8,7 @@ local environment (`.env`), and what each config key means.
 
 | Feature / skill | Harness | What it does | Docs |
 |---|---|---|---|
-| [`dql`](skills/dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.6, 5.0.3, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
+| [`dql`](skills/write-dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.6, 5.0.3, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
 | [`data-modeling`](skills/data-modeling) | [`tests/data-modeling/`](tests/data-modeling/) | Live-model evals: feeds raw-JSON cases plus the skill to a real AI model and deterministically scores its recommendations against the rubric finding IDs | [tests/data-modeling/README.md](tests/data-modeling/README.md) |
 | [`swift-sdk`](skills/swift-sdk) | [`tests/swift-sdk/`](tests/swift-sdk/) | A SwiftPM fixture whose Ditto version pin is an environment variable: one source tree compiled and run against 4.14.6, 5.0.3 and 5.1.0, built for macOS / iOS Simulator / iOS device / Mac Catalyst, plus an executed cross-version on-disk upgrade and rollback. Requires macOS and Xcode. | [tests/swift-sdk/README.md](tests/swift-sdk/README.md) |
 
@@ -69,7 +69,7 @@ GitHub Actions does not use `.env` — the two matrix workflows inject the
 `DITTO_OFFLINE_LICENSE` repo secret directly into the environment, which takes
 precedence per the rule above:
 
-- `.github/workflows/dql-skill-tests.yml` — triggers on `skills/dql/**` or
+- `.github/workflows/dql-skill-tests.yml` — triggers on `skills/write-dql/**` or
   `tests/dql/**` changes.
 - `.github/workflows/swift-skill-tests.yml` — triggers on `skills/swift-sdk/**`
   or `tests/swift-sdk/**` changes, and runs three jobs: the fixture per version

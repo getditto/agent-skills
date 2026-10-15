@@ -5,6 +5,21 @@ description: Complete operator catalog with precedence, NULL/MISSING semantics, 
 
 # DQL operators reference
 
+## Contents
+
+- [1. Operator precedence](#1-operator-precedence)
+- [2. Arithmetic operators](#2-arithmetic-operators)
+- [3. Comparison operators](#3-comparison-operators)
+- [4. Unary `IS` predicates](#4-unary-is-predicates)
+- [5. Range and membership](#5-range-and-membership)
+- [6. Pattern matching](#6-pattern-matching)
+- [7. Logical operators — 4-valued logic](#7-logical-operators--4-valued-logic)
+- [8. String operator `||`](#8-string-operator-)
+- [9. Array and object access](#9-array-and-object-access)
+- [10. Critical warnings](#10-critical-warnings)
+- [11. `XOR` — version-gated](#11-xor--version-gated)
+- [See also](#see-also)
+
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
 Authoritative catalog of every operator usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.

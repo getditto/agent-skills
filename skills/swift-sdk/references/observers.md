@@ -1,18 +1,19 @@
 # Observers, diffing and back-pressure — Ditto Swift SDK
 
+## Contents
+
+- [CAP-11 Observers, diffing and back-pressure](#cap-11-observers-diffing-and-back-pressure)
+- [Registering](#registering)
+- [Retaining the handle is about cancelling, not about staying alive](#retaining-the-handle-is-about-cancelling-not-about-staying-alive)
+- [Where the callback runs](#where-the-callback-runs)
+- [An observer scoped to a selection](#an-observer-scoped-to-a-selection)
+- [Back-pressure: `handler` versus `handlerWithSignalNext`](#back-pressure-handler-versus-handlerwithsignalnext)
+- [`DittoDiffer`](#dittodiffer)
+- [There is no DQL observation publisher in Combine](#there-is-no-dql-observation-publisher-in-combine)
+
 This is where most Ditto Swift apps live, and where correct-looking code leaks, stalls or
 janks. Read [`SKILL.md` § Concurrency and threading model](../SKILL.md#concurrency-and-threading-model)
 first; this file is the detail.
-
-## Contents
-
-- Registering
-- Retaining the handle is about cancelling, not about staying alive
-- Where the callback runs
-- An observer scoped to a selection
-- Back-pressure: `handler` versus `handlerWithSignalNext`
-- `DittoDiffer`
-- There is no DQL observation publisher in Combine
 
 ## CAP-11 Observers, diffing and back-pressure
 
@@ -55,7 +56,7 @@ observer's delivery count was unchanged, and it had disappeared from
 `ditto.store.observers`.
 
 `ditto.store.observers` is **computed** in v5, so a cached snapshot goes stale — read it
-at the point of use. See [sync.md](sync.md#dittosyncsubscriptions-is-computed-do-not-cache-it).
+at the point of use. See [sync.md](sync.md#dittosyncsubscriptions-is-computed--do-not-cache-it).
 
 ### Where the callback runs
 
@@ -371,4 +372,4 @@ releasing its `AnyCancellable`, while an observer is cancelled by calling `cance
 the handle. Releasing an observer handle does nothing.
 
 The `@available` annotation on the four publishers is version-gated — see
-[versions.md](versions.md#combine).
+[versions.md](api-compatibility.md#combine).

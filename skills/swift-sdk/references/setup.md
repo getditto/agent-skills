@@ -167,7 +167,7 @@ like a signing problem until you read the reason string.
 
 Command-line tools built with `swift build` have the same problem and no app target to
 fix it — there, sign the framework yourself after building. See
-[`examples/minimal-app.md`](../examples/minimal-app.md#running-it).
+[`examples/minimal-app.md`](minimal-app-running.md#running-it).
 
 ### Crash reporting
 

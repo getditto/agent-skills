@@ -2,9 +2,9 @@
 
 ## Contents
 
-- CAP-18 Testing
-- Two things that break a command-line Swift test run
-- What a unit test cannot cover
+- [CAP-18 Testing](#cap-18-testing)
+- [Two things that break a command-line Swift test run](#two-things-that-break-a-command-line-swift-test-run)
+- [What a unit test cannot cover](#what-a-unit-test-cannot-cover)
 
 ## CAP-18 Testing
 

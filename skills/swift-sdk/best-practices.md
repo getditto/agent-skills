@@ -1,5 +1,17 @@
 # Best practices — Ditto Swift SDK
 
+## Contents
+
+- [Instance ownership](#instance-ownership)
+- [Structuring async work](#structuring-async-work)
+- [Retaining handles](#retaining-handles)
+- [Writes](#writes)
+- [Reads and observers](#reads-and-observers)
+- [Error handling](#error-handling)
+- [Sync handling](#sync-handling)
+- [Performance](#performance)
+- [Common mistakes](#common-mistakes)
+
 Judgement calls with more than one working answer. Anything with a named symptom — a
 compiler error, an exception, a crash — is in [`SKILL.md` § Anti-patterns](SKILL.md#anti-patterns)
 instead, because that file is always loaded and this one is not.

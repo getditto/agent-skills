@@ -76,32 +76,45 @@ Every skill body should include:
 
 ## Token budget
 
-Agent tools inject the skill name + description into every session; the body
-is loaded when triggered, and `references/`/`examples/` on demand.
+Discovery loads names/descriptions; activation loads the entire `SKILL.md` body.
+References and examples cost context when read. Keep that distinction explicit:
+Codex, Claude Code and OpenCode support progressive loading, but a model can still
+choose to read an oversized file in full.
 
-- **Description: 1–3 sentences, ≤ ~500 chars.** Claude Code budgets the whole
-  skill listing at 1% of the model's context window and caps each entry at
-  1,536 characters, dropping least-used descriptions when it overflows. A long
-  description crowds out other skills' trigger keywords and loses its own tail.
-- **SKILL.md body: aim ≤ 14,000 characters (~3,500 tokens).** Anthropic's
-  published ceiling is 500 lines, but that is a ceiling, not a target: Apple's
-  published Xcode skills run 16–37 line `SKILL.md` files routing to 1,000–3,400
-  lines of references. The operative constraint is that Claude Code re-attaches
-  only the first 5,000 tokens of each invoked skill after auto-compaction, so a
-  larger body silently loses its tail — usually the routing section.
-- **Promote the punchline, demote the explanation.** The one clause that changes
-  what an agent emits, plus the observable symptom, belongs in `SKILL.md`. The
-  worked code and the reference tables belong behind a link.
-- One `references/<topic>.md` file per concern; an agent should rarely need
-  to load all of them at once. Give any reference over 200 lines a
-  `## Contents` list, so a partial read still shows its full scope.
-- **Do not split one skill into several to make each smaller.** More skills means
-  more listing entries competing for that 1% budget, which makes discovery worse
-  for every skill. Fan out *within* a skill instead. A new skill is justified by a
-  different task mode, not by a file having grown long.
+Repository budgets (authoring policy, not vendor limits):
 
-Per-language SDK skills have stricter, CI-enforced versions of these numbers:
-[`SDK-SKILL-TEMPLATE.md`](SDK-SKILL-TEMPLATE.md) §11.
+| Surface | Target | Enforced limit |
+|---|---|---|
+| Description | ≤500 characters, concrete triggers first | 1,024 characters |
+| SKILL.md body | ≤10,000 characters | 12,000 characters |
+| Supporting file | One focused task or intact program | ≤20,000 characters; contents above 8,000 characters **or** 200 lines |
+
+At four characters per token, a 10,000-character body is roughly 2,500 tokens.
+This is an estimate: code, punctuation and different tokenizers change the ratio.
+Do not present a character check as a guarantee that a file fits a model's context.
+
+- Keep core constraints, symptoms and task routing in `SKILL.md`; put worked code,
+  detailed tables and conditional explanations in references.
+- Tell agents to choose a task row, preview a long file's contents, then read only
+  the matching section. Do not require every reference, the README or a full example
+  before answering an ordinary question. Load another skill only for its actual task.
+- Give long references/examples/READMEs a linked `## Contents` near the top, including
+  dense tables that are short in lines but large in characters. Keep references one
+  level deep. Split by independently useful task, not an arbitrary number of lines.
+- Do not split one skill into many just to reduce body size: each new description
+  adds discovery overhead. Keep trigger descriptions brief and discriminating.
+
+`python3 scripts/validate-sdk-skills.py --context-report` checks every skill's
+entry-point budget, supporting-file navigation and local links, and lists every
+Markdown file's size. It rejects oversized resources so a full-file read stays within the repository
+budget. These are policy choices; even a passing file is not guaranteed to fit every model. SDK skills also have the stricter contract in
+[SDK-SKILL-TEMPLATE.md](SDK-SKILL-TEMPLATE.md) §11.
+
+Source guidance: [Agent Skills specification](https://agentskills.io/specification#progressive-disclosure),
+[Codex skill loading](https://learn.chatgpt.com/docs/build-skills),
+[Claude Code supporting files](https://code.claude.com/docs/en/skills#add-supporting-files),
+[OpenCode skill loading](https://opencode.ai/docs/skills/).
+These describe host loading, not behavioral validation on every underlying model.
 
 ## Tests
 

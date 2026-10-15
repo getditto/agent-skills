@@ -13,8 +13,8 @@ Known limits — a green run does NOT mean these were checked:
 * Whether a claim is TRUE is never checked. Neither is whether a code sample compiles.
 * Link checking resolves paths and anchors; it does not judge whether the link is apt.
 
-Also enforces the two repo-wide skill rules from §12.1 items 1-2 against *every*
-skill, not only SDK skills.
+Also enforces repo-wide frontmatter and context budgets against *every* skill,
+not only SDK skills. --context-report lists every Markdown file's size.
 
 Run from the repository root:
 
@@ -23,6 +23,7 @@ Run from the repository root:
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
@@ -39,12 +40,6 @@ PERMITTED_FRONTMATTER_KEYS = {
     "compatibility",
     "allowed-tools",
     "metadata",
-}
-
-# Frontmatter `name` values that predate the directory-name rule. Adding to this
-# list is a deliberate act; new skills must match their directory.
-GRANDFATHERED_NAMES = {
-    "dql": "write-dql",
 }
 
 # §5 — exactly these H2 headings, in this order, spelled exactly this way.
@@ -115,14 +110,15 @@ REQUIRED_FILES = [
     "references/anti-patterns.md",
 ]
 
-# §11 — the SKILL.md body budget is in CHARACTERS, not lines, because lines are a poor
-# proxy: the four-row capability-exceptions table is 4 lines carrying ~2 KB. The number
-# that matters is how the body survives auto-compaction, which re-attaches only the first
-# 5,000 tokens of each invoked skill. At ~4 chars/token that slice is ~20,000 characters,
-# so a body over it loses its tail — in practice the References section, which is the part
-# that routes everything else.
-SKILL_BODY_CHAR_TARGET = 14_000  # ~3,500 tokens
-SKILL_BODY_CHAR_HARD_LIMIT = 18_000  # ~4,500 tokens — still inside the compaction slice
+# Repository authoring budgets, not model limits. Characters are reproducible without
+# requiring a vendor tokenizer; token estimates are deliberately labelled approximate.
+# These apply to concept skills too: several skills may share one small context window.
+SKILL_BODY_CHAR_TARGET = 10_000
+SKILL_BODY_CHAR_HARD_LIMIT = 12_000
+DESCRIPTION_CHAR_TARGET = 500
+DESCRIPTION_CHAR_HARD_LIMIT = 1024
+RESOURCE_TOC_CHAR_THRESHOLD = 8_000
+RESOURCE_CHAR_HARD_LIMIT = 20_000
 
 # §3 / §11 — references cost zero context until read, so they are budgeted far more
 # loosely than SKILL.md. Above TOC_REQUIRED_LINES a file needs a `## Contents` list:
@@ -175,16 +171,31 @@ def heading_anchor(heading: str) -> str:
     """GitHub's slug rules, for the subset of characters headings here use."""
     slug = heading.strip().lower()
     slug = re.sub(r"[^\w\s-]", "", slug)
-    slug = re.sub(r"\s+", "-", slug)
+    slug = re.sub(r"\s", "-", slug)
     return slug
 
 
 def collect_anchors(text: str) -> set[str]:
     anchors: set[str] = set()
+    counts: dict[str, int] = {}
+    fence: str | None = None
     for line in text.split("\n"):
+        marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if marker:
+            char = marker.group(1)[0]
+            if fence is None:
+                fence = char
+            elif fence == char:
+                fence = None
+            continue
+        if fence:
+            continue
         match = re.match(r"^(#{1,6})\s+(.*?)\s*$", line)
         if match:
-            anchors.add(heading_anchor(match.group(2)))
+            slug = heading_anchor(match.group(2))
+            occurrence = counts.get(slug, 0)
+            counts[slug] = occurrence + 1
+            anchors.add(f"{slug}-{occurrence}" if occurrence else slug)
     return anchors
 
 
@@ -218,7 +229,7 @@ def check_links(skill_dir: str, relative_path: str) -> None:
 # a citation, whether or not it is in backticks.
 # The `(` is deliberately NOT in this lookbehind: markdown link targets are stripped
 # before this runs, so excluding a leading `(` only created a bypass —
-# "taken from (skills/dql/...)" would slip through.
+# "taken from (skills/write-dql/...)" would slip through.
 CITATION_RE = re.compile(r"(?<![\w/])(skills/[\w./-]+|\.\./\.\.(?:/[\w./-]+)?)")
 MARKDOWN_LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
 
@@ -250,17 +261,18 @@ def all_markdown(skill_dir: str) -> list[str]:
 
 
 def validate_every_skill() -> None:
-    """§12.1 items 1-2, applied to every skill in the repository."""
+    """Frontmatter, context budgets and navigation for every skill."""
     for name in sorted(os.listdir(SKILLS_DIR)):
         skill_dir = os.path.join(SKILLS_DIR, name)
         skill_md = os.path.join(skill_dir, "SKILL.md")
         if not os.path.isfile(skill_md):
             continue
 
-        keys, _ = split_frontmatter(read(skill_md), skill_md)
+        text = read(skill_md)
+        keys, body = split_frontmatter(text, skill_md)
 
         declared = keys.get("name")
-        expected = GRANDFATHERED_NAMES.get(name, name)
+        expected = name
         if declared != expected:
             fail(
                 f"{skill_md}: frontmatter name '{declared}' does not match the "
@@ -274,8 +286,67 @@ def validate_every_skill() -> None:
                 f"{', '.join(sorted(unknown))}"
             )
 
-        if "description" not in keys:
-            fail(f"{skill_md}: frontmatter is missing 'description'")
+        # The small frontmatter parser leaves block scalars uninterpreted. Unfold
+        # just the description for length accounting; this is not a YAML validator.
+        frontmatter = text.split("\n---\n", 1)[0]
+        match = re.search(
+            r"^description:\s*(.*?)(?=^[A-Za-z][A-Za-z0-9_-]*:|\Z)",
+            frontmatter, re.S | re.M,
+        )
+        description = " ".join((match.group(1) if match else "").split())
+        if description.startswith(("> ", "| ")):
+            description = description[2:]
+        if not description or len(description) > DESCRIPTION_CHAR_HARD_LIMIT:
+            fail(f"{skill_md}: description must contain 1–1024 characters")
+        elif len(description) > DESCRIPTION_CHAR_TARGET:
+            warn(f"{skill_md}: description is {len(description)} characters; target ≤500")
+
+        body_chars = len(body.strip())
+        if body_chars > SKILL_BODY_CHAR_HARD_LIMIT:
+            fail(
+                f"{skill_md}: body is {body_chars:,} characters, over the "
+                f"{SKILL_BODY_CHAR_HARD_LIMIT:,}-character limit. Move conditional "
+                "detail to references/ and retain core constraints and routing."
+            )
+        elif body_chars > SKILL_BODY_CHAR_TARGET:
+            warn(f"{skill_md}: body is {body_chars:,} characters; target ≤10,000")
+
+        for path in all_markdown(skill_dir):
+            check_links(skill_dir, os.path.relpath(path, skill_dir))
+            if path == skill_md:
+                continue
+            resource = read(path)
+            lines = len(resource.splitlines())
+            needs_contents = (
+                lines > TOC_REQUIRED_LINES or len(resource) > RESOURCE_TOC_CHAR_THRESHOLD
+            )
+            contents = extract_section(resource, "Contents")
+            has_contents_links = any(target.startswith("#") for target in LINK_RE.findall(contents))
+            if needs_contents and not has_contents_links:
+                fail(
+                    f"{path}: needs a linked '## Contents' list (over 200 lines or "
+                    "8,000 characters), so agents can select a section."
+                )
+            if len(resource) > RESOURCE_CHAR_HARD_LIMIT:
+                fail(
+                    f"{path}: {len(resource):,} characters, over the repository's "
+                    "20,000-character resource limit. Split independent topics; "
+                    "a contents list alone does not bound a full-file read."
+                )
+
+
+def print_context_report() -> None:
+    """Inventory includes references, examples and READMEs, without counting symlinks twice."""
+    print("\nContext inventory (characters; tokens ≈ chars/4, NOT a tokenizer count)")
+    print("| File | Characters | Lines | Approx. tokens |")
+    print("|---|---:|---:|---:|")
+    for name in sorted(os.listdir(SKILLS_DIR)):
+        skill_dir = os.path.join(SKILLS_DIR, name)
+        if not os.path.isfile(os.path.join(skill_dir, "SKILL.md")):
+            continue
+        for path in sorted(all_markdown(skill_dir)):
+            text = read(path)
+            print(f"| {path} | {len(text):,} | {len(text.splitlines()):,} | {len(text) / 4:,.0f} |")
 
 
 def validate_sdk_skill(name: str) -> None:
@@ -322,23 +393,6 @@ def validate_sdk_skill(name: str) -> None:
             f"{skill_md}: H2 headings do not match {SPEC} §5.\n"
             f"    expected: {REQUIRED_SKILL_HEADINGS}\n"
             f"    found:    {found}"
-        )
-
-    # §11 — SKILL.md body size, measured in characters. See the constants for why not
-    # lines. There is no version-spread allowance: §5's punchline-in/detail-out rule means
-    # a version-gated fact costs one clause inline and its explanation lives in
-    # references/versions.md, so covering three lines does not buy extra budget.
-    body_chars = len(body.strip())
-    if body_chars > SKILL_BODY_CHAR_HARD_LIMIT:
-        fail(
-            f"{skill_md}: body is {body_chars:,} characters, over the "
-            f"{SKILL_BODY_CHAR_HARD_LIMIT:,}-character hard limit in {SPEC} §11. Move "
-            f"explanation into references/ and keep the one-line punchline here."
-        )
-    elif body_chars > SKILL_BODY_CHAR_TARGET:
-        warn(
-            f"{skill_md}: body is {body_chars:,} characters; {SPEC} §11 targets "
-            f"{SKILL_BODY_CHAR_TARGET:,}"
         )
 
     # §3 / §11 — reference size, and the table of contents that a long one owes.
@@ -415,12 +469,10 @@ def validate_sdk_skill(name: str) -> None:
                     f"following a chain through another reference."
                 )
 
-    # §12.1 items 7 and 9 — over EVERY markdown file in the skill. §3 permits extra
-    # references/ and examples/ files, and an unchecked extra file is exactly where a
-    # broken link or a self-citation hides.
+    # §12.1 item 9 — all SDK Markdown files, including optional resources.
+    # Link checks run for every skill in validate_every_skill().
     for path in sorted(all_markdown(skill_dir)):
         relative = os.path.relpath(path, skill_dir)
-        check_links(skill_dir, relative)
         check_no_self_citation(skill_dir, relative)
 
 
@@ -780,6 +832,9 @@ def check_one_example(name: str, example: str) -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--context-report", action="store_true", help="list sizes of every skill Markdown file")
+    args = parser.parse_args()
     if not os.path.isdir(SKILLS_DIR):
         print("ERROR: run this from the repository root", file=sys.stderr)
         return 2
@@ -795,6 +850,9 @@ def main() -> int:
         validate_sdk_skill(name)
         check_examples_match_fixture(name)
         check_mirrored_declarations(name)
+
+    if args.context_report:
+        print_context_report()
 
     for message in warnings:
         print(f"WARNING: {message}")

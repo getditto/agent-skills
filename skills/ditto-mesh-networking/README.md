@@ -68,7 +68,7 @@ behavior is tabulated in [`references/versions.md`](references/versions.md).
 This skill documents a handful of executable statements (`ALTER SYSTEM SET
 TRANSPORTS_DISCOVERED_PEERS`, `mesh_chooser_*`, `document_size_*_limit_bytes`,
 `SELECT ... FROM system:transports_info`). **They are not currently exercised by any test
-harness** — the `tests/dql/` extractor only walks `skills/dql/`. Treat them as
+harness** — the `tests/dql/` extractor only walks `skills/write-dql/`. Treat them as
 documentation-verified, not execution-verified, and see the tracking note in
 `CONTRIBUTING.md` before relying on exact syntax.
 

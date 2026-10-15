@@ -116,9 +116,8 @@ way `ditto-mesh-networking` already does:
 - Directory: `skills/<lang>-sdk/` — lowercase, hyphenated, matching the frontmatter
   `name`. Use the short language name, not the package name: `swift-sdk`, `kotlin-sdk`,
   `js-sdk`, `csharp-sdk`, `flutter-sdk`, `rust-sdk`, `cpp-sdk`, `java-sdk`, `go-sdk`.
-- **The frontmatter `name` must equal the directory name.** This is not currently true
-  everywhere in the repo — `skills/dql/SKILL.md` ships `name: write-dql` — and CI does
-  not catch it. §12 requires that check to be added.
+- **The frontmatter `name` must equal the canonical and plugin entry directory names.**
+  CI enforces this for every skill, without legacy exceptions.
 - **One plugin per language skill**, per the scoping rule in
   [`../AGENTS.md`](../AGENTS.md): `plugins/ditto-<lang>/` with a real `skills/`
   directory holding a single symlink. A developer writing Swift must not be forced to
@@ -170,16 +169,15 @@ are permitted, provided every capability-map link still resolves and `references
 one level deep. A reference whose capabilities all have `Support: no` may be omitted, with
 the reason carried in the capability map row.
 
-**References are budgeted loosely on purpose: they cost zero context until read.** Target
-600 lines, hard limit 800 — see §11. Do not split a reference merely because it is long;
-split it when it covers two topics an agent would load separately. Apple's published
-SwiftUI skill ships a single 938-line reference behind a 19-line `SKILL.md`, and that
-shape is correct.
+**References are loaded on demand, but their size matters once read.** Prefer focused
+resources under 20,000 characters; CI rejects larger resources. SDK references
+also target 600 lines with a hard limit of 800. Split when topics serve independent
+tasks; preserve complete runnable examples where splitting would make them unusable.
 
-**A reference over 200 lines must carry a `## Contents` list** immediately after its lead
-paragraph. Agents preview long files with partial reads (`head -100`); without a contents
-list, a partial read hides the rest of the file's scope and the agent proceeds as if it
-had the whole picture. CI enforces this.
+**A supporting file over 8,000 characters or 200 lines must carry a linked
+`## Contents` list near the top**, including READMEs and examples. Agents should
+preview the contents and read the relevant section. Character counts catch dense
+API tables that a line-only limit misses. CI enforces the navigation requirement.
 
 References stay **one level deep** from `SKILL.md`. A reference must never be the only
 path to another reference — agents frequently only partially read chained links.
@@ -191,7 +189,7 @@ path to another reference — agents frequently only partially read chained link
 Only the keys permitted by `CONTRIBUTING.md` — `name`, `description`, `license`,
 `compatibility`, `allowed-tools`, `metadata`.
 
-**`allowed-tools`:** set it to `Read, Grep, Glob, Edit, Write`, matching `skills/dql` and
+**`allowed-tools`:** set it to `Read, Grep, Glob, Edit, Write`, matching `skills/write-dql` and
 `skills/data-modeling`. It is in the skeleton; do not silently drop it.
 
 `description` is the activation mechanism and the only part of the skill injected into
@@ -576,50 +574,43 @@ Three rules specific to SDK skills:
 
 ## 11. Token budget
 
-The name and description are injected into **every** session, and nine SDK skills will
-eventually coexist.
+Name and description are discovery overhead; activation loads the complete body.
+SDK skills share the repository budgets from [SKILLS-TEMPLATE.md](SKILLS-TEMPLATE.md#token-budget):
 
 | File | Target | Hard limit |
 |---|---|---|
-| `description` | ~400 characters | 1024 (see the listing cap below) |
-| `SKILL.md` body | ≤ 14,000 characters (~3,500 tokens) | 18,000 characters |
-| Each `references/*.md` | ≤ 600 lines | 800 lines (§3) |
+| Description | ≤500 characters (aim ~400) | 1,024 characters |
+| SKILL.md body | ≤10,000 characters | 12,000 characters |
+| Each supporting file | Focused task/complete program | 20,000 characters; contents above 8,000 characters or 200 lines |
+| Each SDK reference | ≤600 lines | 800 lines |
 
-**The `SKILL.md` budget is in characters, not lines, because lines are a poor proxy.**
-`swift-sdk`'s four-row capability-exceptions table is 4 lines carrying ~2 KB. Two skills
-at the same line count can differ twofold in context cost.
+**These are authoring budgets, not model context limits.** Characters are reproducible
+without vendor tokenizers; at four characters per token, the body target is roughly
+2,500 tokens. Code and other tokenizers can cost more. Do not infer guaranteed fit
+from that estimate, or assume a host always preserves references after compaction.
 
-**Where 18,000 comes from.** Claude Code re-attaches only the **first 5,000 tokens** of
-each invoked skill after auto-compaction, and re-attached skills share a 25,000-token
-combined budget filled most-recent-first. At ~4 characters per token that slice is
-~20,000 characters. The hard limit sits below it so the whole body survives compaction
-with headroom; the target sits well below so several skills can coexist after a compaction
-without evicting each other. For calibration: `skills/dql/SKILL.md` is 6.1 KB and
-`skills/swift-sdk/SKILL.md` is 13.5 KB across three version lines.
+The [Agent Skills specification](https://agentskills.io/specification#progressive-disclosure)
+recommends a body below 5,000 tokens. The smaller repository target leaves room for
+other active skills, user source code and tool results. [Codex](https://learn.chatgpt.com/docs/build-skills),
+[Claude Code](https://code.claude.com/docs/en/skills) and [OpenCode](https://opencode.ai/docs/skills/)
+load bodies on demand; their discovery and compaction policies differ and can change.
+Do not bake one host's context allocation into a portable skill's instructions.
 
-**There is no version-spread allowance.** A version-gated fact costs one clause inline —
-*"`deliverOn:` is silently ignored on 5.0.3"* — and its explanation lives in
-`references/versions.md`, which owns every cross-version fact. Covering three version
-lines therefore does not buy extra budget.
+**Promote the constraint, move the explanation.** Sections 6–8 retain the rule and its
+observable symptom; API tables and wrong/right examples live in references. Section 4
+carries exceptions, not the full map; section 5 carries a short excerpt, not the whole
+program. No version-spread allowance: keep one clause for a version gate and route to
+`references/versions.md` for the explanation. Do not remove capabilities from README.
 
-If you are over, in order: (1) §10 and §8 are prose that expands easily — tighten the
-clauses; (2) §4 carries exceptions, never the full map; (3) §5 carries a ~25-line excerpt,
-never the whole program; (4) move explanation behind a reference and keep the punchline.
-Do not delete a capability from the `README.md` map.
+**Route to sections.** The References section must say to select the matching task,
+preview long files' contents, and read the relevant section only. Do not require all
+references or README before ordinary SDK work. The capability/evidence map is useful
+for coverage reviews; it is not part of every coding task's startup cost.
 
-**The description has a second, tighter cap than the frontmatter's 1024.** Claude Code
-caps each skill-listing entry at **1,536 characters** and budgets the whole listing at
-**1% of the model's context window**, dropping descriptions — least-invoked first — when
-it overflows. Nine SDK skills compete in that budget, so a long description crowds out
-its siblings' keywords and is truncated itself. Apple's `app-intents-specialist` ships a
-2,539-character description and loses the tail; do not copy that. Aim 400, never exceed
-~600.
-
-**More skills is not the way to cut a skill's size.** Splitting one skill into three adds
-three listing entries competing for the same 1% budget and makes discovery worse for
-every skill in the repo. Fan out *within* a skill — more `references/` behind one
-`SKILL.md`. A new skill is justified by a different **task mode** (Apple splits evergreen
-SwiftUI review from new-API adoption), never by a file having grown long.
+Run `python3 scripts/validate-sdk-skills.py --context-report` for an inventory of all
+skill Markdown files and context validation results. Keep a runnable program intact within the resource limit; move its dependency,
+running or verification notes into a separate directly linked reference when needed. More skill names also increase
+discovery overhead: fan out within a skill unless the tasks are genuinely different.
 
 ---
 
@@ -627,14 +618,10 @@ SwiftUI review from new-API adoption), never by a file having grown long.
 
 ### 12.1 Structural checks — must be automated
 
-Two-thirds of the §14 checklist is mechanical, and leaving it to human diff across nine
-PRs is how it rots. The repo already demonstrates the failure: `skills/dql/SKILL.md`
-ships `name: write-dql` in `skills/dql/`, and CI passes.
+The validator invoked by `.github/workflows/ci.yml` enforces the following structural
+checks. Keep them aligned with the authoring contract as new language skills are added:
 
-`.github/workflows/ci.yml` **must be extended with these checks in the same PR as the
-first SDK skill**:
-
-1. Frontmatter `name` == directory name (for **all** skills; fix or grandfather `dql`).
+1. Frontmatter `name` == directory name for every canonical skill and plugin skill entry.
 2. Frontmatter contains only permitted keys.
 3. `Use ONLY for` present in an SDK skill's description.
 4. The ten `SKILL.md` H2 headings present, in order, spelled exactly.
@@ -643,9 +630,9 @@ first SDK skill**:
 7. Every capability-map link resolves, **including the anchor**.
 8. All §3 required files present; `references/` exactly one level deep.
 9. No file in `skills/` cited as a source (grep for `skills/` or `../..` in a citation).
-10. `SKILL.md` body within the §11 character hard limit.
-11. Every `references/*.md` within the §3 line limit, and every one over 200 lines carries
-    a `## Contents` list.
+10. Every skill body within the §11 character hard limit, with concise descriptions.
+11. Every SDK reference within the §3 line limit; every supporting file over 8,000
+    characters or 200 lines has linked contents. Local Markdown links resolve for all skills.
 
 Items needing human judgement and *not* automatable: "front-loads literal API names",
 "no concept material duplicated", "§6 names the actual thread", "version claims agree
@@ -654,7 +641,7 @@ with `versions.md`", "citations name real paths at named refs".
 ### 12.2 Executable verification
 
 - **DQL inside an SDK skill is not covered today.** `tests/dql/scripts/extract-queries.mjs:7`
-  hard-codes its scan root to `skills/dql`. Still tag DQL as ` ```sql ` so extending the
+  hard-codes its scan root to `skills/write-dql`. Still tag DQL as ` ```sql ` so extending the
   harness to a second root stays a one-line change, but do not assume your DQL is
   verified because you tagged it.
 - **`examples/minimal-app.md` is the normative program** and must be **compiled and
@@ -738,8 +725,8 @@ Structural — a PR failing any of these goes back before the content is read:
 - [ ] `SKILL.md` §4 lists exactly the non-`yes` rows — no more, no fewer.
 - [ ] **[CI]** All §3 files present; `references/` one level deep; all map links and
       anchors resolve.
-- [ ] **[CI]** `SKILL.md` body within the §11 character budget; every reference over 200
-      lines has a `## Contents` list.
+- [ ] **[CI]** `SKILL.md` body within the §11 character budget; every supporting file ≤20,000
+      characters, with linked contents above 8,000 characters or 200 lines.
 
 Content:
 

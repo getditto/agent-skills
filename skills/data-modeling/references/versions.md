@@ -5,7 +5,14 @@ description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5
 
 # Version matrix for data modeling
 
-Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). **This skill assumes lenient mode on every peer** — it is the 5.x default and the migration target for every 4.x mesh. If you need the DQL feature matrix (operators, functions, statements), see the `write-dql` skill's [`../../dql/references/versions.md`](../../dql/references/versions.md) — this file is the modeling-side view.
+## Contents
+
+- [Strict mode: `false` is the assumed baseline (most important section)](#strict-mode-false-is-the-assumed-baseline-most-important-section)
+- [CRDT type availability](#crdt-type-availability)
+- [Modeling-relevant statement features](#modeling-relevant-statement-features)
+- [Practical rules by target version](#practical-rules-by-target-version)
+
+Tagging convention used across this skill: **4.14+** (exists in the LTS line and everything newer), **5.0+**, **5.1+**. Terminology: **strict mode** = `dql_strict_mode = true` (bare objects are REGISTERs); **lenient mode** = `false` (bare objects are MAPs, the 5.x default). **This skill assumes lenient mode on every peer** — it is the 5.x default and the migration target for every 4.x mesh. If you need the DQL feature matrix (operators, functions, statements), see the `write-dql` skill's [`../../write-dql/references/versions.md`](../../write-dql/references/versions.md) — this file is the modeling-side view.
 
 ## Strict mode: `false` is the assumed baseline (most important section)
 

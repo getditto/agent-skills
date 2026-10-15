@@ -5,6 +5,22 @@ description: Literals, identifiers, parameters, path expressions, CASE, quantifi
 
 # DQL expressions reference
 
+## Contents
+
+- [1. Literals](#1-literals)
+- [2. Identifiers](#2-identifiers)
+- [3. Parameters](#3-parameters)
+- [4. Path expressions](#4-path-expressions)
+- [5. `CASE` — simple form](#5-case--simple-form)
+- [6. `CASE` — searched form](#6-case--searched-form)
+- [7. `ANY ... IN ... SATISFIES ... END`](#7-any--in--satisfies--end)
+- [8. `EVERY ... IN ... SATISFIES ... END`](#8-every--in--satisfies--end)
+- [9. `ANY AND EVERY ... IN ... SATISFIES ... END`](#9-any-and-every--in--satisfies--end)
+- [10. `IN` vs `WITHIN` inside quantifiers and comprehensions](#10-in-vs-within-inside-quantifiers-and-comprehensions)
+- [11. `ARRAY expr FOR ... IN ... [WHEN ...] END`](#11-array-expr-for--in--when--end)
+- [12. `OBJECT NameExpr : ValueExpr FOR ... IN ... [WHEN ...] END`](#12-object-nameexpr--valueexpr-for--in--when--end)
+- [See also](#see-also)
+
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
 An **expression** evaluates to a value (or `NULL` / `MISSING`). This file catalogs the expression grammar usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x** — literals, identifiers, parameters, path expressions, conditional `CASE`, the array/object quantifiers (`ANY`/`EVERY ... SATISFIES`), and the comprehension forms (`ARRAY ... FOR ...`, `OBJECT k:v FOR ...`).

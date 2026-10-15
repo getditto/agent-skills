@@ -5,7 +5,17 @@ description: REGISTER, MAP, COUNTER, PN_COUNTER, and ATTACHMENT — exact merge 
 
 # CRDT types for data modeling
 
-Every field in a Ditto document is a CRDT. Choosing the model means choosing, per field, which CRDT it is. This file is the modeling-side reference for the five types; for full DQL mutation grammar see the `write-dql` skill's [`../../dql/references/types-mutators.md`](../../dql/references/types-mutators.md).
+## Contents
+
+- [REGISTER](#register)
+- [MAP](#map)
+- [COUNTER (settable counter, 4.14+)](#counter-settable-counter-414)
+- [PN_COUNTER (legacy, 4.11+)](#pn_counter-legacy-411)
+- [ATTACHMENT](#attachment)
+- [Arrays — not a CRDT type, and that's the point](#arrays--not-a-crdt-type-and-thats-the-point)
+- [Decision matrix](#decision-matrix)
+
+Every field in a Ditto document is a CRDT. Choosing the model means choosing, per field, which CRDT it is. This file is the modeling-side reference for the five types; for full DQL mutation grammar see the `write-dql` skill's [`../../write-dql/references/types-mutators.md`](../../write-dql/references/types-mutators.md).
 
 | Type | Merge semantic | Payload | Min SDK | Mutators |
 |---|---|---|---|---|

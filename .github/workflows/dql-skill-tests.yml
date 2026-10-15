@@ -3,13 +3,13 @@ name: DQL Skill Tests
 on:
   pull_request:
     paths:
-      - 'skills/dql/**'
+      - 'skills/write-dql/**'
       - 'tests/dql/**'
       - '.github/workflows/dql-skill-tests.yml'
   push:
     branches: [main]
     paths:
-      - 'skills/dql/**'
+      - 'skills/write-dql/**'
       - 'tests/dql/**'
       - '.github/workflows/dql-skill-tests.yml'
 

@@ -30,18 +30,18 @@ Last verified against docs.ditto.live and Ditto source: 2026-08-25.
 | [`references/versions.md`](references/versions.md) | 4.14.x / 5.0.x / 5.1.x feature matrix for modeling |
 | [`references/performance.md`](references/performance.md) | Size limits, merge cost, BLE/LAN budget, hardware tiers, observers |
 | [`best-practices.md`](best-practices.md) | Default embed pattern, split triggers, audit logs, soft delete, anti-patterns |
-| [`examples/`](examples/) | Cookbook: POS order, chat+media, IoT telemetry, MongoDB/SQL migration |
+| [`examples/`](examples) | Cookbook: POS order, chat+media, IoT telemetry, MongoDB/SQL migration |
 
 ## Tests
 
-[`tests/data-modeling/`](../../tests/data-modeling/) contains review cases:
+[`tests/data-modeling/`](../../tests/data-modeling) contains review cases:
 raw JSON inputs with expected findings (keyed to the rubric IDs), plus a runner
 that feeds them to live AI models and scores the recommendations
 deterministically.
 
 ## Related
 
-- [`../dql/`](../dql/) (`write-dql`) — the DQL syntax skill this one cites for
+- [`../write-dql/`](../write-dql) (`write-dql`) — the DQL syntax skill this one cites for
   statement grammar, mutators, indexing, and the DQL-side version matrix.
 - Official docs: <https://docs.ditto.live/best-practices/data-modeling>,
   <https://docs.ditto.live/dql/types-and-definitions>,

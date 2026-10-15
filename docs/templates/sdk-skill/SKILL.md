@@ -13,9 +13,9 @@ allowed-tools: Read, Grep, Glob, Edit, Write
   The structure below is normative: see docs/SDK-SKILL-TEMPLATE.md.
   Do not add, remove, rename or reorder the ## headings.
 
-  BUDGET: the body below (everything after the frontmatter) must stay under 14,000
-  characters, hard limit 18,000. That is ~3,500 tokens, sized so the whole body survives
-  Claude Code's auto-compaction, which keeps only the first 5,000 tokens of each skill.
+  BUDGET: the body below (everything after the frontmatter) targets 10,000
+  characters, hard limit 12,000. At chars/4 that is roughly 2,500 tokens, not a tokenizer
+  count or a guarantee of fit. Share context with source code, tools and other skills.
   CI measures characters, not lines — see spec §11.
 
   THE RULE THAT KEEPS YOU INSIDE IT: promote the punchline, demote the explanation.
@@ -24,13 +24,16 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 
   The description above is a DRAFT until you have written references/errors.md.
   Workflow step 9 requires you to rewrite it with error strings you actually observed.
-  Aim 400 characters: Claude Code caps each listing entry at 1,536 and the whole
-  listing at 1% of the context window, so a long one crowds out its siblings.
+  Aim 400 characters and stay below 500 where possible: all hosts pay discovery
+  overhead, so a long description crowds out other skills.
 
   Delete every TODO and every HTML comment before opening a PR.
 -->
 
 # Ditto TODO_LANGUAGE SDK
+
+Read only the reference sections needed for the task. Preview a long file's contents
+first; do not preload the README, every reference or other SDK skills.
 
 <!--
   REQUIRED lead paragraph (spec §5). Two things, in this order:

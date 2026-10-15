@@ -17,7 +17,7 @@ graph.allConnectionsByID()      // [String: DittoConnection]
 `DittoPeer` carries `peerKey`, `connections`, `deviceName`, `isConnectedToDittoServer`,
 `os: DittoPeerOS?`, `dittoSDKVersion: String?`, `isCompatible: Bool?`, `peerMetadata` and
 `identityServiceMetadata`. The v4 spellings (`peerKeyString`, `isConnectedToDittoCloud`,
-`osV2`) are in [versions.md](versions.md#presence-and-peers).
+`osV2`) are in [versions.md](api-compatibility.md#presence-and-peers).
 
 `DittoConnection` has `id`, `type: DittoConnectionType`, `peer1` and `peer2`.
 

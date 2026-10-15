@@ -8,7 +8,7 @@
   This file holds the per-API TABLE and the reasoning. SKILL.md § Concurrency and
   threading model holds the numbered rules that follow from it, and links here. Spec §5.
 
-  Add a `## Contents` list once this file passes 200 lines — CI enforces it (spec §3).
+  Add a `## Contents` list once this file passes 8,000 characters or 200 lines — CI enforces it (spec §3).
 -->
 
 Which thread or executor every SDK callback arrives on, and what that forces the calling

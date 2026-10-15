@@ -1,13 +1,13 @@
 # Connecting, authentication and lifecycle — Ditto Swift SDK
 
-Everything here is the **5.1.x** form. The 4.14.x differences are in
-[versions.md](versions.md#initialization-and-lifecycle).
-
 ## Contents
 
-- CAP-03 Connecting: config, opening, persistence directory
-- CAP-04 Authentication and identity
-- CAP-05 Lifecycle: start/stop sync, shutdown, ownership
+- [CAP-03 Connecting: config, opening, persistence directory](#cap-03-connecting-config-opening-persistence-directory)
+- [CAP-04 Authentication and identity](#cap-04-authentication-and-identity)
+- [CAP-05 Lifecycle: start/stop sync, shutdown, ownership](#cap-05-lifecycle-startstop-sync-shutdown-ownership)
+
+Everything here is the **5.1.x** form. The 4.14.x differences are in
+[versions.md](versions.md#initialization-and-lifecycle).
 
 ## CAP-03 Connecting: config, opening, persistence directory
 
