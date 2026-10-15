@@ -25,14 +25,27 @@ customer use.**
 skills/          Canonical skills (the portable unit: SKILL.md + references/ + examples/)
 agents/<plugin>/ Portable agent definitions (markdown), namespaced per plugin
 tests/<skill>/   Executable verification for each skill's documented examples
-plugins/         Thin per-tool packaging (Claude Code plugin wrappers w/ symlinks)
+plugins/         Thin scoped wrappers and host metadata; canonical content stays in skills/
 docs/            Contributor docs (skill templates, SDK skill spec, plans)
 ```
 
 Skill content lives exactly once in `skills/`. Everything tool-specific wraps
 or points at it.
 
+## Swift getting started
+
+The Swift skill includes a runnable SwiftUI project generator, diagnostics screen,
+and getting-started/deliverables/troubleshooting references. It can also integrate
+an existing Swift app in place.
+
+**[Install Ditto Swift in your agent](docs/install-swift.md)** — Claude Code and Desktop,
+Codex CLI and Desktop, Cursor, Copilot CLI, Antigravity CLI, Gemini CLI and OpenCode.
+Standalone packages and per-skill upload ZIPs are generated from the canonical skill.
+
 ## Installation by tool
+
+For Swift, use the [host-specific guide](docs/install-swift.md) for local/PR packages,
+activation, updates and removal. Existing concept skills retain the routes below.
 
 ### Claude Code
 
@@ -41,7 +54,7 @@ Install via the bundled plugin marketplace (backed by thin wrappers in
 you want:
 
 ```bash
-/plugin marketplace add getditto/claude-code-plugins
+/plugin marketplace add getditto/agent-skills
 
 /plugin install ditto-dql            # DQL skill + dql-expert agent
 /plugin install ditto-mesh           # ditto-mesh-networking skill
@@ -78,8 +91,8 @@ individual skill directory into the tool's expected location, e.g.:
 
 ```bash
 # Codex — link only the skills you want
-ln -s "$(pwd)/skills/write-dql" ~/.codex/skills/write-dql
-ln -s "$(pwd)/skills/ditto-mesh-networking" ~/.codex/skills/ditto-mesh-networking
+ln -s "$(pwd)/skills/write-dql" ~/.agents/skills/write-dql
+ln -s "$(pwd)/skills/ditto-mesh-networking" ~/.agents/skills/ditto-mesh-networking
 ```
 
 Consult your tool's documentation for its skills directory location.

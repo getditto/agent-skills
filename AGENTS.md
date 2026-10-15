@@ -61,6 +61,9 @@ plugins/                       # Claude Code plugin wrappers (thin)
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
+.agents/plugins/marketplace.json # Swift: Codex
+.cursor-plugin/marketplace.json  # Swift: Cursor
+.github/plugin/marketplace.json  # Swift: Copilot CLI
 
 docs/                          # Contributor-facing docs
 ├── SKILLS-TEMPLATE.md         # Template for any skill
@@ -100,6 +103,12 @@ under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
 `skills/` directory holding **one symlink per skill that plugin ships**, plus
 — if it ships agents — an `agents` symlink pointing at that plugin's namespaced
 subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
+
+Swift also has generated portable/Codex/Cursor metadata and a Gemini extension
+manifest. Run `python3 scripts/package-swift-plugin.py --sync-manifests` after changing
+its canonical Claude manifest. Release packages materialize scoped symlinks into real
+files in ignored build outputs or CI artifacts. See `docs/install-swift.md` for all
+installation surfaces.
 
 **Agents must be linked as a directory, not as individual files.** Claude Code
 follows a symlinked *directory* but not a symlinked *file*: an

@@ -52,6 +52,19 @@ jobs:
       - name: Check skill context guard negative controls
         run: python3 tests/skill-context/test_contract.py
 
+      - name: Check Swift host metadata and build standalone packages
+        run: |
+          python3 scripts/package-swift-plugin.py --check
+          python3 scripts/package-swift-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
+
+      - name: Upload Swift installation packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: ditto-swift-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-swift-packages/*.zip
+            ${{ runner.temp }}/ditto-swift-packages/SHA256SUMS
+
       - name: Check plugin references in marketplace
         run: |
           echo "Checking plugin sources exist..."

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ditto-swift",
+  "version": "1.1.0",
+  "description": "Build runnable SwiftUI apps and integrate or troubleshoot the Ditto Swift SDK on iOS, iPadOS, macOS and Mac Catalyst. Includes Xcode project generation, diagnostics, lifecycle and concurrency guidance for SDK 4.14.x, 5.0.x and 5.1.x.",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "appkit",
+    "ditto",
+    "ios",
+    "ipados",
+    "macos",
+    "offline-first",
+    "sdk",
+    "swift",
+    "swiftui",
+    "sync",
+    "uikit",
+    "xcode"
+  ],
+  "repository": "https://github.com/getditto/agent-skills",
+  "homepage": "https://docs.ditto.live/sdk/latest/install-guides/swift",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Ditto Swift",
+        "shortDescription": "Build and troubleshoot Ditto Swift apps for Apple platforms.",
+        "developerName": "Ditto",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://ditto.com",
+        "defaultPrompt": [
+          "Build a runnable SwiftUI app with Ditto and a diagnostics screen.",
+          "Integrate Ditto into this existing Swift app.",
+          "Diagnose why my Swift app writes locally but does not sync."
+        ]
+      }
+    }
+  }
+}

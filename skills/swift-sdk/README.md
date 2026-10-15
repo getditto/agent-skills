@@ -6,7 +6,7 @@
 - [Supported versions](#supported-versions)
 - [Capability map](#capability-map)
 - [Verification](#verification)
-- [Installation](#installation)
+- [Getting started and installation](#getting-started-and-installation)
 - [Maintenance](#maintenance)
 
 Agent skill for writing and reviewing Ditto **Swift** SDK code — iOS, iPadOS,
@@ -281,27 +281,16 @@ repository, at the Swift source path that exists at each tag.
 
 **Last verified:** 2026-09-18.
 
-## Installation
+## Getting started and installation
 
-```bash
-# Claude Code
-/plugin marketplace add getditto/claude-code-plugins
-/plugin install ditto-swift@ditto-plugins
-```
-
-For other agent tools, see the repository [README](../../README.md).
+[Create an app](references/getting-started.md), [check deliverables](references/project-deliverables.md),
+or [troubleshoot](references/troubleshooting.md). See the [installation guide](../../docs/install-swift.md)
+for all hosts and standalone packages.
 
 ## Maintenance
 
-When the SDK ships a new minor version:
-
-1. Re-read `sdk/latest/release-notes/swift.mdx` and
-   `snippets/common-release-notes/<version>-capabilities/swift-specific-changelog.mdx` —
-   the changelog carries the ticket numbers and symptom wording the prose summary drops.
-2. Update [`references/versions.md`](references/versions.md) first; it is the source of
-   truth for every version claim in this skill.
-3. Add the version to `tests/swift-sdk/scripts/run.sh --all`, re-run the fixture, the
-   platform matrix and the persistence matrix, and update **Verification** and
-   `examples/minimal-app.md` with the new transcripts.
-4. Re-check the capability map: a `preview` row may have become `yes`, and a `partial`
-   row may have been filled in.
+For a new SDK minor, read the official Swift release notes and SDK source, then
+update [version guidance](references/versions.md), fixture pins, capability evidence
+and example transcripts. Repeat the relevant fixture/platform/persistence checks;
+record exact patches and distinguish execution, compilation and source inspection.
+For starter generation and host packaging, see [the installation guide](../../docs/install-swift.md).

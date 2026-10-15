@@ -17,6 +17,26 @@ permissions:
   contents: read
 
 jobs:
+  starter:
+    name: Build generated SwiftUI starter
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['4.14.6', '5.0.3', '5.1.0']
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate the Xcode app
+        run: python3 skills/swift-sdk/scripts/create-swift-app.py "$RUNNER_TEMP/DittoNotes" --sdk-version "${{ matrix.sdk }}"
+      - name: Build the generated app for Mac, Simulator and Catalyst
+        shell: bash
+        run: |
+          for destination in 'platform=macOS' 'generic/platform=iOS Simulator' 'platform=macOS,variant=Mac Catalyst'; do
+            xcodebuild -project "$RUNNER_TEMP/DittoNotes/DittoNotes.xcodeproj" \
+              -scheme DittoNotes -destination "$destination" \
+              -derivedDataPath "$RUNNER_TEMP/DittoNotesBuild" build
+          done
+
   test:
     name: Test against Ditto SDK ${{ matrix.sdk }}
     runs-on: macos-latest

@@ -1,5 +1,8 @@
 # Skill context audit
 
+This records the audit snapshot at commit `1c33670`. Later Swift workflow work adds
+references/assets; use the validator context report for the current inventory.
+
 Updated 2026-10-15 after independent adversarial review. The baseline is commit
 `3885ed1`; scope is all five canonical skills, their references/examples/READMEs,
 plugin discovery names, the DQL agent prompt, and shared authoring checks.

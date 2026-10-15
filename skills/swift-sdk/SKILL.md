@@ -2,11 +2,11 @@
 name: swift-sdk
 description: >
   Use ONLY for the Ditto Swift SDK: .swift, Package.swift, Xcode projects,
-  import DittoSwift, DittoConfig, Ditto.open, observers, authentication,
-  lifetimes and concurrency errors. Covers iOS, iPadOS, macOS/AppKit and
+  runnable SwiftUI apps, import DittoSwift, DittoConfig, Ditto.open, observers,
+  authentication, lifetimes and concurrency errors. Covers iOS, iPadOS, macOS/AppKit and
   Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x. Other languages use their
   own Ditto SDK skill.
-allowed-tools: Read, Grep, Glob, Edit, Write
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Ditto Swift SDK
@@ -24,6 +24,13 @@ README; the latter holds the capability/evidence map for coverage reviews.
 Writes and reviews Ditto Swift code: initialization, authentication, store access,
 sync, lifetimes, threading and Xcode/SwiftPM configuration. Supports **4.14.x (LTS),
 5.0.x and 5.1.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
+
+### New apps and integration failures
+
+For a new runnable Swift app, follow [getting-started.md](references/getting-started.md)
+and [project-deliverables.md](references/project-deliverables.md). Use the bundled
+generator for a SwiftUI Xcode project; integrate existing apps in place. For failures,
+use [troubleshooting.md](references/troubleshooting.md). Load these only for that task.
 
 ## When to use this skill
 

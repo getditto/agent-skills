@@ -11,3 +11,6 @@ docs/DA-281-*.md
 # Python bytecode, e.g. from importing scripts/validate-sdk-skills.py in a check.
 __pycache__/
 *.pyc
+
+# Materialized plugin packages and installation archives.
+dist/

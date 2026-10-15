@@ -35,6 +35,14 @@ recommends the same initialization, sync and observation forms they do.
 
 ## Package and toolchain
 
+**5.1.0 architecture:** inspection of the published
+[XCFramework](https://software.ditto.live/swift/DittoSwift/5.1.0/dist/DittoSwift.xcframework.zip)
+`Info.plist` shows only `arm64` for iOS, iOS Simulator, macOS and Mac Catalyst.
+The generated starter therefore targets arm64 for that exact pin. Generic Simulator
+builds otherwise request x86_64 too and fail with `unsupported Swift architecture`.
+This is evidence for 5.1.0, not a claim about later releases.
+
+
 One SPM URL serves all three lines: `https://github.com/getditto/DittoSwiftPackage`. The
 version pin changes the package's shape, not its identity.
 
