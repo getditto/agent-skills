@@ -80,7 +80,7 @@ try ditto.sync.start()
 let query = "SELECT * FROM cars WHERE mileage > :min"
 let arguments: [String: Any?] = ["min": 100]
 let subscription = try ditto.sync.registerSubscription(query: query, arguments: arguments)
-let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
+let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { @Sendable result in
     for item in result.items {
         defer { item.dematerialize() }
         print(item.value["make"] as? String ?? "")      // [String: Any?] is not Sendable

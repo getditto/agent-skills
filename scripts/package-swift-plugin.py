@@ -101,6 +101,10 @@ def archive(folder, destination):
 
 def copy_skill(destination):
     source = ROOT / "skills/swift-sdk"
+    # Validate before copytree dereferences links: the archive guard cannot detect
+    # an outside file once it has become a regular file in the staging directory.
+    if source.is_symlink() or any(path.is_symlink() for path in source.rglob("*")):
+        raise ValueError("Canonical Swift skill must not contain symlinks; release only real scoped files.")
     shutil.copytree(source, destination,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", ".env", ".git"))
     # Maintainer links to repository docs/tests are navigation, not runtime skill

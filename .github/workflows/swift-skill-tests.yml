@@ -37,6 +37,13 @@ jobs:
               -derivedDataPath "$RUNNER_TEMP/DittoNotesBuild" build
           done
 
+      - name: Exercise the canonical starter model
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: |
+          python3 tests/swift-sdk/scripts/test-starter.py "${{ matrix.sdk }}" \
+            --frameworks "$RUNNER_TEMP/DittoNotesBuild/Build/Products/Debug"
+
   test:
     name: Test against Ditto SDK ${{ matrix.sdk }}
     runs-on: macos-latest

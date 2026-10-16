@@ -63,9 +63,8 @@ public struct Project: Identifiable, Sendable, Equatable {
     public let name: String
 
     public init(_ value: [String: Any?]) {
-        // `?? nil` on EVERY field. A `[String: Any?]` subscript yields `Any??`, so the
-        // bare `value["name"] as? String` reads the OUTER optional and is `nil` for a
-        // field that is present — a trap on the same footing as `as? Double`.
+        // Collapse the outer dictionary optional explicitly before casting.
+        // Swift's conditional cast can also unwrap these nested optionals.
         self.id = (value["_id"] ?? nil) as? String ?? ""
         self.name = (value["name"] ?? nil) as? String ?? "Untitled"
     }
@@ -119,7 +118,7 @@ public final class ProjectsStore {
         )
         let registered = try ditto.store.registerObserver(
             query: "SELECT * FROM projects ORDER BY name"
-        ) { result in
+        ) { @Sendable result in
             continuation.yield(result.items.map { item in
                 defer { item.dematerialize() }
                 return Project(item.value)
@@ -185,7 +184,7 @@ public final class ProjectTasksStore {
         let registered = try ditto.store.registerObserver(
             query: "SELECT * FROM tasks WHERE projectId = :projectId ORDER BY isDone, title",
             arguments: ["projectId": projectID]
-        ) { result in
+        ) { @Sendable result in
             continuation.yield(result.items.map { item in
                 defer { item.dematerialize() }
                 return ProjectTask(item.value)
@@ -314,7 +313,7 @@ re-authentication handler that retries — are in
 Compiled for macOS, iOS Simulator, iOS device and Mac Catalyst against Ditto **4.14.6**,
 **5.0.3** and **5.1.0** — twelve builds, on every change.
 
-**Not executed.** No test drives a real SwiftUI view. The pieces it composes *are*
-executed: the observer bridge, the bounded buffer under each policy, `onTermination`, and
-that cancelling releases a consumer suspended in `for await`. See the "Not verified" list
-in [`README.md`](../README.md).
+`ProjectsStoreTests` executes the actual project/task observer callbacks on `MainActor`
+with nonempty rows. Separate tests cover the bridge, bounded buffering, `onTermination`
+and cancellation. **No test drives a real SwiftUI view** or asserts `.onDisappear`
+delivery; see the remaining scope in [`README.md`](../README.md).

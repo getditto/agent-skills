@@ -146,7 +146,7 @@ enum MinimalApp {
         let observer = try ditto.store.registerObserver(
             query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
             arguments: ["minimumMileage": 100]
-        ) { result in
+        ) { @Sendable result in
             continuation.yield(
                 result.items.compactMap { item in
                     defer { item.dematerialize() }   // release the native copy

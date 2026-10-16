@@ -115,7 +115,7 @@ public struct ObserverBridge: Sendable {
         self.continuation = continuation
         let counter = YieldCounter()
         self.counter = counter
-        let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { result in
+        let observer = try ditto.store.registerObserver(query: query, arguments: arguments) { @Sendable result in
             counter.increment()
             continuation.yield(result.items.cars())
         }

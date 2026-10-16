@@ -23,7 +23,7 @@ first; this file is the detail.
 let observer = try ditto.store.registerObserver(
     query: "SELECT * FROM cars WHERE mileage > :minimumMileage ORDER BY mileage",
     arguments: ["minimumMileage": 100]
-) { result in
+) { @Sendable result in
     // fires once immediately with the current result, then on every change
 }
 ```
@@ -109,7 +109,7 @@ struct Car: Identifiable, Sendable, Equatable {
 // a backlog of results the UI will never display.
 let (updates, continuation) = AsyncStream<[Car]>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
-let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { result in
+let observer = try ditto.store.registerObserver(query: "SELECT * FROM cars") { @Sendable result in
     // Off the main actor on 5.0.x, on `.main` elsewhere. Decode here either way — this
     // is the expensive part and it does not belong on the main thread.
     continuation.yield(result.items.map { item in
@@ -207,12 +207,29 @@ The `handlerWithSignalNext:` form hands you a `DittoSignalNext` closure and deli
 nothing further until you call it.
 
 ```swift
+// The SDK permits signalling from the context that finishes the work, but its
+// DittoSignalNext type is not Sendable. This narrow wrapper synchronizes ownership
+// and consumes the callback once; it does not make arbitrary callbacks Sendable.
+final class DeliverySignal: @unchecked Sendable {
+    private let lock = NSLock()
+    private var signal: DittoSignalNext?
+    init(_ signal: @escaping DittoSignalNext) { self.signal = signal }
+    func call() {
+        lock.lock()
+        let next = signal
+        signal = nil
+        lock.unlock()
+        next?()
+    }
+}
+
 let observer = try ditto.store.registerObserver(
     query: "SELECT * FROM cars"
-) { [weak self] result, signalNext in
+) { @Sendable [weak self] result, signalNext in
+    let completion = DeliverySignal(signalNext)
     Task { @MainActor [weak self] in
         // FIRST statement in the body, so nothing below can skip it.
-        defer { signalNext() }
+        defer { completion.call() }
         self?.apply(result.items)
     }
 }

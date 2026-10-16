@@ -27,10 +27,12 @@ build_for() {
   # A per-version derived-data path: Xcode caches the resolved package graph and the
   # built module, and reusing one path across version pins fails with
   # "cannot load underlying module for 'DittoSwift'".
-  # SwiftPM names the whole-package scheme "<Package>-Package" once the package has
-  # more than one executable product.
+  # Build the UI library's scheme, which also compiles SkillSupport and the SDK.
+  # The whole-package scheme embeds the same v4 binary frameworks for both command
+  # line executables into one output directory on Xcode 26 (duplicate copy outputs).
+  # run.sh separately builds and executes the macOS command-line products.
   DITTO_SWIFT_VERSION="$version" xcodebuild \
-    -scheme DittoSwiftSkillTests-Package \
+    -scheme UIPatterns \
     -destination "$destination" \
     -derivedDataPath ".build/xcode-$version" \
     -quiet \

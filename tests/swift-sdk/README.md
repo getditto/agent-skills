@@ -11,13 +11,15 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              93 @Test declarations (3 parameterized)
+Tests/SwiftSDKSkillTests/              94 @Test declarations (3 parameterized)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
   build-platforms.sh                   compile for every supported Apple platform
   persistence-matrix.sh                upgrade, rollback, direct version pairs, and the
                                        default/legacy directory fallbacks — all asserted
+  test-starter.py                      canonical starter model: observer, pause, cleanup,
+                                       persistence and configuration failures
 ```
 
 ## Prerequisites
@@ -45,6 +47,7 @@ cd tests/swift-sdk
 
 ./scripts/build-platforms.sh --all      # 12 builds: 3 versions x 4 platforms
 ./scripts/persistence-matrix.sh         # cross-version on-disk behaviour
+python3 -m unittest discover -s . -p 'test_*.py'  # fast runner/packaging checks
 ```
 
 Expect a few minutes on the first run of each version: the XCFramework is around 100 MB
@@ -69,7 +72,10 @@ Two environment problems make the obvious command fail. Both are documented for 
 then **verifies** that every resolved artifact URL carries the requested version, because
 a stale build directory otherwise keeps the previous version's framework. The suite's
 `the build is pinned to the version it claims` case is the in-process backstop.
-`build-platforms.sh` uses a per-version `-derivedDataPath` for the same reason — reusing
+`build-platforms.sh` builds the `UIPatterns` library and its dependencies; the macOS
+command-line products run separately in `run.sh`. The whole-package scheme duplicates
+v4 framework-copy outputs between those executables on Xcode 26. The platform runner
+uses a per-version `-derivedDataPath` for the same reason — reusing
 one fails with *"cannot load underlying module for 'DittoSwift'"* — and
 `persistence-matrix.sh` passes `--expect-version` to each probe so a degenerate
 same-version pair cannot masquerade as a cross-version one.

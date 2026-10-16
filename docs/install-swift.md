@@ -29,7 +29,7 @@ SDK. No Kotlin skill, cloud credentials, hooks or MCP servers are bundled.
 | Claude Code CLI / Claude Desktop Code tab | Marketplace + `ditto-swift` | Local marketplace directory |
 | Claude Desktop Customize | Add marketplace and install `ditto-swift` | Upload `swift-sdk.zip` as a skill |
 | Codex CLI / Desktop | Marketplace + plugin browser | Materialized local marketplace |
-| Cursor | Plugin marketplace | Local Agent Plugin package, where supported by the client |
+| Cursor | Team marketplace on Teams/Enterprise | Materialized local plugin, when local imports are allowed |
 | GitHub Copilot CLI | Plugin marketplace | Local plugin directory |
 | Antigravity CLI | Local native plugin package | Workspace plugin directory |
 | Gemini CLI | Local extension package | Direct native skill installation |
@@ -104,12 +104,20 @@ display metadata and example prompts; it does not grant tool permissions.
 
 ## Cursor
 
-Add `getditto/agent-skills` as a plugin marketplace in Cursor's plugin UI, then install
-**ditto-swift**. The repository supplies `.cursor-plugin/marketplace.json`, a per-plugin
-Cursor manifest and a portable Agent Plugins manifest. For local installation, use
-the materialized package rather than copying a wrapper with unresolved symlinks.
-Marketplace publication and approval are separate release tasks; a manifest is not
-proof of a public listing.
+On Teams/Enterprise, open **Dashboard → Plugins & MCPs → Team Marketplaces → Add
+Marketplace → Import from Repo** and enter the repository URL. Enterprise requires an
+admin. After import, install **ditto-swift** from Customize.
+
+For a local install, copy the entire materialized
+`ditto-swift-marketplace/plugins/ditto-swift/` directory to
+`~/.cursor/plugins/local/ditto-swift/`, then restart Cursor or run **Developer: Reload
+Window**. Confirm `swift-sdk` appears in Customize. Local imports must be allowed by
+the client/team policy; Enterprise disables them by default. Do not symlink to a
+directory outside `~/.cursor/plugins/local/`, because Cursor skips that link.
+
+The repository supplies a Cursor catalog/manifest and a portable Agent Plugins
+manifest. Public marketplace publication requires a separate review; these files do
+not establish a public listing. See [Cursor's installation guide](https://cursor.com/docs/plugins).
 
 ## GitHub Copilot CLI
 

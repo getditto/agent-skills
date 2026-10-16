@@ -29,6 +29,14 @@ final class StarterModel: ObservableObject {
     private var subscription: DittoSyncSubscription?
     private var continuation: AsyncStream<[Note]>.Continuation?
     private var consumer: Task<Void, Never>?
+    private let configurationURL: URL?
+    private let persistenceDirectory: URL?
+
+    init(configurationURL: URL? = Bundle.main.url(forResource: "LocalConfig", withExtension: "plist"),
+         persistenceDirectory: URL? = nil) {
+        self.configurationURL = configurationURL
+        self.persistenceDirectory = persistenceDirectory
+    }
 
     var isReady: Bool { ditto != nil }
 
@@ -39,13 +47,13 @@ final class StarterModel: ObservableObject {
         defer { isOpening = false }
         var opened: Ditto?
         do {
-            guard let url = Bundle.main.url(forResource: "LocalConfig", withExtension: "plist"),
+            guard let url = configurationURL,
                   let values = NSDictionary(contentsOf: url) as? [String: String],
                   let databaseID = values["DatabaseID"], UUID(uuidString: databaseID) != nil,
                   let license = values["OfflineLicense"], !license.isEmpty else {
                 throw StarterFailure.configuration
             }
-            let directory = try FileManager.default.url(
+            let directory = try persistenceDirectory ?? FileManager.default.url(
                 for: .applicationSupportDirectory, in: .userDomainMask,
                 appropriateFor: nil, create: true
             ).appendingPathComponent(Bundle.main.bundleIdentifier ?? "DittoStarter", isDirectory: true)
@@ -68,7 +76,9 @@ final class StarterModel: ObservableObject {
             continuation = output
             let registered = try instance.store.registerObserver(
                 query: "SELECT * FROM notes ORDER BY _id"
-            ) { result in
+            ) { @Sendable result in
+                // SDK 5.0.x can deliver off-main even with the default queue. An
+                // explicitly Sendable handler prevents inherited MainActor isolation.
                 let snapshot = result.items.map { item in
                     defer { item.dematerialize() }
                     return Note(id: (item.value["_id"] ?? nil) as? String ?? "",
@@ -236,8 +246,10 @@ struct DiagnosticsView: View {
     }
 }
 
+#if !DITTO_STARTER_TESTING
 @main
 struct DittoStarterApp: App {
     @StateObject private var model = StarterModel()
     var body: some Scene { WindowGroup { StarterView(model: model) } }
 }
+#endif

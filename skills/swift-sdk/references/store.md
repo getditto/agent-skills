@@ -40,17 +40,13 @@ typed form does not compile on the LTS line — see
 
 **Subscripting yields a DOUBLE optional.** `value` is `[String: Any?]`, so
 `value["name"]` has type `Any??` — the outer optional is "was the key present", the inner
-one is "was the stored value null". `value["name"] as? String` casts the *outer* optional
-and is `nil` for a field that is present and perfectly valid. Collapse it first:
+one is "was the stored value null". Explicitly collapsing the outer optional makes
+that shape clear; Swift's conditional cast can also unwrap nested optionals:
 
 ```swift
-let name = (value["name"] ?? nil) as? String        // correct
-let name = value["name"] as? String                 // WRONG — nil for a present field
+let name = (value["name"] ?? nil) as? String        // explicit optional collapse
+let directName = value["name"] as? String           // also succeeds for a stored String
 ```
-
-This applies to **every** field, not just `_id`. It is the same class of trap as reading a
-number with `as? Double`, and it fails the same way: no error, no log, a row that renders
-empty or gets dropped by a `guard let`.
 
 `DittoQueryResultItem.value` is `[String: Any?]`. It materializes lazily on first access,
 and `dematerialize()` releases the cached Swift representation. **The item stays usable**

@@ -5,10 +5,9 @@
 //
 // This is the published sample in `skills/swift-sdk/examples/swiftui-app.md`, byte for
 // byte below the marker. It compiles on every platform and version leg the matrix
-// covers. It is NOT executed — no test drives a real SwiftUI view — so the runtime
-// evidence for the pieces it composes lives elsewhere: `ObserverBridgeTests` covers the
-// bridge, the bounded buffer, `onTermination`, and that cancelling a bridge releases a
-// consumer suspended in `for await`. README.md says so under "Not verified".
+// covers. ProjectsStoreTests executes the inline project/task observer callbacks;
+// no test drives a real SwiftUI view. ObserverBridgeTests separately covers buffering,
+// termination and cancellation. README.md records the remaining UI acceptance scope.
 //
 // iOS 17 / macOS 14 for `@Observable`. The package floor is the SDK's own iOS 15, which
 // is why this file is availability-gated rather than raising it.
@@ -37,9 +36,8 @@ public struct Project: Identifiable, Sendable, Equatable {
     public let name: String
 
     public init(_ value: [String: Any?]) {
-        // `?? nil` on EVERY field. A `[String: Any?]` subscript yields `Any??`, so the
-        // bare `value["name"] as? String` reads the OUTER optional and is `nil` for a
-        // field that is present — a trap on the same footing as `as? Double`.
+        // Collapse the outer dictionary optional explicitly before casting.
+        // Swift's conditional cast can also unwrap these nested optionals.
         self.id = (value["_id"] ?? nil) as? String ?? ""
         self.name = (value["name"] ?? nil) as? String ?? "Untitled"
     }
@@ -93,7 +91,7 @@ public final class ProjectsStore {
         )
         let registered = try ditto.store.registerObserver(
             query: "SELECT * FROM projects ORDER BY name"
-        ) { result in
+        ) { @Sendable result in
             continuation.yield(result.items.map { item in
                 defer { item.dematerialize() }
                 return Project(item.value)
@@ -159,7 +157,7 @@ public final class ProjectTasksStore {
         let registered = try ditto.store.registerObserver(
             query: "SELECT * FROM tasks WHERE projectId = :projectId ORDER BY isDone, title",
             arguments: ["projectId": projectID]
-        ) { result in
+        ) { @Sendable result in
             continuation.yield(result.items.map { item in
                 defer { item.dematerialize() }
                 return ProjectTask(item.value)

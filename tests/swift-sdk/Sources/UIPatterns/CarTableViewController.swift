@@ -18,6 +18,23 @@ import os
 import DittoSwift
 #endif
 
+/// The SDK's signal may finish on another queue but is not annotated Sendable.
+/// Transfer it through one synchronized owner and consume it at most once.
+private final class DeliverySignal: @unchecked Sendable {
+    private let lock = NSLock()
+    private var signal: DittoSignalNext?
+
+    init(_ signal: @escaping DittoSignalNext) { self.signal = signal }
+
+    func call() {
+        lock.lock()
+        let next = signal
+        signal = nil
+        lock.unlock()
+        next?()
+    }
+}
+
 /// The recommended UIKit shape at the skill's iOS 15 minimum.
 ///
 /// A diffable data source computes the diff itself from a snapshot, so the entire class
@@ -170,7 +187,8 @@ public final class DifferCarTableViewController: UITableViewController {
         do {
             observer = try ditto.store.registerObserver(
                 query: "SELECT * FROM cars ORDER BY mileage"
-            ) { [weak self] result, signalNext in
+            ) { @Sendable [weak self] result, signalNext in
+                let completion = DeliverySignal(signalNext)
                 // Hop to the main actor before touching the table view or the differ.
                 // `deliverOn:` is ignored on 5.0.x, so this hop is what makes the same
                 // code correct on all three supported lines.
@@ -178,7 +196,7 @@ public final class DifferCarTableViewController: UITableViewController {
                     // First statement in the body: a throw or early return below can
                     // never skip it. An observer whose handler returns without calling
                     // signalNext() stops delivering forever, silently.
-                    defer { signalNext() }
+                    defer { completion.call() }
                     guard let self, self.generation == myGeneration else { return }
                     self.apply(items: result.items)
                 }

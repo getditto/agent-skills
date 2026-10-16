@@ -30,12 +30,14 @@ this file carries the per-API table and the reasoning.
 
 1. **Never assume a callback is on the main actor.** `deliverOn:` is honoured on 4.14.6
    and 5.1.0 and silently ignored on 5.0.3, where using it with Swift concurrency is a
-   documented crash (#SDKS-3856). Hop explicitly inside the handler and one source file
-   is correct on all three lines.
+   documented crash (#SDKS-3856). Mark the closure `@Sendable` so registration inside
+   `@MainActor` code does not give it inherited actor isolation, then hop explicitly
+   through the stream consumer. Without that annotation, Swift 6 can trap in a nested
+   decoding closure before the hop, even when it only builds Sendable values.
 2. **Convert before you cross.** `DittoQueryResultItem.value` is `[String: Any?]`, which
    is not `Sendable`. Extract into a value type *inside* the callback and send that.
-   Subscripting that dictionary yields `Any??`, so `value["x"] as? String` is `nil` for a
-   present field — collapse with `?? nil` first.
+   Subscripting that dictionary yields `Any??`. Explicitly collapse with `?? nil`
+   before casting for clarity; Swift's conditional cast can also unwrap the optionals.
 3. **Do the expensive work in the callback, not after the hop.** Decoding, diffing and
    sorting belong off the main actor; only the final assignment is main-actor work. A
    large result set decoded in a main-thread callback is the most common cause of a
@@ -99,7 +101,7 @@ The observer handler, the stream and the consumer form a retain cycle through
 ```swift
 let (updates, continuation) = AsyncStream<[String]>.makeStream(
     bufferingPolicy: .bufferingNewest(1))
-let observer = try ditto.store.registerObserver(query: q, arguments: a) { result in
+let observer = try ditto.store.registerObserver(query: q, arguments: a) { @Sendable result in
     continuation.yield(result.items.compactMap { item in
         defer { item.dematerialize() }
         return item.value["make"] as? String   // [String: Any?] is not Sendable

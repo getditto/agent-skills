@@ -130,9 +130,9 @@ Rows that are not `Support: yes`:
 with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
 [`tests/swift-sdk/`](../../tests/swift-sdk), and its README explains how to run it.
 
-- **93 current `@Test` declarations** (`scripts/run.sh --all`), including three
-  parameterized declarations. The earlier recorded run reported 92 tests in 14 suites;
-  that historical total is not a fresh run of the current 93 declarations. Tests that
+- **94 current `@Test` declarations** (`scripts/run.sh --all`), including three
+  parameterized declarations. The production audit adds a runtime regression for
+  actor-isolated SwiftUI stores; see the [current verification record](../../docs/swift-workflow-verification.md). Tests that
   do not apply to a line are skipped rather than silently passed:
 
   | Line | Skipped |
@@ -185,9 +185,9 @@ with Apple Swift 6.4 (swiftlang-6.4.0.34.1). The fixture is
   write.
 - **`examples/swiftui-app.md`** — the two-screen SwiftUI app, including the per-selection
   observer — is **compiled** on all twelve platform/version legs, and is byte-identical to
-  the fixture source that gets compiled. It is **not executed**: no test drives a real
-  SwiftUI view. The pieces it composes are (observer bridge, bounded buffer,
-  `onTermination`, cancel-releases-a-suspended-consumer).
+  the fixture source. `ProjectsStoreTests` executes its actual project/task observer
+  callbacks with nonempty rows. No test drives a real SwiftUI view. Bridge lifecycle,
+  buffering and cancellation have separate runtime tests.
 - **Platform compile matrix** (`scripts/build-platforms.sh --all`): macOS, iOS Simulator,
   iOS device and Mac Catalyst × all three versions — 12 builds, including the SwiftUI,
   UIKit and AppKit samples in `Sources/UIPatterns/`. Verified non-vacuous by introducing
@@ -245,8 +245,8 @@ repository, at the Swift source path that exists at each tag.
   mismatch documented in `references/observers.md` is reasoned from both frameworks'
   contracts and a measured `DittoDiffer` output; the AppKit sample avoids the question by
   using a diffable data source, so the broken form is not exercised.
-- **The UIKit, AppKit and SwiftUI samples' runtime behaviour.** They are compiled on
-  every platform and version, and the observer bridge underneath them is tested, but no
+- **The UIKit, AppKit and SwiftUI views' runtime behaviour.** Their models/bridge have
+  runtime checks and the sources compile on every platform/version, but no
   test drives a real table view or a real SwiftUI view. In particular, that the
   per-selection observer in `examples/swiftui-app.md` cancels on `.onDisappear` is
   argued from the observer-lifetime rules, not asserted by a UI test.
