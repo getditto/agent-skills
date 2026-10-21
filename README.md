@@ -17,6 +17,7 @@ customer use.**
 | [ditto-mesh-networking](skills/ditto-mesh-networking) | `ditto-mesh` | Peer-to-peer mesh and transports — Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket, explicit TCP. Peer discovery and multihop routing, the transport configuration model and its runtime-update semantics, and how transport choice shapes your data model. |
 | [sync-subscriptions](skills/sync-subscriptions) (`sync-subscriptions`) | `ditto-subscriptions` | How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 | [data-modeling](skills/data-modeling) (`data-modeling`) | `ditto-data-modeling` | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x. |
+| [kotlin-sdk](skills/kotlin-sdk) (`kotlin-sdk`) | `ditto-kotlin` | Ditto Kotlin SDK for Android and JVM: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 
 ## Repository layout
 

@@ -51,6 +51,17 @@
       },
       "source": "./plugins/ditto-data-modeling",
       "category": "development"
+    },
+    {
+      "name": "ditto-kotlin",
+      "description": "Ditto Kotlin SDK assistance — Android and JVM apps: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-kotlin",
+      "category": "development"
     }
   ]
 }
