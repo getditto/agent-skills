@@ -52,7 +52,7 @@ Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
 | `observe()` / `collect()` Flow APIs | ✗ (callback `registerObserver` only) | ✓ | ✓ | Unresolved references on 4.14.x |
 | `DittoFactory.create(DittoConfig)` | ✗ | ✓ | ✓ | v4 uses the `Ditto(deps, identity)` constructor |
 | JVM target | ✗ | ✓ | ✓ | No artifact |
-| `DittoTools` companion package | `live.ditto:ditto-tools` | — | `com.ditto:ditto-tools-android:6.x` (requires ditto-kotlin ≥ 5.0.1) | Old coordinate tracks the v4 namespace |
+| `DittoTools` companion package | `live.ditto:ditto-tools-android` | `com.ditto:ditto-tools-android:6.x` (requires ditto-kotlin ≥ 5.0.1) | `com.ditto:ditto-tools-android:6.x` | Old coordinate tracks the v4 namespace |
 
 ## CAP-19 v4 to v5 migration
 
@@ -198,7 +198,7 @@ the v5 upgrade.)
   result values (`.stringOrNull` etc. — `as` casts now throw).
 - JVM/server target (`-jvm` variant + `ditto-binaries` classifier), KMP layout.
 - 5.1.x adds: JOINs, composite indexes, `RETURNING`, `ADVISE`, Data Streams (preview).
-- `com.ditto:ditto-tools-android:6.x` replaces `live.ditto:ditto-tools`.
+- `com.ditto:ditto-tools-android:6.x` replaces `live.ditto:ditto-tools-android`.
 
 ### Migration checklist
 

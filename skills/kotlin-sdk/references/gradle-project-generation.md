@@ -61,7 +61,7 @@ A single debug screen or JVM block that answers "is it working?" at a glance:
   `StateFlow`.
 - Last sync timestamps: observe `SELECT * FROM system:data_sync_info`
   ([`sync.md`](sync.md)).
-- A "copy logs" affordance: `DittoLog.exportToFile(path)`
+- A "copy logs" affordance: `DittoLogger.exportToFile(path)`
   ([`observability.md`](observability.md)).
 - Transport warnings: collect `ditto.transportCondition`
   ([`transports.md`](transports.md)) — this is where "BLE permission missing" shows up
