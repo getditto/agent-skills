@@ -49,6 +49,9 @@ jobs:
 
           echo "All SKILL.md files valid"
 
+      - name: SDK-skill structural checks (SDK-SKILL-TEMPLATE.md §12.1)
+        run: python3 scripts/check-sdk-skill-structure.py
+
       - name: Check plugin references in marketplace
         run: |
           echo "Checking plugin sources exist..."

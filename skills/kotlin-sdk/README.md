@@ -44,7 +44,7 @@ Deliberately **out of scope** — these have their own skills:
 | CAP-09 | Transactions | yes | docs-sample | both |
 | CAP-10 | Indexing | yes | docs-sample | both |
 | CAP-11 | Observers, diffing and back-pressure | yes | executed | both |
-| CAP-12 | Attachments | yes | docs-sample | both |
+| CAP-12 | Attachments | yes | source | both |
 | CAP-13 | Presence graph and connection requests | partial | docs-sample | both |
 | CAP-14 | Sync status and local commit tracking | yes | docs-sample | both |
 | CAP-15 | Logging, diagnostics and stats | yes | executed | both |
@@ -80,7 +80,13 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   the EVICT statement itself is harness-verified DQL (`tests/dql`, 5.1.0) and the
   Kotlin call shape is the documented `store.execute` overload. The composition was
   not executed.
-- **CAP-02 / CAP-09 / CAP-10 / CAP-12 / CAP-14 / CAP-20 `docs-sample`** — working
+- **CAP-12 `source`** — the fetch sample's v5 signatures (`executeRaw` returns the
+  closeable result; `fetchAttachment(token: DittoAttachmentToken, …)` vs the
+  `tokenMap: Map<String, Any>` overload) verified against
+  `sdks/kotlin/api/ditto-kotlin/src/commonMain/kotlin/com/ditto/kotlin/DittoStore.kt`
+  at `sdk-release-5.1.0` and compile-verified against the published 5.1.0 jar; the
+  fetch *lifecycle* (progress events, `Deleted` race) was not executed end-to-end.
+- **CAP-02 / CAP-09 / CAP-10 / CAP-14 / CAP-20 `docs-sample`** — working
   Kotlin samples exist on the cited doc pages; they were not re-executed here.
 - **CAP-04 `executed`** covers offline-license activation; the cloud
   `expirationHandler`/`login` round-trip needs a Ditto Cloud app and is docs-sourced.
@@ -99,6 +105,12 @@ Evidence notes (spec §7 requires the tier's extra information inline for
 - 5.0.3 (JVM, same host): same program.
 - 4.14.7 (Android emulator, API 35 arm64, AGP 9.4.1): same flow as an Android app,
   including the `disableSyncWithV3()` requirement and its exact failure string.
+- JUnit pattern (5.0.3 and 5.1.0, same JVM host):
+  [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
+  — `insertThenReadBack` and `observerReportsTheWrite`, 2 tests green
+  (`gradle test -PdittoLine=v5 -PdittoVersion=<v>`). The observer test runs under
+  `runBlocking`, not `runTest`: Ditto delivers on real FFI threads, so `runTest`'s
+  virtual time expires first (executed failure).
 - Executed failure modes: missing `ditto-binaries` classifier on JVM; plain re-INSERT
   FAIL-conflict `UnknownException`; v4 INSERT without `disableSyncWithV3()`.
   Transcripts: [`examples/minimal-app.md`](examples/minimal-app.md).
@@ -111,11 +123,12 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   exception-in-handler closes the observer, per-platform callback dispatchers
   (`Ditto.android.kt` `MainScope()` vs `Ditto.jvm.kt` `Dispatchers.Default`),
   cancellation closing the native observer, the transport-config DSL surface.
-- `kotlinx-coroutines-core` `native/src/Dispatchers.kt` @ 1.10.2 (the coroutines
-  version Ditto 5.1.0 builds against): `Dispatchers.IO` on Kotlin/Native (iOS) is a
+- `kotlinx-coroutines-core` `native/src/Dispatchers.kt` @ 1.9.0 (the coroutines
+  version Ditto 5.1.0 builds against, per its `libs.versions.toml`) and @ 1.10.2 (the
+  version the harness executed): `Dispatchers.IO` on Kotlin/Native (iOS) is a
   public `actual val` backed by `DefaultIoScheduler` (2048-thread pool,
-  `limitedParallelism(64)`) — present and off-main, backing the skill's KMP-wide
-  "use `Dispatchers.IO`, never main" guidance.
+  `limitedParallelism(64)`) in both — present and off-main, backing the skill's
+  KMP-wide "use `Dispatchers.IO`, never main" guidance.
 - `sdk-release-4.14.7`: the `crdt_version < V6` gate behind "disable sync with V3"
   (`ffi/src/store/dql/ffi_access.rs`); the 4.14.7 AAR (javap) for identity constructor
   shapes and the `live.ditto.android` package layout.

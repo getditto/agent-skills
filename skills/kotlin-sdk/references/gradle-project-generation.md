@@ -19,9 +19,11 @@
    `ditto-binaries` classifier artifact for the host — or the first
    `DittoFactory.create` throws `IllegalStateException: Unable to find binary
    'libdittoall.dylib' …` (executed).
-3. **Pin the toolchain that is known to work:** Kotlin Gradle plugin 2.3.x
-   (executed: 2.3.21 — 2.0.x fails on the 5.x artifacts' stdlib metadata), JDK 17,
-   `kotlinx-coroutines` 1.10.x, Android `minSdk` 24 / `compileSdk` 36.
+3. **Pin the toolchain that is known to work:** JDK 17, `kotlinx-coroutines` 1.10.x,
+   Android `minSdk` 24 / `compileSdk` 36. JVM projects: Kotlin Gradle plugin 2.3.x
+   (executed: 2.3.21 — the 2.0.x plugin cannot read the 5.0.3 artifacts' Kotlin 2.1
+   metadata). Android projects on AGP 9: use built-in Kotlin — applying
+   `org.jetbrains.kotlin.android` fails the build.
 4. **One `Ditto` instance, owned at application scope** (Android `Application`/DI
    singleton; JVM top-level). Never construct it in an Activity or per-request.
 5. **The config is immutable and complete at construction:** `DittoConfig(databaseId,
@@ -35,15 +37,17 @@
    Extraction happens **inside** the lambda — see
    [`observers.md`](observers.md).
 7. **Auth is a property assignment of a suspend lambda, set before `sync.start()`:**
-   `ditto.auth?.expirationHandler = { d, _ -> d.auth?.login(token, .development()) }`.
+   `ditto.auth?.expirationHandler = { d, _ -> d.auth?.login(token, DittoAuthenticationProvider.development()) }`.
    There is no `setExpirationHandler()`; do not wrap the body in `launch { }`.
 8. **Android manifest:** no permission declarations of your own are needed (the SDK
    merges them); do not add a manual `DittoInitializer` entry. Add the runtime
    permission flow (`DittoSyncPermissions` → `ditto.refreshPermissions()`) where the
    app first needs P2P.
-9. **Release builds need the keep rule** — emit `proguard-rules.pro` with
-   `-keep class com.ditto.** { *; }` and wire it into the release build type, or the
-   minified build crashes with `NoSuchMethodError … DittoFFI`.
+9. **Release builds need the keep rules** — emit `proguard-rules.pro` with
+   `-keep class com.ditto.** { *; }` **and**
+   `-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }`
+   (TLS to Ditto Server breaks without the second) and wire them into the release
+   build type, or the minified build crashes with `NoSuchMethodError … DittoFFI`.
 10. **Generate a diagnostics surface.** A new project is not done until its author can
     see whether sync works — see below.
 11. **Verify by building.** The deliverable is a project that compiles; run

@@ -116,7 +116,7 @@ without them the panic is unreadable in the reporter. Never ship a call to it.
 `DittoTransportConfig.PeerToPeer.MulticastBeta` (configured via
 `config.peerToPeer.multicastBeta`) is the beta reliable UDP multicast
 transport, and `DittoConnectionType.Multicast` is its connection-type enum —
-both new in 5.1.0 (#SDKS-4471, sdk/latest/release-notes-hub/kotlin). It is
+both new in 5.1.0 (sdk/latest/release-notes-hub/kotlin). It is
 **disabled by default**, ships as an opt-in beta rather than part of the
 standard build, and the docs say to **contact Ditto support before deploying
 multicast in production**. On Android, a change requested while sync is active
@@ -175,7 +175,7 @@ the JVM target:
   icon must be monochrome white (sdk/latest/install-guides/kotlin). In 5.1.0,
   `sync.stop()` no longer crashes with
   `ForegroundServiceDidNotStartInTimeException` on Android 14+ when the service
-  is enabled (#SPO-941, sdk/latest/release-notes-hub/kotlin).
+  is enabled (sdk/latest/release-notes-hub/kotlin).
 
 - **`DittoInitializer`** — in v5 the Android `Context` is supplied
   automatically via AndroidX App Startup through the SDK's own manifest merger.

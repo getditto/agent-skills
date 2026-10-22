@@ -73,7 +73,9 @@ mid-fetch). Progress arrives through the optional
 totalBytes)`:
 
 ```kotlin
-ditto.store.execute(
+// executeRaw returns the DittoQueryResult for you to close — the plain
+// execute(query) overload returns Unit and cannot be `.use`d (compile-verified 5.1.0).
+ditto.store.executeRaw(
     query = """
         SELECT * FROM COLLECTION cars (my_attachment ATTACHMENT)
         WHERE _id = "123"
@@ -82,8 +84,11 @@ ditto.store.execute(
     val token = result.items.first().value["my_attachment"].attachmentTokenOrNull
         ?: return@use
 
+    // token is a DittoAttachmentToken — pass it to the `token =` overload.
+    // (`tokenMap =` is a different overload taking Map<String, Any>; it does not
+    // accept a DittoAttachmentToken — compile-verified 5.1.0.)
     val fetchResult = ditto.store.fetchAttachment(
-        tokenMap = token,
+        token = token,
         onFetchProgress = { downloadedBytes, totalBytes ->
             // Handle progress updates
         },
@@ -101,8 +106,11 @@ ditto.store.execute(
 }
 ```
 
-(query shape and `when` from sdk/latest/crud/working-with-attachments; `.attachmentTokenOrNull`
-and the suspend/result shape from sdk/latest/migration-guides/kotlin-v4)
+(query shape and `when` from sdk/latest/crud/working-with-attachments — note the docs
+page still shows the v4-shaped `.use`-on-`execute` + `tokenMap` call, which does not
+compile against v5; this sample follows the 5.1.0 signatures in
+`DittoStore.kt` — **[source-verified, compile-verified]**. `.attachmentTokenOrNull`
+from sdk/latest/migration-guides/kotlin-v4)
 
 ### Reading the bytes — functions, not properties
 

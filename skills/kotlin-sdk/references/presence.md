@@ -40,7 +40,7 @@ graph.serializeToJson()     // JSON String for diagnostics / a presence viewer
 
 `DittoPeerOs.Tvos` is **deprecated in 5.1.0 but retained on purpose** so peers
 running older SDK versions on tvOS can still be identified in the presence graph
-(#SDKS-3944, sdk/latest/release-notes-hub/kotlin). Keep handling it.
+(sdk/latest/release-notes-hub/kotlin). Keep handling it.
 
 `DittoConnection` simplifies in v5: `peer1` and `peer2` are now plain `String`
 peer keys (v4: deprecated `DittoAddress` fields plus `peerKeyString1` /
@@ -95,14 +95,18 @@ ditto.presence.peerMetadataJsonString = """{"role":"kitchen-display"}"""
 
 // Read back
 ditto.presence.peerMetadata                  // DittoJsonSerializable.ObjectValue
-ditto.presence.getPeerMetadataMap()          // Map<String, Any?> — plain map
+ditto.presence.peerMetadataJsonString        // String — JSON form
 ditto.presence.peerMetadataJsonBytes         // ByteArray — binary JSON form
 ditto.presence.graph.localPeer.peerMetadata  // same value, via the graph
 ```
 
-`getPeerMetadataMap()`, `setPeerMetadata(Map)`, and `peerMetadataJsonBytes` are
-**new in v5**. The v4 `Presence.peerMetadataMaxSizeInBytes` companion constant
-is removed from the public API (sdk/latest/migration-guides/kotlin-v4).
+There is **no** `getPeerMetadataMap()` — the migration guide documents one, but the
+method does not exist in 5.0.x/5.1.0 (**[source-verified]** against
+`DittoPresence.kt` and the published jars). To read a plain map, read
+`peerMetadata` (an `ObjectValue`) or parse `peerMetadataJsonString`.
+`setPeerMetadata(Map)` and `peerMetadataJsonBytes` are **new in v5**. The v4
+`Presence.peerMetadataMaxSizeInBytes` companion constant is removed from the
+public API (sdk/latest/migration-guides/kotlin-v4).
 
 Remote peers' metadata is read off the graph:
 
@@ -155,8 +159,8 @@ Rules that matter:
   `DittoConnectionRequestHandler` typealias are all **removed** — use the fun
   interface directly (sdk/latest/migration-guides/kotlin-v4).
 - In 5.1.0 the `connectionRequestHandler` setter no longer leaks the previous
-  handler and its captured closure on every reassignment (#22500,
-  sdk/latest/release-notes-hub/kotlin).
+  handler and its captured closure on every reassignment
+  (sdk/latest/release-notes-hub/kotlin).
 
 ### What works on one device vs. two
 

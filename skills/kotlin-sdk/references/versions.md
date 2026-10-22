@@ -23,11 +23,18 @@
 
 **Kotlin toolchain:** docs say Kotlin 2.0+ (Ditto supports the four most recent stable
 releases, N−4) and JDK 17 (sdk/latest/compatibility/kotlin,
-sdk/latest/install-guides/kotlin). **Executed floor is higher:** 5.0.3/5.1.0 artifacts
-embed Kotlin stdlib 2.3.x metadata — the harness only compiled with the Kotlin
-**2.3.21** Gradle plugin (2.0.x failed with class-metadata version errors), with
-`kotlinx-coroutines-core:1.10.2`. Treat 2.3.x as the practical minimum for v5 until a
-wider matrix is executed.
+sdk/latest/install-guides/kotlin). **Executed floor is higher than the docs imply:**
+the published artifacts embed Kotlin metadata 2.0.x (5.1.0) / 2.1.x (5.0.3)
+(**[source-verified]**: `kotlin.Metadata mv=[2,0,0]` / `mv=[2,1,0]` in the jars), and
+the harness failed to compile 5.0.3 under the Kotlin 2.0.x plugin (a 2.0 compiler
+cannot read 2.1 metadata). The executed-working pin is Kotlin Gradle plugin
+**2.3.21** with `kotlinx-coroutines-core:1.10.2`; treat 2.1+ as the practical
+minimum for v5 until a wider matrix is executed.
+
+**Android + AGP 9:** AGP 9 has built-in Kotlin support enabled by default — do
+**not** apply the `org.jetbrains.kotlin.android` plugin (AGP fails the build if you
+do). The v4 harness fixture builds this way (AGP 9.4.1, no KGP applied); the
+2.3.21 KGP pin above is JVM-verified only — v5 on Android has not been executed yet.
 
 ## Package coordinates per version line
 

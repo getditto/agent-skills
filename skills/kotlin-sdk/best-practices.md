@@ -103,8 +103,8 @@ lifetime:
   `MainScope()`): keep handler bodies cheap and push extraction/deserialization and
   I/O to `Dispatchers.IO`. Unlike `Dispatchers.Default`, `IO` is a real off-main pool
   on **all three** KMP targets — including iOS/Native (source-verified,
-  kotlinx-coroutines 1.10.x), so it's the one dispatcher you can recommend in shared
-  KMP code without a platform carve-out. A observer decoding hundreds of documents per
+  kotlinx-coroutines 1.9.0 and 1.10.x), so it's the one dispatcher you can recommend
+  in shared KMP code without a platform carve-out. A observer decoding hundreds of documents per
   emission on main is the most common Ditto-Kotlin jank source. (Unmeasured claim —
   profile before optimizing; the dispatcher facts themselves are verified.)
 - Evict on a cadence, not on every write: `EVICT` is a maintenance operation

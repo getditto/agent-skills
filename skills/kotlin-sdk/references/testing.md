@@ -5,8 +5,9 @@ Everything here is the **v5** (5.0.x / 5.1.x) form with tagged v4 asides.
 
 Sources: `sdk/latest/deployment/testing`, `sdk/latest/install-guides/kotlin`
 (ProGuard + crash-reporter sections), `sdk/latest/compatibility/kotlin`
-(transport support matrix). The JVM-unit-test pattern is **executed** against
-5.0.3 and 5.1.0.
+(transport support matrix). The JVM-unit-test pattern below is **executed** against
+5.0.3 and 5.1.0 — the runnable copy is
+[`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
 
 ## CAP-18 Testing
 
@@ -52,7 +53,8 @@ Kotlin-relevant guidance:
 The v5 SDK is Kotlin Multiplatform: a JVM target resolves `com.ditto:ditto-kotlin` to
 its **`-jvm` variant**, so plain JUnit tests — no emulator, no Robolectric — can open
 a **real** Ditto. **Executed** on 5.0.3 and 5.1.0 with exactly this pattern:
-`DittoConfig.Connect.SmallPeersOnly` + `setOfflineOnlyLicenseToken`.
+`DittoConfig.Connect.SmallPeersOnly` + `setOfflineOnlyLicenseToken` (2 tests green —
+see the skeleton section below for the fixture path).
 
 ### Required dependencies
 
@@ -69,15 +71,25 @@ dependencies {
     //   macos-arm64 | linux-x64 | linux-arm64 | windows-x64
     runtimeOnly("com.ditto:ditto-binaries:5.1.0:macos-arm64")
 
+    testImplementation(kotlin("test"))  // REQUIRED for kotlin.test.assertEquals —
+                                        // the kotlin("jvm") plugin does not add it
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    environment("DITTO_OFFLINE_LICENSE", System.getenv("DITTO_OFFLINE_LICENSE") ?: "")
 }
 ```
 
 ### Minimal test skeleton
 
 **Executed** pattern — offline-only instance, unique temp `persistenceDirectory` per
-test, `runTest` for the suspend APIs:
+test, `runTest` for the suspend store APIs. The file below is
+[`../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
+executed green against 5.0.3 and 5.1.0 (`gradle test -PdittoLine=v5
+-PdittoVersion=<v>`; 2 tests, 0 failures):
 
 ```kotlin
 import com.ditto.kotlin.Ditto
@@ -140,18 +152,23 @@ Notes:
   deterministic way to test your own error paths.
 - `runBlocking` works too if you are not on kotlinx-coroutines-test.
 
-### Wait on events, never on time
+### Wait on events, never on time — but with **real** time
 
 An observer fires once immediately and again on every change, so a test can await the
-delivery itself. With the v5 Flow API that is `observe(...)` + `first { }` under a
-timeout — the timeout is what turns a regression into a failure instead of a hung suite:
+delivery itself. One executed pitfall: **do not await observer deliveries inside
+`runTest`** — Ditto delivers events from real background FFI threads while `runTest`
+fast-forwards *virtual* time, so `withTimeout(10_000) { … }` expires instantly-ish
+with `TimeoutCancellationException: Timed out after 10s of _virtual_ time …`
+(**executed**, twice, on 5.1.0). Use `runBlocking` for observer tests; `runTest` is
+fine for straight-line `store.execute` calls:
 
 ```kotlin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
 @Test
-fun observerReportsTheWrite() = runTest {
+fun observerReportsTheWrite() = runBlocking {   // real time, not runTest
     val ditto = makeDitto()
     try {
         val counts = ditto.store.observe("SELECT * FROM cars") { result ->
@@ -249,7 +266,7 @@ In v5 the same panic also surfaces in-process as
 
 ## v4 testing constraints
 
-v4 (`live.ditto:ditto`, e.g. `4.14.6`) is **Android-only — there is no JVM artifact**,
+v4 (`live.ditto:ditto`, e.g. `4.14.7`) is **Android-only — there is no JVM artifact**,
 so the plain-JUnit pattern above does not exist on v4. v4 tests need instrumented
 tests on an emulator/device, with an offline identity
 (`DittoIdentity.OfflinePlayground`) and no `startSync()` — the same "offline identity,

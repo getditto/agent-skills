@@ -40,6 +40,19 @@ dependencies {
                 "4.14.x is Android-only, see ../android-app"
         )
     }
+
+    // Test stack — mirrors skills/kotlin-sdk/references/testing.md. kotlin("test")
+    // is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin does not
+    // add it automatically.
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    // The tests read the offline license from the environment.
+    environment("DITTO_OFFLINE_LICENSE", System.getenv("DITTO_OFFLINE_LICENSE") ?: "")
 }
 
 application {

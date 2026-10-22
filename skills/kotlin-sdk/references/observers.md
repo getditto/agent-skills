@@ -29,8 +29,11 @@ val observer = ditto.store.registerObserver(
     query = "SELECT * FROM cars WHERE color = :color",
     arguments = mapOf("color" to "blue"),
 ) { result ->
-    val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
-    /* handle change with `cars` (plain data) */
+    // try/catch is NOT optional: a throw here closes the observer (see below).
+    try {
+        val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
+        /* handle change with `cars` (plain data) */
+    } catch (t: Throwable) { /* log; observer survives */ }
 }
 ```
 
@@ -41,13 +44,17 @@ owning `Ditto` instance is closed.
 **2. `observe` — cold `Flow<T>`, scope-managed lifetime:**
 
 ```kotlin
+// repeatOnLifecycle(STARTED): collection stops while the UI is STOPPED.
+// (In a ViewModel, prefer viewModelScope + stateIn — see "Flow lifecycle" below.)
 lifecycleScope.launch {
-    ditto.store.observe(
-        "SELECT * FROM cars WHERE color = :color",
-        mapOf("color" to "red")
-    ) { result ->   // transform MUST return plain Kotlin data, not result/items
-        result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
-    }.collect { cars -> this@MyActivity.cars = cars }
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        ditto.store.observe(
+            "SELECT * FROM cars WHERE color = :color",
+            mapOf("color" to "red")
+        ) { result ->   // transform MUST return plain Kotlin data, not result/items
+            result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
+        }.collect { cars -> this@MyActivity.cars = cars }
+    }
 }
 // No manual cleanup needed — cancelled with lifecycleScope
 ```
@@ -60,9 +67,12 @@ lifecycleScope.launch {
         "SELECT * FROM cars WHERE color = :color",
         mapOf("color" to "blue"),
     ) { result ->
-        val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
-        expensiveOperation(cars)
-        withContext(Dispatchers.Main) { updateUI(cars) }
+        // Android: this handler starts on the MAIN thread — hop off for the work
+        // (see Threads below); withContext(Dispatchers.Main) alone is a no-op here.
+        val cars = withContext(Dispatchers.IO) {
+            result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
+        }
+        expensiveOperation(cars); updateUI(cars)   // updateUI is back on the handler's dispatcher
     }
 }
 ```
@@ -80,7 +90,7 @@ coroutine suspension *is* the back-pressure (sdk/latest/migration-guides/kotlin-
 
 All three have a `(result, diff)` overload — see [Diffing](#diffing-with-dittodiff).
 All three deliver **immediately with the current local state**, then again on every
-change: on an empty store the first emission is an empty result set, not silence, so
+change: on an empty store the first emission is an empty result set, not silence —
 design handlers to render the empty state.
 
 ### The critical memory rule: extract inside the lambda
@@ -90,7 +100,7 @@ design handlers to render the empty state.
 > they are closed — before the next event is even requested. **[source-verified]** the
 > observer implementation closes the result in a `finally` block *before* calling
 > `signalNext` ("Free the result before signalling next so the core re-arms after the
-> previous result is released." — `InternalDittoStore.kt`, SDKS-4367).
+> previous result is released." — `InternalDittoStore.kt`).
 
 Returning `result.items` from the lambda, storing them in a `var`, or capturing them in
 another coroutine throws on next access:
@@ -142,19 +152,8 @@ native memory early (it re-materializes on next access to `value`).
 - **`observe()`**: a transform exception terminates the Flow with that exception; use a
   `catch { }` operator (or `retryWhen`) if one bad event must not kill the stream.
 
-**Defense: never let an exception escape a `registerObserver` handler** — catch inside:
-
-```kotlin
-val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
-    try {
-        val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
-        render(cars)
-    } catch (t: Throwable) {
-        Log.e("cars", "observer handler failed — observer stays alive", t)
-        // do NOT rethrow: rethrowing closes the observer (see above)
-    }
-}
-```
+**Defense: never let an exception escape a `registerObserver` handler** — catch
+inside, as in shape 1 above, and do NOT rethrow (rethrowing closes the observer).
 
 For `observe()`, decide explicitly whether a terminated stream should be re-collected
 (`retryWhen`) — Flows do not restart themselves.
@@ -176,9 +175,10 @@ dispatcher safe to recommend unconditionally:
 - **Android** — a real off-main elastic pool; mandatory, since the handler starts on
   `MainScope()` (main thread).
 - **JVM** — same real elastic pool; off-main.
-- **iOS (KMP)** — `Dispatchers.IO` **exists and is functional on Native** in
-  kotlinx-coroutines 1.10.x (what Ditto 5.1.0 builds against). **[source-verified]**
-  in `kotlinx-coroutines-core/native/src/Dispatchers.kt` @ 1.10.2: a public
+- **iOS (KMP)** — `Dispatchers.IO` **exists and is functional on Native** in both
+  kotlinx-coroutines 1.9.0 (what Ditto 5.1.0 builds against) and 1.10.2 (what the
+  harness executed). **[source-verified]** in
+  `kotlinx-coroutines-core/native/src/Dispatchers.kt` (both versions): a public
   `actual val Dispatchers.IO` backed by `DefaultIoScheduler` (2048-thread pool,
   `limitedParallelism(64)`) — never the main thread.
 

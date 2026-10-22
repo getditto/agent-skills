@@ -115,9 +115,11 @@ v5 is coroutines-native: async work is `suspend` or `Flow`, never callbacks.
   dispatcher safe to recommend unconditionally — on Android it is mandatory (handler
   starts on main), and it is a real off-main pool on JVM **and** iOS.
   **[source-verified]** `Dispatchers.IO` exists and is functional on Kotlin/Native in
-  kotlinx-coroutines 1.10.x (what Ditto 5.1.0 uses): a public `actual val
-  Dispatchers.IO` backed by `DefaultIoScheduler` (never the main thread). So the KMP
-  rule "always use `Dispatchers.IO`, never main" holds on android, jvm and ios. Use
+  both kotlinx-coroutines 1.9.0 (what Ditto 5.1.0 builds against —
+  `sdks/kotlin/gradle/libs.versions.toml`) and 1.10.2 (what the harness executed): a
+  public `actual val Dispatchers.IO` backed by `DefaultIoScheduler` (never the main
+  thread). So the KMP rule "always use `Dispatchers.IO`, never main" holds on
+  android, jvm and ios. Use
   `withContext(Dispatchers.IO)` / `.flowOn(Dispatchers.IO)` for extraction and I/O,
   then back to `Dispatchers.Main` for View/UI writes.
 - `DittoFactory.create`, `sync.start()/stop()`, `registerSubscription`,

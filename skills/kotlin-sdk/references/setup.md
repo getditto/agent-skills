@@ -14,18 +14,31 @@
 - JDK 17, Android `minSdk` 24 (Android 7.0), `compileSdk` 36
   (sdk/latest/install-guides/kotlin).
 - Kotlin: docs say 2.0+ (N−4 support window, sdk/latest/compatibility/kotlin), but the
-  **executed floor is 2.3.x** — the 5.0.3/5.1.0 artifacts embed stdlib 2.3.x metadata
-  and the harness failed to compile under Kotlin 2.0.x. Use the Kotlin Gradle plugin
-  2.3.x with `kotlinx-coroutines` 1.10.x (executed: 2.3.21 + 1.10.2).
+  **executed floor is higher** — 5.1.0/5.0.3 artifacts embed Kotlin metadata 2.0.x/2.1.x
+  (jar-verified) and the harness failed under the Kotlin 2.0.x plugin. Executed-working
+  pin: Kotlin **2.3.21** with `kotlinx-coroutines` 1.10.x (JVM). On Android with AGP 9,
+  use built-in Kotlin — do **not** apply `org.jetbrains.kotlin.android` (v5 on Android
+  not yet executed).
 - Repository: `mavenCentral()`.
 
-**Android app — the only dependency line you need:**
+**Android app — the only Ditto dependency line you need:**
 
 ```kotlin
 // build.gradle.kts (app module)
 dependencies {
     implementation("com.ditto:ditto-kotlin:5.1.0")
 }
+```
+
+Two non-Ditto additions the samples in this skill assume (add them when you use
+those features):
+
+```kotlin
+// Whole-document decode samples (carJson.decodeFromString<Car>(…)) need:
+implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+//   plus `kotlin("plugin.serialization")` in the plugins block
+// collectAsStateWithLifecycle() in Compose needs:
+implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 ```
 
 `com.ditto:ditto-kotlin` is the KMP root module; an Android project resolves the
@@ -126,7 +139,14 @@ Required keep rule (sdk/latest/install-guides/kotlin):
 
 ```proguard
 -keep class com.ditto.** { *; }
+-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
 ```
+
+Both rules are required (sdk/latest/install-guides/kotlin): the second keeps the TLS
+platform verifier, or `Connect.Server` connections break in minified builds. Yes, the
+first rule is package-wide — it is the vendor-mandated rule, necessary because the
+AAR ships no consumer ProGuard rules of its own; scope it narrower only if you have
+minified-build-tested the result.
 
 Symptom when missing — a release (minified) build crashes on first SDK call with:
 
