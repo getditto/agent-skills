@@ -111,6 +111,11 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   exception-in-handler closes the observer, per-platform callback dispatchers
   (`Ditto.android.kt` `MainScope()` vs `Ditto.jvm.kt` `Dispatchers.Default`),
   cancellation closing the native observer, the transport-config DSL surface.
+- `kotlinx-coroutines-core` `native/src/Dispatchers.kt` @ 1.10.2 (the coroutines
+  version Ditto 5.1.0 builds against): `Dispatchers.IO` on Kotlin/Native (iOS) is a
+  public `actual val` backed by `DefaultIoScheduler` (2048-thread pool,
+  `limitedParallelism(64)`) — present and off-main, backing the skill's KMP-wide
+  "use `Dispatchers.IO`, never main" guidance.
 - `sdk-release-4.14.7`: the `crdt_version < V6` gate behind "disable sync with V3"
   (`ffi/src/store/dql/ffi_access.rs`); the 4.14.7 AAR (javap) for identity constructor
   shapes and the `live.ditto.android` package layout.

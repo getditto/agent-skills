@@ -100,10 +100,13 @@ lifetime:
 ## Performance
 
 - On Android, observer handlers start on the main thread (source-verified
-  `MainScope()`): keep handler bodies cheap and push extraction/deserialization to
-  `Dispatchers.Default`. A observer decoding hundreds of documents per emission on
-  main is the most common Ditto-Kotlin jank source. (Unmeasured claim — profile
-  before optimizing; the dispatcher fact itself is verified.)
+  `MainScope()`): keep handler bodies cheap and push extraction/deserialization and
+  I/O to `Dispatchers.IO`. Unlike `Dispatchers.Default`, `IO` is a real off-main pool
+  on **all three** KMP targets — including iOS/Native (source-verified,
+  kotlinx-coroutines 1.10.x), so it's the one dispatcher you can recommend in shared
+  KMP code without a platform carve-out. A observer decoding hundreds of documents per
+  emission on main is the most common Ditto-Kotlin jank source. (Unmeasured claim —
+  profile before optimizing; the dispatcher facts themselves are verified.)
 - Evict on a cadence, not on every write: `EVICT` is a maintenance operation
   ([references/store.md](references/store.md)).
 - Keep documents small enough for your slowest transport — sizing guidance is owned by

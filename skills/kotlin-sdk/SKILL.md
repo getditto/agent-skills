@@ -110,9 +110,16 @@ v5 is coroutines-native: async work is `suspend` or `Flow`, never callbacks.
 
 - **Observer handlers run on the SDK's internal scope, which is platform-dependent**
   (source-verified, 5.0.3/5.1.0, `dittoCoroutineScope()`): **Android = `MainScope()` —
-  your handler starts on the main thread**; JVM/iOS = `Dispatchers.Default`. Hop off
-  the main thread for heavy extraction (`withContext(Dispatchers.Default)` or
-  `.flowOn(Dispatchers.Default)`), back to `Dispatchers.Main` for View/UI writes.
+  your handler starts on the main thread**; JVM/iOS = `Dispatchers.Default`.
+- **Do the handler's heavy work on `Dispatchers.IO`, on every target.** It is the one
+  dispatcher safe to recommend unconditionally — on Android it is mandatory (handler
+  starts on main), and it is a real off-main pool on JVM **and** iOS.
+  **[source-verified]** `Dispatchers.IO` exists and is functional on Kotlin/Native in
+  kotlinx-coroutines 1.10.x (what Ditto 5.1.0 uses): a public `actual val
+  Dispatchers.IO` backed by `DefaultIoScheduler` (never the main thread). So the KMP
+  rule "always use `Dispatchers.IO`, never main" holds on android, jvm and ios. Use
+  `withContext(Dispatchers.IO)` / `.flowOn(Dispatchers.IO)` for extraction and I/O,
+  then back to `Dispatchers.Main` for View/UI writes.
 - `DittoFactory.create`, `sync.start()/stop()`, `registerSubscription`,
   `registerObserver` are **not** suspend. `store.execute`, `store.collect`,
   `auth.login`, attachment fetches **are** suspend.
@@ -234,8 +241,9 @@ Darwin ARM64 on classpath …` on the first `DittoFactory.create` (executed). Ad
 ### Heavy decode on the Android main thread
 
 **Symptom:** dropped frames / ANR risk during sync bursts — on Android, observer
-handlers start on `MainScope()` (source-verified). Move extraction to
-`Dispatchers.Default`; only plain data crosses back.
+handlers start on `MainScope()` (source-verified). Move extraction and I/O to
+`Dispatchers.IO` (works and stays off-main on Android, JVM and iOS); only plain data
+crosses back to `Dispatchers.Main`.
 
 ## Version differences
 

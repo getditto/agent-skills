@@ -10,7 +10,7 @@
 
 This is where most Kotlin Ditto apps live, and where correct-looking code crashes with
 `IllegalStateException`, silently stops receiving updates, or floods a slow collector.
-Read [`SKILL.md` § Concurrency and threading model](../SKILL.md#concurrency-and-threading-model)
+Read [`SKILL.md` § Concurrency and threading](../SKILL.md#concurrency-and-threading-model)
 first; this file is the detail.
 
 ## CAP-11 Observers, diffing and back-pressure
@@ -45,8 +45,7 @@ lifecycleScope.launch {
     ditto.store.observe(
         "SELECT * FROM cars WHERE color = :color",
         mapOf("color" to "red")
-    ) { result ->
-        // transform MUST return plain Kotlin data, not a DittoQueryResult or its items
+    ) { result ->   // transform MUST return plain Kotlin data, not result/items
         result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
     }.collect { cars -> this@MyActivity.cars = cars }
 }
@@ -64,7 +63,6 @@ lifecycleScope.launch {
         val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
         expensiveOperation(cars)
         withContext(Dispatchers.Main) { updateUI(cars) }
-        // No new event is produced until this lambda returns.
     }
 }
 ```
@@ -82,8 +80,8 @@ coroutine suspension *is* the back-pressure (sdk/latest/migration-guides/kotlin-
 
 All three have a `(result, diff)` overload — see [Diffing](#diffing-with-dittodiff).
 All three deliver **immediately with the current local state**, then again on every
-change: on an empty store the first emission is an empty result set, not silence.
-Design handlers to render the empty state.
+change: on an empty store the first emission is an empty result set, not silence, so
+design handlers to render the empty state.
 
 ### The critical memory rule: extract inside the lambda
 
@@ -103,14 +101,13 @@ IllegalStateException: Query result item has already been closed.
 
 (exact string, `InternalDittoQueryResultItem.getPointer()` — **[source-verified]**;
 also in sdk/latest/migration-guides/kotlin-v4). Treat results like database cursors:
-extract what you need immediately; never keep live references between emissions.
+extract immediately; never keep live references between emissions.
 
 Two extraction paths, both inside the lambda:
 
 ```kotlin
 // Path A — whole-document JSON + kotlinx-serialization (recommended for complex objects)
 val cars = result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
-
 // Path B — typed accessors on item.value (a DittoCborSerializable.Dictionary):
 // .stringOrNull, .intOrNull, .longOrNull, .doubleOrNull, .booleanOrNull,
 // .listOrNull, .dictionaryOrNull, .attachmentTokenOrNull, .isNull
@@ -127,9 +124,8 @@ Returning the `DittoQueryResult` itself from the transform throws immediately �
 `"You must not return DittoQueryResult from transform function. This will cause a
 memory leak!"` (**[source-verified]**, `DittoStore.kt`).
 
-If you extracted only a few fields and want to release the rest of an item's native
-memory early, `item.dematerialize()` frees the materialized value (it re-materializes
-on next access to `value`).
+If you extracted only a few fields, `item.dematerialize()` frees the rest of an item's
+native memory early (it re-materializes on next access to `value`).
 
 ### Exceptions kill observers
 
@@ -174,15 +170,32 @@ For `observe()`, decide explicitly whether a terminated stream should be re-coll
 | JVM | `Dispatchers.Default` | a background pool thread |
 | iOS (KMP) | `Dispatchers.Default` | a background pool thread |
 
+**Do the handler's heavy work on `Dispatchers.IO`, on every target** — it is the one
+dispatcher safe to recommend unconditionally:
+
+- **Android** — a real off-main elastic pool; mandatory, since the handler starts on
+  `MainScope()` (main thread).
+- **JVM** — same real elastic pool; off-main.
+- **iOS (KMP)** — `Dispatchers.IO` **exists and is functional on Native** in
+  kotlinx-coroutines 1.10.x (what Ditto 5.1.0 builds against). **[source-verified]**
+  in `kotlinx-coroutines-core/native/src/Dispatchers.kt` @ 1.10.2: a public
+  `actual val Dispatchers.IO` backed by `DefaultIoScheduler` (2048-thread pool,
+  `limitedParallelism(64)`) — never the main thread.
+
+So the KMP-wide rule holds: **`Dispatchers.IO` always works and never runs on main, on
+all three targets.** iOS nuance: there `IO` is a *separate* pool that does not share
+threads with `Dispatchers.Default` (on JVM/Android they multiplex one pool) — prefer
+`IO` over `Default` for observer/decode work so behavior doesn't diverge per platform.
+
 Consequences:
 
-- **On Android, heavy work inside the handler janks the UI.** Decoding hundreds of
-  documents with `jsonString()`/kotlinx-serialization is CPU work — hop off the main
-  thread for extraction, then back for the UI update:
+- **On Android, heavy work inside the handler janks the UI** unless you hop. Decoding
+  hundreds of documents with `jsonString()`/kotlinx-serialization is CPU work — move
+  it to `Dispatchers.IO`, then back for the UI update:
 
 ```kotlin
 val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
-    val cars = withContext(Dispatchers.Default) {
+    val cars = withContext(Dispatchers.IO) {
         result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
     }
     updateUI(cars) // back on the SDK scope's dispatcher (Main on Android)
@@ -191,7 +204,7 @@ val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
 
   Extraction from another dispatcher *inside* the handler is safe: the result is only
   closed when the handler returns, and item materialization is internally synchronized.
-- With `observe()`, the equivalent is `.flowOn(Dispatchers.Default)` upstream of
+- With `observe()`, the equivalent is `.flowOn(Dispatchers.IO)` upstream of
   collection.
 - On JVM the reverse caution applies: never touch Swing/Compose-desktop UI state
   directly from the handler; hop to the UI dispatcher.
@@ -210,34 +223,23 @@ This replaces v4's `runOnUiThread { ... }` (sdk/latest/migration-guides/kotlin-v
 `signalNext.call()` — which re-arms the core's observer — runs only after the handler
 returns and the query result is closed.
 
-> **Coalescing**: changes that occur while your handler is running are merged. When the
-> next callback fires you receive the **latest state, not every intermediate change**.
-> (sdk/latest/migration-guides/kotlin-v4)
-
-Consequence: never treat observer deliveries as an event log — your handler must be
-correct against "latest state"; it will not see every intermediate value.
+> **Coalescing**: changes that occur while your handler is running are merged — the
+> next callback delivers the **latest state, not every intermediate change**
+> (sdk/latest/migration-guides/kotlin-v4). Never treat deliveries as an event log;
+> your handler must be correct against "latest state".
 
 **`observe()` — the docs overstate the risk; the source is more precise.** The
 migration guide says `observe()` "does not back-pressure" because the Flow "signals
 Ditto to produce the next event right after emitting succeeds"
-(sdk/latest/migration-guides/kotlin-v4). **[source-verified]** the implementation is:
-
-```kotlin
-// InternalDittoStore.observe (5.0.3 and 5.1.0, verbatim shape):
-callbackFlow {
-    collect(query, arguments) { queryResult ->
-        val element = transform(queryResult)
-        send(element)              // suspends until the collector RECEIVES it
-    }
-}.buffer(Channel.RENDEZVOUS)
-```
+(sdk/latest/migration-guides/kotlin-v4). **[source-verified]** the implementation
+(`InternalDittoStore.observe`, 5.0.3 and 5.1.0) is `callbackFlow { collect(…) { result
+-> send(transform(result)) } }.buffer(Channel.RENDEZVOUS)`.
 
 Because `send` is suspending and the channel is rendezvous (capacity 0), Ditto cannot
 run ahead of the collector by more than **one received-but-unprocessed element** — it
-re-arms when the collector *takes* an event, not when the collector finishes
-*processing* it. So with a plain terminal `collect { }`, `observe()` is effectively
-one-at-a-time. The flooding the docs warn about happens when **you** insert a buffering
-operator between `observe()` and the collector:
+re-arms when the collector *takes* an event, not when it finishes *processing* it. So
+with a plain terminal `collect { }`, `observe()` is effectively one-at-a-time. The
+flooding the docs warn about happens when **you** insert a buffering operator:
 
 ```kotlin
 ditto.store.observe("SELECT * FROM cars") { result ->
@@ -253,10 +255,10 @@ Rules of thumb:
 
 - UI snapshots (only latest state matters): `.conflate()` or `stateIn(scope,
   SharingStarted.WhileSubscribed(), initial)` — both drop intermediates safely.
-- Every event must be fully processed before the next is produced: use `collect()`,
-  not `observe()` + operators.
-- Never add `.buffer()` (any capacity) to an `observe()` chain unless you have measured
-  the queue depth you actually need.
+- Every event fully processed before the next is produced: use `collect()`, not
+  `observe()` + operators.
+- Never add `.buffer()` (any capacity) unless you have measured the queue depth you
+  actually need.
 - `collectLatest { }` is safe for "cancel in-flight work on new state" UI logic; it
   does not queue.
 
@@ -281,7 +283,7 @@ class CarsViewModel(private val ditto: Ditto) : ViewModel() {
         .observe("SELECT * FROM cars ORDER BY make") { result ->
             result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
         }
-        .flowOn(Dispatchers.Default)          // decode off the main thread (see Threads)
+        .flowOn(Dispatchers.IO)               // decode off the main thread (see Threads)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     // viewModelScope cancellation closes the observer — nothing else to do.
 }
@@ -294,10 +296,8 @@ re-created when it starts again.
 
 Anti-pattern: `observe()` collected with `GlobalScope.launch { … }` (leaks the observer
 for the process lifetime) or stored in a `val` and never collected (the Flow is **cold**
-— nothing registers until collection).
-
-Introspect live registrations with `ditto.store.observers`
-(sdk/latest/crud/observing-data-changes).
+— nothing registers until collection). Introspect live registrations with
+`ditto.store.observers` (sdk/latest/crud/observing-data-changes).
 
 ### Common client mistakes
 
@@ -312,7 +312,7 @@ Seen in the field; each maps to a rule above:
    try/catch inside the handler.
 3. **UI jank on every sync burst (Android)** — heavy deserialization ran on the main
    thread (Android handlers start on `MainScope()`). Fix: `withContext(
-   Dispatchers.Default)` for extraction or `.flowOn(Dispatchers.Default)`.
+   Dispatchers.IO)` for extraction or `.flowOn(Dispatchers.IO)`.
 4. **Memory climbs until OOM under write load** — `.buffer()` on an `observe()` chain
    decoupled the producer from a slow collector. Fix: remove the buffer; use
    `.conflate()` or `collect()`.
@@ -333,12 +333,12 @@ Available from v4.11+ (sdk/latest/crud/observing-data-changes). All three observ
 shapes have an overload whose lambda takes a second `DittoDiff` parameter:
 
 ```kotlin
-// In v5, the differ is owned by the observer — you do not construct one yourself.
-// Closing the observer frees the differ's native resources.
-var previousDocumentIds: List<String> = emptyList() // Store only extracted IDs
+// In v5 the differ is owned by the observer — you do not construct one yourself, and
+// closing the observer frees its native resources. Extract plain data inside the
+// lambda; never return result.items.
+var previousDocumentIds: List<String> = emptyList() // extracted IDs only
 
 val observer = ditto.store.registerObserver("SELECT * FROM cars") { result, diff ->
-    // Extract plain Kotlin data inside the lambda — never return result.items.
     val currentDocumentIds = result.items.map { item ->
         val id = item.value["_id"].stringOrNull ?: "unknown"
         item.dematerialize() // Release the materialized value early
@@ -382,8 +382,8 @@ not observable statements. For DQL semantics see the `write-dql` skill or
 
 ### Migrating from v4
 
-Short asides only — the extended tables live in
-[versions.md](versions.md) (sdk/latest/migration-guides/kotlin-v4):
+Short asides only — the extended tables live in [versions.md](versions.md)
+(sdk/latest/migration-guides/kotlin-v4):
 
 - **v4's `registerObserver` callback was not `suspend`.** v5 handlers are `suspend`;
   replace `runOnUiThread { ... }` with `withContext(Dispatchers.Main)` — but read
