@@ -19,11 +19,14 @@ DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .ver
 
 ```swift
 // @Sendable: the callback fires on SDK threads. Registered from a @MainActor owner,
-// an unannotated closure can inherit main-actor isolation and trip a Swift 6
-// executor assertion the moment a log arrives.
+// an unannotated closure silently INHERITS main-actor isolation — touching MainActor
+// state from it still compiles and then mutates that state off-thread, with no
+// diagnostic. Marking the closure @Sendable turns the missing actor hop into a
+// compile error instead of a data race (verified on Ditto 5.1.0 / Swift 6.4).
 DittoLogger.setCustomLogCallback { @Sendable level, message in
     // Keep the raw message private — SDK diagnostics can contain authentication
-    // material, and .public bypasses unified-log redaction.
+    // material (login lines carry tokens and user IDs), and .public bypasses
+    // unified-log redaction.
     logger.log(level: level == .error ? .error : .debug, "\(message, privacy: .private)")
 }
 ```
@@ -34,6 +37,10 @@ The callback is invoked from SDK threads and is **not** declared `@Sendable` by 
 (`DittoLogger.swift` — `[source-verified]`). Mark the closure `@Sendable` yourself, do
 not touch actor-isolated UI state from it, and do not call back into Ditto from inside
 it.
+
+`.debug`-level `os.Logger` messages are not persisted to the unified log — use
+`log stream --debug` (not `log show`) to see them, and expect `log stream` on a
+simulator to show even `.private` payloads in cleartext.
 
 ### Exporting logs
 

@@ -1,11 +1,11 @@
 ---
 name: swift-sdk
 description: >
-  Use ONLY for the Ditto Swift SDK: .swift, Package.swift, Xcode projects,
-  runnable SwiftUI apps, import DittoSwift, DittoConfig, Ditto.open, observers,
-  authentication, lifetimes and concurrency errors. Covers iOS, iPadOS, macOS/AppKit and
-  Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x. Other languages use their
-  own Ditto SDK skill.
+  Use ONLY for tasks that use the Ditto Swift SDK (not generic SwiftUI/Xcode work
+  without Ditto): .swift, Package.swift or Xcode files touching import DittoSwift,
+  DittoConfig, Ditto.open, observers, authentication, lifetimes and concurrency errors.
+  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x.
+  Other languages use their own Ditto SDK skill.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

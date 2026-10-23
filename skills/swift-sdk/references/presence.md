@@ -22,8 +22,10 @@ graph.allConnectionsByID()      // [String: DittoConnection]
 
 ```swift
 // @Sendable: presence delivers on an SDK thread. An unannotated closure registered
-// from a @MainActor SwiftUI owner can inherit main-actor isolation and trap on
-// callback entry under Swift 6 — before any hop inside the body could run.
+// from a @MainActor SwiftUI owner silently INHERITS main-actor isolation — writing
+// @Published state from it still compiles, then mutates that state off-thread with
+// no diagnostic. @Sendable turns the missing hop into a compile error at the
+// mutation site instead of a data race (verified on Ditto 5.1.0 / Swift 6.4).
 let observer = ditto.presence.observe { @Sendable graph in
     // graph.localPeer, graph.remotePeers — extract here, then hop explicitly:
     Task { @MainActor in /* update UI state */ }
@@ -41,6 +43,11 @@ releasing its `AnyCancellable` stops the underlying observer.
 The handler is **not** declared `@Sendable` by the SDK (`DittoPresence.swift:74` —
 `[source-verified]`) and is not guaranteed to run on the main queue. Mark it
 `@Sendable` yourself, extract what you need, then hop to the main actor.
+
+`Task { @MainActor [weak self] in … }` inside the `@Sendable` closure triggers
+`#ImplicitStrongCapture` (the outer closure captures `self` strongly to feed the inner
+capture list). If that warning matters, bridge through a bounded `AsyncStream` exactly
+like the store-observer pattern in [observers.md](observers.md) instead of hopping inline.
 
 ### Peer metadata
 
