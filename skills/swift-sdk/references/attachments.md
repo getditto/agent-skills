@@ -52,10 +52,13 @@ let fetcher = try ditto.store.fetchAttachment(token: token) { event in
     switch event {
     case .completed(let attachment):
         // attachment.data() / attachment.copy(toPath:)
+        break
     case .progress(let downloadedBytes, let totalBytes):
         // report progress
+        break
     case .deleted:
         // the attachment was removed while fetching
+        break
     @unknown default:
         break
     }

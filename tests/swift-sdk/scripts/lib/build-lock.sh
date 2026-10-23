@@ -26,26 +26,19 @@ acquire_build_lock() {
 
   until mkdir "$lock" 2>/dev/null; do
     # A run that was killed (or a machine that rebooted) leaves the directory behind.
-    # Break a lock whose owner is gone rather than waiting out a process that will never
-    # exit. The grace period lets a holder that has just won the `mkdir` write its pid
-    # before anyone judges it dead.
+    # We used to break such locks in-band once the owner pid was gone — but every
+    # variant of that races. Even the rename-then-revalidate "claim" version has a
+    # window: a second waiter can displace a live lock, a third caller acquires the
+    # empty path, and the restore `mv` then nests the displaced directory inside the
+    # third caller's lock — two builds in .build at once. No in-band recovery can
+    # close that, because recovery and acquisition are not one atomic step. So this
+    # script never removes a lock it did not create: a dead owner fails loudly with
+    # the diagnosis, and a human removes the directory.
     owner="$(cat "$lock/pid" 2>/dev/null || true)"
     if [[ $waited -ge 10 && -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
-      echo "removing a stale ${lock} left by process $owner" >&2
-      # Rename-and-delete alone races: two waiters can read the same dead pid, and the
-      # loser can end up renaming away the winner's fresh lock. So the rename is only
-      # a CLAIM — afterwards, revalidate that the directory we took still holds the
-      # dead pid. If a live process won the race in between, the pid file now names
-      # that winner: drop our claim and go back to waiting.
-      if mv "$lock" "$lock.stale.$$" 2>/dev/null; then
-        if [[ "$(cat "$lock.stale.$$/pid" 2>/dev/null)" == "$owner" ]]; then
-          rm -rf "$lock.stale.$$"
-        else
-          echo "stale-lock claim lost; a live run holds the lock now" >&2
-          mv "$lock.stale.$$" "$lock" 2>/dev/null || true
-        fi
-      fi
-      continue
+      echo "$lock is stale: owner process $owner is gone." >&2
+      echo "Remove it with:  rm -rf '$lock'" >&2
+      exit 1
     fi
 
     if [[ $waited -ge 600 ]]; then
