@@ -26,9 +26,7 @@ let subscription = try ditto.sync.registerSubscription(
 )
 ```
 
-4.14.6 has only the `[String: Any?]` overload
-(`sdk-release-4.14.6:cocoa/DittoSwift/DittoSync.swift:82-85`), so this does not compile
-there. If one source tree must build against all three lines, use the dictionary form.
+4.14.x has only the `[String: Any?]` overload, so this does not compile there. If one source tree must build against all three lines, use the dictionary form.
 
 `registerSubscription` is `@discardableResult`, which makes it easy to drop the handle by
 accident. Keep it: **the handle is the only way to cancel**, not the thing that keeps the
@@ -45,15 +43,13 @@ subscription.isCancelled            // Bool
 subscription.cancel()
 ```
 
-All **executed**. A cancelled subscription reports `isCancelled == true` and disappears
+A cancelled subscription reports `isCancelled == true` and disappears
 from `ditto.sync.subscriptions`.
 
 ### `ditto.sync.subscriptions` is computed — do not cache it
 
-In v5 it is recomputed from the SDK on every read, not a stored `Set`
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoSync.swift:83`). A snapshot taken once and
-held goes stale and never updates — **executed**: a set captured before a registration
-still reported empty afterwards, while a fresh read reported one subscription. The same
+In v5 it is recomputed from the SDK on every read, not a stored `Set`. A snapshot taken
+once and held goes stale and never updates — read it at the point of use. The same
 applies to `ditto.store.observers`.
 
 This is a natural mistake when porting v4 code, where both were stored properties, and it
@@ -72,15 +68,11 @@ try ditto.sync.start()
 ```
 
 **This must run before `ditto.sync.start()`** or data may sync somewhere you did not
-intend (`sdk/latest/sync/sync-scopes.mdx`). Read the current value back with
-`SHOW USER_COLLECTION_SYNC_SCOPES`. Both **executed**.
-
-> The published Swift sample at `sdk/latest/sync/sync-scopes.mdx:69-76` calls
-> `await ditto.store.execute(...)` with no `try` on a `throws` method, so it does not
-> compile. The form above is the corrected one and is exercised by the fixture.
+intend (<https://docs.ditto.live/sdk/latest/sync/sync-scopes>). Read the current value
+back with `SHOW USER_COLLECTION_SYNC_SCOPES`. `execute` throws, so the call needs `try`.
 
 Re-apply sync scopes on every launch, before sync starts. Why — `ALTER SYSTEM` settings
-are not persisted — and the statement grammar both belong to the `dql` skill, or
+are not persisted — and the statement grammar both belong to the `write-dql` skill, or
 <https://docs.ditto.live/dql/alter-system>.
 
 ## CAP-14 Sync status and local commit tracking
@@ -108,12 +100,11 @@ on an offline-only peer with every radio off. For reachability, read the presenc
 | `SELECT` | `nil` |
 | any statement **inside** a transaction | `nil` |
 
-All three rows **executed**, with the first checked for all four mutating statements.
 Inside a transaction there is no commit yet, so an app that wants a commit identifier has
 to run the statement outside one.
 
 `DittoQueryResult.mutatedDocumentIDs()` returns the `DittoDocumentID`s a mutation touched
-— **executed**: one insert reports one ID, and a `SELECT` reports none.
+— one per document an insert wrote, and none for a `SELECT`.
 
 To observe *when* data arrives rather than when it was written locally, register a store
 observer ([observers.md](observers.md)); an observer fires on every change to its result

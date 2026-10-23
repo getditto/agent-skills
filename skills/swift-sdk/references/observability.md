@@ -12,9 +12,8 @@ DittoLogger.isEnabled = true
 DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .verbose
 ```
 
-**Executed on all three lines.** `isEnabled` exists un-deprecated on 4.14.6 too
-(`sdk-release-4.14.6:cocoa/DittoSwift/DittoLogger.swift:25`); the older `enabled`
-spelling is a deprecated alias there and is gone in v5.
+`isEnabled` works on all three lines; the older `enabled` spelling is a deprecated alias on
+4.14.x and is gone in v5.
 
 ### Routing logs into your own logger
 
@@ -24,8 +23,7 @@ DittoLogger.setCustomLogCallback { level, message in
 }
 ```
 
-**Executed**: with logging enabled at `.debug`, the callback receives SDK lines while an
-instance is open. Pass `nil` to remove it.
+Pass `nil` to remove the callback.
 
 The callback is invoked from SDK threads and is **not** declared `@Sendable`. Do not touch
 UI state from it, and do not call back into Ditto from inside it.
@@ -36,8 +34,7 @@ UI state from it, and do not call back into Ditto from inside it.
 let bytesWritten = try await DittoLogger.export(to: destinationURL)
 ```
 
-**Executed**: returns a non-zero byte count and creates the file. This is the current API;
-the 4.14.x `setLogFile`/`setLogFileURL` forms are deprecated and gone in v5.
+It returns the number of bytes written. This is the current API; the 4.14.x `setLogFile`/`setLogFileURL` forms are deprecated and gone in v5.
 
 Logs may continue to be written into the persistence directory **after** a `Ditto`
 instance has been deallocated (`DittoConfig.persistenceDirectory`'s own documentation), so
@@ -47,8 +44,8 @@ do not delete that directory immediately on teardown and expect it to stay empty
 
 From 4.14.6 and 5.1.0 — but **not** any 5.0.x release — an uncaught exception thrown
 inside an SDK callback closure is re-raised with the original call stack, so a crash
-reporter attributes it to your throwing code instead of reporting a `SIGABRT` inside Ditto
-(#SDKS-3483). On 5.0.x the same crash reads as a Ditto bug in the report.
+reporter attributes it to your throwing code. On 5.0.x the report attributes the same
+crash to a `SIGABRT` inside Ditto; look further up the stack for your own frame.
 
 Symbolication needs `DittoSwift.framework.dSYM` (and `DittoObjC.framework.dSYM` on
 4.14.x) uploaded with your own — see [setup.md](setup.md#crash-reporting).
@@ -66,8 +63,7 @@ let observer = ditto.diskUsage.observe { item in /* … */ }
 observer.stop()
 ```
 
-**Executed**: after a single insert, `sizeInBytes` is greater than zero and `path` is
-non-empty. The 4.14.x spelling is in
+The 4.14.x spelling is in
 [versions.md](versions.md#store-results-and-errors).
 
 `DittoDiskUsage.DiskUsagePublisher` (`diskUsage.diskUsagePublisher()`) is the Combine
@@ -82,7 +78,7 @@ try ditto.smallPeerInfo.setMetadata(["deployment": "store-42"])
 ditto.smallPeerInfo.metadata      // [String: Any]
 ```
 
-**Executed**: metadata round-trips, and an oversized dictionary throws
+An oversized dictionary throws
 `DittoError.validationError(.sizeLimitExceeded(message:))`. `.depthLimitExceeded` and
 `.notADictionary` are the other two validation failures this setter produces.
 
@@ -92,9 +88,9 @@ This is the channel that feeds Ditto's device-observability tooling
 ### System information through DQL
 
 `SELECT * FROM system:collections`, `SELECT * FROM system:indexes` and `SHOW ALL` all run
-through `ditto.store.execute` like any other statement (**executed**). Note that
+through `ditto.store.execute` like any other statement. Note that
 `system:indexes` is empty until an index exists — documents do not populate it. Statement grammar
-belongs to the `dql` skill or <https://docs.ditto.live/dql/dql>.
+belongs to the `write-dql` skill or <https://docs.ditto.live/dql/dql>.
 
 ### DittoSwiftTools
 

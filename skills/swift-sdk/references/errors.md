@@ -5,11 +5,9 @@ differences.
 
 ## CAP-16 Error handling
 
-Every throwing Ditto API throws `DittoError`, an enum conforming to `LocalizedError`.
-**Executed**: `errorDescription` and `localizedDescription` are non-empty for a real
-failure. It conforms to `Sendable` from 5.0.x
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoError.swift:440`); on 4.14.x it does not,
-which is one of the things `@preconcurrency import` covers.
+Every throwing Ditto API throws `DittoError`, an enum conforming to `LocalizedError`;
+`errorDescription` and `localizedDescription` are non-empty for a real failure. It
+conforms to `Sendable` from 5.0.x; on 4.14.x it does not, which is one of the things `@preconcurrency import` covers.
 
 ```swift
 do {
@@ -45,20 +43,16 @@ case"*: `@unknown default` covers future cases, not declared ones.
 | `.queryInvalid(message:)` | `execute`, `registerObserver`, `registerSubscription` | the DQL does not parse |
 | `.queryArgumentsInvalid` | the same | an argument value the SDK cannot encode |
 | `.queryNotSupported(message:)` | `registerObserver` | the query is not a `SELECT`; on 4.14.x, also every mutating statement before `disableSyncWithV3()` |
-| `.queryError(message:)` | `execute` | mapped from Ditto Core's store/parameter query errors. **Not observed**: every malformed statement tried — a scalar where a document is required, an unbound placeholder, an unknown function — came back as `.queryInvalid`. Handle it, but do not expect it. |
+| `.queryError(message:)` | `execute` | mapped from Ditto Core's store/parameter query errors. Malformed statements — a scalar where a document is required, an unbound placeholder, an unknown function — surface as `.queryInvalid` instead, so handle this case but do not rely on it. |
 | `.transactionReadOnly(message:)` | `transaction(isReadOnly: true)` | a mutation inside a read-only transaction |
 | `.persistenceDirectoryLocked(message:)` | `Ditto.open` / `openSync` | another live instance holds that directory |
 | `.documentNotFound` | attachment and document lookups | — |
 | `.attachmentNotFound`, `.attachmentTokenInvalid`, `.failedToFetchAttachment`, `.attachmentFileNotFound`, `.attachmentFilePermissionDenied`, `.failedToCreateAttachment` | the attachment APIs | see [attachments.md](attachments.md) |
 
-`.queryInvalid`, `.queryArgumentsInvalid`, `.queryNotSupported`, `.transactionReadOnly`
-and `.persistenceDirectoryLocked` are **executed** against a running SDK.
-`.queryError` is `source`-evidenced only (see the row above).
-
 ### `activationError(_:)`
 
-`.licenseTokenVerificationFailed(message:)` (**executed**, from
-`setOfflineOnlyLicenseToken` with a bad token), `.licenseTokenExpired(message:)`,
+`.licenseTokenVerificationFailed(message:)` (from `setOfflineOnlyLicenseToken` with a
+bad token), `.licenseTokenExpired(message:)`,
 `.licenseTokenUnsupportedFutureVersion(message:)`, `.notActivatedError(message:)`.
 
 `.licenseTokenExpired` is the one to surface to an operator rather than retry — an
@@ -66,7 +60,7 @@ offline-only fleet stops working when its token lapses and nothing else explains
 
 ### `authenticationError(_:)`
 
-`.expirationHandlerMissing(message:)` — **executed**: `ditto.sync.start()` on a `.server`
+`.expirationHandlerMissing(message:)` — `ditto.sync.start()` on a `.server`
 instance with no `auth.expirationHandler` installed throws this. Install the handler
 first ([connect.md](connect.md#cap-04-authentication-and-identity)).
 
@@ -75,7 +69,7 @@ not help; get a new one.
 
 ### `validationError(_:)`
 
-`.sizeLimitExceeded(message:)` (**executed**, from both `smallPeerInfo.setMetadata` and
+`.sizeLimitExceeded(message:)` (from both `smallPeerInfo.setMetadata` and
 `presence.setPeerMetadata`), `.depthLimitExceeded`, `.notADictionary`,
 `.notJSONCompatible`, `.invalidJSON`, `.invalidCBOR`, `.invalidDittoConfig`.
 
@@ -103,7 +97,7 @@ works and a process that does not.
 | Symptom | Cause |
 |---|---|
 | `dyld: Library not loaded: @rpath/DittoSwift.framework/DittoSwift` … `Trying to load an unsigned library` | The XCFramework ships unsigned and nothing re-signed it — typically `CODE_SIGNING_ALLOWED = NO`. [setup.md](setup.md#code-signing-and-the-embedded-xcframework) |
-| The Rust core aborts before any test runs, complaining about `--disable-color` | `NO_COLOR` is set to something other than `true`/`false`; SwiftPM exports `NO_COLOR=1`. [testing.md](testing.md) |
+| The process aborts before any test runs, mentioning `--disable-color` | `NO_COLOR` is set to a value other than `true`/`false`; SwiftPM sets `NO_COLOR=1`. Unset it for test runs. [testing.md](testing.md) |
 | A transport silently never comes up, while `sync.isActive` stays `true` | A missing `Info.plist` usage description or background mode. [setup.md](setup.md#cap-02-platform-permissions-entitlements-build-config) |
 
 ## Errors you cannot catch
@@ -113,9 +107,9 @@ and the fix is always in the calling code.
 
 | Call | When it is fatal |
 |---|---|
-| `store.registerObserver`, `store.execute` | the owning `Ditto` has been released — **v5 only**. On 4.14.6 these two throw `useAfterCloseError` (#SPO-960) |
-| `store.fetchAttachment`, `sync.start` / `stop` / `isActive`, `sync.registerSubscription`, `presence.graph`, `presence.peerMetadata`, `smallPeerInfo.*` | the owning `Ditto` has been released — on **every** line, 4.14.6 included. #SPO-960 covered only observer registration and query execution |
-| `store.fetchAttachment(token:)` | the dictionary is not a real attachment token |
+| `store.registerObserver`, `store.execute` | the owning `Ditto` has been released — **v5 only**. On 4.14.6 these two throw `useAfterCloseError` |
+| `store.fetchAttachment`, `sync.start` / `stop` / `isActive`, `sync.registerSubscription`, `presence.graph`, `presence.peerMetadata`, `smallPeerInfo.*` | the owning `Ditto` has been released — on **every** line, 4.14.6 included |
+| `store.fetchAttachment(token:)` | the dictionary is not an attachment token read from a document — pass only tokens the SDK produced |
 | `ditto.transportConfig = …` | Ditto Core rejects the configuration |
 | `DittoDiffer.diff(_:)` | the diff result fails to decode (`try!`) |
 
@@ -126,9 +120,9 @@ is promoted out of this file.
 ## Errors the SDK stopped producing
 
 `DittoError.StoreErrorReason.invalidDocumentStructure(cbor:)` and
-`.nonStringKeyInDocument(key:)` are deprecated in 5.1.0 and are **no longer emitted**
-(#SDKS-4009). Do not write recovery paths for them. The `CBOR` enum they carry is
-deprecated on the same ticket.
+`.nonStringKeyInDocument(key:)` are deprecated in 5.1.0 and are **no longer emitted**.
+Do not write recovery paths for them. The `CBOR` enum they carry is deprecated in the
+same release.
 
 ## Retry, surface, or fail
 
@@ -138,7 +132,7 @@ deprecated on the same ticket.
 | `.persistenceDirectoryLocked` | fix ownership — one instance per directory |
 | `.licenseTokenExpired`, `.failedToAuthenticate`, `.expirationHandlerMissing` | surface to the operator or the auth flow; do not loop |
 | `.ioError`, `.unknownError` from a transient write | retry with backoff, then surface |
-| any `fatalError` in the table above | not recoverable at runtime — it is a bug |
+| any `fatalError` in the table above | not recoverable at runtime — fix the calling code |
 
 Sync itself does not throw when the network is down. `sync.start()` succeeds offline and
 Ditto reconnects on its own; connectivity is observed through the presence graph

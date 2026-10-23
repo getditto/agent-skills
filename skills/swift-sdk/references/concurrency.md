@@ -16,8 +16,8 @@ this file carries the per-API table and the reasoning.
 
 | API | Where its callback runs |
 |---|---|
-| `Ditto.open(config:)` | `async throws`, and **nonisolated**, so it runs on the cooperative pool rather than the caller's actor. Awaiting it from `@MainActor` does not block the main thread (**executed**). |
-| `Ditto.openSync(config:)` | `throws`; blocks the calling thread for the whole open — on the main thread that is a launch-watchdog risk (**executed**). |
+| `Ditto.open(config:)` | `async throws`, and **nonisolated**, so it runs on the cooperative pool rather than the caller's actor. Awaiting it from `@MainActor` does not block the main thread. |
+| `Ditto.openSync(config:)` | `throws`; blocks the calling thread for the whole open — on the main thread that is a launch-watchdog risk. |
 | `store.execute(query:arguments:)` | `async throws` and nonisolated, like `open`: it leaves your actor, then occupies one cooperative-pool thread for the whole statement — there is no suspension point inside it. Fine for ordinary statements; a very large one is worth keeping off a saturated pool. |
 | `store.registerObserver(…, deliverOn:)`, `store.fetchAttachment(…, deliverOn:)` | the given `DispatchQueue`, default `.main` — **`registerObserver` ignores it on 5.0.x** |
 | `sync.registerSubscription` | synchronous, `throws`; no callback |
@@ -30,7 +30,7 @@ this file carries the per-API table and the reasoning.
 
 1. **Never assume a callback is on the main actor.** `deliverOn:` is honoured on 4.14.6
    and 5.1.0 and silently ignored on 5.0.3, where using it with Swift concurrency is a
-   documented crash (#SDKS-3856). Mark the closure `@Sendable` so registration inside
+   documented crash. Mark the closure `@Sendable` so registration inside
    `@MainActor` code does not give it inherited actor isolation, then hop explicitly
    through the stream consumer. Without that annotation, Swift 6 can trap in a nested
    decoding closure before the hop, even when it only builds Sendable values.
@@ -83,8 +83,7 @@ func start() async throws {
 ```
 
 `Ditto.open` is nonisolated `async` (SE-0338), so it leaves the caller's actor: awaiting
-it from `@MainActor` does **not** block the main thread — measured at a 6 ms stall over a
-120 ms open. `Ditto.openSync` on the main actor blocks for the full duration.
+it from `@MainActor` does **not** block the main thread. `Ditto.openSync` on the main actor blocks for the full duration.
 `Task.detached` around either buys nothing; it is the same cooperative pool.
 
 Install `auth.expirationHandler` **before** `sync.start()`, or start throws

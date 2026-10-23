@@ -12,10 +12,6 @@ The rules that make a Ditto test suite deterministic are the same three every ti
 **unique persistence directory per test**, an **offline-only instance** so no test
 depends on a network, and **deterministic waits** instead of sleeps.
 
-The suite this skill is verified against lives in the `getditto/agent-skills`
-repository under `tests/swift-sdk/`; it runs against 4.14.6, 5.0.3 and 5.1.0 from one
-source tree.
-
 ### A disposable instance per test
 
 ```swift
@@ -48,14 +44,13 @@ makes a suite order-dependent.
 `DittoConfig.defaultDatabaseID()` is the SDK's all-zero UUID, which is what an
 offline-only peer with no portal database should use.
 
-**Never commit a license token.** Read it from the environment. The fixture in this repo
-takes `DITTO_OFFLINE_LICENSE` from the gitignored repo-root `.env`, and CI supplies it as
-a secret.
+**Never commit a license token.** Read it from the environment — locally from a
+gitignored file, in CI from a secret.
 
 ### Releasing the instance between tests
 
-There is no `close()`. Hold the instance in an optional and nil it out, which is what the
-published guidance says too (`sdk/latest/deployment/testing.mdx`):
+There is no `close()`. Hold the instance in an optional and nil it out, as the
+[testing guide](https://docs.ditto.live/sdk/latest/deployment/testing) recommends:
 
 ```swift
 var ditto: Ditto? = try await makeTestDitto()
@@ -63,9 +58,8 @@ var ditto: Ditto? = try await makeTestDitto()
 ditto = nil            // releases the directory lock
 ```
 
-**Executed**: a directory written by a released instance was reopened by a second
-instance in the same process, which read back what the first had written. Do **not** keep
-using `ditto.store` after nilling the instance — on v5 that is a `fatalError`
+Once released, the directory can be reopened by a new instance in the same process, and
+it sees what the first instance wrote. Do **not** keep using `ditto.store` after nilling the instance — on v5 that is a `fatalError`
 ([errors.md](errors.md#errors-you-cannot-catch)).
 
 ### Wait on events, never on time
@@ -88,8 +82,8 @@ delivery itself:
         arguments: ["car": ["_id": "test-1", "make": "Toyota"]]
     )
 
-    // Never `for await … where … { break }` with no timeout: a regression then HANGS the
-    // suite instead of failing it.
+    // Never `for await … where … { break }` with no timeout: a missing delivery then
+    // hangs the suite instead of failing it.
     #expect(try await firstElement(of: stream, timeout: .seconds(10)) { $0 == 1 } == 1)
 }
 
@@ -139,7 +133,7 @@ ditto.updateTransportConfig { config in
 }
 ```
 
-Source: `sdk/latest/deployment/testing.mdx`. Mutate through `updateTransportConfig` —
+See <https://docs.ditto.live/sdk/latest/deployment/testing>. Mutate through `updateTransportConfig` —
 assigning a fresh `DittoTransportConfig()` disables every peer-to-peer transport as well
 ([transports.md](transports.md#always-mutate-through-updatetransportconfig)).
 
@@ -148,23 +142,12 @@ assigning a fresh `DittoTransportConfig()` disables every peer-to-peer transport
 Both apply to `swift test` from the terminal and to CI. Neither appears when tests run
 inside Xcode against an app target.
 
-### 1. `swift test` sets `NO_COLOR=1`, which panics the SDK
+### 1. Clear `NO_COLOR` before the SDK initializes
 
-**Reproduced by hand on 4.14.6, 5.0.3 and 5.1.0** — no committed test asserts it,
-because the harness clears the variable rather than provoking the panic. Ditto's Rust
-core reads `NO_COLOR` as its `--disable-color` option, which accepts only `true` or
-`false`. `swift test` exports
-`NO_COLOR=1` into the test process, and the SDK panics during initialization before any
-test body runs:
-
-```
-thread '<unnamed>' panicked at crates/tracing-config/src/lib.rs:
-called `Result::unwrap()` on an `Err` value: … [String("--disable-color"), String("1"),
-Strings(["true", "false"])]
-```
-
-There is no `swift test` flag that stops it setting the variable, so drive SwiftPM's test
-helper directly with the variable cleared:
+The SDK accepts only `true` or `false` for the `NO_COLOR` environment variable, and
+`swift test` exports `NO_COLOR=1` into the test process, so the process aborts during SDK
+initialization before any test body runs. There is no `swift test` flag that stops it setting the variable, so
+drive SwiftPM's test helper directly with the variable cleared:
 
 ```bash
 swift build --build-tests
@@ -181,7 +164,6 @@ env -u NO_COLOR \
 
 Use the actual bundle and executable names under `$BIN`: native SwiftPM commonly
 uses `<PackageName>PackageTests`, while Swift Build may use the test target's name.
-The fixture runner discovers the built bundle and fails if there is not exactly one.
 
 Setting `NO_COLOR=false` in your own shell is enough for a plain `swift run`, but not for
 `swift test`, which overwrites it.

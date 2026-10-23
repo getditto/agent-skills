@@ -231,7 +231,7 @@ public struct TasksScreen: View {
             }
         }
         .navigationTitle(project.name)
-        // `.onAppear` / `.onDisappear`, NOT `deinit`: a `@MainActor @Observable` class
+        // `.onAppear` / `.onDisappear`, not `deinit`: a `@MainActor @Observable` class
         // cannot cancel from `deinit` under Swift 6 without isolated-deinit gymnastics,
         // because `deinit` is nonisolated and the observer handle is actor-isolated.
         // The view's appearance is the scope that owns this observer, so bind to it.

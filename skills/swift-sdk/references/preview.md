@@ -20,8 +20,6 @@ let config = DittoConfig(
 
 > *"Experimental functionality should not be used in production applications as it may
 > be changed or removed at any time, and may not have the same security features."*
-> — the `- Warning:` on `DittoConfig.experimental`,
-> `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoConfig.swift:69-71`
 
 `passphrase` is the only field on `DittoConfigExperimental`; the warning is carried by
 the enclosing `DittoConfig.experimental` property. `ditto.isEncrypted` reports the state, and mismatches
@@ -38,12 +36,11 @@ DittoExperimental.triggerTestPanic()
 ```
 
 It forces a panic, and exists so you can confirm a crash reporter is wired up and
-symbolicated (`sdk/latest/install-guides/swift.mdx`). Never ship a call to it.
+symbolicated (<https://docs.ditto.live/sdk/latest/install-guides/swift>). Never ship a call to it.
 
 ### Reliable UDP multicast — 5.1.0, private beta
 
-`DittoMulticastBetaConfig` and `DittoPeerToPeer.multicastBeta` are new in 5.1.0
-(#SDKS-4471):
+`DittoMulticastBetaConfig` and `DittoPeerToPeer.multicastBeta` are new in 5.1.0:
 
 ```swift
 ditto.updateTransportConfig { config in
@@ -56,8 +53,7 @@ ditto.updateTransportConfig { config in
 
 Five constraints, all of which must be stated wherever this is used:
 
-1. **Private beta.** The source says it *"should only be used in coordination with Ditto
-   support"* (`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoTransportConfig.swift:60-72`).
+1. **Private beta.** Use it only in coordination with Ditto support.
 2. **Disabled by default**, and supported on **iOS and macOS only**.
 3. **On iOS the host app must be signed with the restricted
    `com.apple.developer.networking.multicast` entitlement**, which Apple grants per app on
@@ -74,8 +70,7 @@ over connection types is version-gated
 
 ### Data Streams: not available in Swift
 
-`sdk/latest/sync/data-streams.mdx` carries only Kotlin samples, and no Swift release note
-announces the API. Data Streams is **not exposed by the Swift SDK**. The nearest
+Data Streams is **not exposed by the Swift SDK**. The nearest
 alternative for large payloads is an attachment
 ([attachments.md](attachments.md)).
 
@@ -90,7 +85,7 @@ alternative for large payloads is an attachment
 | visionOS | listed as a v4 beta platform in the migration guide, but no SPM slice ships on any line |
 | watchOS | excluded on every line |
 
-Detail and evidence: [versions.md](versions.md#shipped-xcframework-slices).
+Detail: [versions.md](versions.md#shipped-xcframework-slices).
 
 `DittoPeerOS.tvOS` outlives tvOS support on purpose, so a presence `switch` still has to
 handle it ([presence.md](presence.md#dittopeeros-and-exhaustive-switches)).
@@ -105,18 +100,16 @@ SwiftUI views: presence viewer, disk-usage inspector, logging viewer, permission
 helpers. Adding the Ditto SDK does not bring it in, and it does not inherit the SDK's
 platform floor.
 
-Version coupling, from `sdk/latest/migration-guides/swift-v4.mdx:391-397`: Tools **10.0.0**
+Version coupling, per the
+[Swift v4 migration guide](https://docs.ditto.live/sdk/latest/migration-guides/swift-v4): Tools **10.0.0**
 is the first major release supporting DittoSwiftPackage 5, requires **5.0.1 or later**,
 needs a Swift 6 toolchain, raises its targets to iOS 15 / Catalyst 15 / macOS 12, and
 removes tvOS support along with `DittoTvOSTextFieldComponent`. Direct
 `DittoPresenceViewerCore` dependencies must be dropped, because Tools 10 bundles those
 assets.
 
-5.1 changes: `DiskUsageInspectorView` added (#SUPP-284); the SDK's own
-`DittoSwiftPresenceViewer` framework target and podspec removed in favour of Tools'
-`DittoPresenceViewer` (#SDKS-3141).
+5.1 changes: `DiskUsageInspectorView` added; the SDK's own `DittoSwiftPresenceViewer`
+framework target and podspec removed in favour of Tools' `DittoPresenceViewer`.
 
-> **Unresolved source conflict.** The 5.1 changelog says Tools' *"tvOS 15+ requirement is
-> unchanged"*, while `swift-v4.mdx:391-397` says Tools 10 **removes** tvOS support. This
-> skill does not resolve it and does not claim tvOS support for Tools. Check the Tools
-> repository's own release notes before relying on either statement.
+Do not assume tvOS support for DittoSwiftTools; check the Tools repository's release notes
+for its current platform list.

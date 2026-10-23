@@ -119,5 +119,4 @@ connect: .server(url: URL(string: "https://\(databaseID).cloud.ditto.live")!)
 **Symptom:** authentication never succeeds.
 
 Copy the portal's *Connect via SDK* value verbatim — an `https://` URL, not derived from
-the database ID. `.server(url:)` takes a `URL`, not a `String`, and `databaseID` has an
-uppercase `ID`.
+the database ID.

@@ -71,6 +71,5 @@ See [project-deliverables.md](project-deliverables.md) for the completion contra
 - [Mesh presence](https://docs.ditto.live/sdk/latest/sync/using-mesh-presence)
 - [Transport configuration](https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations)
 
-The executable template is maintained with the generator. Its build evidence is
-recorded separately from SDK API evidence; generation alone proves neither runtime
-behavior nor peer connectivity.
+Generating the project proves neither runtime behavior nor peer connectivity; report
+each separately.

@@ -62,18 +62,18 @@ created from UIKit, a second `WindowGroup` on macOS, and previews. Inject at eve
 presentation root, not only at the app root. (`@Observable` + `.environment(_:)` has the
 same failure mode.)
 
-**Opening Ditto blocks, and a SwiftUI `App` cannot await in `init()`.** Model the launch
+**Opening Ditto takes time, and a SwiftUI `App` cannot await in `init()`.** Model the launch
 as a phase — `loading` / `ready(model)` / `failed(message)` — open the instance from
 `.task`, and render the phase.
 
 `Ditto.open` is nonisolated, so `await`ing it from a `@MainActor` model leaves the actor
-and the main thread stays responsive — measured. What you must not do is reach for
+and the main thread stays responsive. What you must not do is reach for
 `Ditto.openSync` to dodge the `await`: that blocks the calling thread for the whole open,
 and on the main thread it is a launch-watchdog termination waiting for a large store
 ([connect.md](references/connect.md#open-versus-opensync)).
 
-Compiled examples of all of this live in the `getditto/agent-skills` repository under
-`tests/swift-sdk/Sources/UIPatterns/`.
+A complete SwiftUI app in this shape is in
+[`examples/swiftui-app.md`](examples/swiftui-app.md).
 
 ## Structuring async work
 
@@ -188,7 +188,7 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   the statement without executing it and returns the `CREATE INDEX` statements the
   planner wants, each with the reason it wants them;
   `ADVISE AND PROVISION <statement>` creates them. Both run through
-  `ditto.store.execute` like any other DQL (**executed**), and the recommendation is a
+  `ditto.store.execute` like any other DQL, and the recommendation is a
   ready-to-run composite index rather than a hint:
 
   ```swift
@@ -212,8 +212,8 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   Reach for `ADVISE` first and `EXPLAIN` second: `ADVISE` tells you what is missing,
   `EXPLAIN` tells you what the planner did with what it has. On **4.14.x and 5.0.x
   `ADVISE` is a parse error** — `queryInvalid("… Unexpected token ADVISE …")`
-  (**executed**) — so guard it by version. The grammar, the shape of the advice
-  document and how to read `EXPLAIN` all belong to the `dql` skill, or
+  — so guard it by version. The grammar, the shape of the advice
+  document and how to read `EXPLAIN` all belong to the `write-dql` skill, or
   <https://docs.ditto.live/dql/advise> and <https://docs.ditto.live/dql/explain>.
 - `dematerialize()` a result item once you have extracted what you need, so the native
   copy is freed rather than held for the result's lifetime.
@@ -228,8 +228,8 @@ handle ([observers.md](references/observers.md#retaining-the-handle-is-about-can
   `updateTransportConfig` — the fresh value has every peer-to-peer transport off.
 - Putting a `Ditto` instance in a view model that the view owns, so a screen dismissal
   deallocates it.
-- Assuming an observer callback is on the main queue. It is not on 5.0.x, and the same code
-  is then correct on two lines and crashes on the third.
+- Assuming an observer callback is on the main queue. `deliverOn:` is ignored on 5.0.x,
+  so hop to the main actor explicitly on every line.
 - Reporting failures with `print`. A `registerObserver` that throws during screen setup
   means the screen silently never populates; use `os.Logger` and surface the failure into
   the model's state so the UI can show it.

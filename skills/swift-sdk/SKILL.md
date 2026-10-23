@@ -60,7 +60,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 |---|---|---|---|
 | CAP-03 | Connecting: config, opening, persistence directory | preview | 4.14.x config/open is preview, no opt-in; prefer it to the deprecated identity initializer. GA on v5. |
 | CAP-04 | Authentication and identity | preview | 4.14.x provider/expirationHandler is preview; GA on v5. |
-| CAP-13 | Presence graph and connection requests | partial | Graph/metadata/observe executed; connectionRequestHandler requires a second peer and is source-verified only. |
+| CAP-13 | Presence graph and connection requests | partial | Graph, peer metadata and observe are available; connectionRequestHandler only takes effect with a second peer. |
 | CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0-only, default off, restricted entitlement required. No Swift Data Streams. [preview.md](references/preview.md) |
 
 ## Minimum viable app
@@ -101,8 +101,8 @@ from SwiftUI and hopping to the main actor without losing ordering are both in
 Read [concurrency.md](references/concurrency.md) for callback delivery and the ordered
 observer→stream→consumer bridge. Core constraints:
 
-- Never assume main-actor delivery. `deliverOn:` is ignored on **5.0.3**, with a
-  documented Swift concurrency crash; hop explicitly inside callbacks.
+- Never assume main-actor delivery. `deliverOn:` is ignored on **5.0.x**; hop
+  explicitly inside callbacks.
 - Extract Sendable values from `[String: Any?]` inside the callback. Do expensive
   conversion there; send only the final UI assignment to the main actor.
 - Use one stream consumer, not one unordered Task per delivery. `.bufferingNewest(1)`
@@ -143,8 +143,8 @@ Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
 [versions.md](references/versions.md) owns deltas and upgrade/rollback results.
 On 4.14.x call `try ditto.disableSyncWithV3()` before mutating DQL. 5.1.x is arm64-only;
-4.14.x/5.0.x also ship x86_64. 4.14.6 throws for some use-after-release calls while v5
-aborts; preserve parent ownership on every line. Newer lines are not uniformly safer.
+4.14.x/5.0.x also ship x86_64. 4.14.6 throws for some use-after-release calls where v5
+calls `fatalError`; preserve parent ownership on every line.
 
 ## References
 
@@ -153,14 +153,14 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Task | Read |
 |---|---|
 | Install/package pin, platform minimums, Info.plist/entitlements | [setup.md](references/setup.md); keep signing enabled or the unsigned XCFramework aborts at launch |
-| Open/authenticate, re-auth or logout | [connect.md](references/connect.md); install expirationHandler before sync.start(), await login; check the server-teardown race |
+| Open/authenticate, re-auth or logout | [connect.md](references/connect.md); install expirationHandler before sync.start(), await login; hold one instance and re-authenticate in place |
 | Actor crossing or starting SwiftUI exactly once | [concurrency.md](references/concurrency.md); a guard alone does not prevent a double open |
 | Retention/cancellation | [lifetimes.md](references/lifetimes.md) |
 | Store observer, signalNext, UI diffing | [observers.md](references/observers.md); SELECT only, one stateful DittoDiffer per observer |
 | Diagnose a symptom | [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md) if needed |
 | Compare core versions | [versions.md](references/versions.md), only the relevant delta |
 | Presence/Combine compatibility and patch fixes | [api-compatibility.md](references/api-compatibility.md) |
-| Run Swift tests | [testing.md](references/testing.md); swift test's NO_COLOR=1 panics the core |
+| Run Swift tests | [testing.md](references/testing.md); unset `NO_COLOR` for `swift test` |
 | Execute DQL, transact, index or evict | [store.md](references/store.md) |
 | Subscribe, scope sync or track status | [sync.md](references/sync.md) |
 | Update radios/endpoints | [transports.md](references/transports.md) |

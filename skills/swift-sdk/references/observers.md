@@ -29,9 +29,9 @@ let observer = try ditto.store.registerObserver(
 ```
 
 - The query **must be a `SELECT`**. Anything else throws
-  `DittoError.storeError(.queryNotSupported(message:))` (**executed**).
+  `DittoError.storeError(.queryNotSupported(message:))`.
 - Invalid DQL throws `.queryInvalid(message:)`; an argument the SDK cannot encode throws
-  `.queryArgumentsInvalid` (**executed**).
+  `.queryArgumentsInvalid`.
 - Arguments are bound, never interpolated. A `Codable` overload takes a typed struct.
 - The first callback arrives with the current result set — it is not "changes only".
 
@@ -39,7 +39,7 @@ let observer = try ditto.store.registerObserver(
 
 > *"You'll have to keep it to be able to cancel the observation. Otherwise it will remain
 > active until the owning `Ditto` object goes out of scope."*
-> — `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoStore.swift:209-211`
+> — `registerObserver` API documentation
 
 Dropping a `DittoStoreObserver` does **not** stop it. It keeps firing, and it keeps
 everything its closure captured alive, for the whole life of the `Ditto` instance. The
@@ -50,9 +50,7 @@ observer.cancel()
 observer.isCancelled   // true
 ```
 
-**Executed**, against a second uncancelled observer on the same query as a positive
-control: once that control had seen a write made *after* the cancellation, the cancelled
-observer's delivery count was unchanged, and it had disappeared from
+A cancelled observer receives no further deliveries and disappears from
 `ditto.store.observers`.
 
 `ditto.store.observers` is **computed** in v5, so a cached snapshot goes stale — read it
@@ -64,14 +62,12 @@ at the point of use. See [sync.md](sync.md#dittosyncsubscriptions-is-computed--d
 |---|---|---|---|
 | `deliverOn:` honoured | yes | **no** | yes |
 
-**Executed on all three lines.** On 5.0.3 the parameter is accepted and ignored, and the
-published symptom is *"a crash when used with Swift concurrency"* (#SDKS-3856). Full
-detail: [versions.md](versions.md#deliveron-is-ignored-on-50x).
+On 5.0.x the parameter is accepted and ignored, and the published release note describes
+the symptom as *"a crash when used with Swift concurrency"*. Full detail:
+[versions.md](versions.md#deliveron-is-ignored-on-50x).
 
 **Write handlers that do not depend on `deliverOn:`.** Do the work in the handler, then
-hop explicitly:
-
-This is the shape to use; everything below explains a part of it.
+hop explicitly. This is the shape to use; everything below explains a part of it:
 
 ```swift
 /// Extracted inside the callback, because `item.value` is `[String: Any?]` — not
@@ -93,8 +89,7 @@ struct Car: Identifiable, Sendable, Equatable {
     ///
     /// Switch rather than `as? String ?? String(describing:)`: a `[String: Any?]`
     /// subscript yields `Any??`, so the shorter form stringifies the inner optional and
-    /// every non-`String` id comes out as `Optional(…)`. **Executed** — see
-    /// `tests/swift-sdk` (`Car derives identity from a non-String _id`).
+    /// every non-`String` id comes out as `Optional(…)`.
     static func identity(of rawID: Any?) -> String {
         switch rawID {
         case let string as String: return string
@@ -142,10 +137,9 @@ all, because it yields `[Car?]`. Where there is no differ — as in
 `compactMap` is fine.
 
 **`onTermination` fires when the stream terminates — not when the consumer walks away.**
-It runs on `continuation.finish()` (**executed**), on cancellation while the consumer is
-suspended in the loop (**executed**), and when the last reference to the stream is
-released. It does **not** run because a consumer `break`s out of the loop, returns early,
-or never starts iterating (**executed**): the stream is still alive and the observer keeps
+It runs on `continuation.finish()`, on cancellation while the consumer is suspended in the
+loop, and when the last reference to the stream is released. It does **not** run because
+a consumer `break`s out of the loop, returns early, or never starts iterating: the stream is still alive and the observer keeps
 firing into it. Those paths need an explicit `cancel()`, or a scope that releases the
 stream.
 
@@ -254,9 +248,8 @@ set, writing to another database, driving an animation. It converts *"fire as fa
 changes arrive"* into *"fire as fast as this app can keep up"*.
 
 **While the handler holds `signalNext`, intervening changes are coalesced.** The next
-callback carries the latest state, not a queue of every intermediate change. **Executed**:
-with `signalNext` held, three inserts produced no deliveries at all; releasing it produced
-a single delivery reporting all three rows — never one reporting 1 or 2.
+callback carries the latest state, not a queue of every intermediate change: three inserts
+made while `signalNext` is held produce one delivery, reporting all three rows.
 
 Consequences to design for:
 
@@ -287,17 +280,14 @@ public struct DittoDiff {
 
 That is deliberately the shape `UITableView` and `UICollectionView` batch updates
 consume — but **not** `NSTableView`'s, and not a minimal edit script. Two properties
-decide whether you can use it at all — the first **reproduced by hand** on all three
-lines, the second read from AppKit's own contract:
+decide whether you can use it at all:
 
 - **`moves` is a full permutation.** Moving one row to the front of a three-row list
   emits `(2→0), (0→1), (1→2)` — a move for every row whose index changed. Correct for
   `performBatchUpdates`, whose `at:` indices are pre-update and `to:` post-update. It
   does mean the call count scales with how far a row moved rather than with how many
-  rows changed — measured at n=3; the cost at list scale follows from that, it was not
-  itself measured.
-- **`NSTableView.moveRow(at:to:)` applies immediately and sequentially** (AppKit's
-  documented behaviour, not something this repo measures), so replaying
+  rows changed.
+- **`NSTableView.moveRow(at:to:)` applies immediately and sequentially**, so replaying
   that same permutation walks `[a,b,c] → [c,a,b] → [a,c,b] → [a,b,c]` and lands back
   where it started while the model says `[c,a,b]`. Permanently stale rows, no crash, no
   log. **Do not replay `DittoDiffer.moves` into `NSTableView`** without first converting
@@ -308,11 +298,10 @@ lines, the second read from AppKit's own contract:
 differ*, so one differ belongs to exactly one observer and is never shared between
 observers or reused across queries. Identity is the `_id` field.
 
-**The first call reports every item as an insertion** (**executed**) — the differ starts
-empty, so initial load is a full population, not an animated insert of N rows. Subsequent
-calls behave as expected: an unchanged result reports nothing, one added document reports
-one insertion at its index, and an in-place field change reports one update (all
-**executed**).
+**The first call reports every item as an insertion** — the differ starts empty, so
+initial load is a full population, not an animated insert of N rows. Subsequent calls
+behave as expected: an unchanged result reports nothing, one added document reports one
+insertion at its index, and an in-place field change reports one update.
 
 | | Use `DittoDiffer` | Skip it |
 |---|---|---|
@@ -349,23 +338,16 @@ Costs, stated plainly:
   isolation and it is wrong.
 - **CPU.** One extra comparison pass per delivery, on top of the query — which is exactly
   when `handlerWithSignalNext` should be throttling deliveries. Use the two together.
-- **Robustness.** `diff(_:)` decodes its result with `try!`
-  (`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoDiffer.swift:43`), so a decode failure is
-  a crash rather than a throw.
+- **Robustness.** `diff(_:)` does not throw, so hand it only live, still-materialized
+  items from the current delivery.
 - **Thread safety.** `DittoDiffer` conforms to `Sendable`, so the compiler will let you
   call `diff(_:)` from two isolation domains — but it is mutable, stateful and not
   thread-safe. Call it from exactly one. The same caveat applies to
   `DittoQueryResultItem`, which is `Sendable` with a lazily materialized cache.
 
-Compiled examples of both shapes — the diffable-data-source default and the corrected
-`DittoDiffer` variant — live in the `getditto/agent-skills` repository under
-`tests/swift-sdk/Sources/UIPatterns/`, and are built for iOS, the iOS Simulator, Mac
-Catalyst and macOS against all three supported versions.
-
 ### There is no DQL observation publisher in Combine
 
-Enumerating every public publisher at
-`sdk-release-5.1.0:sdks/swift/DittoSwift/*+Combine.swift` yields exactly four:
+The SDK's public Combine publishers are exactly these four:
 
 | Publisher | Emits |
 |---|---|
@@ -380,13 +362,11 @@ and 4.14.6's `LiveQueryPublisher` hung off the deprecated collection API and is 
 DQL observation, `registerObserver` is the only API on every supported line, and bridging
 it into SwiftUI or Combine state by hand is the intended pattern, not a workaround.
 
-The hand-rolled bridge is the one at the top of this section. Its bounded buffering,
-`onTermination` teardown and value extraction are exercised at runtime by the fixture's
-`ObserverBridgeTests`.
+The hand-rolled bridge is the one at the top of this section.
 
 Cancellation differs between the two styles: a Combine subscription is cancelled by
 releasing its `AnyCancellable`, while an observer is cancelled by calling `cancel()` on
 the handle. Releasing an observer handle does nothing.
 
 The `@available` annotation on the four publishers is version-gated — see
-[versions.md](api-compatibility.md#combine).
+[api-compatibility.md](api-compatibility.md#combine).

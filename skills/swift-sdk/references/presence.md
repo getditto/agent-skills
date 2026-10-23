@@ -11,13 +11,10 @@ graph.remotePeers               // [DittoPeer]
 graph.allConnectionsByID()      // [String: DittoConnection]
 ```
 
-**Executed**: on an offline-only instance with no peers, `localPeer.peerKey` and
-`localPeer.deviceName` are both non-empty.
-
 `DittoPeer` carries `peerKey`, `connections`, `deviceName`, `isConnectedToDittoServer`,
 `os: DittoPeerOS?`, `dittoSDKVersion: String?`, `isCompatible: Bool?`, `peerMetadata` and
 `identityServiceMetadata`. The v4 spellings (`peerKeyString`, `isConnectedToDittoCloud`,
-`osV2`) are in [versions.md](api-compatibility.md#presence-and-peers).
+`osV2`) are in [api-compatibility.md](api-compatibility.md#presence-and-peers).
 
 `DittoConnection` has `id`, `type: DittoConnectionType`, `peer1` and `peer2`.
 
@@ -32,8 +29,7 @@ observer.stop()
 ```
 
 `presence.observe` returns a `DittoObserver`, which is stopped with **`stop()`** — not
-`cancel()`, which is the store observer's method. **Executed**: the handler fires with a
-graph whose `localPeer.peerKey` matches `presence.graph.localPeer.peerKey`.
+`cancel()`, which is the store observer's method.
 
 `DittoPresence.GraphPublisher` (`presence.graphPublisher()`) is the Combine form;
 releasing its `AnyCancellable` stops the underlying observer.
@@ -49,7 +45,6 @@ ditto.presence.peerMetadata            // [String: Any?]
 ditto.presence.peerMetadataJSONData    // Data
 ```
 
-**Executed**: a value set through `setPeerMetadata` reads back from `peerMetadata`.
 Metadata is capped by the SDK and an oversized dictionary throws
 `DittoError.validationError(.sizeLimitExceeded(message:))`. Keep it to small identity
 facts — it travels with every presence update, to every peer.
@@ -68,15 +63,15 @@ case .none: break               // `os` is Optional
 ```
 
 **`@unknown default` is mandatory.** Without it the compiler rejects the switch with
-*"switch covers known cases, but 'DittoPeerOS?' may have additional unknown values"* —
-verified against 5.1.0. The same is true of `DittoConfigConnect`,
+*"switch covers known cases, but 'DittoPeerOS?' may have additional unknown values"*.
+The same is true of `DittoConfigConnect`,
 `DittoAttachmentFetchEvent` and `DittoError`.
 
-**Executed**: `DittoPeerOS(from: "Fuchsia")` is `.unknown(os: "Fuchsia")`, so an
-unrecognised peer OS never crashes a switch — but it does mean `.unknown` must be handled.
+An unrecognised peer OS arrives as `.unknown(os:)` — for example
+`DittoPeerOS(from: "Fuchsia")` — so `.unknown` must be handled.
 
 `.tvOS` is deprecated in 5.1.0 and **retained on purpose**, so peers running older tvOS
-SDKs stay identifiable (#SDKS-3944). Handling it in a `switch` **pattern** is
+SDKs stay identifiable. Handling it in a `switch` **pattern** is
 warning-free — Swift does not diagnose a deprecated case there — while omitting it is a
 compile error. Keep the case. (Referring to `.tvOS` as a *value* does warn.)
 
@@ -94,11 +89,7 @@ ditto.presence.connectionRequestHandler = { request in
 async, so it can await an authorization service, but it gates every inbound connection —
 keep it fast and never block on the main actor.
 
-Setting the handler while `ditto` has already been released is a silent no-op
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoPresence.swift`), not a crash.
+Setting the handler while `ditto` has already been released is a silent no-op.
 
-**Not verified here.** The fixture is a single offline peer, so remote peers, connection
-types other than the local peer's, and the connection-request path are read from source
-and the published documentation rather than executed. Mesh formation and which transports
-produce which `DittoConnectionType` belong to `ditto-mesh-networking`, or
-<https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>.
+Mesh formation and which transports produce which `DittoConnectionType` belong to
+`ditto-mesh-networking`, or <https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>.

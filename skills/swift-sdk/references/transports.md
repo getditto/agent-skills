@@ -63,19 +63,15 @@ disagree*:
 | `peerToPeer.lan.isMDNSEnabled` | `true` | `true` — *does not differ* |
 | `peerToPeer.lan.isMulticastEnabled` | `true` | `true` — *does not differ* |
 
-Every cell in that table is asserted by `SyncTests.peerToPeerTransportsDefaultOn` in the
-fixture. Only the three `isEnabled` flags flip, which is exactly why assigning a fresh
-config kills the mesh: the LAN sub-flags stay on but are inert while `lan.isEnabled` is
-false. The remaining struct defaults —
-`connect.retryInterval` `5.0`, `listen.tcp.port` `4040`, `listen.http.port` `80`,
-`global.syncGroup`/`routingHint` `0`, empty `connect` collections — are read from
-`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoTransportConfig.swift` and are not measured
-on a live instance.
+Only the three `isEnabled` flags flip, which is exactly why assigning a fresh config
+kills the mesh: the LAN sub-flags stay on but are inert while `lan.isEnabled` is false.
+The remaining struct defaults are `connect.retryInterval` `5.0`, `listen.tcp.port`
+`4040`, `listen.http.port` `80`, `global.syncGroup`/`routingHint` `0`, and empty
+`connect` collections.
 
 One version-gated default is genuinely this skill's: **the `DittoHTTPListenConfig`
-struct default for `listen.http.webSocketSync` flipped from `true` to `false` in v5**
-(**executed**). Note the scope — a *live* instance reports `false` on all three lines
-(**executed**, asserted in the same test), so an app that never built its own transport
+struct default for `listen.http.webSocketSync` flipped from `true` to `false` in v5**.
+Note the scope — a *live* instance reports `false` on all three lines, so an app that never built its own transport
 config is unaffected. It matters only to code that constructs a `DittoTransportConfig` itself,
 which is the anti-pattern above. See
 [versions.md](versions.md#store-results-and-errors).
@@ -88,12 +84,12 @@ ditto.updateTransportConfig { config in
 }
 ```
 
-Source: `sdk/latest/deployment/testing.mdx`.
+See also <https://docs.ditto.live/sdk/latest/deployment/testing>.
 
 ### The setter is fatal, not throwing
 
-Assigning a configuration Ditto Core rejects calls `fatalError`, not `throw`
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/Ditto.swift:357-372`). Validate values —
+Assigning a configuration Ditto rejects terminates the process (`fatalError`) rather than
+throwing. Validate values —
 particularly ports, interface IPs and URL strings — before assigning them.
 
 ### Transport conditions
@@ -107,8 +103,7 @@ enums with `CustomStringConvertible`.
 `DittoConnectionType` is a `String`-backed, `CaseIterable` enum:
 `.bluetooth`, `.accessPoint`, `.p2pWiFi`, `.webSocket`, and — **from 5.1.0 only** —
 `.multicast`. An exhaustive `switch` written against 5.1.0 does not compile against 5.0.3
-and vice versa (**verified**: `DittoConnectionType.allCases` contains `Multicast` on
-5.1.0 and does not on 5.0.3 or 4.14.6).
+and vice versa.
 
 The multicast transport itself is a private beta with hard prerequisites — see
 [preview.md](preview.md).

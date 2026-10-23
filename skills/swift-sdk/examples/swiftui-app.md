@@ -10,12 +10,11 @@
 
 Two screens. The list is driven by an **app-lived** observer; the detail screen creates
 its observer **when a project is selected** and cancels it **when the screen goes away**.
-That per-selection lifetime is the shape most Ditto apps need and the one most often got
-wrong, so it is the point of this example.
+That per-selection lifetime is the shape most Ditto apps need, so it is the point of this
+example.
 
-This is a copy of `Sources/UIPatterns/ProjectsApp.swift` in the fixture. A plugin user has
-no `tests/` tree to open, so the program is restated here in full;
-`scripts/validate-sdk-skills.py` fails the build if the two ever differ by a byte.
+This is a copy of `Sources/UIPatterns/ProjectsApp.swift` in the fixture, restated here in
+full so the example is self-contained.
 
 ## What it shows
 
@@ -258,7 +257,7 @@ public struct TasksScreen: View {
             }
         }
         .navigationTitle(project.name)
-        // `.onAppear` / `.onDisappear`, NOT `deinit`: a `@MainActor @Observable` class
+        // `.onAppear` / `.onDisappear`, not `deinit`: a `@MainActor @Observable` class
         // cannot cancel from `deinit` under Swift 6 without isolated-deinit gymnastics,
         // because `deinit` is nonisolated and the observer handle is actor-isolated.
         // The view's appearance is the scope that owns this observer, so bind to it.
@@ -311,9 +310,5 @@ re-authentication handler that retries — are in
 ## Verified on
 
 Compiled for macOS, iOS Simulator, iOS device and Mac Catalyst against Ditto **4.14.6**,
-**5.0.3** and **5.1.0** — twelve builds, on every change.
-
-`ProjectsStoreTests` executes the actual project/task observer callbacks on `MainActor`
-with nonempty rows. Separate tests cover the bridge, bounded buffering, `onTermination`
-and cancellation. **No test drives a real SwiftUI view** or asserts `.onDisappear`
-delivery; see the remaining scope in [`README.md`](../README.md).
+**5.0.3** and **5.1.0**. The store's observer callbacks are exercised at runtime; the
+SwiftUI views themselves are compiled, not UI-tested.

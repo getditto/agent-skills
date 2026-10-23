@@ -27,9 +27,6 @@ let attachment = try await ditto.store.newAttachment(
 
 `DittoAttachment` exposes `id` (base64, unpadded), `len`, `metadata: [String: String]`,
 `data() throws -> Data` and `copy(toPath:) throws`. Metadata values are `String`s only.
-**Executed on all three lines** via the file-backed path: `len` equals the byte count,
-`metadata` round-trips, `id` is non-empty, and both `data()` and `copy(toPath:)` return
-the original bytes.
 
 ### Storing it in a document
 
@@ -46,9 +43,7 @@ token in the document.
 ### Fetching
 
 In v5 the token in a query result is a plain `[String: Any]`. The `DittoAttachmentToken`
-type is **no longer public** — `public class` at
-`sdk-release-4.14.6:cocoa/DittoSwift/Store/DittoAttachmentToken.swift:11` becomes bare
-`final class` at `sdk-release-5.1.0:sdks/swift/DittoSwift/DittoAttachmentToken.swift:9`.
+type is public on 4.14.x and **no longer public** in v5.
 
 ```swift
 guard let token = item.value["photo"] as? [String: Any] else { return }
@@ -67,27 +62,14 @@ let fetcher = try ditto.store.fetchAttachment(token: token) { event in
 }
 ```
 
-**Executed**: an in-memory attachment written into a document and fetched back through its
-token delivers `.completed` with the original byte count. The token carries `id`, `len`
-and `metadata` keys (**executed**).
+The token carries `id`, `len` and `metadata` keys.
 
 `DittoAttachmentFetchEvent` is a non-frozen enum from another module, so an exhaustive
 `switch` needs `@unknown default`.
 
-**A malformed token is a crash, not an error.** `fetchAttachment(token:)` builds a
-`DittoAttachmentToken` whose initializer calls `fatalError` when the dictionary is not a
-real token
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoAttachmentToken.swift:33-38`, whose own
-comment says it *"should ideally be made failable"*). **Observed** —
-passing `["not": "a token"]` produced:
-
-```
-DittoSwift/DittoAttachmentToken.swift:35: Fatal error: Couldn't fetch attachment, passed
-in attachment token dictionary representation is invalid: ["not": "a token"]
-```
-
-Take the token from the document. Never construct, persist and replay one, and never pass
-user-supplied JSON to `fetchAttachment`.
+**Only pass `fetchAttachment` a token read from a document's attachment field.** An
+invalid token dictionary is not reported as a thrown error. Never construct a token by
+hand, persist and replay one, or pass user-supplied JSON to `fetchAttachment`.
 
 ### Combine
 
@@ -117,10 +99,8 @@ calls `fetcher.stop()`.
 it until the fetch completes or you intentionally stop it, and call `stop()` to cancel.
 `ditto.store.attachmentFetchers` is the set of fetchers currently running.
 
-Unlike a store observer, a fetcher holds a `weak` reference to `Ditto`
-(`sdk-release-5.1.0:sdks/swift/DittoSwift/DittoAttachmentFetcher.swift:12`) and its
-`stop()` routes back through the store, so stopping one after the `Ditto` instance is gone
-is a no-op rather than a crash.
+Unlike a store observer, a fetcher holds a `weak` reference to `Ditto`, so stopping one
+after the `Ditto` instance is gone is a no-op.
 
 ### Size
 

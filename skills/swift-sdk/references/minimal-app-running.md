@@ -70,66 +70,28 @@ BIN="$(swift build --product MinimalApp --show-bin-path)"
 # builds cleanly and then aborts at launch. See references/setup.md.
 codesign --force --sign - "$BIN/DittoSwift.framework/Versions/A/DittoSwift"
 
-# Ditto's core reads NO_COLOR as a --disable-color flag that accepts only true/false,
-# so NO_COLOR=1 panics it. See ../references/testing.md.
+# The SDK accepts only true/false for NO_COLOR, so clear it before launching.
+# See references/testing.md.
 env -u NO_COLOR DYLD_FRAMEWORK_PATH="$BIN" "$BIN/MinimalApp"
 ```
 
-In the `getditto/agent-skills` repository the same thing is one command:
-
-```bash
-cd tests/swift-sdk && ./scripts/run.sh 5.1.0 --app --offline
-```
+For a SwiftUI app in an Xcode project rather than a command-line program, use the
+bundled project generator — see [getting-started.md](getting-started.md).
 
 ## Expected output
 
-Real runs on macOS 27.0 / arm64, Apple Swift 6.4 (swiftlang-6.4.0.34.1). Ditto's own log
-lines are omitted; the build and program output is verbatim, and the only edit anywhere
-below is the redacted server hostname.
-
-Build, 5.1.0:
+Offline mode prints the opened version and directory, the mode, the observed document and
+`done`. Ditto's own log lines are omitted, and the persistence path varies per run:
 
 ```
-$ DITTO_SWIFT_VERSION=5.1.0 swift build --product MinimalApp
-Building for debugging...
-...                                     # ~40 progress lines elided
-[75 / 81] SkillSupport
-[78 / 81] SkillSupport
-[79 / 81] MinimalApp-product
-Build complete! (5.36 sec)
-```
-
-Offline mode, all three lines:
-
-```
-Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-38A3E1F1-C8E5-448A-BC58-D2B45AA87CA3
+Ditto 5.1.0 opened at <temporary directory>/ditto-minimal-app-<UUID>
 mode: smallPeersOnly
 observed 1 car(s): Toyota
 done
 ```
 
-```
-Ditto 5.0.3 opened at /private/var/folders/g0/.../T/ditto-minimal-app-6BEDB64A-AB0B-4F59-8BC2-5062FEDE18D6
-mode: smallPeersOnly
-observed 1 car(s): Toyota
-done
-```
-
-```
-Ditto 4.14.6 opened at /private/var/folders/g0/.../T/ditto-minimal-app-981D4A7D-AF62-4D77-9CC8-CB3DBEBECAFF
-mode: smallPeersOnly
-observed 1 car(s): Toyota
-done
-```
-
-Server mode against a real Ditto Server, 5.1.0 (host redacted):
-
-```
-Ditto 5.1.0 opened at /private/var/folders/g0/.../T/ditto-minimal-app-C012E788-2615-4E39-80FF-14B52EA1BF86
-mode: server (https://REDACTED.cloud.dittolive.app)
-observed 1 car(s): Toyota
-done
-```
+5.0.3 and 4.14.6 print the same lines with their own version number. Server mode prints
+`mode: server (<your connect URL>)` in place of `mode: smallPeersOnly`.
 
 The 4.14.6 build additionally emits one deprecation warning, for the
 `disableSyncWithV3()` call that line requires:
@@ -143,12 +105,9 @@ SDK 5.0. V3 sync is no longer supported.
 
 | Ditto | Host | Toolchain | Modes run |
 |---|---|---|---|
-| 4.14.6 | macOS 27.0, arm64 | Apple Swift 6.4 (swiftlang-6.4.0.34.1) | offline and server |
-| 5.0.3 | macOS 27.0, arm64 | Apple Swift 6.4 (swiftlang-6.4.0.34.1) | offline and server |
-| 5.1.0 | macOS 27.0, arm64 | Apple Swift 6.4 (swiftlang-6.4.0.34.1) | offline and server |
-
-The run is checked, not just started: the harness fails unless the output contains the
-opened-at line for the requested version, `observed 1 car(s): Toyota`, and `done`.
+| 4.14.6 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
+| 5.0.3 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
+| 5.1.0 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 
 The same source also compiles for the iOS Simulator, an iOS device, and Mac Catalyst at
 all three versions. Nothing here was run on `x86_64`: 5.1.0 ships no Intel slice

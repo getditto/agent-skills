@@ -6,7 +6,7 @@ floors differ per line and are owned by [versions.md](versions.md).
 ## CAP-01 Prerequisites, toolchain, package install
 
 **Toolchain:** Xcode 16.0 or later, Swift 6.0 or later
-(`sdk/latest/compatibility/swift.mdx`).
+(<https://docs.ditto.live/sdk/latest/compatibility/swift>).
 
 **Deployment targets:** iOS/iPadOS 15.0+, Mac Catalyst 15.0+, macOS (AppKit) 12.0+.
 
@@ -126,9 +126,9 @@ A sandboxed Mac app needs both network entitlements, and keeps the local-network
 `com.apple.security.network.client` is what lets the app reach Ditto Server;
 `com.apple.security.network.server` is what lets peers reach it.
 **Symptom when missing:** `Operation not permitted (os error 1)` when Ditto tries to
-connect. This is documented for the macOS build under the Flutter install guide
-(`sdk/latest/install-guides/flutter.mdx:98-124`) — it is a property of the macOS
-framework, not of Flutter, and `sdk/latest/install-guides/swift.mdx` does not repeat it.
+connect. The requirement comes from the macOS App Sandbox and applies to every Ditto
+macOS app; Ditto documents it in the
+[Flutter install guide](https://docs.ditto.live/sdk/latest/install-guides/flutter).
 
 A sandboxed Mac app that uses the Bluetooth transport also needs Apple's
 `com.apple.security.device.bluetooth` App Sandbox entitlement. That requirement comes
@@ -162,12 +162,12 @@ CODE_SIGNING_REQUIRED = YES
 CODE_SIGNING_ALLOWED = YES
 ```
 
-A clean build followed by a `dyld` abort is the signature of this, and it looks nothing
-like a signing problem until you read the reason string.
+A clean build followed by a `dyld` abort at launch is the signature of this; the reason
+string names the unsigned library.
 
 Command-line tools built with `swift build` have the same problem and no app target to
 fix it — there, sign the framework yourself after building. See
-[`examples/minimal-app.md`](minimal-app-running.md#running-it).
+[minimal-app-running.md](minimal-app-running.md#running-it).
 
 ### Crash reporting
 
@@ -175,4 +175,4 @@ Release builds need Ditto's symbols uploaded alongside your own, or a crash insi
 SDK is unreadable. The `.xcarchive`'s `dSYMs` folder contains `DittoSwift.framework.dSYM`
 (and `DittoObjC.framework.dSYM` on 4.14.x). `DittoExperimental.triggerTestPanic()` forces
 a panic so you can confirm the pipeline works
-(`sdk/latest/install-guides/swift.mdx`).
+(<https://docs.ditto.live/sdk/latest/install-guides/swift>).

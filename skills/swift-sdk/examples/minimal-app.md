@@ -14,8 +14,8 @@ observe, write, and read the write back through the observer.
 
 Longer form of [`SKILL.md` § Minimum viable app](../SKILL.md#minimum-viable-app).
 
-**This is a copy of `Sources/MinimalApp/MinimalApp.swift` in the fixture**, which is the
-file CI compiles and runs. If the two ever disagree, the fixture is right.
+**This is a copy of `Sources/MinimalApp/MinimalApp.swift` in the fixture**, which CI
+compiles and runs on 4.14.6, 5.0.3 and 5.1.0.
 
 ## What it does
 
@@ -30,11 +30,10 @@ file CI compiles and runs. If the two ever disagree, the fixture is right.
 6. Writes a document with bound arguments.
 7. Waits for the observer to report the write, then tears everything down in reverse.
 
-In **server mode** the program terminates with `exit(0)` instead of releasing the
-instance, and so leaves its temporary directory behind — deliberately, because releasing
-a server-backed instance races the SDK's auth client
-([connect.md](../references/connect.md#shutdown)). A long-lived tool should clean up on
-its own schedule rather than copying that.
+In **server mode** the program ends with `exit(0)` while still holding the instance, as
+an app does at process termination, so it leaves its temporary directory behind. Apps
+hold one instance for the process lifetime and never call `exit()`; see
+[connect.md](../references/connect.md#shutdown).
 
 ## Dependency
 
@@ -55,9 +54,9 @@ import Foundation  // v5 no longer re-exports Foundation; URL and UUID need it.
 
 /// A value type extracted from a query result item.
 ///
-/// Extracting into a `Sendable` struct inside the observer callback is the pattern the
-/// skill teaches: `DittoQueryResultItem.value` is `[String: Any?]`, which is not
-/// `Sendable` and must not be carried across a concurrency boundary.
+/// Extract into a `Sendable` struct inside the observer callback:
+/// `DittoQueryResultItem.value` is `[String: Any?]`, which is not `Sendable` and must
+/// not be carried across a concurrency boundary.
 ///
 /// This initializer is failable, so the extraction below uses `compactMap`. A
 /// `DittoDiffer` needs the opposite — a non-failable initializer and `map`, so the row
@@ -117,8 +116,8 @@ enum MinimalApp {
         switch config.connect {
         case .server:
             let token = environment["DITTO_TOKEN"]!
-            // The handler is `@Sendable` and `async`, and it is `async` precisely so the
-            // SDK can AWAIT re-authentication before treating sync as authenticated.
+            // The handler is `@Sendable` and `async`, so the SDK can await
+            // re-authentication before treating sync as authenticated.
             // Dispatching a login and returning defeats that. Install it before
             // `sync.start()`: starting without one fails with
             // `DittoError.authenticationError(.expirationHandlerMissing)`.
@@ -165,9 +164,9 @@ enum MinimalApp {
         //    do not pass `deliverOn:` — it is ignored on 5.0.x, so code that depends on
         //    it is correct on two lines and wrong on the third. A bounded stream with a
         //    single consumer gives ordering, and coalesces to the newest result. That is
-        //    NOT back-pressure: `yield` never suspends under any policy, so
-        //    `.bufferingNewest(1)` DROPS intermediate results rather than slowing the
-        //    producer. Real back-pressure is `handlerWithSignalNext`.
+        //    not back-pressure: `yield` never suspends under any policy, so
+        //    `.bufferingNewest(1)` drops intermediate results rather than slowing the
+        //    producer. For back-pressure, use `handlerWithSignalNext`.
         let (carUpdates, continuation) = AsyncStream<[Car]>.makeStream(
             bufferingPolicy: .bufferingNewest(1)
         )
@@ -211,17 +210,9 @@ enum MinimalApp {
         ditto.sync.stop()
 
         if case .server = config.connect {
-            // Releasing a server-backed instance shortly after it authenticates races
-            // the SDK's auth client and aborts the process:
-            //
-            //   Panic: Attempted to submit auth request after the Ditto instance was closed
-            //
-            // No ordering reliably avoids it. Terminating without running deinitializers
-            // does — which is what process termination does anyway.
-            //
-            // THIS IS FOR COMMAND-LINE TOOLS AND TEST HARNESSES ONLY. Never call `exit()`
-            // from an iOS or macOS app: it skips `applicationWillTerminate`, reads to the
-            // user as a crash, and is an App Store rejection. See references/connect.md.
+            // A server-backed command-line tool ends by exiting with the instance still
+            // held, as an app does at process termination. Never call `exit()` from an
+            // iOS or macOS app.
             ditto.auth?.expirationHandler = nil
             print("done")
             exit(0)
@@ -284,18 +275,7 @@ enum MinimalApp {
     ///
     /// `withTaskCancellationHandler` is the other half: an unstructured `Task` does not
     /// inherit cancellation, so without it a cancelled caller stays blocked for the full
-    /// timeout and then reports `timedOut` — measured at 31.9s against a 30s deadline
-    /// cancelled at 0.3s.
-    ///
-    /// `Gate` below mirrors `Deadline.Gate` in `tests/swift-sdk/Sources/UIPatterns`,
-    /// which is where its test coverage lives. The duplication is deliberate — this file
-    /// has to compile on its own when a reader pastes it into an empty project — and
-    /// `scripts/validate-sdk-skills.py` fails the build if the two ACTORS drift.
-    ///
-    /// That check does not extend to this function. The orchestration around the gate —
-    /// the `adopt` hand-off, the timer's `catch { return }`, the `onCancel` body — is
-    /// duplicated and unchecked, so a fix to `Deadline.run` has to be ported here by
-    /// hand. Keep the two bodies in step; the validator will not do it for you.
+    /// timeout and then reports `timedOut`.
     private static func login(_ ditto: Ditto, token: String, timeoutSeconds: UInt64) async throws {
         guard let auth = ditto.auth else { throw LoginError.noAuthenticator }
 
@@ -310,10 +290,9 @@ enum MinimalApp {
                         // iOS 16+ and the SDK's own floor is iOS 15.
                         try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
                     } catch {
-                        // `try?` here would be a BUG. A cancelled sleep returns
-                        // immediately, so swallowing its error would send this task on
-                        // to report a timeout — making `cancel()` below a race with the
-                        // completion that just won, rather than a way to stop the timer.
+                        // Do not use `try?` here. A cancelled sleep returns immediately,
+                        // so swallowing its error would report a timeout after the
+                        // completion has already won.
                         return
                     }
                     await gate.finish(LoginError.timedOut)
