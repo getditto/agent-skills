@@ -21,8 +21,10 @@ Three facts to state wherever this API is used:
 
 1. **Kotlin-only preview.** The Data Streams guide covers the *"Android
    (Kotlin)"* preview and its samples are Kotlin-specific; no other SDK
-   documents the API. It **requires Ditto SDK 5.1.0**
-   (sdk/latest/sync/data-streams).
+   documents the API. The docs name **Ditto SDK 5.1.0** as the requirement
+   (sdk/latest/sync/data-streams). The classes do ship in the 5.0.3 jar
+   (**[source-verified]**), but their preview status there is untested and the
+   KDoc still carries the closed-preview warning — treat 5.1.0 as the floor.
 2. **Stability warning, verbatim:** *"Data Streams are in Public Preview and
    may receive breaking changes without notice. You must acknowledge this in
    code by opting in with `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`."*
@@ -55,7 +57,7 @@ a `DittoDataStreamsEndpoint`) (sdk/latest/sync/data-streams):
 
 | Type | Purpose |
 |---|---|
-| `DittoDataStreamsEndpoint` | `bindTopic(topic, reliability, onNewCandidate)`; suspending `connect(peer, topic, reliability, timeoutMs) { candidate -> ... }` |
+| `DittoDataStreamsEndpoint` | `bindTopic(topic, reliability, onNewCandidate)`; suspending `connect(peer, topic, reliability = …, timeoutMs = …) { candidate -> ... }` — **named args required**: `requestCompression` sits between `topic` and `reliability` positionally (**[source-verified]** `DittoDataStreams.kt`) |
 | `DittoAcceptor` | Handle returned by `bindTopic`; keep it alive to keep accepting. One acceptor per topic at a time |
 | `DittoStreamCandidate` | Callback-scoped; `open()` it inside the callback or `take()` it (then close the taken candidate yourself) |
 | `DittoStream` | `suspend send(payload): DittoSendStatus`; `sendAndForget(payload)`; `send(payload) { op -> }` monitor overload; `maxSendSize()`; `close()`; `suspend closeSync()`; `suspend waitUntilClosed()` |

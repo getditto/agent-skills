@@ -22,8 +22,9 @@ ditto.store.newAttachment(attachmentPathOrInputStream, metadata).use { attachmen
 ```
 
 `store.newAttachment(path, metadata)` takes a file path (or input stream) plus metadata
-(sdk/latest/crud/working-with-attachments). The returned `DittoAttachment` is `Closeable` —
-wrap it in `.use { }` (the Java counterpart uses try-with-resources).
+(sdk/latest/crud/working-with-attachments). The returned `DittoAttachment` is a
+`DittoResource` (`AutoCloseable`) — wrap it in `.use { }` (the Java counterpart uses
+try-with-resources).
 
 **Metadata — stick to `Map<String, String>`.** The v5 signature accepts
 `Map<String, Any?>` or `DittoCborSerializable.Dictionary`, but the DQL
@@ -121,7 +122,8 @@ will not compile (sdk/latest/migration-guides/kotlin-v4).
 
 ### Fetcher tracking
 
-`store.attachmentFetchers` (new in v5) exposes the fetchers currently running. The
+`store.attachmentFetchers` exposes the fetchers currently running (it exists in v4 too,
+`@since 4.6.0` — **[source-verified]** `DittoStore.kt`; not new in v5). The
 manual-lifecycle `DittoAttachmentFetcher` class still exists, but the suspend
 `store.fetchAttachment()` form is preferred (sdk/latest/migration-guides/kotlin-v4).
 

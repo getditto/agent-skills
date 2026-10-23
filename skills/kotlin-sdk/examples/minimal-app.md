@@ -152,8 +152,8 @@ differences matter (details in [../references/versions.md](../references/version
   DittoIdentity.OfflinePlayground(dependencies, appId = …))` — the identity takes the
   dependencies object first (javap-verified).
 - **`ditto.disableSyncWithV3()` is required before any mutating DQL.** Without it the
-  insert throws `DittoError.StoreError: <dql> Unsupported feature: Encountered
-  'INSERT' statement. … disable sync with V3 to use DQL` (executed).
+  insert throws ``DittoError.StoreError: <dql> Unsupported feature: Encountered
+  `INSERT` statement. … disable sync with V3 to use DQL`` (executed).
 
 ```bash
 cd tests/kotlin-sdk/android-app

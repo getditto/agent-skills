@@ -16,8 +16,8 @@
 
 ## CAP-06 Customizing transports
 
-All types live in `com.ditto.kotlin.transports` (the config classes themselves are
-nested under `DittoTransportConfig` in `com.ditto.kotlin`).
+All types live in `com.ditto.kotlin.transports` — the config classes are nested
+under `DittoTransportConfig`, which is itself declared in that package.
 
 ### Always mutate through `updateTransportConfig`
 
@@ -74,11 +74,14 @@ sdk/latest/migration-guides/kotlin-v4):
 
 (sdk/latest/migration-guides/kotlin-v4)
 
-### Cloud sync: there is no `connect.websocketUrls` in v5
+### Cloud sync: `connect.websocketUrls` exists but is no longer needed
 
-The v4 workaround of adding the Ditto Server websocket URL to the transport
-config is gone. The cloud URL is inferred from the identity/config you construct
-the instance with — `DittoConfig.Connect.Server.url`:
+`DittoTransportConfig.Connect.websocketUrls` **still exists in v5**
+(`DittoTransportConfig.kt:411,441`, both published jars — **[source-verified]**;
+the docs' transport page still shows it). What changed is the *workflow*: the v4
+workaround of adding the Ditto Server websocket URL to the transport config is
+unnecessary — the cloud URL is inferred from the identity/config you construct
+the instance with, `DittoConfig.Connect.Server.url`:
 
 ```kotlin
 // v4 — REMOVED

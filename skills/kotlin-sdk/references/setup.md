@@ -64,7 +64,7 @@ Without the `ditto-binaries` classifier the first `DittoFactory.create` throws
 
 ```
 IllegalStateException: Unable to find binary 'libdittoall.dylib' for Darwin ARM64
-on classpath ... Make sure you've included a 'ditto-binaries' dependency for the
+on classpath ... Make sure you've included a `ditto-binaries` dependency for the
 correct platform.
 ```
 
@@ -144,11 +144,16 @@ Required keep rule (sdk/latest/install-guides/kotlin):
 
 Both rules are required (sdk/latest/install-guides/kotlin): the second keeps the TLS
 platform verifier, or `Connect.Server` connections break in minified builds. Yes, the
-first rule is package-wide — it is the vendor-mandated rule, necessary because the
-AAR ships no consumer ProGuard rules of its own; scope it narrower only if you have
-minified-build-tested the result.
+first rule is package-wide — it is the vendor-mandated rule. The SDK's own AARs have
+bundled consumer rules for their *internals* since 5.0.1 (**[source-verified]**:
+`proguard.txt` in `ditto-internal-android` and `ditto-cinterop-android` keeps
+`com.ditto.internal.**` / `com.ditto.dittoffi.**`) — but those do not cover the public
+`com.ditto.kotlin.**` facade or the third-party rustls verifier, so keep both rules;
+scope narrower only if you have minified-build-tested the result.
 
-Symptom when missing — a release (minified) build crashes on first SDK call with:
+Symptom when missing — a release (minified) build crashes on first SDK call with
+(string quoted verbatim from the install guide; `someNativeMethod` is its placeholder,
+not an executed output):
 
 ```
 java.lang.NoSuchMethodError: no static method "Lcom/ditto/internal/dittoffi/DittoFFI;.someNativeMethod(...)"

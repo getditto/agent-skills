@@ -1,5 +1,79 @@
 # DA-280 kotlin-sdk skill — adversarial review backlog
 
+## Source-validation sweep (user-requested, all claims vs Ditto source)
+
+Six auditors checked every load-bearing claim in the skill against the
+`sdk-release-5.1.0` and `sdk-release-4.14.7` source trees plus the published
+jars/AARs (~300 claims verified). All source-proven FALSE claims were fixed;
+each fix below names the decisive source evidence:
+
+- **observers.md coroutine-scope hazard was inverted** — cancelling the scope
+  passed to `DittoFactory.create(config, coroutineScope=…)` does NOT kill
+  observers: `InternalDittoResource.kt:39` appends an *unparented*
+  `SupervisorJob()`, detaching the user's Job. Only `ditto.close()` cleans up.
+- **observers.md "finally before signalNext"** is 5.1.0-only; 5.0.3 re-armed
+  before closing (the memory rule itself holds on both).
+- **observers.md differ ownership** — created via `ditto.createChild` (child of
+  the Ditto instance), closed in the observer's `onClose`
+  (`InternalDittoStore.kt:296-298`).
+- **observers.md `dematerialize()`** frees the Kotlin-heap materialized value
+  (`materializedValue = null`), not native memory.
+- **presence.md 128 KB -> 4 KB** — `peerMetadataMaxSizeInBytes = 4096`
+  (`InternalDittoPresence.kt:47`), enforced via FFI; 128 KB is the separate
+  `smallPeerInfo.metadata` limit (`DittoSmallPeerInfo.kt:45`). Docs page wrong.
+- **presence.md v4 `peer1`/`peer2`** are `DittoPeerKey`, not `DittoAddress`
+  (v4 `DittoConnection.kt:13,17`).
+- **presence.md `.toDittoJson()`** has only `Map<String,String>` /
+  `Map<String,Int>` / `Map<String,DittoJsonSerializable>` overloads; generic
+  maps need `toDittoJsonOrThrow()` (serializationHelpers.kt:84-99).
+- **transports.md / connect.md websocketUrls** — `Connect.websocketUrls` EXISTS
+  in v5 (`DittoTransportConfig.kt:411,441`, both jars); only the
+  need-to-add-the-cloud-URL workflow is gone.
+- **versions.md / preview.md Data Streams floor** — the full surface ships in
+  the 5.0.3 jar; docs name 5.1.0 as the requirement, KDoc still warns
+  closed-preview. Matrix row and floor statement hedged accordingly.
+- **connect.md v4 store pickup** — a default-path v4 store IS picked up
+  (`legacyPersistenceDirectoryPath`, `InternalDittoFactory.kt:64-76`); explicit
+  path only needed for custom v4 directories.
+- **connect.md/sync.md `sync.stop()`** declares no `@Throws` (`DittoSync.kt:48`)
+  — the sample's try/catch could never fire; removed.
+- **connect.md `logout` cleanupFn** is called synchronously BEFORE logout
+  completes (`DittoAuthenticator.kt` KDoc), not after.
+- **store.md v4 transaction enum** is `Commit`/`Rollback` — no `Abort`
+  (Swift-ism inherited from the migration guide); v4 also had a generic
+  value-returning overload.
+- **attachments.md `store.attachmentFetchers`** exists since v4.6.0
+  (`@since 4.6.0`, v4 `DittoStore.kt`), not "new in v5".
+- **observability.md v4 `exportToFileBlocking(path: String): BigInteger`**
+  DOES take a path since 4.8.0 (v4 `DittoLogger.kt:167`) — migration guide
+  wrong about the v4 baseline.
+- **setup.md consumer-rules rationale** — the SDK's internal AARs DO bundle
+  consumer rules since 5.0.1 (`proguard.txt` in `ditto-internal-android` /
+  `ditto-cinterop-android`, verified in the published AARs); the two
+  install-guide rules remain required for the public facade + rustls verifier.
+- **Error-string exactness**: backtick `INSERT` (core/query/src/errors.rs:11),
+  backtick `ditto-binaries` (NativeLibraryLoader.kt:135), trailing period on
+  "Query result item has already been closed."
+  (InternalDittoQueryResultItem.kt:115), backticks in "attachment property
+  `metadata` is invalid" (crates/ditto-types/src/attachment_handle.rs:30).
+- **store.md `mutatedDocumentIds().first()`** prints the CBOR wrapper, not
+  `"123"` — sample now unwraps with `.stringOrNull`.
+- **sync.md commitId sample** printed `null`, never `1548` (value captured
+  pre-commit); rewritten to say so and point at the post-commit read.
+- **errors.md** reason-less subclass list now includes `DataStreamsException`
+  (DittoException.kt:103 — no public `reason`).
+- **SKILL.md** "or is finalized" removed (no finalizer path in v5 Kotlin);
+  description error string now exact.
+
+Several falsehoods were inherited verbatim from Ditto's own docs/migration
+guide (128 KB, `Abort`, exportToFileBlocking path, websocketUrls removal,
+`getPeerMetadataMap()`) — candidates for upstream doc reports.
+
+Unresolved tension (left as-is, docs-backed): `Connect.Server.url` — the
+migration guide says paste the portal's https URL; the `DittoConfig.kt` KDoc
+example shows `wss://YOUR-APP.ditto.live`. The skill follows the migration
+guide.
+
 ## Round 2 (2-vote consensus rule, panel re-run independently)
 
 Five fresh reviewers (API accuracy, Android best practices vs `android/skills`,

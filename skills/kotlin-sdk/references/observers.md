@@ -96,11 +96,10 @@ design handlers to render the empty state.
 ### The critical memory rule: extract inside the lambda
 
 > **A `DittoQueryResult` and the `DittoQueryResultItem`s it owns are native resources
-> whose lifetime is bound to the observer's current event.** When your handler returns,
-> they are closed — before the next event is even requested. **[source-verified]** the
-> observer implementation closes the result in a `finally` block *before* calling
-> `signalNext` ("Free the result before signalling next so the core re-arms after the
-> previous result is released." — `InternalDittoStore.kt`).
+> whose lifetime is bound to the observer's current event.** When your handler returns
+> they are closed — before the next event is requested. **[source-verified]** 5.1.0
+> closes the result in a `finally` *before* `signalNext`; 5.0.3 re-arms first but
+> closes it either way — the rule holds on both (`InternalDittoStore.kt`).
 
 Returning `result.items` from the lambda, storing them in a `var`, or capturing them in
 another coroutine throws on next access:
@@ -134,8 +133,9 @@ Returning the `DittoQueryResult` itself from the transform throws immediately �
 `"You must not return DittoQueryResult from transform function. This will cause a
 memory leak!"` (**[source-verified]**, `DittoStore.kt`).
 
-If you extracted only a few fields, `item.dematerialize()` frees the rest of an item's
-native memory early (it re-materializes on next access to `value`).
+If you extracted only a few fields, `item.dematerialize()` drops the item's
+materialized Kotlin-heap value early (it re-materializes on next access to `value`;
+the native buffer is freed when the result closes regardless).
 
 ### Exceptions kill observers
 
@@ -208,10 +208,9 @@ val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
   collection.
 - On JVM the reverse caution applies: never touch Swing/Compose-desktop UI state
   directly from the handler; hop to the UI dispatcher.
-- `DittoFactory.create(config, coroutineScope = …)` overrides the scope. Pass a scope
-  with a `SupervisorJob` that outlives the `Ditto` instance — cancelling it silently
-  kills every observer the SDK delivers (**[source-verified]**: handlers are launched
-  with `coroutineScope.launch { eventHandler(…) }` on this scope).
+- `DittoFactory.create(config, coroutineScope = …)` overrides the scope — but the SDK
+  **detaches your scope's `Job`** (unparented `SupervisorJob()`, **[source-verified]**
+  `InternalDittoResource.kt`): cancelling it does NOT cancel observers; `ditto.close()` does.
 
 This replaces v4's `runOnUiThread { ... }` (sdk/latest/migration-guides/kotlin-v4).
 
@@ -359,8 +358,9 @@ and new items — retain whatever you need (e.g. the IDs above) yourself
 (sdk/latest/crud/observing-data-changes).
 
 **v5 change:** the standalone `com.ditto.kotlin.DittoDiffer()` is no longer
-user-constructible — its lifecycle is owned by the observer (**[source-verified]**:
-created as a child resource of the observer, freed in its `onClose`). Migrating manual
+user-constructible — its lifecycle is managed by the SDK (**[source-verified]**:
+created as a child of the `Ditto` instance, closed in the observer's `onClose` —
+`InternalDittoStore.kt`). Migrating manual
 `DittoDiffer().diff(result.items)` code means switching to the `(result, diff)`
 overload, which also closes a v4 native-memory leak footgun
 (sdk/latest/migration-guides/kotlin-v4).

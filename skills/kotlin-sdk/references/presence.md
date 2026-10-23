@@ -43,7 +43,7 @@ running older SDK versions on tvOS can still be identified in the presence graph
 (sdk/latest/release-notes-hub/kotlin). Keep handling it.
 
 `DittoConnection` simplifies in v5: `peer1` and `peer2` are now plain `String`
-peer keys (v4: deprecated `DittoAddress` fields plus `peerKeyString1` /
+peer keys (v4: deprecated `DittoPeerKey` fields plus `peerKeyString1` /
 `peerKeyString2`), and `approximateDistanceInMeters` is **removed**
 (sdk/latest/migration-guides/kotlin-v4).
 
@@ -75,13 +75,17 @@ and `ditto.observePeersV2()` are all **removed**; use `presence.observe()`
 ### Local peer metadata
 
 Peer metadata travels with every connection handshake and is visible to every
-peer in the mesh — keep it small (metadata over the **128 KB** limit fails with
-an error) and non-sensitive, especially over BLE
-(sdk/latest/sync/using-mesh-presence).
+peer in the mesh — keep it small and non-sensitive, especially over BLE. The SDK
+enforces a **4 KB** limit (JSON-encoded): `peerMetadataMaxSizeInBytes = 4096` in
+`InternalDittoPresence.kt`, the setters reject oversize payloads via FFI, and the
+`DittoPresence.kt` KDoc says 4 KB (**[source-verified]** — the docs page's
+"128 KB" is wrong; 128 KB is the `smallPeerInfo.metadata` limit, a different field).
 
 In v5, `presence.peerMetadata` is typed `DittoJsonSerializable.ObjectValue`, so
 wrap a plain Kotlin map with `.toDittoJson()` when assigning directly, or use
-the convenience members:
+the convenience members (note `.toDittoJson()` only has `Map<String, String>` /
+`Map<String, Int>` / `Map<String, DittoJsonSerializable>` overloads — nested or
+mixed-value maps need `toDittoJsonOrThrow()`):
 
 ```kotlin
 import com.ditto.kotlin.serialization.toDittoJson

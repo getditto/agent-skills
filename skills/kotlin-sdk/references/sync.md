@@ -122,11 +122,7 @@ try {
 
 ditto.sync.isActive   // true once started
 
-try {
-    ditto.sync.stop()
-} catch (e: DittoException) {
-    // handle error
-}
+ditto.sync.stop()     // declares no checked error — a try/catch here can never fire
 ```
 
 Start sync in the top-most scope of the app and keep it running for the app
@@ -279,17 +275,22 @@ sdk/latest/sync/tracking-local-commits, "Monitoring Multiple Commits").
 commits. Inside the block, `execute` reports `null`:
 
 ```kotlin
-val commitId: ULong? = (ditto.store.transaction { transaction ->
+// Inside an explicit transaction, txnResult.commitId is null — nothing is
+// committed yet. Result.Commit(value) carries whatever you captured, so the
+// final value here is null too, NOT the assigned ID:
+val captured: ULong? = (ditto.store.transaction { transaction ->
     transaction.execute(
         query = "INSERT INTO orders DOCUMENTS (:doc)",
         arguments = mapOf("doc" to mapOf("_id" to "order-123", "total" to 99.99))
     ) { txnResult ->
-        println(txnResult.commitId ?: "null") // null — not committed yet
-        DittoTransaction.Result.Commit(txnResult.commitId)
+        DittoTransaction.Result.Commit(txnResult.commitId)   // null at this point
     }
 } as? DittoTransaction.Result.Commit)?.value
 
-println(commitId ?: "null") // e.g. 1548 — assigned now that the txn committed
+println(captured ?: "null") // null — to learn the assigned commit ID, use a
+                            // top-level execute (result.commitId is populated
+                            // after auto-commit) or read system:data_sync_info
+                            // afterwards, as shown above
 ```
 
 Best practices from the source page: don't block user operations on sync

@@ -46,8 +46,8 @@ scope.launch {
 ```
 
 `DittoLogger.observeLogEvents(): Flow<DittoLogEvent>` replaces v4's
-`setCustomLogCallback(callback)` / `unsetCustomLogCallback()`; `DittoLogEvent(level,
-message)` is the event data class. Cancelling the collecting scope stops delivery — that
+`setCustomLogCallback(callback)` / `unsetCustomLogCallback()`; `DittoLogEvent` carries
+the `level` and `message`. Cancelling the collecting scope stops delivery — that
 is the v5 replacement for `unsetCustomLogCallback()`. The `DittoLogCallback` interface is
 removed (sdk/latest/migration-guides/kotlin-v4).
 
@@ -59,9 +59,11 @@ val bytesWritten: ULong = DittoLogger.exportToFileBlocking(path)
 val bytesWritten: ULong = DittoLogger.exportToFile(path)   // suspend
 ```
 
-Both take a destination `path: String` and return a `ULong` byte count. The v4 form was
-`exportToFileBlocking(): BigInteger` with no path parameter
-(sdk/latest/migration-guides/kotlin-v4).
+Both take a destination `path: String` and return a `ULong` byte count. The v4 forms
+also take a path: `exportToFileBlocking(path: String): BigInteger` and a suspend
+`exportToFile(path: String): ULong` since 4.8.0 (**[source-verified]** v4
+`DittoLogger.kt` — the migration guide's "now requires `path` parameter" aside is
+wrong about the v4 baseline).
 
 Removed in v5: `DittoLogger.emojiLogLevelHeadingsEnabled` (no effect since 4.8.0) and the
 `DittoLogCallback` interface (sdk/latest/migration-guides/kotlin-v4).

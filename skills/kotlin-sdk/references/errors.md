@@ -27,8 +27,9 @@ try {
 ```
 
 Most subclasses carry a typed `reason` — a `*ExceptionReason` sealed class you can
-`when` over a second time. `FatalException`, `UnknownException` and
-`UnsupportedException` carry only a message.
+`when` over a second time. `FatalException`, `UnknownException`,
+`UnsupportedException` and `DataStreamsException` carry only a message (no public
+`reason` — **[source-verified]** `DittoException.kt`).
 
 ### The hierarchy
 
@@ -113,8 +114,9 @@ display order — sort at query time.
 
 `store.newAttachment(path, metadata)` accepts `Map<String, Any?>`, but the DQL
 `INSERT INTO … ATTACHMENT` layer currently rejects non-String values at insert time
-with `attachment property 'metadata' is invalid`. Stick to `Map<String, String>`
-(`sdk/latest/migration-guides/kotlin-v4`).
+with ``attachment property `metadata` is invalid``. Stick to `Map<String, String>`
+(`sdk/latest/migration-guides/kotlin-v4`; string shape **[source-verified]** in
+`crates/ditto-types/src/attachment_handle.rs`).
 
 ## Failures that are not `DittoException`
 
@@ -123,8 +125,8 @@ These throw plain JVM exceptions, so `catch (e: DittoException)` will **not** se
 | Seen as | Cause | Fix |
 |---|---|---|
 | `IllegalStateException: Unable to find binary 'libdittoall.dylib' … include a ditto-binaries dependency` | **Executed** on 5.0.3/5.1.0: `DittoFactory.create()` on the **JVM** variant without a `com.ditto:ditto-binaries` classifier artifact on the runtime classpath | add `runtimeOnly("com.ditto:ditto-binaries:<version>:macos-arm64")` (or `linux-x64` / `linux-arm64` / `windows-x64`) — [testing.md](testing.md) |
-| `IllegalStateException: Query result item has already been closed` | a `DittoQueryResultItem` escaped its observer/`execute` handler — the result is a managed native resource, closed when the lambda returns (`sdk/latest/migration-guides/kotlin-v4`, OBSERVERS) | extract plain Kotlin data (`item.jsonString()`, typed accessors) **inside** the lambda; never return `result.items` |
-| `java.lang.NoSuchMethodError: no static method "Lcom/ditto/internal/dittoffi/DittoFFI;.someNativeMethod(...)"` | release build minified without the Ditto keep rules (`sdk/latest/install-guides/kotlin`, Proguard) | `-keep class com.ditto.** { *; }` **and** `-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }` — rules in [testing.md](testing.md) |
+| `IllegalStateException: Query result item has already been closed.` | a `DittoQueryResultItem` escaped its observer/`execute` handler — the result is a managed native resource, closed when the lambda returns (`sdk/latest/migration-guides/kotlin-v4`, OBSERVERS) | extract plain Kotlin data (`item.jsonString()`, typed accessors) **inside** the lambda; never return `result.items` |
+| `java.lang.NoSuchMethodError: no static method "Lcom/ditto/internal/dittoffi/DittoFFI;.someNativeMethod(...)"` | release build minified without the Ditto keep rules (`sdk/latest/install-guides/kotlin`, Proguard — this is the guide's *illustrative* string, `someNativeMethod` is a placeholder; the SDK's internal AARs bundle their own consumer rules, so a real crash names a public-facade or rustls class) | `-keep class com.ditto.** { *; }` **and** `-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }` — rules in [testing.md](testing.md) |
 | `ClassCastException` from `doc.value["field"] as SomeType` | v5 `DittoQueryResultItem.value` is a `DittoCborSerializable.Dictionary`, not `Map<String, Any>` | use `.stringOrNull` / `.intOrNull` etc., or `item.jsonString()` |
 
 ## `DittoPanicException` and crash reporters
@@ -171,7 +173,7 @@ Compile-error breadcrumbs from the migration guide's build-fix list:
 | `UnknownException` "Identifier conflict … FAIL conflict policy" | fix the query (`ON ID CONFLICT …`); never retry as-is |
 | `<dql> Unsupported feature: …` / query-parse failures | fix the code — retrying is pointless |
 | `StoreException(PersistenceDirectoryLocked)` | fix ownership — one live instance per persistence directory |
-| `IllegalStateException: Query result item has already been closed` | a bug in your handler, not a runtime condition — fix the lifetime |
+| `IllegalStateException: Query result item has already been closed.` | a bug in your handler, not a runtime condition — fix the lifetime |
 | `DittoPanicException` | capture `nativeCrashMessage` / `nativeCrashStackTrace` for a support ticket; not recoverable in-process |
 
 Sync itself does not throw when the network is down. `sync.start()` succeeds offline

@@ -5,7 +5,7 @@ description: >
   Go — each has its own skill). Triggers on .kt/.kts files, build.gradle.kts,
   com.ditto:ditto-kotlin or live.ditto:ditto coordinates, DittoConfig,
   DittoFactory.create, registerObserver, ditto.store.execute, and errors like
-  "Query result item has already been closed", "Unable to find binary
+  "Query result item has already been closed.", "Unable to find binary
   'libdittoall'", "Identifier conflict … FAIL conflict policy". Android and JVM
   targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
@@ -142,7 +142,7 @@ Everything resource-like implements `DittoResource` (`AutoCloseable`); closing t
 
 | Object | Keep alive by | Symptom if dropped |
 |---|---|---|
-| `Ditto` | Application-level singleton (Android) or top-level `val` (JVM) for the process lifetime | all sync, observers and subscriptions stop when it closes or is finalized |
+| `Ditto` | Application-level singleton (Android) or top-level `val` (JVM) for the process lifetime | all sync, observers and subscriptions stop when it closes |
 | `DittoSyncSubscription` | retain the handle (field/collection) until you want sync of that query to stop | you can't stop it except via `ditto.sync.subscriptions`; sync continues |
 | `DittoStoreObserver` (from `registerObserver`) | retain and `close()` explicitly | observer stays active — leak; no automatic cleanup |
 | `observe()`/`collect()` Flows | collect in a lifecycle-tied scope | `GlobalScope` collection leaks for the process lifetime; an uncollected cold Flow never registers |

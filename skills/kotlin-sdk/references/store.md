@@ -19,10 +19,12 @@ v5 API shown throughout (`com.ditto:ditto-kotlin`, imports under
 
 ## CAP-08 Querying the store: executing DQL
 
-### The three `execute` overloads (v5)
+### The three `execute` result shapes (v5)
 
-All store reads and writes go through `ditto.store.execute` / `executeRaw`. All
-overloads are `suspend`. The overload you pick determines the result lifecycle:
+All store reads and writes go through `ditto.store.execute` / `executeRaw` — six
+`execute` overloads and three `executeRaw` (Map vs `Dictionary` arguments, plus
+reified `@Serializable` variants — **[source-verified]** `DittoStore.kt`). All
+are `suspend`. The overload you pick determines the result lifecycle:
 
 ```kotlin
 // 1. No handler — returns Unit. Use for writes (INSERT/UPDATE/DELETE/EVICT,
@@ -56,7 +58,7 @@ removed in v5 — use `runBlocking { store.execute(...) }` if you must.)
 > resources. As soon as the handler lambda returns, they are closed. Returning
 > `result.items` (or anything referencing an item) out of the lambda, or
 > storing items in a field/`StateFlow`, throws
-> `IllegalStateException: Query result item has already been closed` on the
+> `IllegalStateException: Query result item has already been closed.` on the
 > next access. Extract plain Kotlin data — strings, numbers, decoded data
 > classes — *inside* the lambda.
 
@@ -154,7 +156,8 @@ ditto.store.execute(
     query = "INSERT INTO cars DOCUMENTS (:newCar)",
     arguments = mapOf("newCar" to mapOf("_id" to "123", "color" to "blue")),
 ) { result ->
-    println(result.mutatedDocumentIds().first()) // "123"
+    // mutatedDocumentIds() returns Set<DittoCborSerializable> — unwrap with an accessor
+    println(result.mutatedDocumentIds().first().stringOrNull) // "123"
 }
 ```
 
@@ -233,8 +236,10 @@ Semantics to know:
 - `transaction.info` (`DittoTransactionInfo`) exposes `id`, `hint` and
   `isReadOnly`. `ditto.close()` waits for pending transactions to complete.
 
-(4.14.x: `store.transaction { txn -> DittoTransactionCompletionAction.Commit }`
-returns no value; `Abort` instead of `DittoTransaction.Result.Rollback`;
+(4.14.x: `store.transaction { txn -> DittoTransactionCompletionAction.Commit }` —
+the v4 enum is `Commit` / `Rollback`; there is no `Abort` (**[source-verified]**
+v4 `DittoTransactionCompletionAction.kt` — the migration guide's "Abort" is a
+Swift-ism). v4 also had a generic value-returning `transaction` overload;
 `store.write(block)` write transactions were removed in v5.)
 
 Replication caveat: peers whose subscriptions cover only part of a

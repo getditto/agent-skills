@@ -46,16 +46,21 @@ Details that cost a build or a support ticket if missed:
   `DittoConfigConnect.Server(url: URI)`, top-level.
 - **The URL is the portal's *Connect via SDK* value copied verbatim** — an
   `https://` URL. Do not build it from the database ID, and do not paste a
-  `wss://` value: v5 takes no separate WebSocket URL (the cloud URL is inferred
-  from `DittoConfig.Connect.Server.url`; the v4
-  `config.connect.websocketUrls.add(...)` workaround is gone).
+  `wss://` value: you no longer need to add the cloud WebSocket URL to the
+  transport config (it is inferred from `DittoConfig.Connect.Server.url`; the
+  v4 `config.connect.websocketUrls.add(...)` workaround is unnecessary). The
+  `Connect.websocketUrls` API itself still exists in v5 — see
+  [transports.md](transports.md).
 - **`DittoConfig` properties are immutable `val`s.** You cannot mutate the
   config after construction; pass a new one. `persistenceDirectory` is `String?`
   — **v4:** `File?`.
 - **The default persistence directory includes the database ID:**
-  `ditto-{databaseId}` on v5, versus plain `ditto` on v4. v5 does not migrate an
-  existing v4 store; pass the old path explicitly to keep it
-  (sdk/latest/migration-guides/kotlin-v4):
+  `ditto-{databaseId}` on v5, versus plain `ditto` on v4. A v5 instance with no
+  explicit `persistenceDirectory` **does** pick up a v4 store at the default
+  location — the SDK passes a `legacyPersistenceDirectoryPath` fallback
+  (`<defaultRoot>/ditto`) to the core (**[source-verified]**
+  `InternalDittoFactory.kt`). Pass the old path explicitly only if v4 used a
+  **custom** directory (sdk/latest/migration-guides/kotlin-v4):
 
   ```kotlin
   val ditto = DittoFactory.create(
@@ -133,7 +138,7 @@ Without one, `DittoFactory.create` throws:
 
 ```
 IllegalStateException: Unable to find binary 'libdittoall.dylib' for Darwin ARM64
-on classpath ... Make sure you've included a 'ditto-binaries' dependency for the
+on classpath ... Make sure you've included a `ditto-binaries` dependency for the
 correct platform.
 ```
 
@@ -204,8 +209,10 @@ Three syntax rules, each a top v4→v5 migration failure:
   collect it in a coroutine scope; the v4 status-change callback interface is
   removed.
 - `auth.logout(cleanupFn: ((Ditto) -> Unit)?)` — the optional cleanup function
-  receives the `Ditto` instance after logout completes; the place to evict the
-  signed-out user's data.
+  is called **synchronously before logout completes** (`DittoAuthenticator.kt`
+  KDoc — **[source-verified]**), receiving the `Ditto` instance in a state that
+  is no longer authorized for writes but can still query and evict — the place
+  to evict the signed-out user's data.
 
 ### Offline license token
 
@@ -238,8 +245,9 @@ ditto.sync.stop()
 ditto.sync.isActive   // false
 ```
 
-`sync.start()` and `sync.stop()` both declare `DittoException`
-(sdk/latest/sync/syncing-data). **v4:** `ditto.startSync()` /
+Only `sync.start()` declares `DittoException`; `sync.stop()` declares no checked
+error (**[source-verified]** `DittoSync.kt`), so a try/catch around `stop()` can
+never fire. **v4:** `ditto.startSync()` /
 `ditto.stopSync()` / `ditto.isSyncActive`, catching `DittoError`.
 
 Start sync in the top-most scope of the app and leave it on for the app's
@@ -311,7 +319,7 @@ the first constructor argument, not optional (javap-verified, 4.14.7):
 v4 also needed `config.connect.websocketUrls.add("wss://…")` and
 `ditto.disableSyncWithV3()`; both are gone in v5 (cloud URL inferred from
 `Connect.Server.url`, v3 sync disable removed). **Without `disableSyncWithV3()`,
-mutating DQL on 4.14.x throws** `DittoError.StoreError: <dql> Unsupported feature:
-Encountered 'INSERT' statement. … Please configure your app to disable sync with V3
-to use DQL` — executed on 4.14.7 (Android); `SELECT` and observers work without it.
+mutating DQL on 4.14.x throws** ``DittoError.StoreError: <dql> Unsupported feature:
+Encountered `INSERT` statement. … Please configure your app to disable sync with V3
+to use DQL`` — executed on 4.14.7 (Android); `SELECT` and observers work without it.
 See [versions.md](versions.md).
