@@ -21,8 +21,12 @@ graph.allConnectionsByID()      // [String: DittoConnection]
 ### Observing
 
 ```swift
-let observer = ditto.presence.observe { graph in
-    // graph.localPeer, graph.remotePeers
+// @Sendable: presence delivers on an SDK thread. An unannotated closure registered
+// from a @MainActor SwiftUI owner can inherit main-actor isolation and trap on
+// callback entry under Swift 6 — before any hop inside the body could run.
+let observer = ditto.presence.observe { @Sendable graph in
+    // graph.localPeer, graph.remotePeers — extract here, then hop explicitly:
+    Task { @MainActor in /* update UI state */ }
 }
 // …
 observer.stop()
@@ -34,8 +38,9 @@ observer.stop()
 `DittoPresence.GraphPublisher` (`presence.graphPublisher()`) is the Combine form;
 releasing its `AnyCancellable` stops the underlying observer.
 
-The handler is **not** declared `@Sendable` and is not guaranteed to run on the main
-queue. Treat it like a store observer: extract what you need, then hop to the main actor.
+The handler is **not** declared `@Sendable` by the SDK (`DittoPresence.swift:74` —
+`[source-verified]`) and is not guaranteed to run on the main queue. Mark it
+`@Sendable` yourself, extract what you need, then hop to the main actor.
 
 ### Peer metadata
 

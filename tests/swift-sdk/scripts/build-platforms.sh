@@ -16,7 +16,10 @@ set -euo pipefail
 FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$FIXTURE_DIR"
 
-. "$(dirname "${BASH_SOURCE[0]}")/lib/build-lock.sh"
+# Source from the computed absolute path, not `dirname BASH_SOURCE[0]` again: after
+# `cd`, a *relative* BASH_SOURCE (e.g. `bash tests/swift-sdk/scripts/build-platforms.sh`
+# from the repo root) resolves against the new working directory and fails.
+. "$FIXTURE_DIR/scripts/lib/build-lock.sh"
 acquire_build_lock
 mkdir -p .build
 

@@ -64,11 +64,17 @@ export DITTO_SWIFT_VERSION=5.1.0
 swift build --product MinimalApp
 BIN="$(swift build --product MinimalApp --show-bin-path)"
 
-# The published XCFramework ships unsigned and SwiftPM copies it without signing;
+# The published XCFrameworks ship unsigned and SwiftPM copies them without signing;
 # macOS will not load an unsigned library. An Xcode app target signs its embedded
 # frameworks for you ONLY while signing is enabled — `CODE_SIGNING_ALLOWED = NO`
 # builds cleanly and then aborts at launch. See references/setup.md.
-codesign --force --sign - "$BIN/DittoSwift.framework/Versions/A/DittoSwift"
+# Sign every built framework: 4.14.x also copies DittoObjC.framework, and signing
+# only DittoSwift leaves the v4 dependency unsigned and the executable unlaunchable
+# (run.sh signs them all; references/testing.md requires the same).
+for f in "$BIN"/*.framework; do
+  name="$(basename "$f" .framework)"
+  codesign --force --sign - "$f/Versions/A/$name"
+done
 
 # The SDK accepts only true/false for NO_COLOR, so clear it before launching.
 # See references/testing.md.

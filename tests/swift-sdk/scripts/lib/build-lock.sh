@@ -32,10 +32,18 @@ acquire_build_lock() {
     owner="$(cat "$lock/pid" 2>/dev/null || true)"
     if [[ $waited -ge 10 && -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
       echo "removing a stale ${lock} left by process $owner" >&2
-      # Rename first: only one contender's `mv` can succeed, so a second one cannot
-      # delete the fresh lock the winner is about to create.
+      # Rename-and-delete alone races: two waiters can read the same dead pid, and the
+      # loser can end up renaming away the winner's fresh lock. So the rename is only
+      # a CLAIM — afterwards, revalidate that the directory we took still holds the
+      # dead pid. If a live process won the race in between, the pid file now names
+      # that winner: drop our claim and go back to waiting.
       if mv "$lock" "$lock.stale.$$" 2>/dev/null; then
-        rm -rf "$lock.stale.$$"
+        if [[ "$(cat "$lock.stale.$$/pid" 2>/dev/null)" == "$owner" ]]; then
+          rm -rf "$lock.stale.$$"
+        else
+          echo "stale-lock claim lost; a live run holds the lock now" >&2
+          mv "$lock.stale.$$" "$lock" 2>/dev/null || true
+        fi
       fi
       continue
     fi

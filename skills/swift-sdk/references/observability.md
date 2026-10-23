@@ -18,15 +18,22 @@ DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .ver
 ### Routing logs into your own logger
 
 ```swift
-DittoLogger.setCustomLogCallback { level, message in
-    logger.log(level: level == .error ? .error : .debug, "\(message, privacy: .public)")
+// @Sendable: the callback fires on SDK threads. Registered from a @MainActor owner,
+// an unannotated closure can inherit main-actor isolation and trip a Swift 6
+// executor assertion the moment a log arrives.
+DittoLogger.setCustomLogCallback { @Sendable level, message in
+    // Keep the raw message private — SDK diagnostics can contain authentication
+    // material, and .public bypasses unified-log redaction.
+    logger.log(level: level == .error ? .error : .debug, "\(message, privacy: .private)")
 }
 ```
 
 Pass `nil` to remove the callback.
 
-The callback is invoked from SDK threads and is **not** declared `@Sendable`. Do not touch
-UI state from it, and do not call back into Ditto from inside it.
+The callback is invoked from SDK threads and is **not** declared `@Sendable` by the SDK
+(`DittoLogger.swift` — `[source-verified]`). Mark the closure `@Sendable` yourself, do
+not touch actor-isolated UI state from it, and do not call back into Ditto from inside
+it.
 
 ### Exporting logs
 

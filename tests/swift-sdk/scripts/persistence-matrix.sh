@@ -21,7 +21,10 @@ FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$FIXTURE_DIR/../.." && pwd)"
 cd "$FIXTURE_DIR"
 
-. "$(dirname "${BASH_SOURCE[0]}")/lib/build-lock.sh"
+# Source from the computed absolute path: after `cd`, a relative BASH_SOURCE
+# (e.g. `bash tests/swift-sdk/scripts/run.sh` from the repo root) resolves
+# against the new working directory and fails.
+. "$FIXTURE_DIR/scripts/lib/build-lock.sh"
 acquire_build_lock
 
 if [[ -f "$REPO_ROOT/.env" ]]; then
