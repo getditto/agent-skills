@@ -4,17 +4,22 @@
   "versions": {
     "codex": "0.160.0",
     "claude": "2.1.292",
-    "opencode": "1.19.1"
+    "opencode": "1.19.1",
+    "claude_rerun": "2.1.311",
+    "codex_rerun": "0.163.0"
   },
   "source_digests": [
+    "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+    "be13e2f437cd9d732e156877c0debf9fce2842189086a4f5cf63e647ce0a67e0",
     "10ad14c6454eb7b3cfbbee12637b5cb9587d2847bdebba029379c37ab3ef2f7f",
     "3f8501ec5c7890b094610e13fda027cb70aba6254f4e2fa53dfe1a6506bca8b6"
   ],
-  "latest_evaluated_digest": "10ad14c6454eb7b3cfbbee12637b5cb9587d2847bdebba029379c37ab3ef2f7f",
+  "latest_evaluated_digest": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
   "post_evaluation_changes": [
     "Conditional movies/reviews schema lead-wording clarification after final copies was not behaviorally rerun.",
     "Final traces identified conflicting data-modeling reference examples for unscoped child joins and unchanged blob transmission, for static correction after the bounded evaluation iteration. No subsequent model result is claimed.",
-    "Corrected workflow and order/relational-migration examples to preserve complete scoped parent references, and corrected unchanged-blob transmission claims in order-management and best-practices. These final semantic corrections were not model-retested; scoped JOINs were checked separately against the SDK."
+    "Corrected workflow and order/relational-migration examples to preserve complete scoped parent references, and corrected unchanged-blob transmission claims in order-management and best-practices. These final semantic corrections were not model-retested; scoped JOINs were checked separately against the SDK.",
+    "Superseded on 2026-10-27: all five cases plus the new swift_no_ditto trigger-scope case were rerun on Claude Code and Codex against the final skill tree (commit 7538627). The data-modeling corrections and the narrowed swift-sdk description are now model-tested; see SUMMARY.md."
   ],
   "limitations": [
     "No before/after model experiment.",
@@ -23,7 +28,9 @@
     "Provider/host token and cache accounting differ.",
     "Core-task passes do not certify every ancillary claim or generated snippet.",
     "Tool-result byte counts are rendered tool-result payloads, not all injected skill context; Claude can inject skill bodies in separate messages.",
-    "Codex host could not read guidance under managed approvals."
+    "Initial matrix: Codex host could not read guidance under managed approvals. The 2026-10-27 rerun used a fresh HOME and CODEX_HOME and read guidance normally.",
+    "The 2026-10-27 rerun has one attempt per host and case; OpenCode/Kimi K3 was not available for it.",
+    "Tree digests from the 2026-10-27 rerun hash sorted relative paths and per-file SHA-256 of the copied skill tree; the earlier private script's digest method is not recorded, so digests are comparable within a run only."
   ],
   "pilot_provenance": {
     "claude": "Filesystem-only restricted pilot omitted canonical catalog skills; retry registered a local plugin. Both traces retained privately.",
@@ -1094,6 +1101,761 @@
         "Managed approval rejected RTK-prefixed local reads; inherited global guidance prevents clean context comparison. Other four tasks not attempted on this host."
       ],
       "tool_result_text_bytes": null
+    },
+    {
+      "host": "claude",
+      "case": "join",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 12.9,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:write-dql"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "write-dql/references/joins.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 25994,
+      "cache_write_tokens": 9584,
+      "output_tokens": 916,
+      "reported_cost_usd": 0.1002148,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "You're on 5.1, which is the first version that supports JOIN, so this can be a single query:\n\n```sql\nSELECT o._id AS order_id, o.total, c.name AS customer_name\nFROM orders o\nINNER JOIN customers c ON c._id = o.customer_id\nWHERE o.total > 100\n```\n\n**What the join needs to work:**\n\n1. **SDK 5.1 or later on every device that runs this query.** On 4.14.x or 5.0.x, any JOIN syntax is a parse error. On those versions you'd need two queries instead, or a copy of the customer name stored on each order.\n2. **The key you match against in the second collection must be `_id` or an indexed field.** Here that's `c._id`, which is always indexed, so no extra setup is needed. If you reverse the join (`FROM customers c JOIN orders o ON o.customer_id = c._id`), Ditto rejects it with `Joining to \"o\" disallowed without appropriate index support` until you create an index:\n   ```sql\n   CREATE INDEX IF NOT EXISTS orders_customer_id ON orders (customer_id);\n   ```\n3. **`o.customer_id` must have exactly the same value and type as `c._id`.** For example, a string doesn't match a number, and a plain string doesn't match an object `_id`. Orders with no match are dropped by `INNER JOIN`.\n4. **Use an alias for each collection** (`o`, `c`) and prefix every field with it, so the two `_id` fields don't collide.\n\nIf you also want orders whose customer is missing, use `LEFT JOIN` and `coalesce(c.name, 'Unknown') AS customer_name`.\n\nThe query only reads what's already stored on the device, so both collections need to have synced there. You need sync subscriptions covering both `orders` and `customers`.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "Valid 5.1 INNER JOIN with total > 100; states right-side key must be _id or indexed and that customers._id needs no index; shows the reversed-join index error."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "swift_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 30.25,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:swift-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/concurrency.md"
+        },
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/lifetimes.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 26935,
+      "cache_write_tokens": 12558,
+      "output_tokens": 2977,
+      "reported_cost_usd": 0.16541499999999998,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "## What's wrong\n\n1. **`deliverOn: .main` does nothing on 5.0.3.** That version ignores the parameter, so the callback runs on an SDK thread, not the main thread. Using it together with Swift concurrency is also a documented crash on 5.0.3. Upgrading to 5.1.x would make it work again, but the code shouldn't rely on it either way.\n2. **One `Task` per callback is why updates arrive out of order.** Separate unstructured `Task`s have no ordering guarantee. During a burst of changes, an older result can be applied after a newer one, and the screen ends up showing stale data.\n3. **Leaving the screen doesn't stop the observer.** Releasing a `DittoStoreObserver` (or `DittoSyncSubscription`) does not cancel it. It keeps firing, and keeps everything its closure captured alive, for as long as `Ditto` lives. Your `Ditto` lives for the whole app, so the callbacks never stop. Only an explicit `cancel()` stops them.\n4. **Probably also:** passing `[String: Any?]` into those tasks. That type isn't `Sendable`, and decoding it after reaching the main actor puts the expensive work on the main thread.\n\n## Corrected architecture\n\n- **Ownership:** the app root keeps the only strong reference to `Ditto`, as you already do. The screen's model gets `Ditto` passed in and never stores `ditto.store`, because child objects like `store` only hold a weak reference back to `Ditto`. The observer, and any subscription used only by this screen, belong to the screen and last exactly as long as it does.\n- **Threading:** the callback is marked `@Sendable`, converts results to `Sendable` value types and yields them into one `AsyncStream` with `.bufferingNewest(1)`. A single `@MainActor` loop reads that stream, so updates are applied in order and bursts collapse into the latest result.\n- **Cancellation:** SwiftUI's `.task` cancels when the view disappears. That ends the `for await` loop, and the `defer` then cancels the observer and subscription. `onTermination` also cancels the observer if the stream ends. It captures the observer weakly because otherwise the handler, stream and observer would keep each other alive.\n\n```swift\nimport DittoSwift\nimport Foundation\n\nstruct CarRow: Sendable, Identifiable {\n    let id: String\n    let make: String\n}\n\n@MainActor @Observable\nfinal class CarsModel {\n    private(set) var cars: [CarRow] = []\n\n    /// Runs for the lifetime of the calling task; returns (and cleans up) on cancellation.\n    func observe(_ ditto: Ditto) async {\n        let query = \"SELECT * FROM cars WHERE mileage > :min\"\n        let args: [String: Any?] = [\"min\": 100]\n        let (updates, continuation) = AsyncStream<[CarRow]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))\n\n        let subscription: DittoSyncSubscription   // omit if subscription is app-scoped\n        let observer: DittoStoreObserver\n        do {\n            subscription = try ditto.sync.registerSubscription(query: query, arguments: args)\n            // No deliverOn: \u2014 ignored on 5.0.3. @Sendable avoids inheriting @MainActor.\n            observer = try ditto.store.registerObserver(query: query, arguments: args) { @Sendable result in\n                continuation.yield(result.items.map { item in      // decode off-main\n                    defer { item.dematerialize() }\n                    let v = item.value\n                    return CarRow(id: (v[\"_id\"] ?? nil) as? String ?? \"\",\n                                  make: (v[\"make\"] ?? nil) as? String ?? \"\")\n                })\n            }\n        } catch {\n            continuation.finish()\n            return\n        }\n        continuation.onTermination = { [weak observer] _ in observer?.cancel() }\n        defer {                       // teardown order: consumer ends \u2192 observer \u2192 subscription\n            observer.cancel()\n            subscription.cancel()\n        }\n\n        for await rows in updates {   // single ordered consumer on the main actor\n            cars = rows\n        }\n    }\n}\n\nstruct CarsScreen: View {\n    let ditto: Ditto                  // injected from the app root\n    @State private var model = CarsModel()\n\n    var body: some View {\n        List(model.cars) { Text($0.make) }\n            .task { await model.observe(ditto) }   // cancelled on disappear\n            // use .task(id: filter) if query params change; it restarts cleanly\n    }\n}\n```\n\n**Other points:**\n- When the screen closes, don't call `ditto.sync.stop()` or release `Ditto`. Both belong to the app, not the screen.\n- If you'd rather keep the long-lived task inside the model instead of using `.task`, store the consumer `Task` and the observer as properties. Then cancel them in `.onDisappear` in this order: consumer, then observer, then subscription. Don't put this in `deinit`: on a `@MainActor` model, `deinit` can't access those properties.\n- Don't cache `ditto.store.observers` to keep track of observers. It's computed each time, so a saved copy goes stale. Hold on to your own handles instead.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "5.0.3 ignores deliverOn; @Sendable callback, Sendable rows, one bufferingNewest(1) AsyncStream consumed by a single @MainActor loop; app owns Ditto, screen owns observer/subscription with explicit cancel on .task cancellation. Snippet not compiled."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "relay",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 14.01,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:sync-subscriptions"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "sync-subscriptions/references/mesh-and-flooding.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 24549,
+      "cache_write_tokens": 8163,
+      "output_tokens": 908,
+      "reported_cost_usd": 0.0883978,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "**Why:** In Ditto's default pairwise sync, two rules apply at every hop:\n\n1. **A peer sends only documents it holds, filtered by the recipient's subscriptions.**\n2. **A peer holds only its own writes plus documents that matched its own subscriptions.**\n\nSo when A syncs with B, A checks B's query (`blue cars`) and sends only the blue cars. B never holds the other cars. When B syncs with C, B checks C's query (`all cars`) against what it holds, which is only blue cars. C's subscription matches A's exactly, but B's narrower subscription filters the data on the way through. There is no hop limit and no error is raised. Each hop is working as designed, because a relay can only pass on what it holds.\n\n**Concrete fixes (pick one):**\n\n1. **Widen B's subscription to cover everything it must relay.** On B, register `SELECT * FROM cars` (or a query covering every car C needs) in place of, or alongside, the blue-only one. B's UI can still show only blue cars by using a local store query/observer such as `SELECT * FROM cars WHERE color = 'blue'`. The cost is that B now stores and transfers all cars.\n2. **Give C another path to a peer that holds all cars.** This could be a direct A\u2194C connection, another relay that subscribes to all cars, or Ditto Server. A server path only works if the server actually holds the non-blue cars and permissions let it serve them to C. A cloud connection by itself doesn't guarantee that. Once such a path exists, C fills the gap with no config change.\n3. **Change the topology so B isn't the only path for data it doesn't subscribe to.** Any relay-only device must subscribe to the union of everything it is expected to carry.\n\n**Notes:**\n- Subscriptions are in memory, so re-register B's widened subscription at every app start.\n- After the fix, check every hop: each intermediate peer's subscriptions must cover the documents expected to pass through it.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "Recipient-filtered sends and relay holdings explained; widen B or add a holding path; local UI filter; no invented counts; cloud path qualified on server holdings and permissions."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "model",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 31.96,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:data-modeling"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "data-modeling/references/workflow.md"
+        },
+        {
+          "tool": "Grep",
+          "path": "data-modeling/examples/order-management.md",
+          "pattern": "COUNTER|ATTACHMENT|INSERT|INCREMENT|PN_COUNTER"
+        },
+        {
+          "tool": "Read",
+          "path": "data-modeling/examples/order-management.md"
+        }
+      ],
+      "input_tokens_uncached": 10,
+      "cache_read_tokens": 63763,
+      "cache_write_tokens": 17689,
+      "output_tokens": 2810,
+      "reported_cost_usd": 0.21050460000000001,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "Here's my recommended model, based on the local Ditto data-modeling guidance. I'm assuming every peer runs 5.1.x with `dql_strict_mode = false`, the 5.x default. Apply it at every app start. Older or strict peers would need declarations during the transition.\n\n## Findings\n\n- **[warn] `COMPOSITE_ID` on `_id = \"store7:order42\"`.** Permission rules can only see `_id`. A delimiter-joined string hides the store scope from those rules, can't be indexed by its parts, and breaks if a part ever contains `:`. `_id` can't be changed later, so decide now.\n- **[blocker] `ARRAY_LWW` on `items`.** An array merges as one last-write-wins value. When two offline devices both append, one device's items are dropped without any error.\n- **[blocker] `COUNTER_CANDIDATE` on `stock`.** A plain number is also last-write-wins. Two devices that each do \"read, add 1, write\" end up with +1, not +2.\n- **[blocker] `ATTACHMENT_CANDIDATE` / `SIZE_SOFT` on the image.** 400 KiB inline is already over the 256 KiB soft limit before merge metadata is added. It's under the 5 MiB hard limit, so 5.1 still accepts it. Over BLE (about 20 KB/s) it takes roughly 20 seconds or more of airtime per peer, and every change to it resends the whole value.\n\n## Recommended model\n\n**Collection `orders`**\n- `_id`: `{ store_id: 7, order_id: 'order42' }`. Use an object, not a string, and don't copy `store_id` into the body. Rules and indexes use `_id.store_id` directly.\n- `items`: a map keyed by a unique line ID (for example a UUID), not by SKU. Two separate appends of the same SKU would otherwise merge into one entry. The map merges each key separately, so no append is lost. It doesn't keep order, so add a `seq` or `added_at` field and sort in the app. Store money as integer cents.\n- `image`: an `ATTACHMENT`. The document holds only the token; the bytes are fetched separately and lazily, and don't count toward document size.\n- Other scalar fields stay last-write-wins (the default). Objects become maps automatically, so no declarations are needed.\n\n```sql\nINSERT INTO COLLECTION orders (image ATTACHMENT)\nDOCUMENTS ({\n  '_id': { 'store_id': 7, 'order_id': 'order42' },\n  'items': {\n    'line-6f1c': { 'sku': 'SKU-100', 'qty': 2, 'price_cents': 1999, 'added_at': '2026-10-27T10:00:00Z' }\n  },\n  'image': :image   -- bind ditto.store.newAttachment(path, {mime:'image/jpeg'})\n})\n```\n\n**`stock` \u2014 `COUNTER` (requires 4.14+).** If it's really store or SKU inventory, put it in its own collection, `inventory`, with `_id: { store_id: 7, sku: 'SKU-100' }`. That's the usual case, and it gives it the same store scope as orders. If it's genuinely per-order, keep it on the order instead.\n- Declare `COUNTER` on the INSERT that first creates the field. Without that declaration it becomes a plain number, and a later increment silently starts again from 0.\n- Seed it only once, from one source, using `ON ID CONFLICT DO NOTHING`.\n- Devices change it with `APPLY stock INCREMENT BY n`, never `SET stock = stock + 1`.\n- For a recount, use `APPLY stock RESTART WITH n`.\n\n```sql\nINSERT INTO COLLECTION inventory (stock COUNTER)\nDOCUMENTS ({ '_id': { 'store_id': 7, 'sku': 'SKU-100' }, 'stock': 500 })\nON ID CONFLICT DO NOTHING\n```\n\n## Split decisions\n\n- **Items:** keep them embedded as a map if orders stay small and bounded. If item counts can grow without limit or are edited heavily on their own, move them to an `order_items` collection:\n  - `_id: { store_id, order_id, line_id }`\n  - `parent_id: { store_id: 7, order_id: 'order42' }` \u2014 the full parent identity, so `order42` in another store can't match\n  - an index on `parent_id`\n\n  On 5.1 you can read them back with `JOIN ... ON i.parent_id = o._id` on the device; JOINs aren't supported in subscriptions or on Big Peer.\n- **Image:** before moving it to an attachment, check whether this collection syncs through the MongoDB Connector. The connector doesn't carry attachments. In that case keep the image as base64 in its own document, sized so the base64 (about 33% larger than the raw bytes) fits under 256 KiB.\n\n## Budget\n\n- With the image moved out, an order is about 1\u20135 KiB plus a little per line. That's fine over both BLE and LAN.\n- Attachments travel separately, so the image doesn't hold up order sync over BLE. Fetch it only when it's viewed.\n- Scope subscriptions and observers by `_id.store_id = 7`, plus whatever narrower filter you need, rather than watching the whole collection.\n- Deletes are only remembered for 7 days on devices (30 on Big Peer) by default. A device offline longer than that could bring a deleted order back, so use soft deletes if that matters.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "All seven criteria met, including complete scoped parent_id with an index for the optional 5.1 JOIN and UUID line keys rather than SKU keys. Read the corrected workflow.md and order-management.md."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "mesh",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 22.76,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:ditto-mesh-networking"
+      ],
+      "reads": [
+        {
+          "tool": "Grep",
+          "path": "ditto-mesh-networking/references/versions.md",
+          "pattern": "(?i)5\\.1|awdl|wi-fi aware|wifiaware"
+        },
+        {
+          "tool": "Grep",
+          "path": "ditto-mesh-networking/references/platform-requirements.md",
+          "pattern": "(?i)background|BLUETOOTH_SCAN|NSBluetooth|location|NEARBY_WIFI|NSLocalNetwork"
+        }
+      ],
+      "input_tokens_uncached": 8,
+      "cache_read_tokens": 37333,
+      "cache_write_tokens": 7560,
+      "output_tokens": 1785,
+      "reported_cost_usd": 0.1036786,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "## Diagnosis\n\n1. **\"AWDL will connect Android devices\" is wrong.** AWDL only works between Apple devices. Android has its own peer-to-peer Wi-Fi, called Wi-Fi Aware, and the two can't talk to each other. The Kotlin SDK's config doesn't even have an `awdl` section, and Swift has no `wifiAware`. Without an access point, **Bluetooth LE is the only link between iOS and Android**.\n2. **A freshly built TransportConfig starts with every transport turned off.** It doesn't start from the platform defaults. Enabling only BLE therefore turned off LAN and AWDL on iOS, and LAN and Wi-Fi Aware on Android, if they had been on. All traffic, including iOS\u2194iOS and Android\u2194Android, now goes over BLE at about 20 KB/s. That explains why it's slower.\n3. **\"Sync is active\" doesn't prove that peers are reachable.** `startSync()` can succeed while a radio is blocked by OS state or a missing permission. For example, Wi-Fi Aware below API 29 just logs an error and carries on. Check the transport-condition callbacks and presence over a period of time. A missing direct connection is normal, because connection budgets rank LAN > P2P Wi-Fi > BLE, and connections churn.\n\n## Configuration changes\n\n- **Read-modify-write the current config.** Don't construct a new one.\n- Enable these on each platform:\n  - **iOS:** BLE + AWDL + LAN\n  - **Android:** BLE + Wi-Fi Aware + LAN\n- Every device then has a fast path to its own platform and BLE as the bridge to the other. Devices of the same platform form fast clusters, and data moves between platforms over BLE through multihop relays.\n- Change the config at runtime. Ordinary transport changes don't need a sync restart. The exception is `syncGroup`: stop sync before changing it, then start again.\n- Don't turn radios off to save battery unless you've measured the effect. Removing a fast path pushes more traffic onto BLE.\n\n## Deployment changes\n\n- **Android:**\n  - BLE needs `BLUETOOTH_SCAN`, `BLUETOOTH_ADVERTISE` and `BLUETOOTH_CONNECT` (API 31+). On older API levels it needs location permission.\n  - Wi-Fi Aware needs:\n    - API 29+ and hardware support\n    - `NEARBY_WIFI_DEVICES` with `neverForLocation` (API 33+)\n    - On API 29\u201332, `ACCESS_FINE_LOCATION` and the system location toggle switched on\n  - By default, Wi-Fi Aware stops searching when the app is in the background.\n- **iOS:**\n  - Bluetooth and local-network permissions.\n  - BLE/AWDL background modes. Even so, backgrounded iOS apps are harder for other devices to find over BLE, especially Android, so keep the apps in the foreground where cross-platform sync matters.\n- **Size data for BLE:**\n  - Use many small documents. Nothing appears until it has fully arrived, and 256 KiB takes more than 10 seconds over BLE.\n  - Put binary data in attachments.\n  - Keep subscriptions narrow so they don't flood the cross-platform BLE bridge.\n- **Plan for co-location:** with no AP and no Ditto Server, data only reaches peers that are linked by some chain of nearby devices, either directly or through relays. A relay can only forward data that it subscribes to itself.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "Fresh TransportConfig disables omitted transports; read-modify-write; AWDL Apple-only, Wi-Fi Aware Android-only; BLE bridge; permissions; sync active is not connectivity."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "swift_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 11.44,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2,
+      "cache_read_tokens": 5243,
+      "cache_write_tokens": 3588,
+      "output_tokens": 1028,
+      "reported_cost_usd": 0.05032060000000001,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "Since you don't use Ditto, the installed skills don't apply here. This is a general Swift concurrency fix.\n\n**Cause:** `@Observable` doesn't move work onto the main thread. SwiftUI reads `notes` on the main actor, so writing it from a detached Task is a data race. Swift 6 reports that race as an error at compile time. Swift 5 only showed the runtime warning you saw.\n\n**Fix:**\n1. Isolate the model to the main actor.\n2. Do the disk I/O off the main thread in a `nonisolated` or `@concurrent` function that returns `Sendable` values.\n3. Assign the result back on the main actor.\n\n```swift\nstruct Note: Codable, Identifiable, Sendable {\n    let id: UUID\n    var title: String\n    var body: String\n}\n\n@MainActor\n@Observable\nfinal class NotesModel {\n    private(set) var notes: [Note] = []\n    var loadError: Error?\n\n    func load() async {\n        do {\n            notes = try await NotesStore.loadNotes()   // hops back to main actor here\n        } catch {\n            loadError = error\n        }\n    }\n}\n\nenum NotesStore {\n    // Runs off the main actor. In Swift 6.2+ with default MainActor isolation\n    // / NonisolatedNonsendingByDefault, use `@concurrent` to force a background hop.\n    @concurrent\n    nonisolated static func loadNotes() async throws -> [Note] {\n        let url = URL.documentsDirectory.appending(path: \"notes.json\")\n        let data = try Data(contentsOf: url)\n        return try JSONDecoder().decode([Note].self, from: data)\n    }\n}\n```\n\nThe App and the view:\n\n```swift\n@main\nstruct NotesApp: App {\n    @State private var model = NotesModel()\n\n    var body: some Scene {\n        WindowGroup {\n            ContentView()\n                .environment(model)\n                .task { await model.load() }   // replaces Task.detached\n        }\n    }\n}\n```\n\n**Key points:**\n- **Remove the `Task.detached` that mutates the model.** If you must keep a detached task, have it only return data, then do `await MainActor.run { model.notes = loaded }`. The structured version above is cleaner.\n- **Use `.task` instead of `onAppear` plus `Task {}`.** `.task` inherits main-actor isolation and cancels automatically when the view goes away.\n- **Make `Note` `Sendable`.** It's a struct with `Sendable` fields, so the array can cross from the background function to the main actor.\n- **Don't make the model `@unchecked Sendable` and don't use `nonisolated(unsafe)`.** Either one only hides the race.\n- **If your compiler is older than Swift 6.2**, `@concurrent` isn't available. Drop it: a `nonisolated async` function already runs off the main actor there.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "swift-sdk not invoked and no skill file read. @MainActor model, @concurrent/nonisolated loader returning Sendable values, assignment on the main actor. Mentions Ditto only to say the skills do not apply."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "swift_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 15.94,
+      "tree_sha256": "be13e2f437cd9d732e156877c0debf9fce2842189086a4f5cf63e647ce0a67e0",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2,
+      "cache_read_tokens": 5243,
+      "cache_write_tokens": 3574,
+      "output_tokens": 1615,
+      "reported_cost_usd": 0.06194859999999999,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "I didn't need any of the installed skills for this. They only cover the Ditto SDK, and your app uses Apple frameworks only.\n\n**Cause:** the detached Task runs off the main thread and writes to `model.notes` from there. SwiftUI reads that property on the main thread. Swift 6 now catches this at compile time; before Swift 6 you only saw the runtime \"Publishing changes from background threads\" warning.\n\n**Fix:** put the model on the main actor, do the file reading in the background, and assign the result back on the main actor.\n\n```swift\nimport SwiftUI\nimport Observation\n\nstruct Note: Identifiable, Codable, Sendable {\n    let id: UUID\n    var title: String\n    var body: String\n}\n\n// Disk I/O lives outside the main actor.\nstruct NotesStore: Sendable {\n    let url: URL\n\n    @concurrent  // Swift 6.2+: forces this off the caller's actor.\n                 // On Swift 6.0/6.1 use `nonisolated func` (already runs off-main).\n    func loadNotes() async throws -> [Note] {\n        let data = try Data(contentsOf: url)\n        return try JSONDecoder().decode([Note].self, from: data)\n    }\n}\n\n@MainActor\n@Observable\nfinal class NotesModel {\n    var notes: [Note] = []\n    var loadError: (any Error)?\n\n    private let store: NotesStore\n    init(store: NotesStore) { self.store = store }\n\n    func load() async {\n        do {\n            notes = try await store.loadNotes()   // decode off-main, assign on main\n        } catch {\n            loadError = error\n        }\n    }\n}\n\n@main\nstruct NotesApp: App {\n    @State private var model = NotesModel(\n        store: NotesStore(url: .documentsDirectory.appending(path: \"notes.json\"))\n    )\n\n    var body: some Scene {\n        WindowGroup {\n            ContentView()\n                .environment(model)\n                .task { await model.load() }   // cancelled automatically with the view\n        }\n    }\n}\n```\n\n**Key points:**\n- **`@MainActor` on the model:** every write to `notes` now happens on the main thread, which fixes both the compile error and the old runtime warning.\n- **Owning the model:** keep it in `@State` in the App, not `@StateObject`, and pass it down with `.environment(model)` / `@Environment(NotesModel.self)`.\n- **`Note` must be `Sendable`:** the loaded array crosses from the background back to the main actor.\n- **Drop `Task.detached`:** it doesn't inherit cancellation or priority, and it's what caused the bad write. If you really need it, return a value from it and assign on the main actor:\n  ```swift\n  notes = try await Task.detached { try await store.loadNotes() }.value\n  ```\n- **Don't patch it with `DispatchQueue.main.async` or `MainActor.run`** in individual places. Isolating the whole model is what lets the compiler check every write.",
+      "attempt": "final_content_rerun_old_swift_description_control",
+      "swift_description_variant": "pre-e377ca7",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "Control: same case with the swift-sdk description from before e377ca7. swift-sdk not invoked and no skill file read. Mentions Ditto only to say the skills do not apply."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "join",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 15.52,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/write-dql/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 8111
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/write-dql/references/joins.md'",
+          "exit_code": 0,
+          "output_bytes": 5224
+        }
+      ],
+      "input_tokens_uncached": 16166,
+      "cache_read_tokens": 66432,
+      "output_tokens": 287,
+      "reasoning_tokens": 15,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "```sql\nSELECT o._id AS order_id, o.total, c.name AS customer_name\nFROM orders AS o\nINNER JOIN customers AS c ON o.customer_id = c._id\nWHERE o.total > 100;\n```\n\nDitto SDK 5.1 supports joins, but the right-side match key must be indexed. Here, `customers._id` is automatically indexed, so no additional index is required.\n\nMatching customer documents must be available locally, with `_id` values matching the orders\u2019 `customer_id` values. The inner join omits orders without a matching customer.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "Valid 5.1 INNER JOIN with total > 100; right-side key must be indexed; customers._id automatically indexed."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "swift_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 24.27,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 10205
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/lifetimes.md'",
+          "exit_code": 0,
+          "output_bytes": 3950
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/concurrency.md'",
+          "exit_code": 0,
+          "output_bytes": 7059
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/observers.md'",
+          "exit_code": 0,
+          "output_bytes": 18725
+        }
+      ],
+      "input_tokens_uncached": 22913,
+      "cache_read_tokens": 67200,
+      "output_tokens": 743,
+      "reasoning_tokens": 10,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "There are three problems:\n\n- **SDK 5.0.3 ignores `deliverOn: .main`.** The callback can run off-main. Explicitly mark it `@Sendable` so registration inside `@MainActor` code does not accidentally inherit actor isolation and cause a Swift 6 runtime trap.\n- **One `Task` per callback loses ordering.** Main-actor isolation prevents simultaneous mutations, but independent tasks can apply older snapshots after newer ones.\n- **Dropping an observer handle does not cancel observation.** With your app-lived Ditto, it keeps firing and retaining its captures until explicitly cancelled.\n\nUse this architecture:\n\n```text\nApp-owned Ditto\n  \u2192 screen-owned observer\n  \u2192 AsyncStream<Sendable snapshot>\n  \u2192 one @MainActor consumer\n  \u2192 model assignment\n```\n\nInside the explicitly `@Sendable` observer callback, decode results into your own `Sendable` structs, then yield them into `AsyncStream(bufferingPolicy: .bufferingNewest(1))`. Extract values before crossing isolation boundaries: `item.value` is `[String: Any?]`, which is not `Sendable`. Dematerialize each item after extraction. Keep decoding and sorting off the main actor.\n\nOne long-lived consumer applies full snapshots:\n\n```swift\nTask { @MainActor [weak model] in\n    for await snapshot in updates {\n        guard !Task.isCancelled else { break }\n        model?.rows = snapshot\n    }\n}\n```\n\n`bufferingNewest(1)` deliberately coalesces pending UI snapshots; this is suitable for displaying current state, not processing every change as an event.\n\nThe screen\u2019s stable model/controller should retain the **observer handle, stream continuation, and consumer task**. Make `start` idempotent; when the query identity changes, stop the old observation before registering another.\n\nOn disappearance, explicitly:\n\n1. Cancel the consumer task.\n2. Call `observer.cancel()`.\n3. Finish the stream and clear the stored handles.\n4. Cancel any subscription owned exclusively by that screen.\n\nUse `.onDisappear { model.stop() }`, or scope the consumption loop to `.task(id:)` with explicit observer cleanup. SwiftUI cancellation does not automatically cancel separately created unstructured tasks. Stream `onTermination` can provide backup cancellation, capturing the observer **weakly** to avoid a retain cycle; simply breaking the loop does not guarantee termination.\n\nKeep your existing app-owned Ditto and shared sync running. Do not rely solely on `deinit` for a `@MainActor` owner\u2019s cleanup.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "All five criteria met. Overstates the skill slightly: says a missing @Sendable causes a Swift 6 trap where concurrency.md says it can trap. No snippet beyond the consumer loop; not compiled."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "relay",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 19.34,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/sync-subscriptions/SKILL.md .agents/skills/ditto-mesh-networking/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 11696
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/sync-subscriptions/references/mesh-and-flooding.md .agents/skills/sync-subscriptions/examples/mesh-scenarios.md'",
+          "exit_code": 0,
+          "output_bytes": 11104
+        }
+      ],
+      "input_tokens_uncached": 19816,
+      "cache_read_tokens": 64000,
+      "output_tokens": 435,
+      "reasoning_tokens": 22,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "This is expected under SDK 5.1\u2019s default pairwise sync. **Subscriptions filter what a peer receives; relays can forward only documents they hold.**\n\nA sends B only blue cars. C\u2019s all-cars subscription asks B for everything B holds\u2014it does not make B fetch non-blue cars from A on C\u2019s behalf.\n\nConcrete fixes:\n\n- **Broaden B\u2019s sync subscription to `SELECT * FROM cars`.** Keep B\u2019s blue-only UI using a separate local query or observer. Relays must subscribe to the union of data their downstream peers need.\n- **Give C another path to the data:** connect it directly to A, or through peers whose subscriptions cover all cars.\n- **Connect C to Ditto Server**, provided the server holds the missing cars and permissions allow C to receive them.\n\nB\u2019s subscription is not an outbound blue-only restriction: if B already held non-blue cars from earlier sync or local writes, it could send those to C. The bottleneck here is B\u2019s missing holdings, not a hop limit.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "Recipient-filtered sends and relay holdings explained; widen B with a separate local UI query, or add a holding path; cloud path qualified on holdings and permissions; no invented counts."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "model",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 28.76,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-modeling/SKILL.md .agents/skills/ditto-mesh-networking/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 13782
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-modeling/references/workflow.md .agents/skills/data-modeling/references/crdt-types.md .agents/skills/data-modeling/references/performance.md'",
+          "exit_code": 0,
+          "output_bytes": 40971
+        }
+      ],
+      "input_tokens_uncached": 26409,
+      "cache_read_tokens": 69632,
+      "output_tokens": 864,
+      "reasoning_tokens": 32,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "Use small order documents, separate line-item documents, and an attachment for the image. Assume Ditto 5.1\u2019s default lenient mode and no MongoDB Connector.\n\n| Collection | Recommended fields |\n|---|---|\n| `orders` | `_id: {store_id: \"store7\", order_id: \"order42\"}`; ordinary scalar fields use LWW registers; independently editable objects use MAPs; `image` explicitly typed `ATTACHMENT`. |\n| `order_items` | `_id: {store_id: \"store7\", order_id: \"order42\", line_id: \"<UUID>\"}`; `parent_id` contains the complete order `_id`; fields such as SKU and price use registers. |\n| `inventory` | If stock means store inventory, use `_id: {store_id: \"store7\", sku: \"\u2026\"}` and explicitly declare `stock COUNTER` when seeding it. If it is order-specific, keep that counter on `orders`. |\n\nThe important decisions are:\n\n- **`items` \u2014 blocker, `ARRAY_LWW`:** arrays merge as a whole last-write-wins value; concurrent offline appends can silently disappear. Separate documents preserve distinct additions. Generate stable, unique line IDs; SKU alone collapses repeated lines. A keyed MAP is also suitable for a strictly bounded, small item set. Neither design preserves list order automatically.\n- **`stock` \u2014 blocker, `COUNTER_CANDIDATE`:** use counter increment operations, rather than reading and assigning `stock + 1`. Two concurrent increments then produce +2. Counter resets can override concurrent increments; convergence also does not enforce nonnegative inventory.\n- **`_id` \u2014 warning, `COMPOSITE_ID`:** replace `\"store7:order42\"` with the object identity above. Permission rules can inspect only `_id`, so store scope must be available there on every collection. IDs are immutable: existing records need recreation under new IDs. Keep serialized IDs below 256 bytes.\n- **`image` \u2014 `ATTACHMENT_CANDIDATE`; document \u2014 warning, `SIZE_SOFT`:** a 400 KiB base64 field already exceeds the default 256 KiB warning threshold, before CRDT metadata. At roughly 20 KB/s, that payload alone takes about 20 seconds over BLE. Attachment bytes are fetched separately and excluded from document size; the handle merges LWW, so concurrent replacements retain one image.\n\nTarget single-digit-KiB order and item documents, including metadata headroom. Fetch images on demand; attachments still consume BLE airtime. Ditto 5.1 rejects local writes exceeding the default 5 MiB hard limit; replicated oversized documents can still arrive.\n\nReassemble items using the complete scoped `parent_id`, with app-side reads or a 5.1 Small Peer JOIN against the order `_id`. Scope subscriptions and observers to the store and relevant orders. If MongoDB Connector is involved, revise the image plan: it does not carry attachments.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "All seven criteria met: order_items with complete scoped parent_id, unique line IDs (SKU alone collapses repeats), seeded COUNTER, attachment with connector caveat, soft/hard limits and BLE airtime. Read the corrected workflow.md."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "mesh",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 25.65,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/ditto-mesh-networking/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 6911
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/ditto-mesh-networking/references/transport-config.md .agents/skills/ditto-mesh-networking/references/versions.md .agents/skills/ditto-mesh-networking/references/transports.md'",
+          "exit_code": 0,
+          "output_bytes": 32877
+        }
+      ],
+      "input_tokens_uncached": 16862,
+      "cache_read_tokens": 48256,
+      "output_tokens": 664,
+      "reasoning_tokens": 23,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "The slowdown fits the configuration change: **a fresh `TransportConfig` starts with every transport disabled**. Enabling only BLE replaced the platform defaults and removed faster paths. \u201cSync active\u201d means the sync engine is running; it does not prove that peers connected or that every transport is available.\n\n- **Keep BLE enabled on both platforms.** It is the common infrastructure-free bridge between iOS and Android. Budget roughly **20 KB/s**, or about **4 KB/s on pre-Android-10 devices**.\n- **Restore same-platform fast paths:** AWDL for Apple \u2194 Apple; Wi-Fi Aware for Android \u2194 Android. **AWDL cannot connect Android, and Wi-Fi Aware does not interoperate with AWDL.** Wi-Fi Aware requires Android API 29+ and compatible hardware.\n- **Read-modify-write the current configuration**, explicitly restoring transports already disabled by this overwrite. Keep LAN enabled for occasions when a shared network is available. Ordinary transport enable/disable updates apply live without restarting sync; disabling a transport drops its connections.\n- **Deploy with Wi-Fi and Bluetooth radios on**, even without an access point. Verify iOS Bluetooth/Local Network permissions and Bonjour declarations; Android Bluetooth permissions, Wi-Fi Aware permissions and location-service requirements. Monitor transport conditions, logs and actual peer links rather than relying on the sync-active indicator. Account for background discovery restrictions.\n- **Design for the BLE boundary:** use small documents, narrow subscriptions and separately fetched attachments. A 256 KiB document can take over ten seconds over BLE and remains absent from queries until fully received. Place devices within reliable BLE reach\u2014plan around roughly 10 m indoors\u2014and ensure relays subscribe to data they must forward.\n\nIf the requirement is **high-throughput iOS \u2194 Android sync without an AP**, this transport mix cannot guarantee it: the cross-platform bridge remains BLE. Adjust payloads and latency expectations, or revise deployment to provide a shared high-bandwidth network.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "All five criteria met, including read-modify-write, platform fast paths, permissions and BLE sizing."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "swift_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 18.91,
+      "tree_sha256": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2386,
+      "cache_read_tokens": 9600,
+      "output_tokens": 513,
+      "reasoning_tokens": 172,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "Make the UI model explicitly `@MainActor`, and have the detached task **return loaded data** rather than mutate the model. `@Observable` provides observation; it doesn\u2019t provide actor isolation.\n\n```swift\nimport SwiftUI\n\nstruct Note: Codable, Identifiable, Sendable {\n    let id: UUID\n    var text: String\n}\n\n@MainActor\n@Observable\nfinal class NotesModel {\n    var notes: [Note] = []\n    var loadingError: String?\n\n    func load(from url: URL) async {\n        do {\n            let loaded = try await Task.detached(priority: .utility) {\n                let data = try Data(contentsOf: url)\n                return try JSONDecoder().decode([Note].self, from: data)\n            }.value\n\n            // Back on the main actor after awaiting the disk work.\n            notes = loaded\n            loadingError = nil\n        } catch {\n            loadingError = error.localizedDescription\n        }\n    }\n}\n```\n\nKeep the App-owned instance in `@State`, pass it to your views, and start loading from a view\u2019s `.task`:\n\n```swift\n@State private var model = NotesModel()\n\n// In the root view:\nNotesView(model: model)\n    .task {\n        await model.load(from: notesURL)\n    }\n```\n\n`Note` must be `Sendable` because the result crosses from the detached task to the main actor. Keep disk reading and decoding off the main actor; keep observable UI state mutations on it. `Task {}` alone inherits actor isolation, so wrapping synchronous disk work in it wouldn\u2019t move that work off the main actor.",
+      "attempt": "final_content_rerun",
+      "swift_description_variant": "current",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "No skill file read or listed. @MainActor model; detached task returns Sendable data and assignment happens on the main actor. No mention of Ditto."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "swift_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 28.18,
+      "tree_sha256": "be13e2f437cd9d732e156877c0debf9fce2842189086a4f5cf63e647ce0a67e0",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc \"rg --files -g 'AGENTS.md' -g 'SKILL.md' -g '*swift*' -g '*concurr*' .agents\"",
+          "exit_code": 0,
+          "output_bytes": 413
+        }
+      ],
+      "input_tokens_uncached": 2718,
+      "cache_read_tokens": 21504,
+      "output_tokens": 750,
+      "reasoning_tokens": 245,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "Make the UI-facing model `@MainActor`. `@Observable` tracks changes; it does **not** make mutations thread-safe or move them to the main actor.\n\nKeep disk reading and decoding in the detached task, return the result, and assign it after awaiting back on the main actor:\n\n```swift\nimport Foundation\nimport Observation\n\n// Note should be a Sendable value type, including its stored properties.\nstruct Note: Codable, Identifiable, Sendable {\n    var id: UUID\n    var text: String\n}\n\n@MainActor\n@Observable\nfinal class NotesModel {\n    var notes: [Note] = []\n    var loadError: String?\n\n    func load(from url: URL) async {\n        do {\n            let loaded = try await Task.detached(priority: .utility) {\n                let data = try Data(contentsOf: url)\n                return try JSONDecoder().decode([Note].self, from: data)\n            }.value\n\n            // Execution resumes on MainActor.\n            notes = loaded\n            loadError = nil\n        } catch {\n            loadError = error.localizedDescription\n        }\n    }\n}\n```\n\nHave the App own the observable reference using `@State`, and start loading through a view\u2019s lifecycle:\n\n```swift\n@main\n@MainActor\nstruct NotesApp: App {\n    @State private var model = NotesModel()\n\n    var body: some Scene {\n        WindowGroup {\n            NotesView(model: model)\n                .task {\n                    await model.load(from: notesURL)\n                }\n        }\n    }\n}\n```\n\nHere, `notesURL` is your existing file URL. The detached closure captures only that URL\u2014not the model. Its `[Note]` result must be `Sendable` to cross the isolation boundary.\n\nAvoid moving synchronous disk work into a plain `Task {}` created on the main actor: that task inherits main-actor isolation and can block the UI. The older publishing warning reflects the same underlying problem: UI state was being mutated from background execution.",
+      "attempt": "final_content_rerun_old_swift_description_control",
+      "swift_description_variant": "pre-e377ca7",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "Control: same case with the swift-sdk description from before e377ca7. swift-sdk not invoked and no skill file read. The model listed skill files matching *swift* with rg before answering without them."
+      ]
     }
-  ]
+  ],
+  "rerun_date": "2026-10-27"
 }

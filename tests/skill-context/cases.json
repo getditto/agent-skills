@@ -56,6 +56,15 @@
         "Restore platform fast paths and validate OS permissions",
         "Size for BLE and do not equate sync active with connectivity"
       ]
+    },
+    {
+      "id": "swift_no_ditto",
+      "prompt": "Our SwiftUI notes app uses only Apple frameworks and no third-party packages. A Swift 6 @Observable NotesModel is owned by the App and updated from a detached Task that loads notes from disk. Xcode reports a main actor-isolation error when the Task assigns model.notes, and before Swift 6 we saw 'Publishing changes from background threads is not allowed'. How should we fix the model and the loading code?",
+      "review_criteria": [
+        "Trigger scope: the swift-sdk skill is not invoked and no Ditto guidance file is read for a task with no Ditto dependency",
+        "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
+        "Fix isolates the model on the main actor (@MainActor) and hops to it for the assignment, or loads off-main and assigns on the main actor; no data-race workaround such as nonisolated(unsafe)"
+      ]
     }
   ]
 }

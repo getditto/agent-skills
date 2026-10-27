@@ -45,6 +45,10 @@ Pass the prompt on stdin. Disable discovered global skills with explicit
 removes managed/global instructions. Record approval rejection; never bypass policy.
 The observed Codex host retained global guidance and rejected local file commands,
 including commands following the local RTK convention; it was not a clean comparison.
+The 2026-10-27 rerun isolated Codex by running it with a fresh empty `HOME` (no
+`~/.agents/skills`, no shell profile) and a fresh `CODEX_HOME` containing only a
+symlink to the existing `auth.json` (no config, rules, memories or global guidance).
+Confirm the catalog shows only vendor builtins plus the canonical skills before a run.
 
 **Claude Code:** copy skills into a temporary local plugin's real `skills/` directory
 and create `.claude-plugin/plugin.json` with a synthetic name, version and description.
@@ -60,6 +64,9 @@ claude --print --verbose --output-format stream-json --no-session-persistence
 ```
 
 Use proper subprocess argument arrays; JSON arguments above are single arguments.
+Put PLUGIN inside the session's working directory, with symlinks resolved. Otherwise
+Read rejects skill reference files as outside the working directory, and answers fall
+back to the entry point alone; check traces for those tool errors.
 The startup `init` event records skills, tools, MCP servers and resolved model. The
 observed local plugin exposed all five canonical skills plus vendor builtins; the
 four named tools were available and MCP was empty. Filesystem-only registration under

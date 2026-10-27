@@ -17,6 +17,42 @@ reads even after the RTK command convention was enforced. Inherited global guida
 also prevented a clean context comparison. The other four tasks were not run on that
 host. No policy bypass was attempted.
 
+## Final-content rerun — 2026-10-27
+
+After the data-modeling corrections and the narrowed `swift-sdk` description, every
+case was rerun once per host against the final skill tree (commit `7538627`, digest
+`af58eb2c…`). A new `swift_no_ditto` case checks trigger scope: a plain SwiftUI
+concurrency task with no Ditto dependency, where `swift-sdk` must not fire.
+
+| Task | Claude Code 2.1.311 (Opus 5.5) | Codex 0.163.0 (`gpt-6.1-sol`) |
+|---|---|---|
+| 5.1 JOIN and right-side index requirement | Core pass | Core pass |
+| Swift 5.0.3 observer concurrency/lifetimes | Core pass; snippet not compiled | Core pass; says "traps" where the skill says "can trap" |
+| Narrow relay loses non-blue cars | Core pass | Core pass |
+| Offline concurrent order model | Core pass, all seven criteria | Core pass, all seven criteria |
+| Mixed-platform no-AP mesh/configuration | Core pass | Core pass |
+| Plain SwiftUI task, no Ditto (new) | Pass; `swift-sdk` not invoked | Pass; no skill file read |
+
+- Both order-model answers read the corrected `workflow.md`. Neither repeats the earlier
+  residual errors: any offered JOIN uses the complete scoped `parent_id` with an index,
+  and neither says an unchanged image is resent on every order edit.
+- Trigger-scope control: the same new case run with the pre-`e377ca7` description also
+  did not invoke `swift-sdk` on either host. Codex listed files matching `*swift*`
+  under that description before answering without them; under the current one it did
+  not look. This is one run per variant, so it shows no false trigger, not a measured
+  effect of the narrowing.
+- The criterion "does not mention Ditto" was reworded after the first Claude run. Both
+  Claude answers mention Ditto only to say the installed skills do not apply.
+- Codex ran with a fresh `HOME` and `CODEX_HOME` holding only a link to the existing
+  auth file. Its catalog was the four vendor builtins plus the five canonical skills,
+  and guidance reads succeeded, unlike the initial matrix. The CLI reported a
+  hook-trust bypass warning from the local wrapper. Hooks were disabled and none ran.
+- A first Claude batch registered the plugin outside the session's working directory,
+  so reference reads were rejected and answers fell back to the entry points. That
+  batch was discarded; the reported runs had no tool errors.
+- OpenCode/Kimi K3 was not available for the rerun. Claude reported USD 0.78 for the
+  seven runs; Codex does not report cost.
+
 ## Final bounded regressions
 
 The same natural relay and order-model prompts were rerun on fresh Claude and Kimi
@@ -35,8 +71,7 @@ Trace review found conflicting reference examples behind both residual errors:
 and `data-modeling/examples/order-management.md:44` claims every edit resyncs the blob.
 Those conflict with the corrected entry-point scope/index rule and the correct
 field-delta explanation in `references/performance.md`. These examples and the related relational-migration and best-practices guidance were
-corrected after the final traces. The bounded iteration makes no claim of a subsequent
-model rerun. This also shows why
+corrected after the final traces and model-tested in the 2026-10-27 rerun above. This also shows why
 preserving prose and code blocks is not a semantic correctness check.
 
 ## Evidence and limits
@@ -69,7 +104,7 @@ preserving prose and code blocks is not a semantic correctness check.
 - Generated Swift and extra SQL were not compiled or executed by this smoke suite.
   Core-task passes do not certify all ancillary statements or snippet completeness.
 
-`results.json` preserves 16 primary/retry/regression records including the timeout
+`results.json` preserves 30 primary/retry/regression/rerun records including the timeout
 and blocked Codex record. Pilot setup failures and all raw traces remain private.
 `cases.json` contains prompts and separate review criteria. `README.md` describes the
 reproducible method and command templates without credentials, private endpoints,
@@ -82,6 +117,11 @@ private orchestration script must not be copied into the public repository uncha
   `3f8501ec5c7890b094610e13fda027cb70aba6254f4e2fa53dfe1a6506bca8b6`.
 - Four final targeted regressions:
   `10ad14c6454eb7b3cfbbee12637b5cb9587d2847bdebba029379c37ab3ef2f7f`.
+- 2026-10-27 final-content rerun (commit `7538627`):
+  `af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe`; old-description
+  control `be13e2f437cd9d732e156877c0debf9fce2842189086a4f5cf63e647ce0a67e0`. The rerun
+  hashes sorted relative paths plus per-file SHA-256, so compare its digests only with
+  each other.
 
 Every result records its own digest. Subsequent wording or static example corrections
 must be described as after these snapshots; these runs do not certify the exact final
