@@ -13,7 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # ubuntu-24.04 rather than ubuntu-latest: setup-python has no 3.9 build for the
+        # Ubuntu 26.04 image, and this job exists to prove the oldest supported Python.
+        os: [ubuntu-24.04, windows-latest]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
