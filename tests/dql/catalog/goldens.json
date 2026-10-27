@@ -1,128 +1,128 @@
 {
-  "sk_best_practices_18312e75": {
+  "sk_modeling_patterns_42c12991": {
     "rowCount": 1
   },
-  "sk_best_practices_8e4b5f96": {
+  "sk_modeling_patterns_ef999540": {
     "rowCount": 0
   },
-  "sk_best_practices_95977c5e": {
+  "sk_modeling_patterns_66e90540": {
     "rowCount": 0
   },
-  "sk_best_practices_68cfc172": {
+  "sk_modeling_patterns_1261e8e1": {
     "rowCount": 0
   },
-  "sk_best_practices_8e6dfd33": {
+  "sk_modeling_patterns_07879a59": {
     "rowCount": 0
   },
-  "sk_best_practices_a32e3f4a": {
+  "sk_modeling_patterns_43f6ba16": {
     "rowCount": 0
   },
-  "sk_best_practices_f8309b15": {
+  "sk_modeling_patterns_d2071fb3": {
     "rowCount": 0
   },
-  "sk_best_practices_e83afec0": {
+  "sk_modeling_patterns_09bb7d16": {
     "rowCount": 0
   },
-  "sk_best_practices_6082be3d": {
+  "sk_modeling_patterns_cac3785d": {
     "rowCount": 0
   },
-  "sk_best_practices_8552c8e9": {
+  "sk_modeling_patterns_ba9fc162": {
     "rowCount": 0
   },
-  "sk_best_practices_4e282717": {
+  "sk_modeling_patterns_199c8da5": {
     "rowCount": 0
   },
-  "sk_best_practices_4adf35c1": {
+  "sk_modeling_patterns_d3a7408b": {
     "rowCount": 1
   },
-  "sk_best_practices_0e7894cb": {
+  "sk_modeling_patterns_9eb86b5c": {
     "rowCount": 1
   },
-  "sk_best_practices_2633a544": {
+  "sk_query_performance_0539fed8": {
     "rowCount": 1
   },
-  "sk_best_practices_b7c97c51": {
+  "sk_query_performance_54b9327e": {
     "rowCount": 0
   },
-  "sk_best_practices_b6a6b0b5": {
+  "sk_query_performance_6809e57e": {
     "rowCount": 1
   },
-  "sk_best_practices_245a6f7d": {
+  "sk_query_performance_fd3e9925": {
     "rowCount": 0
   },
-  "sk_best_practices_20d138f3": {
+  "sk_query_performance_2ccd95b9": {
     "rowCount": 0
   },
-  "sk_best_practices_199c2d8b": {
+  "sk_query_performance_b59a03e9": {
     "rowCount": 1
   },
-  "sk_best_practices_f3c85d2a": {
+  "sk_query_performance_16070d5d": {
     "rowCount": 1
   },
-  "sk_best_practices_5c5b1d61": {
+  "sk_query_performance_09f00d79": {
     "rowCount": 1
   },
-  "sk_best_practices_6a69cc4e": {
+  "sk_query_performance_4303cc51": {
     "rowCount": 0
   },
-  "sk_best_practices_400e2e78": {
+  "sk_query_performance_67ab2b9e": {
     "rowCount": 1
   },
-  "sk_best_practices_33d9e6f0": {
+  "sk_strict_mode_safety_4abb6c6f": {
     "rowCount": 1
   },
-  "sk_best_practices_ea43f08b": {
+  "sk_strict_mode_safety_ade3a790": {
     "rowCount": 1
   },
-  "sk_best_practices_4f1259c6": {
+  "sk_strict_mode_safety_93dced15": {
     "rowCount": 1
   },
-  "sk_best_practices_d535ba43": {
+  "sk_strict_mode_safety_f5ee8b3f": {
     "rowCount": 0
   },
-  "sk_best_practices_94a2c6b0": {
+  "sk_strict_mode_safety_c947f7bc": {
     "rowCount": 0
   },
-  "sk_best_practices_0e377dab": {
+  "sk_strict_mode_safety_ecb21d1e": {
     "rowCount": 0
   },
-  "sk_best_practices_f657f27e": {
+  "sk_strict_mode_safety_a50f3af0": {
     "rowCount": 0
   },
-  "sk_best_practices_0fd1fcc5": {
+  "sk_strict_mode_safety_28e0f605": {
     "rowCount": 0
   },
-  "sk_best_practices_12e453ca": {
+  "sk_strict_mode_safety_509bf53b": {
     "rowCount": 0
   },
-  "sk_best_practices_ff3de1e5": {
+  "sk_timestamps_e41d660b": {
     "rowCount": 0
   },
-  "sk_best_practices_d38b28f2": {
+  "sk_timestamps_859e702d": {
     "rowCount": 0
   },
-  "sk_best_practices_3cc54a5d": {
+  "sk_timestamps_f5679956": {
     "rowCount": 0
   },
-  "sk_best_practices_bcaa8df1": {
+  "sk_timestamps_a76c506f": {
     "rowCount": 0
   },
-  "sk_best_practices_f1532a19": {
+  "sk_timestamps_0708b013": {
     "rowCount": 0
   },
-  "sk_best_practices_da5b14a4": {
+  "sk_timestamps_cb12db5a": {
     "rowCount": 0
   },
-  "sk_best_practices_909cef02": {
+  "sk_timestamps_a3de6270": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_53bada8f": {
+  "sk_movies_cookbook_ca8e0edb": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_e61b0997": {
+  "sk_movies_cookbook_177bdbcf": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_afaff684": {
+  "sk_movie_reads_4b46b8df": {
     "rowCount": 25,
     "firstRow": {
       "_id": "573a1399f29313caabcee345",
@@ -131,10 +131,10 @@
       "year": 1994
     }
   },
-  "sk_movies_cookbook_b0cd4faa": {
+  "sk_movie_reads_630fa661": {
     "rowCount": 1
   },
-  "sk_movies_cookbook_8415fa9a": {
+  "sk_movie_reads_f1367435": {
     "rowCount": 1,
     "firstRow": {
       "_id": "573a1399f29313caabcecb4a",
@@ -142,16 +142,16 @@
       "year": 1991
     }
   },
-  "sk_movies_cookbook_e0745c10": {
+  "sk_movie_reads_a4ff8115": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_07433162": {
+  "sk_movie_reads_251b3039": {
     "rowCount": 128
   },
-  "sk_movies_cookbook_b2d7426d": {
+  "sk_movie_reads_f06b9caa": {
     "rowCount": 128
   },
-  "sk_movies_cookbook_2ff21a08": {
+  "sk_movie_reads_5001c268": {
     "rowCount": 194,
     "firstRow": {
       "_id": "573a13a1f29313caabd0660a",
@@ -161,49 +161,49 @@
       "verdict": "good"
     }
   },
-  "sk_movies_cookbook_c9e64fa4": {
+  "sk_movie_reads_4318280d": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_3f8cf611": {
+  "sk_movie_reads_2fc61139": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_c1eca4d0": {
+  "sk_movie_reads_6cc08ecf": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_f62224cd": {
+  "sk_movie_reads_a5132d64": {
     "rowCount": 1
   },
-  "sk_movies_cookbook_21a07f82": {
+  "sk_movie_mutations_62ba2566": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_9306e1e2": {
+  "sk_movie_mutations_188d5f0f": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_c8f636f4": {
+  "sk_movie_mutations_4dcc9538": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_0594ab50": {
+  "sk_movie_mutations_b3000a73": {
     "rowCount": 76
   },
-  "sk_movies_cookbook_0f197001": {
+  "sk_movie_mutations_66fedf51": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_0dbaadd5": {
+  "sk_movie_mutations_aae1e823": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_fa5ef482": {
+  "sk_movie_mutations_373c398d": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_f0ecab97": {
+  "sk_movie_mutations_c17b8b91": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_c85a1e5b": {
+  "sk_movies_cookbook_9bdc9b3f": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_54c2410e": {
+  "sk_movies_cookbook_a503d1d7": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_ca54fe60": {
+  "sk_movies_cookbook_9182e6b9": {
     "rowCount": 10,
     "firstRow": {
       "_id": "573a1395f29313caabce2b21",
@@ -212,10 +212,10 @@
       "title": "A Big Hand for the Little Lady"
     }
   },
-  "sk_movies_cookbook_ec24fb17": {
+  "sk_movies_cookbook_a8bba05d": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_be8b5228": {
+  "sk_movies_cookbook_4dd707f7": {
     "rowCount": 10,
     "firstRow": {
       "_id": "573a13a1f29313caabd0660a",
@@ -223,19 +223,19 @@
       "year": 2002
     }
   },
-  "sk_movies_cookbook_dfb212b7": {
+  "sk_movies_cookbook_77a7c1d0": {
     "rowCount": 0
   },
-  "sk_movies_cookbook_6b5e7b76": {
+  "sk_movies_cookbook_7a180d88": {
     "rowCount": 0
   },
-  "sk_retail_cookbook_58046bae": {
+  "sk_retail_cookbook_41c3d0be": {
     "rowCount": 1
   },
-  "sk_retail_cookbook_fbb8cbeb": {
+  "sk_retail_cookbook_38d63d98": {
     "rowCount": 1
   },
-  "sk_retail_cookbook_acf270b3": {
+  "sk_retail_cookbook_ffca45e3": {
     "rowCount": 10,
     "firstRow": {
       "_id": "order_20250325_0001",
@@ -244,42 +244,42 @@
       "total": 704.72
     }
   },
-  "sk_retail_cookbook_d75b42c8": {
+  "sk_retail_cookbook_84f2c947": {
     "rowCount": 2
   },
-  "sk_retail_cookbook_a76f548b": {
+  "sk_retail_cookbook_3c34a5e9": {
     "rowCount": 3
   },
-  "sk_retail_cookbook_2798df93": {
+  "sk_retail_cookbook_fb3054f0": {
     "rowCount": 3
   },
-  "sk_retail_cookbook_80b74496": {
+  "sk_retail_cookbook_6280e50c": {
     "rowCount": 0
   },
-  "sk_retail_cookbook_61bfdcf4": {
+  "sk_retail_cookbook_b16c0a44": {
     "rowCount": 1,
     "firstRow": {
       "revenue": 783909.3799999993,
       "store_id": "store_seattle"
     }
   },
-  "sk_retail_cookbook_8efe568f": {
+  "sk_retail_cookbook_63766ea2": {
     "rowCount": 2
   },
-  "sk_retail_cookbook_94a00d0a": {
+  "sk_retail_cookbook_7ea7f46f": {
     "rowCount": 1,
     "firstRow": {
       "revenue": 783909.3799999993,
       "store_id": "store_seattle"
     }
   },
-  "sk_retail_cookbook_10417499": {
+  "sk_retail_cookbook_3d5ca30a": {
     "rowCount": 1000
   },
-  "sk_retail_cookbook_fc3f2adf": {
+  "sk_retail_cookbook_24b65006": {
     "rowCount": 292
   },
-  "sk_retail_cookbook_f0c1d821": {
+  "sk_retail_cookbook_20992f5d": {
     "rowCount": 10,
     "firstRow": {
       "amount": 704.72,
@@ -287,20 +287,20 @@
       "store_id": "store_seattle"
     }
   },
-  "sk_retail_cookbook_5b132423": {
+  "sk_retail_cookbook_d8a6a9e9": {
     "rowCount": 10,
     "firstRow": {
       "product_id": "prod_grd_0050",
       "units_on_hand": 95
     }
   },
-  "sk_retail_cookbook_d463e0bd": {
+  "sk_retail_cookbook_105a2cf4": {
     "rowCount": 2
   },
-  "sk_retail_joins_cookbook_efd27787": {
+  "sk_retail_joins_cookbook_65e758bc": {
     "rowCount": 1
   },
-  "sk_retail_joins_cookbook_b0fd81f0": {
+  "sk_retail_joins_cookbook_ce8cd611": {
     "rowCount": 10,
     "firstRow": {
       "_id": "order_20250325_0001",
@@ -310,10 +310,10 @@
       "total": 704.72
     }
   },
-  "sk_retail_joins_cookbook_6e3f154c": {
+  "sk_retail_joins_cookbook_060c96a4": {
     "rowCount": 0
   },
-  "sk_retail_joins_cookbook_ad2788df": {
+  "sk_retail_joins_cookbook_a463646c": {
     "rowCount": 3,
     "firstRow": {
       "_id": "079b7d30-1e81-41eb-9bcb-1357956b2704",
@@ -323,10 +323,10 @@
       "quantity": 4
     }
   },
-  "sk_retail_joins_cookbook_ff6e61f3": {
+  "sk_retail_joins_cookbook_a4915076": {
     "rowCount": 0
   },
-  "sk_retail_joins_cookbook_9262db74": {
+  "sk_retail_joins_cookbook_17b0b9b7": {
     "rowCount": 1,
     "firstRow": {
       "_id": "store_seattle",
@@ -334,7 +334,7 @@
       "store_name": "Zava Retail Seattle"
     }
   },
-  "sk_retail_joins_cookbook_4560c0e2": {
+  "sk_retail_joins_cookbook_092cceaf": {
     "rowCount": 1,
     "firstRow": {
       "_id": "store_seattle",
@@ -342,13 +342,13 @@
       "store_name": "Zava Retail Seattle"
     }
   },
-  "sk_retail_joins_cookbook_0c12b9d0": {
+  "sk_retail_joins_cookbook_674b05da": {
     "rowCount": 0
   },
-  "sk_retail_joins_cookbook_ad907d8b": {
+  "sk_retail_joins_cookbook_52bf0d78": {
     "rowCount": 10
   },
-  "sk_retail_joins_cookbook_f796bc51": {
+  "sk_retail_joins_cookbook_7579f6a1": {
     "rowCount": 10,
     "firstRow": {
       "amount": 960.51,
@@ -356,13 +356,13 @@
       "store": "Zava Retail Seattle"
     }
   },
-  "sk_retail_joins_cookbook_779bc4c6": {
+  "sk_retail_joins_cookbook_8e5e9e78": {
     "rowCount": 0
   },
-  "sk_retail_joins_cookbook_508258b8": {
+  "sk_retail_joins_cookbook_a8963375": {
     "rowCount": 0
   },
-  "sk_retail_joins_cookbook_993e691e": {
+  "sk_retail_joins_cookbook_806c1b07": {
     "rowCount": 10,
     "firstRow": {
       "_id": "prod_pwr_0003",
@@ -371,169 +371,169 @@
       "units_on_hand": 70
     }
   },
-  "sk_expressions_c3c0fa24": {
+  "sk_expressions_077f4b3a": {
     "rowCount": 5
   },
-  "sk_expressions_657ca280": {
+  "sk_expressions_ae09b4f1": {
     "rowCount": 5,
     "firstRow": {
       "cast_size": 4,
       "title": "Peter Pan"
     }
   },
-  "sk_expressions_bffab40a": {
+  "sk_expressions_af2b6349": {
     "rowCount": 0
   },
-  "sk_expressions_d256654c": {
+  "sk_expressions_7fd01296": {
     "rowCount": 194
   },
-  "sk_expressions_d2c4660a": {
+  "sk_expressions_7fb0f1ef": {
     "rowCount": 194,
     "firstRow": {
       "genre_score": 3,
       "title": "Boiling Point"
     }
   },
-  "sk_expressions_03f225bc": {
+  "sk_expressions_80b3cf31": {
     "rowCount": 194,
     "firstRow": {
       "title": "A Big Hand for the Little Lady",
       "verdict": "good"
     }
   },
-  "sk_expressions_031587d4": {
+  "sk_expressions_813da7fa": {
     "rowCount": 1
   },
-  "sk_expressions_407971da": {},
-  "sk_expressions_05315411": {},
-  "sk_expressions_37d0df75": {
+  "sk_expressions_3ecc3b11": {},
+  "sk_expressions_5186ce42": {},
+  "sk_expressions_2f74bffa": {
     "rowCount": 194
   },
-  "sk_expressions_a1960b7a": {
+  "sk_expressions_eb4b6205": {
     "rowCount": 194
   },
-  "sk_expressions_da5ce93b": {
+  "sk_expressions_cb3e7cd7": {
     "rowCount": 194
   },
-  "sk_functions_42b86fe5": {
+  "sk_functions_04971111": {
     "rowCount": 194
   },
-  "sk_functions_bc27e575": {
+  "sk_functions_3f6b25d7": {
     "rowCount": 194
   },
-  "sk_functions_bbd3cedc": {
+  "sk_functions_9ba799a9": {
     "rowCount": 194
   },
-  "sk_functions_0160367f": {
+  "sk_functions_cc770ad0": {
     "rowCount": 3
   },
-  "sk_functions_604d13f1": {
+  "sk_functions_fa36f576": {
     "rowCount": 3
   },
-  "sk_functions_8e52e5c9": {
+  "sk_functions_1184f01e": {
     "rowCount": 194
   },
-  "sk_functions_639f5e0d": {
+  "sk_functions_50d00782": {
     "rowCount": 194
   },
-  "sk_functions_557eb3da": {
+  "sk_string_functions_1f66631c": {
     "rowCount": 194
   },
-  "sk_functions_f60fad80": {
+  "sk_string_functions_92e62567": {
     "rowCount": 1
   },
-  "sk_functions_104cbb22": {
+  "sk_string_functions_d21e40e9": {
     "rowCount": 0
   },
-  "sk_functions_bd2c848b": {
+  "sk_string_functions_e7842f45": {
     "rowCount": 39
   },
-  "sk_functions_514f951d": {
+  "sk_string_functions_2f3711fd": {
     "rowCount": 194
   },
-  "sk_functions_da32ac57": {
+  "sk_string_functions_963ff7ab": {
     "rowCount": 3
   },
-  "sk_functions_917492e6": {
+  "sk_string_functions_1603fcdd": {
     "rowCount": 194
   },
-  "sk_functions_04fac624": {
+  "sk_string_functions_309668d6": {
     "rowCount": 194
   },
-  "sk_functions_461270b3": {
+  "sk_string_functions_fd4ecb76": {
     "rowCount": 194
   },
-  "sk_functions_0c8e11c8": {
+  "sk_string_functions_4b380a92": {
     "rowCount": 194
   },
-  "sk_functions_61e6a36c": {
+  "sk_string_functions_febbe8a3": {
     "rowCount": 194
   },
-  "sk_functions_e8c9ee1f": {
+  "sk_string_functions_fc467564": {
     "rowCount": 1
   },
-  "sk_functions_1fc24a03": {
+  "sk_functions_fcc034de": {
     "rowCount": 118
   },
-  "sk_functions_6a43a545": {
+  "sk_functions_340ab27c": {
     "rowCount": 5,
     "firstRow": {
       "cast_size": 4,
       "title": "Peter Pan"
     }
   },
-  "sk_functions_7b81300c": {
+  "sk_functions_94739f12": {
     "rowCount": 0
   },
-  "sk_functions_3e9e048f": {
+  "sk_functions_95b5971b": {
     "rowCount": 0
   },
-  "sk_functions_d0e5a6f3": {
+  "sk_functions_8c82f87f": {
     "rowCount": 0
   },
-  "sk_functions_445bed10": {
+  "sk_functions_96e0a961": {
     "rowCount": 194
   },
-  "sk_functions_3f0827b7": {
+  "sk_functions_b517eac4": {
     "rowCount": 194
   },
-  "sk_functions_4bdfe9f8": {
+  "sk_functions_c99f39aa": {
     "rowCount": 194
   },
-  "sk_functions_8fc07f2d": {
+  "sk_functions_7d8e96cb": {
     "rowCount": 0
   },
-  "sk_functions_18c38d8d": {
+  "sk_date_time_functions_9c752863": {
     "rowCount": 0
   },
-  "sk_functions_871c02e8": {
+  "sk_date_time_functions_f69fd7ba": {
     "rowCount": 3
   },
-  "sk_functions_bbf269a3": {
+  "sk_date_time_functions_d3335ed0": {
     "rowCount": 0
   },
-  "sk_functions_3ed767c5": {
+  "sk_date_time_functions_f06d91d0": {
     "rowCount": 10
   },
-  "sk_functions_e3ad12b5": {
+  "sk_date_time_functions_ea8fd916": {
     "rowCount": 0
   },
-  "sk_functions_cd3c01a5": {
+  "sk_date_time_functions_be12dad1": {
     "rowCount": 194
   },
-  "sk_functions_fd033db3": {
+  "sk_date_time_functions_3d6db2df": {
     "rowCount": 1
   },
-  "sk_functions_14971a84": {
+  "sk_date_time_functions_2e32c736": {
     "rowCount": 194
   },
-  "sk_functions_cf1b53cc": {
+  "sk_functions_a49341be": {
     "rowCount": 1
   },
-  "sk_functions_aaaf7414": {
+  "sk_functions_13c56043": {
     "rowCount": 1
   },
-  "sk_functions_6ca1b48e": {
+  "sk_functions_4cd0c7c4": {
     "rowCount": 41,
     "firstRow": {
       "avg_rating": 6.22,
@@ -541,185 +541,185 @@
       "year": 2000
     }
   },
-  "sk_indexing_a85884c4": {
+  "sk_indexing_101ce71f": {
     "rowCount": 0
   },
-  "sk_indexing_82fc2d28": {
+  "sk_indexing_40a1e3a4": {
     "rowCount": 0
   },
-  "sk_indexing_646903d6": {
+  "sk_indexing_18dcd919": {
     "rowCount": 0
   },
-  "sk_indexing_928b114a": {
+  "sk_indexing_2ef95496": {
     "rowCount": 0
   },
-  "sk_indexing_d061499f": {
+  "sk_indexing_aa88a56d": {
     "rowCount": 0
   },
-  "sk_indexing_487ae345": {
+  "sk_planner_hints_7fb4c163": {
     "rowCount": 0
   },
-  "sk_indexing_b12b3d22": {
+  "sk_planner_hints_c078fe8c": {
     "rowCount": 7,
     "firstRow": {
       "title": "Jails, Hospitals & Hip-Hop"
     }
   },
-  "sk_indexing_f3447501": {
+  "sk_planner_hints_848d8102": {
     "rowCount": 10,
     "firstRow": {
       "title": "Andaz Apna Apna"
     }
   },
-  "sk_indexing_8cab37ca": {
+  "sk_planner_hints_925be48c": {
     "rowCount": 10,
     "firstRow": {
       "title": "Andaz Apna Apna"
     }
   },
-  "sk_indexing_84859df2": {
+  "sk_planner_hints_fde9c217": {
     "rowCount": 0
   },
-  "sk_indexing_4186236a": {
+  "sk_planner_hints_70db014a": {
     "rowCount": 1
   },
-  "sk_indexing_5a9665bb": {
+  "sk_planner_hints_df09e82d": {
     "rowCount": 1
   },
-  "sk_indexing_b9e9fc85": {
+  "sk_planner_hints_15ab355c": {
     "rowCount": 0
   },
-  "sk_indexing_113487b2": {
+  "sk_query_diagnostics_806add46": {
     "rowCount": 0
   },
-  "sk_indexing_09c6589f": {
+  "sk_query_diagnostics_ed5c176c": {
     "rowCount": 1
   },
-  "sk_indexing_10afacc8": {
+  "sk_query_diagnostics_44644452": {
     "rowCount": 1
   },
-  "sk_indexing_23087069": {
+  "sk_query_diagnostics_6ba65a08": {
     "rowCount": 1
   },
-  "sk_indexing_eaf05c69": {
+  "sk_query_diagnostics_c3f1ab4d": {
     "rowCount": 1
   },
-  "sk_indexing_e12b0068": {
+  "sk_query_diagnostics_7a4fa329": {
     "rowCount": 3
   },
-  "sk_indexing_256aa2a0": {
+  "sk_query_diagnostics_facb918f": {
     "rowCount": 1
   },
-  "sk_indexing_000c2782": {
+  "sk_indexing_0037dfc4": {
     "rowCount": 0
   },
-  "sk_indexing_57c263ea": {
+  "sk_indexing_0f14b2c7": {
     "rowCount": 0
   },
-  "sk_indexing_064b45a5": {
+  "sk_indexing_b91c5f77": {
     "rowCount": 0
   },
-  "sk_indexing_b4a1ac5a": {
+  "sk_indexing_2de8adc5": {
     "rowCount": 0
   },
-  "sk_indexing_fc6936de": {
+  "sk_indexing_7fa6f196": {
     "rowCount": 0
   },
-  "sk_indexing_da95d2fa": {
+  "sk_indexing_1a15c4de": {
     "rowCount": 0
   },
-  "sk_indexing_edb0f14e": {
+  "sk_indexing_2cb6678e": {
     "rowCount": 0
   },
-  "sk_operators_710772ba": {
+  "sk_operators_740dd86f": {
     "rowCount": 7
   },
-  "sk_operators_f01edbd9": {
+  "sk_operators_2e80e42c": {
     "rowCount": 194
   },
-  "sk_operators_9c4bbab9": {},
-  "sk_operators_f8ddc00a": {
+  "sk_operators_ac3df46f": {},
+  "sk_operators_19246ec1": {
     "rowCount": 187
   },
-  "sk_operators_be0a34ce": {
+  "sk_operators_9f0ce9c2": {
     "rowCount": 0
   },
-  "sk_operators_bbf02051": {
+  "sk_operators_62372349": {
     "rowCount": 118
   },
-  "sk_operators_366003fc": {
+  "sk_operators_98204444": {
     "rowCount": 194
   },
-  "sk_operators_1377ca55": {
+  "sk_operators_25fa362f": {
     "rowCount": 39
   },
-  "sk_operators_285954ca": {
+  "sk_operators_9ac5bf03": {
     "rowCount": 0
   },
-  "sk_operators_880d4ea0": {
+  "sk_operators_9309b300": {
     "rowCount": 194
   },
-  "sk_operators_1fc89ebe": {
+  "sk_operators_87bb0448": {
     "rowCount": 194
   },
-  "sk_operators_0742f43e": {
+  "sk_operators_72f19f10": {
     "rowCount": 194
   },
-  "sk_operators_e6c225f9": {
+  "sk_operators_527531ab": {
     "rowCount": 32
   },
-  "sk_operators_4ceca36d": {
+  "sk_operators_060e2738": {
     "rowCount": 194
   },
-  "sk_operators_e8ff55fb": {},
-  "sk_schema_cdb4145b": {
+  "sk_operators_0555d0d6": {},
+  "sk_schema_b3dda3fd": {
     "rowCount": 0
   },
-  "sk_select_d9e8856e": {
+  "sk_select_basics_1b855d7a": {
     "rowCount": 194
   },
-  "sk_select_04120979": {
+  "sk_select_basics_77fc1d50": {
     "rowCount": 194
   },
-  "sk_select_6c286a3a": {},
-  "sk_select_975b1672": {
+  "sk_select_basics_5c3c320e": {},
+  "sk_select_basics_faf8ef0c": {
     "rowCount": 76
   },
-  "sk_select_43de9a32": {
+  "sk_select_access_c4c27aba": {
     "rowCount": 0
   },
-  "sk_select_aa4c37d7": {
+  "sk_select_access_d1b86289": {
     "rowCount": 1
   },
-  "sk_select_a58640e3": {
+  "sk_select_access_e8666af0": {
     "rowCount": 0
   },
-  "sk_select_71a6a498": {
+  "sk_select_access_05c77dcf": {
     "rowCount": 1
   },
-  "sk_select_5faf50a6": {
+  "sk_select_access_4879df5c": {
     "rowCount": 0
   },
-  "sk_select_6a17ecfd": {
+  "sk_select_access_2f0cd0cf": {
     "rowCount": 0
   },
-  "sk_select_cb0decf1": {
+  "sk_select_access_1a3b8718": {
     "rowCount": 0
   },
-  "sk_select_8ac302e0": {
+  "sk_select_basics_b9199db6": {
     "rowCount": 76
   },
-  "sk_select_1568e18f": {
+  "sk_select_basics_4f30d764": {
     "rowCount": 0
   },
-  "sk_select_42c0b3c8": {
+  "sk_select_basics_6fd5fb19": {
     "rowCount": 69,
     "firstRow": {
       "n": 12,
       "year": 1996
     }
   },
-  "sk_select_9f13a924": {
+  "sk_select_basics_46c615a9": {
     "rowCount": 144,
     "firstRow": {
       "n": 1,
@@ -727,24 +727,24 @@
       "year": 2002
     }
   },
-  "sk_select_82852433": {
+  "sk_select_basics_00b7c745": {
     "rowCount": 0
   },
-  "sk_select_3fb21a2b": {
+  "sk_select_basics_b47e687f": {
     "rowCount": 10,
     "firstRow": {
       "imdb": 8.8,
       "title": "Andaz Apna Apna"
     }
   },
-  "sk_select_253d6034": {
+  "sk_select_basics_745e6a78": {
     "rowCount": 20,
     "firstRow": {
       "box_office_millions": 22,
       "title": "Ferris Bueller's Day Off"
     }
   },
-  "sk_select_34b9ec3d": {
+  "sk_select_basics_958b2142": {
     "rowCount": 20,
     "firstRow": {
       "_id": "573a1396f29313caabce397c",
@@ -752,20 +752,20 @@
       "year": 1969
     }
   },
-  "sk_select_6e34dddc": {
+  "sk_select_basics_1ee66282": {
     "rowCount": 194
   },
-  "sk_select_7ae42c93": {
+  "sk_select_basics_2eb0da73": {
     "rowCount": 194,
     "firstRow": {
       "box_office_millions": 22,
       "title": "Ferris Bueller's Day Off"
     }
   },
-  "sk_select_080164bc": {
+  "sk_subscription_queries_54f5a177": {
     "rowCount": 0
   },
-  "sk_select_49ecc1df": {
+  "sk_select_basics_3371cb83": {
     "rowCount": 10,
     "firstRow": {
       "_id": "573a1399f29313caabcee345",
@@ -773,19 +773,19 @@
       "title": "Andaz Apna Apna"
     }
   },
-  "sk_select_045b9e2c": {
+  "sk_joins_62a39f82": {
     "rowCount": 0
   },
-  "sk_select_b4512c82": {
+  "sk_joins_89fbff20": {
     "rowCount": 0
   },
-  "sk_select_f2ddb7ed": {
+  "sk_joins_1feb69d6": {
     "rowCount": 0
   },
-  "sk_select_7e764ee7": {
+  "sk_joins_b1447007": {
     "rowCount": 0
   },
-  "sk_select_9d4ddcd9": {
+  "sk_joins_2cf819dc": {
     "rowCount": 10,
     "firstRow": {
       "_id": "573a13a1f29313caabd0660a",
@@ -793,103 +793,103 @@
       "year": 2002
     }
   },
-  "sk_statements_a6636707": {
+  "sk_statements_252655df": {
     "rowCount": 0
   },
-  "sk_statements_a6e60d03": {
+  "sk_statements_e03c0af7": {
     "rowCount": 0
   },
-  "sk_statements_71d9e54b": {
+  "sk_statements_5d784312": {
     "rowCount": 0
   },
-  "sk_statements_f2a143e6": {
+  "sk_statements_54258640": {
     "rowCount": 0
   },
-  "sk_statements_abaea258": {
+  "sk_statements_4ffa22af": {
     "rowCount": 0
   },
-  "sk_statements_a30c18f4": {
+  "sk_statements_60d51b9a": {
     "rowCount": 1
   },
-  "sk_statements_bdaf53db": {
+  "sk_statements_11990b4f": {
     "rowCount": 0
   },
-  "sk_statements_1a120040": {
+  "sk_statements_949bcd59": {
     "rowCount": 0
   },
-  "sk_statements_ddc204dc": {
+  "sk_statements_d7719059": {
     "rowCount": 0
   },
-  "sk_statements_f50ca795": {
+  "sk_statements_4ba52db1": {
     "rowCount": 0
   },
-  "sk_statements_069cd8e4": {
+  "sk_statements_656e4ff7": {
     "rowCount": 76
   },
-  "sk_statements_a464dc21": {
+  "sk_statements_de4b27d2": {
     "rowCount": 0
   },
-  "sk_statements_76062b18": {
+  "sk_statements_189871f4": {
     "rowCount": 0
   },
-  "sk_statements_ac1b321e": {
+  "sk_system_statements_68d76bc3": {
     "rowCount": 1
   },
-  "sk_statements_f50465c9": {
+  "sk_system_statements_574e5c4f": {
     "rowCount": 1
   },
-  "sk_statements_639bf65c": {
+  "sk_system_statements_bb63a577": {
     "rowCount": 1
   },
-  "sk_statements_ad7d66bd": {
+  "sk_system_statements_13a50091": {
     "rowCount": 1
   },
-  "sk_statements_ac0b422f": {
+  "sk_system_statements_cb195d16": {
     "rowCount": 2
   },
-  "sk_types_mutators_e7a9242b": {
+  "sk_types_mutators_798f6e9a": {
     "rowCount": 0
   },
-  "sk_types_mutators_6d2e5c18": {
+  "sk_types_mutators_dd512451": {
     "rowCount": 0
   },
-  "sk_types_mutators_0c9f20b1": {
+  "sk_types_mutators_ddb5161a": {
     "rowCount": 0
   },
-  "sk_types_mutators_5a081510": {
+  "sk_types_mutators_c66b5306": {
     "rowCount": 0
   },
-  "sk_types_mutators_c15ba434": {
+  "sk_types_mutators_be917454": {
     "rowCount": 0
   },
-  "sk_types_mutators_f3a668e4": {
+  "sk_types_mutators_640ebaac": {
     "rowCount": 0
   },
-  "sk_types_mutators_3f8c3c47": {
+  "sk_types_mutators_5e662750": {
     "rowCount": 0
   },
-  "sk_types_mutators_31550d5e": {
+  "sk_types_mutators_45d17468": {
     "rowCount": 0
   },
-  "sk_types_mutators_637f1055": {
+  "sk_legacy_types_4c5a4199": {
     "rowCount": 0
   },
-  "sk_types_mutators_2a3af0ef": {
+  "sk_legacy_types_c3371d01": {
     "rowCount": 0
   },
-  "sk_types_mutators_f369871c": {
+  "sk_types_mutators_a5e794db": {
     "rowCount": 0
   },
-  "sk_types_mutators_f68d8948": {
+  "sk_legacy_types_ad16e15f": {
     "rowCount": 0
   },
-  "sk_types_mutators_4207ee66": {
+  "sk_legacy_types_a24fffa8": {
     "rowCount": 1
   },
-  "sk_versions_74388326": {
+  "sk_versions_3e752b65": {
     "rowCount": 1
   },
-  "sk_versions_699f1e5d": {
+  "sk_versions_a7a6d942": {
     "rowCount": 1
   }
 }

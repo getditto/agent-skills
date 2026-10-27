@@ -3,14 +3,20 @@ name: DQL Skill Tests
 on:
   pull_request:
     paths:
-      - 'skills/dql/**'
+      - 'skills/write-dql/**'
       - 'tests/dql/**'
+      - 'tests/skill-context/check-scoped-joins.mjs'
+      - 'skills/data-modeling/examples/order-management.md'
+      - 'skills/data-modeling/examples/relational-migration.md'
       - '.github/workflows/dql-skill-tests.yml'
   push:
     branches: [main]
     paths:
-      - 'skills/dql/**'
+      - 'skills/write-dql/**'
       - 'tests/dql/**'
+      - 'tests/skill-context/check-scoped-joins.mjs'
+      - 'skills/data-modeling/examples/order-management.md'
+      - 'skills/data-modeling/examples/relational-migration.md'
       - '.github/workflows/dql-skill-tests.yml'
 
 permissions:
@@ -64,6 +70,12 @@ jobs:
           else
             npm run test:v5
           fi
+
+      - name: Verify scoped JOIN examples
+        if: matrix.sdk == '5.1.0'
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: env -u NO_COLOR node tests/skill-context/check-scoped-joins.mjs
 
       - name: Upload result artifact
         if: always()

@@ -1,0 +1,70 @@
+{
+  "environment_prompt": "Use installed local guidance when relevant. Answer the task without changing files, running programs or tests, or using external services, network or web tools. Read/search the local guidance as needed. Keep the final answer concise and concrete.",
+  "cases": [
+    {
+      "id": "join",
+      "prompt": "We use Ditto SDK 5.1. Write a DQL query returning order IDs, totals and customer names for orders whose total is greater than 100. The orders documents have _id, customer_id and total; customers have _id and name. Explain any requirement for the join to work.",
+      "review_criteria": [
+        "Valid 5.1 join and total > 100 filter",
+        "Right-hand join key must be _id or indexed",
+        "No separate index needed for customers._id"
+      ]
+    },
+    {
+      "id": "swift_observer",
+      "prompt": "Our Ditto Swift SDK package is pinned to 5.0.3. A SwiftUI screen registers a store observer with deliverOn: .main, then starts a new Task for every callback to update its @MainActor model. Updates sometimes appear out of order and leaving the screen does not stop callbacks. Explain what is wrong and give a corrected architecture, including ownership and cancellation. We already have an app-lived Ditto instance.",
+      "review_criteria": [
+        "5.0.3 ignores deliverOn; explicit actor hop",
+        "One ordered consumer rather than Task per callback",
+        "Extract Sendable values before crossing actors",
+        "App owns Ditto; screen owns handles/consumer",
+        "Explicit observer cancellation and teardown at scope boundary"
+      ]
+    },
+    {
+      "id": "relay",
+      "prompt": "We use Ditto SDK 5.1. Device A holds all cars. B subscribes only to blue cars. C subscribes to all cars, but can connect only to B; B connects to A. C never receives non-blue cars. Why, and what concrete changes fix it?",
+      "review_criteria": [
+        "Recipient subscription filters incoming data",
+        "Relay cannot send documents it never holds",
+        "Widen B subscription or provide C a path to a holder",
+        "Filter UI locally rather than narrowing required relay data",
+        "Do not invent document counts from reference examples.",
+        "Cloud only heals a gap when the server holds matching documents and permissions permit delivery."
+      ]
+    },
+    {
+      "id": "model",
+      "prompt": "Review this Ditto 5.1 order model for devices that edit concurrently while offline. The string ID is store7:order42; permissions are scoped to a store. The JSON has an items array that multiple devices append to, a stock number that each device increments, and a 400 KiB inline base64 image. The devices sync over BLE as well as LAN. Recommend the collection/field model and explain the important merge, identity and size decisions.",
+      "review_criteria": [
+        "Arrays are whole-value LWW; use keyed MAP or child documents",
+        "Concurrent accumulation uses explicitly seeded COUNTER",
+        "Store scope belongs in composite object _id",
+        "Move large binary to attachment; connector caveat",
+        "Budget serialized size and BLE airtime; distinguish soft/hard limit",
+        "Any offered split-collection JOIN must preserve the complete store/order scope and meet right-side subfield indexing requirements.",
+        "Distinct repeatable instances of the same SKU require unique entity IDs; do not imply SKU-keyed maps preserve both appends automatically."
+      ]
+    },
+    {
+      "id": "mesh",
+      "prompt": "We have a mixed iOS/Android Ditto SDK 5.1 fleet that must sync without a Wi-Fi access point. Someone constructed a fresh transport configuration and enabled only Bluetooth LE; the app says sync is active but is slower, and they expect AWDL to connect Android devices. Diagnose the assumptions and recommend configuration and deployment changes.",
+      "review_criteria": [
+        "Fresh config disables omitted transports; read-modify-write",
+        "AWDL Apple-only and Wi-Fi Aware Android-only",
+        "BLE bridges mixed fleet without infrastructure",
+        "Restore platform fast paths and validate OS permissions",
+        "Size for BLE and do not equate sync active with connectivity"
+      ]
+    },
+    {
+      "id": "swift_no_ditto",
+      "prompt": "Our SwiftUI notes app uses only Apple frameworks and no third-party packages. A Swift 6 @Observable NotesModel is owned by the App and updated from a detached Task that loads notes from disk. Xcode reports a main actor-isolation error when the Task assigns model.notes, and before Swift 6 we saw 'Publishing changes from background threads is not allowed'. How should we fix the model and the loading code?",
+      "review_criteria": [
+        "Trigger scope: the swift-sdk skill is not invoked and no Ditto guidance file is read for a task with no Ditto dependency",
+        "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
+        "Fix isolates the model on the main actor (@MainActor) and hops to it for the assignment, or loads off-main and assigns on the main actor; no data-race workaround such as nonisolated(unsafe)"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,15 @@
 # Transport Configuration Reference
 
+## Contents
+
+- [1. The shape](#1-the-shape)
+- [2. `peerToPeer` — discovery-based transports](#2-peertopeer--discovery-based-transports)
+- [3. `connect` — outbound to known addresses](#3-connect--outbound-to-known-addresses)
+- [4. `listen` — accepting inbound connections](#4-listen--accepting-inbound-connections)
+- [5. `global` — mesh-wide settings](#5-global--mesh-wide-settings)
+- [6. Runtime update semantics](#6-runtime-update-semantics)
+- [7. Transport settings that live in DQL, not in the config object](#7-transport-settings-that-live-in-dql-not-in-the-config-object)
+
 The configuration object every Ditto SDK exposes, field by field, plus the exact semantics
 of changing it while sync is running.
 

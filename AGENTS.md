@@ -18,7 +18,7 @@ skills or content that are not appropriate for customer use.**
 
 ```
 skills/                        # Canonical skills — the portable unit
-├── dql/
+├── write-dql/
 │   ├── SKILL.md               # Skill entry point (YAML frontmatter + body)
 │   ├── references/            # Detailed reference docs loaded on demand
 │   ├── examples/              # Worked examples
@@ -31,17 +31,20 @@ agents/                        # Portable agent definitions (markdown)
     └── dql-expert.md
 
 tests/                         # Per-skill test harnesses
-├── dql/                       # DQL: name-matched subdirectory
+├── dql/                       # Historical DQL harness directory (skill: write-dql)
 │   ├── catalog/  scripts/  runner/  fixtures/  sdks/
 │   └── README.md
-└── data-modeling/             # data-modeling: live-model JSON-review evals
-    ├── cases/  runner/
+├── data-modeling/             # data-modeling: live-model JSON-review evals
+│   ├── cases/  runner/
+│   └── README.md
+└── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
+    ├── Sources/  Tests/  scripts/
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-dql/                 # One plugin per skill it ships
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/dql -> ../../../skills/dql        (symlinked dir)
+│   ├── skills/write-dql -> ../../../skills/write-dql        (symlinked dir)
 │   └── agents -> ../../agents/ditto-dql         (symlinked dir)
 ├── ditto-mesh/
 │   ├── .claude-plugin/plugin.json
@@ -49,12 +52,18 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-subscriptions/
 │   ├── .claude-plugin/plugin.json
 │   └── skills/sync-subscriptions -> ../../../skills/sync-subscriptions
-└── ditto-data-modeling/
+├── ditto-data-modeling/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/data-modeling -> ../../../skills/data-modeling
+└── ditto-swift/
     ├── .claude-plugin/plugin.json
-    └── skills/data-modeling -> ../../../skills/data-modeling
+    └── skills/swift-sdk -> ../../../skills/swift-sdk
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
+.agents/plugins/marketplace.json # Swift: Codex
+.cursor-plugin/marketplace.json  # Swift: Cursor
+.github/plugin/marketplace.json  # Swift: Copilot CLI
 
 docs/                          # Contributor-facing docs
 ├── SKILLS-TEMPLATE.md         # Template for any skill
@@ -95,6 +104,12 @@ under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
 — if it ships agents — an `agents` symlink pointing at that plugin's namespaced
 subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
 
+Swift also has generated portable/Codex/Cursor metadata and a Gemini extension
+manifest. Run `python3 scripts/package-swift-plugin.py --sync-manifests` after changing
+its canonical Claude manifest. Release packages materialize scoped symlinks into real
+files in ignored build outputs or CI artifacts. See `docs/install-swift.md` for all
+installation surfaces.
+
 **Agents must be linked as a directory, not as individual files.** Claude Code
 follows a symlinked *directory* but not a symlinked *file*: an
 `agents/foo.md -> ../../../agents/foo.md` link is silently dropped and the
@@ -110,7 +125,7 @@ plugin installs for everyone who already has it. CI enforces the scoping.
 ## Tests
 
 `tests/<skill>/` holds executable verification for a skill's documented
-examples. For DQL: `tests/dql` runs every ```sql block in `skills/dql/`
+examples. For DQL: `tests/dql` runs every ```sql block in `skills/write-dql/`
 against real Ditto SDK versions (see `tests/dql/README.md`). For
 data-modeling: `tests/data-modeling` feeds raw-JSON cases plus the skill to
 live AI models and deterministically scores the recommendations against the
@@ -121,13 +136,16 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
   frontmatter, checks marketplace `source` targets exist, and enforces that
   each plugin wrapper only symlinks the skills/agents it declares.
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
-  harness; triggers on changes to `skills/dql/**` or `tests/dql/**`.
+  harness; triggers on changes to `skills/write-dql/**` or `tests/dql/**`.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
 environment variables (and CI secrets) always take precedence. Keys:
-`DITTO_OFFLINE_LICENSE` (tests/dql, required), `DITTO_DATABASE_ID`
-(tests/dql, optional), `DM_MODEL_CMD` (tests/data-modeling, required).
+`DITTO_OFFLINE_LICENSE` (tests/dql and tests/swift-sdk, required),
+`DITTO_DATABASE_ID` (optional), `DITTO_URL` + `DITTO_TOKEN` (tests/swift-sdk,
+optional — enables the server-authentication leg), `DM_MODEL_CMD`
+(tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` read the same
+`.env` with their own shell parser.
 Overview for contributors: `testing-readme.md`.
 
 ## MCP Servers

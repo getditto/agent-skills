@@ -1,5 +1,13 @@
 # Cookbook: IoT device telemetry
 
+## Contents
+
+- [The input JSON](#the-input-json)
+- [Findings](#findings)
+- [Recommended model](#recommended-model)
+- [Retention](#retention)
+- [Budget](#budget)
+
 Covers SDK **4.14.x and 5.1.x**. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Time-series telemetry is the fastest way to hit the hard size limit: readings arrive every few seconds, forever.
 
 ## The input JSON

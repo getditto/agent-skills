@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
-// tests/dql/scripts -> <repo>/skills/dql
-const SKILL_ROOT = path.resolve(import.meta.dirname, "..", "..", "..", "skills", "dql");
+// tests/dql/scripts -> <repo>/skills/write-dql
+const SKILL_ROOT = path.resolve(import.meta.dirname, "..", "..", "..", "skills", "write-dql");
 // Repo root, for repo-relative source paths in the catalog
 const REPO_ROOT = path.resolve(SKILL_ROOT, "..", "..");
 const OUT = path.resolve(import.meta.dirname, "..", "catalog", "catalog.json");

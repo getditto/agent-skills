@@ -151,7 +151,7 @@ whole line is an extrapolation, and it has been wrong here before.
    ```
 
 2. **In the matrix**, at
-   [`skills/dql/references/versions.md`](skills/dql/references/versions.md) §4.
+   [`skills/write-dql/references/versions.md`](skills/write-dql/references/versions.md) §4.
 
 Those must agree. `versions.md` calls itself the single source of truth, so an
 inline tag that contradicts it is worse than no tag — it makes both untrustworthy.
@@ -352,10 +352,29 @@ a Claude-Code-only field breaks the skill everywhere else.
 
 ### Keep SKILL.md lean
 
-Agent tools load the body whenever the skill triggers, so it competes with the
-user's actual conversation for context. Target **under 500 lines**; push depth
-into `references/`. Keep references **one level deep** from `SKILL.md` — agents
-often only partially read files reached through a chain of links.
+Target **10,000 characters** for the body, with a **12,000-character hard limit**
+for every skill. Keep descriptions below 500 characters where possible (hard limit
+1,024). These are repository budgets for sharing context with the conversation,
+source code, tools and other skills; they are not a model's advertised limits.
+Token estimates such as characters ÷ 4 are approximate and tokenizer-dependent.
+
+Keep core constraints and routing in `SKILL.md`. Move worked examples and conditional
+detail to focused references, linked one level deep. Tell the agent to select a task
+and read the matching section rather than loading the full library. READMEs and
+capability/evidence maps should load only for installation or coverage questions.
+
+Supporting files over **8,000 characters or 200 lines** need a linked `## Contents`
+near the top. **20,000 characters** is the repository hard limit: split independent tasks rather
+than assuming the model will issue a partial read. Keep runnable programs intact and
+move separate setup/run notes when necessary. A short file with dense tables can
+cost more context than a long file with short lines; measure both characters and lines.
+
+Run `python3 scripts/validate-sdk-skills.py --context-report` to audit every skill,
+reference, example and README. It checks links and structure, not model behavior.
+Do not add more skill names merely to make files smaller; that increases discovery
+cost. See [docs/SKILLS-TEMPLATE.md](docs/SKILLS-TEMPLATE.md#token-budget) for host
+loading sources and [docs/SDK-SKILL-TEMPLATE.md](docs/SDK-SKILL-TEMPLATE.md#11-token-budget)
+for the additional SDK contract.
 
 ### Wire up packaging
 

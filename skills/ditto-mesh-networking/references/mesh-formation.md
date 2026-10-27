@@ -1,5 +1,15 @@
 # Mesh Formation Reference
 
+## Contents
+
+- [1. The six stages of a sync](#1-the-six-stages-of-a-sync)
+- [2. The multiplexer and the rainbow connection](#2-the-multiplexer-and-the-rainbow-connection)
+- [3. Discovery, presence, and multihop routing](#3-discovery-presence-and-multihop-routing)
+- [4. Why peers don't all connect to each other](#4-why-peers-dont-all-connect-to-each-other)
+- [5. What this means for your application](#5-what-this-means-for-your-application)
+- [6. Common topologies](#6-common-topologies)
+- [7. Sync groups](#7-sync-groups)
+
 How a Ditto mesh actually comes together: the lifecycle from `startSync()` to converged
 data, why peers connect to *some* peers and not all of them, and what that means for
 anything you build on top of connection state.

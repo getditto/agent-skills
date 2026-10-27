@@ -1,5 +1,15 @@
 # Transports Reference
 
+## Contents
+
+- [1. Bluetooth Low Energy (BLE)](#1-bluetooth-low-energy-ble)
+- [2. LAN (mDNS / multicast discovery + TCP)](#2-lan-mdns--multicast-discovery--tcp)
+- [3. AWDL (Apple Wireless Direct Link)](#3-awdl-apple-wireless-direct-link)
+- [4. Wi-Fi Aware (NAN)](#4-wi-fi-aware-nan)
+- [5. WebSocket (Ditto Server / Big Peer)](#5-websocket-ditto-server--big-peer)
+- [6. Explicit TCP: `connect` and `listen`](#6-explicit-tcp-connect-and-listen)
+- [Choosing a mix](#choosing-a-mix)
+
 One section per transport: what it is, where it runs, how it discovers peers, what it
 costs in bandwidth and battery, and how it fails. Read the section for the transport you
 are choosing, debugging, or designing against.

@@ -22,7 +22,7 @@ reject a PR that does not.
 
 > **Internal paths.** §8 and the appendices cite `mintlify-docs/` and `ditto/`, which
 > are Ditto-internal checkouts. External contributors should substitute the published
-> documentation at <https://docs.ditto.com> and the public API references in
+> documentation at <https://docs.ditto.live> and the public API references in
 > [Appendix A](#appendix-a--the-nine-sdks). Path structure is the same.
 
 ---
@@ -107,7 +107,7 @@ hand-off must therefore name a public documentation URL alongside the skill name
 way `ditto-mesh-networking` already does:
 
 > For DQL syntax see the `dql` skill if installed, otherwise
-> <https://docs.ditto.com/dql/dql>.
+> <https://docs.ditto.live/dql/dql>.
 
 ---
 
@@ -116,9 +116,8 @@ way `ditto-mesh-networking` already does:
 - Directory: `skills/<lang>-sdk/` — lowercase, hyphenated, matching the frontmatter
   `name`. Use the short language name, not the package name: `swift-sdk`, `kotlin-sdk`,
   `js-sdk`, `csharp-sdk`, `flutter-sdk`, `rust-sdk`, `cpp-sdk`, `java-sdk`, `go-sdk`.
-- **The frontmatter `name` must equal the directory name.** This is not currently true
-  everywhere in the repo — `skills/dql/SKILL.md` ships `name: write-dql` — and CI does
-  not catch it. §12 requires that check to be added.
+- **The frontmatter `name` must equal the canonical and plugin entry directory names.**
+  CI enforces this for every skill, without legacy exceptions.
 - **One plugin per language skill**, per the scoping rule in
   [`../AGENTS.md`](../AGENTS.md): `plugins/ditto-<lang>/` with a real `skills/`
   directory holding a single symlink. A developer writing Swift must not be forced to
@@ -150,19 +149,35 @@ skills/<lang>-sdk/
 │   ├── errors.md                # CAP-16
 │   ├── testing.md               # CAP-18
 │   ├── versions.md              # CAP-19 + the compatibility matrix
-│   └── preview.md               # CAP-20
+│   ├── preview.md               # CAP-20
+│   ├── concurrency.md           # Detail behind SKILL.md §6
+│   ├── lifetimes.md             # Detail behind SKILL.md §7
+│   └── anti-patterns.md         # Detail behind SKILL.md §8
 └── examples/
     └── minimal-app.md           # Required. THE normative program for this skill
 ```
 
+The last three are not capability files: they hold the explanation for the three `SKILL.md`
+sections that carry only a punchline inline (§5). They are required for the same reason the
+sections are — that material is where correct-looking code fails at runtime.
+
 `CAP-17` (device storage / `EVICT`) lives in `store.md`, not `sync.md`: it is a DQL
 statement issued through the same execute call as CAP-08.
 
-**The mapping above is a minimum, not a cap.** A reference may be split when it exceeds
-400 lines, and extra `references/` and `examples/` files are permitted, provided every
-capability-map link still resolves and `references/` stays one level deep. A reference
-whose capabilities all have `Support: no` may be omitted, with the reason carried in the
-capability map row.
+**The mapping above is a minimum, not a cap.** Extra `references/` and `examples/` files
+are permitted, provided every capability-map link still resolves and `references/` stays
+one level deep. A reference whose capabilities all have `Support: no` may be omitted, with
+the reason carried in the capability map row.
+
+**References are loaded on demand, but their size matters once read.** Prefer focused
+resources under 20,000 characters; CI rejects larger resources. SDK references
+also target 600 lines with a hard limit of 800. Split when topics serve independent
+tasks; preserve complete runnable examples where splitting would make them unusable.
+
+**A supporting file over 8,000 characters or 200 lines must carry a linked
+`## Contents` list near the top**, including READMEs and examples. Agents should
+preview the contents and read the relevant section. Character counts catch dense
+API tables that a line-only limit misses. CI enforces the navigation requirement.
 
 References stay **one level deep** from `SKILL.md`. A reference must never be the only
 path to another reference — agents frequently only partially read chained links.
@@ -174,7 +189,7 @@ path to another reference — agents frequently only partially read chained link
 Only the keys permitted by `CONTRIBUTING.md` — `name`, `description`, `license`,
 `compatibility`, `allowed-tools`, `metadata`.
 
-**`allowed-tools`:** set it to `Read, Grep, Glob, Edit, Write`, matching `skills/dql` and
+**`allowed-tools`:** set it to `Read, Grep, Glob, Edit, Write`, matching `skills/write-dql` and
 `skills/data-modeling`. It is in the skeleton; do not silently drop it.
 
 `description` is the activation mechanism and the only part of the skill injected into
@@ -215,7 +230,7 @@ derived from the headings by the usual GitHub slug rules; do not hand-write anch
 
 | # | Heading | Contains |
 |---|---|---|
-| 1 | `## What this skill does` | 2–3 sentences. Language, package, versions. A lead paragraph under the H1, before this section, is permitted and encouraged — both mature skills in this repo have one. |
+| 1 | `## What this skill does` | 2–3 sentences. Language, package, versions. A lead paragraph under the H1, before this section, is **required**: it carries the authority statement and the API-selection guardrails (see below). |
 | 2 | `## When to use this skill` | The routing contract and ownership table hand-offs from §1, each naming a public docs URL as fallback. |
 | 3 | `## Supported versions and packages` | Pointer, not a claim: name the package and link `references/versions.md`, which owns every cross-version fact. |
 | 4 | `## Capability exceptions` | **Only** the capability rows whose `Support` is not `yes`. The full twenty-row map lives in `README.md`. An agent's behaviour should change on the exceptions; the complete grid is a reviewer artifact. If there are no exceptions, say so in one line. |
@@ -224,11 +239,48 @@ derived from the headings by the usual GitHub slug rules; do not hand-write anch
 | 7 | `## Object lifetimes and retention` | What must be held to stay alive — instance, subscriptions, observers, attachment fetchers — and the observable symptom when it is dropped. |
 | 8 | `## Anti-patterns` | See the boundary rule below. |
 | 9 | `## Version differences` | Short form of the 4.14.x → 5.x delta. Full table in `references/versions.md`. |
-| 10 | `## References` | A table mapping *a question an agent would have* to the file that answers it. |
+| 10 | `## References` | Annotated bullets, one per file — see §10 below. Not a question→filename table. |
 
-Sections 6 and 7 are promoted out of the reference tree deliberately. They are where
-correct-looking code fails at runtime, and an agent that has to follow a link to find
-them usually does not.
+### Promote the punchline, demote the explanation
+
+Sections 6, 7 and 8 exist in `SKILL.md` because they are where correct-looking code fails
+at runtime, and an agent that has to follow a link to find them usually does not. That
+reasoning is sound, and it is **not** a licence to inline the whole topic.
+
+What belongs inline is the **punchline** — the one clause that changes the code an agent
+emits, plus the observable symptom. What belongs in `references/` is the explanation: the
+wrong-and-right code pair, the per-API table, the diagnosis.
+
+```markdown
+Inline (SKILL.md §8):
+- **Missing `signalNext()` on an exit path.** The observer stops delivering forever — no
+  error, no log. `defer { signalNext() }` as the handler's first line.
+
+In references/anti-patterns.md: both code forms, why the coalescing makes it silent,
+and how it interacts with the actor hop.
+```
+
+**Why this is not a style preference.** Claude Code re-attaches only the **first 5,000
+tokens** of each invoked skill after auto-compaction, and re-attached skills share a
+25,000-token combined budget. A body over that slice loses its tail — in practice §10
+References, the section that routes everything else. Before this rule `swift-sdk`'s body
+was ~21 KB (~5,300 tokens) and was already over. Inlining detail does not make guidance
+more reliably present; past the slice it makes it *less* so.
+
+### The lead paragraph
+
+Above `## What this skill does`, and required:
+
+1. **An authority statement.** Model training data carries the v4 API shapes this skill
+   must not emit. Say so: *"This guidance is derived from the shipping SDK and supersedes
+   prior training on the Ditto \<Language\> API."* Name the specific stale symbols.
+2. **The API-selection guardrails**, in priority order — never emit a deprecated API;
+   establish the project's version first; among non-deprecated options prefer the form
+   that also exists in v5. One sentence, not a numbered section; a new H2 would break the
+   §5 heading contract.
+
+Both patterns are taken from Apple's published Xcode skills, which open every skill this
+way for the same reason: the model's priors about the framework are wrong and stale.
 
 ### §8 Anti-patterns vs best-practices.md
 
@@ -246,6 +298,34 @@ skill triggers; `best-practices.md` is loaded only if the agent follows a link.
 A hot-path serialization cost with a named symbol belongs in §8, not in
 `best-practices.md`. If you cannot name the symptom, you have not finished
 investigating it.
+
+### §10 References — annotated bullets, not a filename table
+
+A table mapping *"How do I subscribe?"* → `sync.md` tells an agent only where to look. It
+spends a line and changes nothing about what the agent emits if it doesn't follow the
+link. Write a bullet per file that **carries the trap inline**, so the agent gets the
+load-bearing fact either way, plus a sharp signal about when the file is worth opening:
+
+```markdown
+Weak — a filename lookup:
+| How do I react to data changes without polling? | references/observers.md |
+
+Strong — the punchline travels with the pointer:
+- `references/observers.md`: `registerObserver` needs a `SELECT` or it is
+  `storeError(.queryNotSupported)`. `handlerWithSignalNext` coalesces and stops forever
+  if you miss a signal. `DittoDiffer` is stateful — one per observer, first call reports
+  every item as an insertion, usually wrong in SwiftUI.
+```
+
+This is what lets a small `SKILL.md` still steer behaviour, and it is the highest-value
+edit per line in the whole file. Rules:
+
+- **Order by value, not alphabetically.** The files an agent needs on most tasks first.
+- **Annotate in proportion to trap density.** A reference that holds a genuine footgun
+  earns three lines; `presence.md` earns half of one. Do not pad every entry to match.
+- **Open the section with a load-discipline line** — *"Load a reference only when its topic
+  is actually in play; these files teach the non-obvious traps, not how the framework
+  works."* Without it agents over-fetch references and burn the context the split saved.
 
 ---
 
@@ -494,19 +574,43 @@ Three rules specific to SDK skills:
 
 ## 11. Token budget
 
-The name and description are injected into **every** session, and nine SDK skills will
-eventually coexist. For calibration: `skills/dql/SKILL.md` is 84 lines and
-`skills/ditto-mesh-networking/SKILL.md` is 246.
+Name and description are discovery overhead; activation loads the complete body.
+SDK skills share the repository budgets from [SKILLS-TEMPLATE.md](SKILLS-TEMPLATE.md#token-budget):
 
 | File | Target | Hard limit |
 |---|---|---|
-| `description` | ~400 characters | 1024 |
-| `SKILL.md` body | ≤ 300 lines | 400 lines |
-| Each `references/*.md` | ≤ 400 lines | split instead (§3) |
+| Description | ≤500 characters (aim ~400) | 1,024 characters |
+| SKILL.md body | ≤10,000 characters | 12,000 characters |
+| Each supporting file | Focused task/complete program | 20,000 characters; contents above 8,000 characters or 200 lines |
+| Each SDK reference | ≤600 lines | 800 lines |
 
-The budget is achievable because §4 carries exceptions rather than the full map, and §5
-carries a short excerpt rather than the whole program. If you are over, those are the
-two places to look first — do not delete a capability from the `README.md` map.
+**These are authoring budgets, not model context limits.** Characters are reproducible
+without vendor tokenizers; at four characters per token, the body target is roughly
+2,500 tokens. Code and other tokenizers can cost more. Do not infer guaranteed fit
+from that estimate, or assume a host always preserves references after compaction.
+
+The [Agent Skills specification](https://agentskills.io/specification#progressive-disclosure)
+recommends a body below 5,000 tokens. The smaller repository target leaves room for
+other active skills, user source code and tool results. [Codex](https://learn.chatgpt.com/docs/build-skills),
+[Claude Code](https://code.claude.com/docs/en/skills) and [OpenCode](https://opencode.ai/docs/skills/)
+load bodies on demand; their discovery and compaction policies differ and can change.
+Do not bake one host's context allocation into a portable skill's instructions.
+
+**Promote the constraint, move the explanation.** Sections 6–8 retain the rule and its
+observable symptom; API tables and wrong/right examples live in references. Section 4
+carries exceptions, not the full map; section 5 carries a short excerpt, not the whole
+program. No version-spread allowance: keep one clause for a version gate and route to
+`references/versions.md` for the explanation. Do not remove capabilities from README.
+
+**Route to sections.** The References section must say to select the matching task,
+preview long files' contents, and read the relevant section only. Do not require all
+references or README before ordinary SDK work. The capability/evidence map is useful
+for coverage reviews; it is not part of every coding task's startup cost.
+
+Run `python3 scripts/validate-sdk-skills.py --context-report` for an inventory of all
+skill Markdown files and context validation results. Keep a runnable program intact within the resource limit; move its dependency,
+running or verification notes into a separate directly linked reference when needed. More skill names also increase
+discovery overhead: fan out within a skill unless the tasks are genuinely different.
 
 ---
 
@@ -514,14 +618,10 @@ two places to look first — do not delete a capability from the `README.md` map
 
 ### 12.1 Structural checks — must be automated
 
-Two-thirds of the §14 checklist is mechanical, and leaving it to human diff across nine
-PRs is how it rots. The repo already demonstrates the failure: `skills/dql/SKILL.md`
-ships `name: write-dql` in `skills/dql/`, and CI passes.
+The validator invoked by `.github/workflows/ci.yml` enforces the following structural
+checks. Keep them aligned with the authoring contract as new language skills are added:
 
-`.github/workflows/ci.yml` **must be extended with these checks in the same PR as the
-first SDK skill**:
-
-1. Frontmatter `name` == directory name (for **all** skills; fix or grandfather `dql`).
+1. Frontmatter `name` == directory name for every canonical skill and plugin skill entry.
 2. Frontmatter contains only permitted keys.
 3. `Use ONLY for` present in an SDK skill's description.
 4. The ten `SKILL.md` H2 headings present, in order, spelled exactly.
@@ -530,7 +630,9 @@ first SDK skill**:
 7. Every capability-map link resolves, **including the anchor**.
 8. All §3 required files present; `references/` exactly one level deep.
 9. No file in `skills/` cited as a source (grep for `skills/` or `../..` in a citation).
-10. `SKILL.md` body within the §11 hard limit.
+10. Every skill body within the §11 character hard limit, with concise descriptions.
+11. Every SDK reference within the §3 line limit; every supporting file over 8,000
+    characters or 200 lines has linked contents. Local Markdown links resolve for all skills.
 
 Items needing human judgement and *not* automatable: "front-loads literal API names",
 "no concept material duplicated", "§6 names the actual thread", "version claims agree
@@ -539,15 +641,36 @@ with `versions.md`", "citations name real paths at named refs".
 ### 12.2 Executable verification
 
 - **DQL inside an SDK skill is not covered today.** `tests/dql/scripts/extract-queries.mjs:7`
-  hard-codes its scan root to `skills/dql`. Still tag DQL as ` ```sql ` so extending the
+  hard-codes its scan root to `skills/write-dql`. Still tag DQL as ` ```sql ` so extending the
   harness to a second root stays a one-line change, but do not assume your DQL is
   verified because you tagged it.
 - **`examples/minimal-app.md` is the normative program** and must be **compiled and
   run** against each supported version line. Its *Expected output* section must contain
   a **pasted real build-and-run transcript** naming the patch version — that is the one
   part of "it compiles" a reviewer can actually check without nine toolchains.
-- Keep the program as a **real source file** under `tests/<lang>-sdk/` and have
-  `examples/minimal-app.md` reference it, rather than restating it.
+- Keep the program as a **real source file** under `tests/<lang>-sdk/`. A plugin user
+  has no `tests/` tree to open, so `examples/minimal-app.md` has to restate it; make the
+  duplication checkable rather than leaving it to drift:
+
+  1. In the fixture source, put `// MARK: - begin documented program` (or the language's
+     comment form) above the part the markdown publishes. Everything below it is the
+     documented program; only comments and blank lines may appear above it, since
+     anything else is code the published sample would silently omit.
+  2. In `examples/minimal-app.md`, state the source in prose — *This is a copy of
+     `<path>` in the fixture* — with `<path>` relative to `tests/<skill>/`, and put the
+     program in the single fenced block under `## Program`.
+
+  `scripts/validate-sdk-skills.py` derives the fixture from that sentence and fails the
+  build when the two differ by a byte. It is declaration-driven on purpose: a hard-coded
+  table silently skips a skill nobody registered, and silently stops checking when a
+  fixture is renamed.
+
+- **A fixture file that restates a type defined elsewhere in the same harness** — the
+  minimal app cannot `import` the harness's own modules, because a reader pastes it into
+  an empty project — declares it the same way: *mirrors `Type.Nested` in `<path>`*. The
+  validator compares the two declarations and fails on drift. Without it the tested copy
+  gets fixed and the pasted copy does not, which is the single most common way these
+  skills ship a known-wrong sample.
 - **Before the third SDK skill merges**, CI must compile that file for the languages
   merged so far. "Encouraged" is not sufficient for the one property this template
   exists to guarantee.
@@ -602,8 +725,17 @@ Structural — a PR failing any of these goes back before the content is read:
 - [ ] `SKILL.md` §4 lists exactly the non-`yes` rows — no more, no fewer.
 - [ ] **[CI]** All §3 files present; `references/` one level deep; all map links and
       anchors resolve.
+- [ ] **[CI]** `SKILL.md` body within the §11 character budget; every supporting file ≤20,000
+      characters, with linked contents above 8,000 characters or 200 lines.
 
 Content:
+
+- [ ] The lead paragraph carries the authority statement and the API-selection guardrails
+      (§5), naming the stale v4 symbols this language must not emit.
+- [ ] §6–§8 carry the **punchline** inline and the explanation in `references/` (§5). No
+      wrong-and-right code pair, and no per-API table, sits in `SKILL.md`.
+- [ ] §10 is annotated bullets ordered by value, each carrying its file's trap, opened by
+      the load-discipline line (§10). Not a question→filename table.
 
 - [ ] `examples/minimal-app.md` contains a pasted real build-and-run transcript naming
       the patch version.

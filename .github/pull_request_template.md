@@ -24,7 +24,7 @@ Which Ditto SDK releases does this content apply to?
 
 State exact patch versions you actually ran against (e.g. 4.14.6, 5.0.3, 5.1.0),
 not just the line. If a claim is version-gated, say where the gate is documented
-(a version tag inline, plus a row in skills/dql/references/versions.md).
+(a version tag inline, plus a row in skills/write-dql/references/versions.md).
 
 If this change is version-independent (tooling, packaging, prose with no
 technical claims), write "N/A — no version-specific claims" and move on.

@@ -1,5 +1,15 @@
 # Cookbook: migrating a MongoDB/SQL-style model
 
+## Contents
+
+- [The input shape (three related documents)](#the-input-shape-three-related-documents)
+- [Findings](#findings)
+- [Recommended model](#recommended-model)
+- [The `_id` question (decide this first)](#the-_id-question-decide-this-first)
+- [The join question](#the-join-question)
+- [Index plan (both versions)](#index-plan-both-versions)
+- [Budget](#budget)
+
 Covers SDK **4.14.x and 5.1.x** — the join question is where these versions diverge most. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Scenario: a team-portal coming from MongoDB with normalized collections asks "how do I lay this out in Ditto?"
 
 ## The input shape (three related documents)
@@ -55,7 +65,7 @@ Covers SDK **4.14.x and 5.1.x** — the join question is where these versions di
 INSERT INTO comments
 DOCUMENTS ({
   '_id': { 'team_id': 't-9', 'comment_id': 'c-7001' },
-  'ticket_id': 'k-100',
+  'ticket_id': { 'team_id': 't-9', 'ticket_id': 'k-100' },
   'by': 'u-2',
   'at': '2026-08-25T09:00:00.000Z',
   'body': 'Parts ordered'
@@ -102,7 +112,7 @@ Delimiter-joined string `_id`s are the specific smell here — they exist becaus
 Two practical consequences visible in the model above:
 
 - **Don't restate the `_id` subfields in the body.** The migration reflex is to keep `team_id` as a column *and* put it in `_id`. Unnecessary: `_id.team_id` is an ordinary path, so `WHERE _id.team_id = 't-9'`, `CREATE INDEX … ON tickets (_id.team_id)`, and composite indexes over `(_id.team_id, state)` (5.1+) all work against it. A duplicate is per-document CRDT metadata plus two values that can drift apart. **A child's back-reference to its parent is different and stays** — `comments.ticket_id` is the split pattern, not a duplicate.
-- **Adjust the join to reach into `_id`.** Once `tickets._id` is an object, `c.ticket_id = t._id` no longer matches. Join `c.ticket_id = t._id.ticket_id` — left side into the parent's `_id`, right side the child's indexed back-reference (5.1+, verified).
+- **Adjust the join to reach into `_id`.** A legacy scalar `c.ticket_id` cannot match the new composite `tickets._id`. Store the complete parent object in `comments.ticket_id` and join `c.ticket_id = t._id`. Matching only the ticket number could attach another team's comments. With comments on the right, index that complete back-reference as below (5.1+).
 
 **MongoDB Connector note:** MongoDB `_id`s are usually `ObjectId`s and are rarely used as scoped composite keys, so the two systems' ID schemes will not line up by themselves. The connector's ID mapping has to be configured deliberately for each collection — plan it as part of this decision, not after. Connector-oriented examples sometimes show the `_id` subfields duplicated into the document body; treat that as an accommodation for that ID mapping, not as a Ditto modeling pattern to copy into collections the connector doesn't touch.
 
@@ -117,13 +127,13 @@ CREATE INDEX IF NOT EXISTS idx_comments_ticket ON comments (ticket_id);
 
 SELECT t.title, c.body, c.at
 FROM tickets AS t
-LEFT JOIN comments AS c ON c.ticket_id = t._id.ticket_id   -- reach into the composite _id
+LEFT JOIN comments AS c ON c.ticket_id = t._id   -- complete scoped parent identity
 WHERE t._id = { 'team_id': 't-9', 'ticket_id': 'k-100' };
 ```
 
 **On 4.14.x** there are no joins. Two patterns:
 
-1. **Two fetches in app code** — fine for detail screens: `SELECT * FROM tickets WHERE _id = { 'team_id': …, 'ticket_id': … }`, then `SELECT * FROM comments WHERE ticket_id = …` (the child's back-reference, indexed).
+1. **Two fetches in app code** — fine for detail screens: `SELECT * FROM tickets WHERE _id = { 'team_id': …, 'ticket_id': … }`, then `SELECT * FROM comments WHERE ticket_id = { 'team_id': …, 'ticket_id': … }` (the child's back-reference, indexed).
 2. **Denormalize read-time fields** into the hot document — ticket cards carry `assignee_name` and `team_name` duplicated from the source docs. Keep duplicated writes cheap and idempotent with `INSERT … ON ID CONFLICT DO UPDATE_LOCAL_DIFF` (4.12+), and treat the source collection as the system of record.
 
 Also decide **before** launch whether 4.14.x peers will ever join the mesh: a screen built on JOINs has no fallback on LTS devices. Mixed-mesh rule: build reads to the 4.14 surface (two-fetch or denormalized) even if writers are 5.1.

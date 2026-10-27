@@ -1,5 +1,14 @@
 # Designing Data and Transports Together
 
+## Contents
+
+- [1. The mechanism: why transport choice reaches into your schema](#1-the-mechanism-why-transport-choice-reaches-into-your-schema)
+- [2. The rule](#2-the-rule)
+- [3. Decision table](#3-decision-table)
+- [4. Practical techniques](#4-practical-techniques)
+- [5. Monitoring and remediation](#5-monitoring-and-remediation)
+- [6. Checklist](#6-checklist)
+
 Ditto's data-modeling advice is **not transport-neutral**. The schema that performs
 perfectly on a LAN can make an app feel broken on Bluetooth LE. This file connects the two
 decisions.

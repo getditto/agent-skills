@@ -62,6 +62,9 @@ already has, so redelivery dies out instead of circulating.
 Transitivity does **not** make intermediate peers transparent. Because of
 Rule 2, each hop can narrow the data that flows:
 
+For illustration, assume A holds 100 cars and 10 are blue. These counts describe
+this example dataset, not a property of the topology or counts supplied by a user.
+
 ```
 Peer A                        Peer B                        Peer C
 subscribes: all cars          subscribes: blue cars only    subscribes: all cars
@@ -111,9 +114,13 @@ When peers in the same role run the same subscription, any of them can serve
 any other — maximal path redundancy. Deliberately narrow subscriptions are
 fine (they save bandwidth and storage) as long as every *intended* data path
 is made of peers whose subscriptions cover the data expected to traverse
-them. The Ditto Server (Big Peer) typically holds everything and therefore
-terminates any path — devices that sync through the cloud never hit this
-problem via that route.
+them. A Ditto Server (Big Peer) can provide a path around a narrow relay **if it
+holds the missing documents and permissions allow it to serve them to the receiving
+peer**. A cloud connection alone does not guarantee complete holdings, matching
+subscriptions, or authorization. Apply the same recipient-filter rule to that path.
+
+The receive-filter rule is described in [Managing Subscriptions](https://docs.ditto.live/sdk/latest/sync/syncing-data);
+authorization is covered in [Authorizing Users](https://docs.ditto.live/sdk/latest/auth-and-authorization/data-authorization).
 
 ## Loop safety and efficiency, briefly
 

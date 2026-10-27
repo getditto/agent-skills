@@ -563,7 +563,7 @@ if (fs.existsSync(OVERRIDES_PATH)) {
 // the previous run so persistent ignores keep their hand-written reason, but
 // that also means an id whose sql block was edited or deleted would be carried
 // forward forever. Keep only ids that correspond to a block seen in THIS run
-// (the raw catalog is every block in skills/dql, pre-filter).
+// (the raw catalog is every block in skills/write-dql, pre-filter).
 const BLOCKS_PATH = path.join(TESTS_DIR, "catalog", "blocks.json");
 const liveIds = fs.existsSync(BLOCKS_PATH)
   ? new Set(JSON.parse(fs.readFileSync(BLOCKS_PATH, "utf8")).map(b => b.id))

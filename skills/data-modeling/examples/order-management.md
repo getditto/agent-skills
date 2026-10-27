@@ -1,5 +1,13 @@
 # Cookbook: POS / e-commerce order
 
+## Contents
+
+- [The input JSON](#the-input-json)
+- [Findings](#findings)
+- [Recommended model — items stay embedded, as a keyed MAP](#recommended-model--items-stay-embedded-as-a-keyed-map)
+- [When to split instead](#when-to-split-instead)
+- [Budget](#budget)
+
 Worked example of the review workflow from [`../references/workflow.md`](../references/workflow.md). Covers SDK **4.14.x and 5.1.x**; version gates are tagged inline. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes).
 
 ## The input JSON
@@ -33,7 +41,7 @@ A team migrating a POS app brings this document:
 |---|---|---|---|
 | blocker | `ARRAY_LWW` | `items` | Two devices adding items offline lose one item — whole-array LWW, no error. Severity drops to OK only if items are written exactly once at creation and never edited |
 | blocker | `ARRAY_LWW` | `statusHistory` | Append-log in an array: concurrent status transitions drop. Also grows unbounded over a long-lived order |
-| blocker | `ATTACHMENT_CANDIDATE` | `receiptPdfBase64` | ~380 KB inline blows the 256 KiB soft limit and every order edit re-syncs the blob's register |
+| blocker | `ATTACHMENT_CANDIDATE` | `receiptPdfBase64` | ~380 KB inline exceeds the 256 KiB soft limit. Initial transfer and changes to the blob send its whole value; unrelated field edits still pay whole-document merge/storage cost, without retransmitting unchanged blob bytes |
 | warn | `COUNTER_CANDIDATE` | (implied) inventory side | `qty` decremented from *product* stock by many devices — that's a counter on the `products` collection, not a field here |
 | blocker | `COMPOSITE_ID` | `_id` | Flat string `_id` on a document that is scoped by store. Permission rules can only see `_id`, so a per-store sync rule is impossible to express — and `_id` is immutable, so fixing it later means rewriting every order under a new ID |
 | warn | `DECLARE_TYPES` | `store`, `customer` | No declarations on the 5.1.x tablets — the lenient default infers MAP. But the 4.14.x registers under the strict `true` default silently store these as whole-object REGISTERs and drop them from plain reads. Migrate the registers to `dql_strict_mode = false` before the v5 rollout (recommended); declare `MAP` explicitly only on statements still-strict peers execute during the transition |
@@ -43,7 +51,7 @@ A team migrating a POS app brings this document:
 
 ## Recommended model — items stay embedded, as a keyed MAP
 
-Most-realistic POS constraint: items are finalized at checkout; disputes edit **quantity or void flags per item** from one register at a time. Keyed MAP handles that with clean merges:
+Most-realistic POS constraint: items are finalized at checkout; disputes edit **quantity or void flags per item** from one register at a time. This example has one aggregate line per SKU; a keyed MAP handles independent line edits. If repeated instances of a SKU are distinct, use unique line IDs and keep `sku` as a field instead. A SKU key would collapse those instances:
 
 ```sql
 -- store/customer/items/status_log infer MAP under the lenient default —
@@ -110,19 +118,20 @@ DOCUMENTS ({
   -- store scope as the parent order, so the same per-store permission rule
   -- covers both collections.
   '_id': { 'store_id': 42, 'order_id': 'order-2026-00042', 'sku': 'SKU-100' },
-  'order_id': 'order-2026-00042',   -- back-reference to the parent: a real field,
-  'qty': 2, 'price_cents': 1999     -- indexed below and used as the join key
+  -- Complete parent identity: order numbers can repeat in another store.
+  'parent_id': { 'store_id': 42, 'order_id': 'order-2026-00042' },
+  'qty': 2, 'price_cents': 1999
 });
 
-CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (parent_id);
 ```
 
 **Don't reach for a delimiter-joined string `_id` here** (`'order-2026-00042:SKU-100'`). It is the reflex when migrating a relational schema whose primary key was `(order_id, sku)` — the composite key flattened to fit a string-keyed system. Ditto isn't one. The string form breaks as soon as a SKU contains the delimiter, has to be re-parsed at every read, can't be indexed per-component, and hides the store scope from permissions. The object form has none of those problems and reads correctly in the portal and HTTP API. See [`../references/workflow.md`](../references/workflow.md) §2 `COMPOSITE_ID`.
 
 Reads across the split:
 
-- **5.1+**: `SELECT * FROM orders INNER JOIN order_items ON order_items.order_id = orders._id.order_id` — the left side reaches straight into the parent's composite `_id`; the right side is the child's back-reference, which is why that field carries the index above. (The JOIN right side must be `_id` or indexed, and the child's `_id` here is the three-part object, not the order id.)
-- **4.14.x**: two fetches — `SELECT * FROM orders WHERE _id = { 'store_id': 42, 'order_id': 'order-2026-00042' }` plus `SELECT * FROM order_items WHERE order_id = …`.
+- **5.1+**: `SELECT * FROM orders o INNER JOIN order_items i ON i.parent_id = o._id` — match the complete scoped identity. The right-side `i.parent_id` carries the index above; matching just the order number could mix stores.
+- **4.14.x**: two fetches — `SELECT * FROM orders WHERE _id = { 'store_id': 42, 'order_id': 'order-2026-00042' }` plus `SELECT * FROM order_items WHERE parent_id = { 'store_id': 42, 'order_id': 'order-2026-00042' }`.
 
 ## Budget
 
