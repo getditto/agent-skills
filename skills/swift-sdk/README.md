@@ -37,12 +37,13 @@ Deliberately **out of scope** — these have their own skills:
 
 | Ditto SDK | Verified patch | Status |
 |---|---|---|
+| 5.2.x | 5.2.0-rc.2 | Release candidate. Additive over 5.1.x — store encryption, `systemParameters`, `deleteStore`. Pin exactly; 5.2.0 GA is published but not yet verified. |
 | 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line. |
 | 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
-skill's verified code targets 4.14.6, 5.0.3 or 5.1.0.
+skill's verified code targets 4.14.6, 5.0.3, 5.1.0 or 5.2.0-rc.2.
 
 ## Capability map
 
@@ -80,7 +81,7 @@ Rows that are not `Support: yes`:
 - **CAP-03 `preview`** — on **4.14.x only**, introduced in **4.12.0**: `DittoConfig`,
   `Ditto.open(config:)`, `Ditto.openSync(config:)` and `Ditto.config` are labelled
   *(Preview)* in the release notes (`sdk/v4/release-notes/swift.mdx:419,421,427`). There
-  is no opt-in flag — using the type is the opt-in. They are GA on 5.0.x and 5.1.x. The
+  is no opt-in flag — using the type is the opt-in. They are GA on 5.0.x and later. The
   skill recommends them on all three lines because the alternative,
   `Ditto(identity:persistenceDirectory:)`, is deprecated on 4.14.x and removed in v5.
   **Stability:** the preview label means "this is the shape v5 standardizes on", which is
@@ -91,7 +92,7 @@ Rows that are not `Support: yes`:
   (`sdk/v4/release-notes/swift.mdx:423,425,429`). `DittoAuthenticator` itself is not
   preview and predates 4.14. There is no opt-in flag — using the API is the opt-in.
   **Stability:** these are the v5 replacement for `DittoAuthenticationDelegate`, and are
-  GA on 5.0.x and 5.1.x.
+  GA on 5.0.x and later.
 - **CAP-13 `partial`** — the presence graph, peer metadata and observation are covered and
   executed. The connection-request path (`presence.connectionRequestHandler`) needs a
   second peer and is documented from the public guide at

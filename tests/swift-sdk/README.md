@@ -1,8 +1,8 @@
 # `tests/swift-sdk` — executable verification for `skills/swift-sdk`
 
 Every claim in the Swift SDK skill marked **executed** was produced here. The same
-sources build and run against Ditto **4.14.6**, **5.0.3** and **5.1.0**, and compile for
-macOS, the iOS Simulator, an iOS device and Mac Catalyst.
+sources build and run against Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0-rc.2**,
+and compile for macOS, the iOS Simulator, an iOS device and Mac Catalyst.
 
 ```
 Package.swift                          version pin read from $DITTO_SWIFT_VERSION
@@ -25,7 +25,7 @@ scripts/
 ## Prerequisites
 
 - macOS on Apple silicon, Xcode 16 or later (verified on Xcode 27 / Swift 6.4).
-  5.1.0 ships no `x86_64` slice, so an Intel Mac cannot run the 5.1.0 legs.
+  5.1.0 and 5.2.0-rc.2 ship no `x86_64` slice, so an Intel Mac cannot run those legs.
 - `DITTO_OFFLINE_LICENSE` in the gitignored repo-root `.env` — copy `.env-sample`.
   Everything here runs offline-only and the SDK will not accept work without it.
 - Optional: `DITTO_DATABASE_ID`, and `DITTO_URL` + `DITTO_TOKEN` to additionally exercise
@@ -41,11 +41,11 @@ Environment variables already set take precedence over `.env`, matching
 cd tests/swift-sdk
 
 ./scripts/run.sh 5.1.0                  # tests on one version
-./scripts/run.sh --all                  # 4.14.6, 5.0.3 and 5.1.0 in sequence
+./scripts/run.sh --all                  # 4.14.6, 5.0.3, 5.1.0 and 5.2.0-rc.2 in sequence
 ./scripts/run.sh 5.1.0 --app            # tests, then the minimal app
 ./scripts/run.sh 5.1.0 --app --offline  # force the app's offline mode
 
-./scripts/build-platforms.sh --all      # 12 builds: 3 versions x 4 platforms
+./scripts/build-platforms.sh --all      # 16 builds: 4 versions x 4 platforms
 ./scripts/persistence-matrix.sh         # cross-version on-disk behaviour
 python3 -m unittest discover -s . -p 'test_*.py'  # fast runner/packaging checks
 ```
@@ -60,7 +60,8 @@ Two environment problems make the obvious command fail. Both are documented for 
 
 1. **`swift test` exports `NO_COLOR=1`.** Ditto's Rust core reads `NO_COLOR` as its
    `--disable-color` option, which accepts only `true` or `false`, so the process panics
-   during initialization before any test runs. Reproduced on all three version lines.
+   during initialization before any test runs. Reproduced on 4.14.6, 5.0.3 and 5.1.0; the
+   runner's workaround carries 5.2.0-rc.2 as well.
    There is no flag that stops `swift test` setting it, so the runner drives SwiftPM's
    own `swiftpm-testing-helper` with the variable cleared.
 2. **The published XCFramework is unsigned**, and SwiftPM copies it out of its artifact

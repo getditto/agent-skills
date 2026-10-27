@@ -82,7 +82,9 @@ match on the message, not the case. On 4.14.6 and 5.0.3 it does not fail at all.
 
 `.passphraseNotGiven`, `.passphraseInvalid`, `.extraneousPassphraseGiven` — all three from
 opening a store whose encryption state does not match the config
-([connect.md](connect.md#encryption-at-rest)).
+([connect.md](connect.md#encryption-at-rest)). **5.2.x renames them** to `.keyRequired`,
+`.keyInvalid` and `.keyUnexpected` (the old spellings remain, deprecated) and adds
+`.unsupportedScheme` and `.metadataCorrupt` — see [versions.md](versions.md#52x).
 
 ### `ioError(_:)`
 

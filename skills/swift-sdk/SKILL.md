@@ -4,7 +4,7 @@ description: >
   Use ONLY for tasks that use the Ditto Swift SDK (not generic SwiftUI/Xcode work
   without Ditto): .swift, Package.swift or Xcode files touching import DittoSwift,
   DittoConfig, Ditto.open, observers, authentication, lifetimes and concurrency errors.
-  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x.
+  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.x.
   Other languages use their own Ditto SDK skill.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
@@ -23,7 +23,7 @@ README; the latter holds the capability/evidence map for coverage reviews.
 
 Writes and reviews Ditto Swift code: initialization, authentication, store access,
 sync, lifetimes, threading and Xcode/SwiftPM configuration. Supports **4.14.x (LTS),
-5.0.x and 5.1.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
+5.0.x, 5.1.x and 5.2.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
 
 ### New apps and integration failures
 

@@ -8,7 +8,7 @@
 - [Verified on](#verified-on)
 
 Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.x; version-specific notes remain inline. Read only the topic needed.
 
 ## Dependency
 
@@ -18,7 +18,7 @@ Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14
 import PackageDescription
 import Foundation
 
-// One SPM URL serves all three supported lines; only the pin changes.
+// One SPM URL serves all four supported lines; only the pin changes.
 let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ?? "5.1.0"
 
 // 4.14.x needs `@preconcurrency import DittoSwift` and `disableSyncWithV3()`, both of

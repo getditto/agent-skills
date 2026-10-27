@@ -30,20 +30,29 @@ Setting `persistenceDirectory` explicitly removes the ambiguity, and is what
 
 Each pair below was written by one version and read directly by the other, with no
 intermediate version opening the store, and also as a chain
-(`4.14.6 → 5.0.3 → 5.1.0`, and `5.1.0 → 5.0.3 → 4.14.6`):
+(`4.14.6 → 5.0.3 → 5.1.0 → 5.2.0-rc.2`, and `5.2.0-rc.2 → 5.1.0 → 5.0.3 → 4.14.6`):
 
 | Written by | Read by | Result |
 |---|---|---|
 | 4.14.6 | 5.0.3 | document and index present |
 | 4.14.6 | 5.1.0 | document and index present |
+| 4.14.6 | 5.2.0-rc.2 | document and index present |
 | 5.1.0 | 5.0.3 | document and index present |
 | 5.1.0 | 4.14.6 | document and index present |
+| 5.2.0-rc.2 | 5.1.0 | document and index present |
+| 5.2.0-rc.2 | 5.0.3 | document and index present |
+| 5.2.0-rc.2 | 4.14.6 | document and index present |
 
 This matches the published
 [5.1 upgrade considerations](https://docs.ditto.live/sdk/latest/release-notes/swift):
 5.1 changes the on-disk index format, and a downgrade must route through **5.0.2+ or
 4.14.6+**, which recognise the new format and revert it. During the downgrade a composite
 index is replaced by one single-field index per key.
+
+**5.2.0-rc.2 adds no new break:** a store it writes is read back by 5.1.0, 5.0.3 and
+4.14.6 (document and index present), both chained and as a direct 5.2.0-rc.2 → 5.1.0
+pair, and it reads stores written by every earlier line. The 5.1 downgrade rule above
+is unchanged — do not route a 5.2-opened store below 5.0.2 / 4.14.6 either.
 
 Do not downgrade below 5.0.2 / 4.14.6 from a store 5.1.x has opened. Composite indexes are
 a DQL feature; see the `write-dql` skill or <https://docs.ditto.live/dql/indexing#migration>.

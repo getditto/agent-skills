@@ -6,7 +6,7 @@
 #   ./scripts/run.sh 5.1.0 --app      # tests, then the minimal app (server mode if
 #                                     # DITTO_URL/DITTO_TOKEN are set)
 #   ./scripts/run.sh 5.1.0 --app --offline   # force the minimal app's offline mode
-#   ./scripts/run.sh --all            # 4.14.6, 5.0.3 and 5.1.0 in sequence
+#   ./scripts/run.sh --all            # 4.14.6, 5.0.3, 5.1.0 and 5.2.0-rc.2 in sequence
 #
 # Reads DITTO_OFFLINE_LICENSE (required) and DITTO_DATABASE_ID / DITTO_URL /
 # DITTO_TOKEN (optional) from the gitignored repo-root .env, unless already set in the
@@ -167,7 +167,7 @@ for arg in "$@"; do
   case "$arg" in
     --app) RUN_APP="yes" ;;
     --offline) OFFLINE="yes" ;;
-    --all) VERSIONS=(4.14.6 5.0.3 5.1.0) ;;
+    --all) VERSIONS=(4.14.6 5.0.3 5.1.0 5.2.0-rc.2) ;;
     *) VERSIONS+=("$arg") ;;
   esac
 done

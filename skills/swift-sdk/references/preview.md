@@ -90,8 +90,8 @@ Detail: [versions.md](versions.md#shipped-xcframework-slices).
 `DittoPeerOS.tvOS` outlives tvOS support on purpose, so a presence `switch` still has to
 handle it ([presence.md](presence.md#dittopeeros-and-exhaustive-switches)).
 
-Intel (`x86_64`) is removed from **every** 5.1.0 slice — macOS, iOS Simulator and Mac
-Catalyst — not only from the Mac build.
+Intel (`x86_64`) is removed from **every** 5.1.x and 5.2.x slice — macOS, iOS Simulator
+and Mac Catalyst — not only from the Mac build.
 
 ### DittoSwiftTools
 

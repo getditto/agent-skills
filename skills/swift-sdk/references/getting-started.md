@@ -10,7 +10,7 @@ Gather only missing information: existing project or new folder; iOS/iPadOS, mac
 or Mac Catalyst; SwiftUI/UIKit/AppKit; existing SDK pin; and small-peers-only or a
 Ditto Server connection. Inspect the workspace/toolchain first. A reasonable new-demo
 default is SwiftUI, SDK 5.1.0 and an iOS Simulator destination; state that assumption.
-The generator supports 4.14.6, 5.0.3 and 5.1.0 and needs Python 3.9+ plus Swift 6/Xcode
+The generator supports 4.14.6, 5.0.3, 5.1.0 and 5.2.0-rc.2 and needs Python 3.9+ plus Swift 6/Xcode
 16+. Confirm compatibility using [versions.md](versions.md); do not downgrade or
 upgrade a customer's dependencies merely to match the demo.
 SDK 5.1.0's published binary is arm64-only, so that starter pin requires Apple

@@ -3,10 +3,12 @@
 # Executes the cross-version persistence claims in
 # ../../skills/swift-sdk/references/versions.md:
 #
-#   * data written by 4.14.6 is readable by 5.0.3 and 5.1.0 (upgrade), both chained
-#     and as direct pairs
+#   * data written by 4.14.6 is readable by 5.0.3, 5.1.0 and 5.2.0-rc.2 (upgrade), both
+#     chained and as direct pairs
 #   * data written by 5.1.0 is readable by 5.0.3 and 4.14.6 (documented rollback path),
 #     both chained and as a DIRECT 5.1.0 -> 4.14.6 downgrade with no intermediate 5.0.x
+#   * data written by 5.2.0-rc.2 is readable by 5.1.0, 5.0.3 and 4.14.6 — the newest
+#     line down, chained and direct
 #   * an upgrading app that never set `persistenceDirectory` still finds its v4
 #     database through the v5 legacy-path fallback
 #
@@ -75,11 +77,12 @@ probe() {
 
 banner() { echo; echo "### $*"; }
 
-banner "upgrade: 4.14.6 writes, 5.0.3 and 5.1.0 read (explicit directory)"
+banner "upgrade: 4.14.6 writes, 5.0.3, 5.1.0 and 5.2.0-rc.2 read (explicit directory)"
 UPGRADE_DIR="$WORK/upgrade"
 probe 4.14.6 write upgrade-1 "$UPGRADE_DIR"
 probe 5.0.3  read  upgrade-1 "$UPGRADE_DIR"
 probe 5.1.0  read  upgrade-1 "$UPGRADE_DIR"
+probe 5.2.0-rc.2 read upgrade-1 "$UPGRADE_DIR"
 
 banner "rollback: 5.1.0 writes, 5.0.3 then 4.14.6 read (documented downgrade route)"
 ROLLBACK_DIR="$WORK/rollback"
@@ -87,11 +90,18 @@ probe 5.1.0  write rollback-1 "$ROLLBACK_DIR"
 probe 5.0.3  read  rollback-1 "$ROLLBACK_DIR"
 probe 4.14.6 read  rollback-1 "$ROLLBACK_DIR"
 
+banner "rollback: 5.2.0-rc.2 writes, 5.1.0 then 5.0.3 then 4.14.6 read (newest line down)"
+NEWEST_DOWN_DIR="$WORK/newest-down"
+probe 5.2.0-rc.2 write newest-down-1 "$NEWEST_DOWN_DIR"
+probe 5.1.0        read  newest-down-1 "$NEWEST_DOWN_DIR"
+probe 5.0.3        read  newest-down-1 "$NEWEST_DOWN_DIR"
+probe 4.14.6       read  newest-down-1 "$NEWEST_DOWN_DIR"
+
 # The chains above route every read through the adjacent version, which is exactly the
 # step the published contract says reverts the 5.1 index format. These legs remove that
 # step so each pair is tested directly.
 banner "direct pairs: no intermediate version between writer and reader"
-for pair in "4.14.6 5.1.0 direct-up" "5.1.0 4.14.6 direct-down" "4.14.6 5.0.3 direct-up-50" "5.1.0 5.0.3 direct-down-50"; do
+for pair in "4.14.6 5.1.0 direct-up" "5.1.0 4.14.6 direct-down" "4.14.6 5.0.3 direct-up-50" "5.1.0 5.0.3 direct-down-50" "4.14.6 5.2.0-rc.2 direct-up-52" "5.2.0-rc.2 5.1.0 direct-down-52"; do
   set -- $pair
   writer="$1"; reader="$2"; label="$3"
   dir="$WORK/$label"

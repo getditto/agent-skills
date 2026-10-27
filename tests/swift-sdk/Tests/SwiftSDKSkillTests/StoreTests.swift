@@ -298,11 +298,11 @@ struct StoreTests {
         )
         let statement = "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
 
-        guard Ditto.version.hasPrefix("5.1.") else {
+        guard isAtLeast("5.1.0") else {
             // 4.14.x and 5.0.x reject it at the parser.
             do {
                 _ = try await peer.ditto.store.execute(query: statement)
-                Issue.record("expected ADVISE to be rejected before 5.1.x")
+                Issue.record("expected ADVISE to be rejected before 5.1.0")
             } catch let error as DittoError {
                 guard case .queryInvalid(let message) = error.storeReason else {
                     Issue.record("expected queryInvalid, got \(error)")
