@@ -15,7 +15,10 @@
 > 5.1.0 artifacts: `Ditto.android.kt` / `Ditto.jvm.kt` in `ditto-kotlin-5.1.0-sources.jar`
 > and `InternalDittoStore` in `ditto-internal-jvm-5.1.0.jar` (bytecode; the
 > `ditto-internal` sources jar is empty). Claims marked **[source-verified]** were read
-> there. The 4.14.x callback model is summarised in [versions.md](versions.md).
+> there. The Android rows were **executed** on a Pixel 10a (Android 17) with 5.1.0 and
+> 5.0.3: the observer handler logged `thread=main`, and an `observe()` transform under
+> `.flowOn(Dispatchers.IO)` also logged `main`. The 4.14.x callback model is summarised
+> in [versions.md](versions.md).
 
 Which dispatcher every SDK callback starts on, and what that forces the calling code to
 do. The load-bearing rules are summarised in
@@ -126,10 +129,11 @@ reads the producer's context, so the transform's dispatcher is the SDK's, not
 `flowOn`'s. The docs' own warning that `observe()` "does not back-pressure" refers to
 this hand-off; see [observers.md](observers.md#back-pressure-what-the-source-actually-does).
 
-Established from the published 5.1.0 bytecode and **executed** on JVM (5.0.3 and 5.1.0,
-CI): a transform that records `Thread.currentThread().name` under
+Established from the published 5.1.0 bytecode and **executed**: on JVM (5.0.3 and 5.1.0,
+CI) a transform that records `Thread.currentThread().name` under
 `.flowOn(newSingleThreadContext("probe"))` reports a `DefaultDispatcher-worker` thread,
-never `probe`.
+never `probe`; on a Pixel 10a the same transform under `.flowOn(Dispatchers.IO)`
+reports `main`.
 
 ## Overriding the SDK scope
 

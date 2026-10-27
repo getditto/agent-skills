@@ -28,7 +28,7 @@ class DittoStoreTest {
     private fun makeDitto(): Ditto {
         val ditto = DittoFactory.create(
             DittoConfig(
-                databaseId = "test-database",
+                databaseId = System.getenv("DITTO_DATABASE_ID") ?: "test-database",  // license is per database ID
                 connect = DittoConfig.Connect.SmallPeersOnly(),
                 persistenceDirectory = tempDir.absolutePath,  // String? in v5, not File?
             )

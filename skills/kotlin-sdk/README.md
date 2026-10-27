@@ -113,8 +113,18 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   the full minimal app — create, offline license, `sync.start()`, subscription,
   observer initial + change delivery, INSERT, read-back, clean shutdown.
 - 5.0.3 (JVM, same host): same program.
-- 4.14.7 (Android emulator, API 35 arm64, AGP 9.4.1): same flow as an Android app,
-  including the `disableSyncWithV3()` requirement and its exact failure string.
+- 4.14.7 (Android emulator, API 35 arm64, AGP 9.4.1; re-run on a Pixel 10a / Android
+  17): same flow as an Android app, including the `disableSyncWithV3()` requirement
+  and its exact failure string.
+- **5.1.0 and 5.0.3 on Android** (Pixel 10a, Android 17, AGP 9.4.1 built-in Kotlin,
+  `compileSdk` 36): the same flow as an Android app, plus two on-device probes — the
+  `registerObserver` handler runs on `main`, and an `observe()` transform under
+  `.flowOn(Dispatchers.IO)` also runs on `main`. A `compileSdk` 35 build fails
+  `CheckAarMetadata` (executed).
+- Forward check, not part of the documented coverage: `5.2.0-rc.2` (the newest
+  `com.ditto:ditto-kotlin` on Maven Central; 5.2.0 GA is not published) runs the JVM
+  minimal app and all four tests green, and the Android v5 leg on the Pixel 10a with
+  both probes unchanged. Coverage moves to 5.2.x when GA is installable.
 - JUnit pattern (5.0.3 and 5.1.0, same JVM host):
   [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
   — `insertThenReadBack`, `observerReportsTheWrite`, `observerReportsTheWriteUnderRunTest`
@@ -151,14 +161,13 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   ([`references/concurrency.md`](references/concurrency.md#why-flowon-does-not-move-the-observe-transform)).
   `sync.subscriptions` / `store.observers` are delegated live views, not snapshots.
 
-**Not verified:** **v5 on Android** — every Android run used 4.14.7; the 5.x runs are
-JVM-only, so the Android-specific v5 claims (handlers on `MainScope()`, AGP 9 built-in
-Kotlin, permissions helper) are source- or docs-sourced, not executed; two-peer mesh
-sync (no second device run); attachments fetch lifecycle; transactions; Data Streams
-(preview); ProGuard/R8 release-build behavior; in-place on-disk store migration
-semantics on a shipped 4.14.x store; cloud authentication round-trip.
+**Not verified:** the runtime-permissions helper and foreground service on Android (the
+harness app is offline-only and declares neither); two-peer mesh sync (no second device
+run); attachments fetch lifecycle; transactions; Data Streams (preview); ProGuard/R8
+release-build behavior; in-place on-disk store migration semantics on a shipped 4.14.x
+store; cloud authentication round-trip.
 
-**Last verified:** 2026-10-27 (JVM legs in CI); Android 4.14.7 leg 2026-10-21.
+**Last verified:** 2026-10-27 (JVM legs in CI; all three Android legs on a Pixel 10a).
 
 ## Installation
 

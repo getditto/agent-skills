@@ -23,12 +23,17 @@
 
 - JDK 17, Android `minSdk` 24 (Android 7.0), `compileSdk` 36
   (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
-- Kotlin: docs say 2.0+ (N−4 support window, <https://docs.ditto.live/sdk/latest/compatibility/kotlin>), but the
-  **executed floor is higher** — 5.1.0/5.0.3 artifacts embed Kotlin metadata 2.0.x/2.1.x
-  (jar-verified) and the harness failed under the Kotlin 2.0.x plugin. Executed-working
-  pin: Kotlin **2.3.21** with `kotlinx-coroutines` 1.10.x (JVM). On Android with AGP 9,
-  use built-in Kotlin — do **not** apply `org.jetbrains.kotlin.android` (v5 on Android
-  not yet executed).
+- Kotlin: docs say 2.0+ (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>), but
+  the 5.1.0 artifacts depend on `kotlin-stdlib` **2.3.21** (5.0.3: 2.1.0 — Maven Central
+  POMs), and the compiler reads metadata at most one minor version newer, so the
+  practical floor is **KGP ≥ 2.2 for 5.1.0**. Executed-working pin: Kotlin **2.3.21**
+  with `kotlinx-coroutines` 1.10.x. On Android with AGP 9, use built-in Kotlin — do
+  **not** apply `org.jetbrains.kotlin.android` (**executed**: v5 5.1.0 and 5.0.3 built
+  with AGP 9.4.1 and no KGP applied, run on a Pixel 10a / Android 17).
+- **`compileSdk` 36 is enforced, not advisory:** the 5.x AARs declare a minimum
+  `compileSdk`, and a project at 35 fails `CheckAarMetadata` with "requires libraries
+  and applications that depend on it to compile against … a newer compileSdk"
+  (**executed**, 5.1.0). `minSdk` 24 is unchanged.
 - Repository: `mavenCentral()`.
 
 **Android app — the only Ditto dependency line you need:**

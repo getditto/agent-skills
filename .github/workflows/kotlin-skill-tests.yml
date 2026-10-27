@@ -20,10 +20,16 @@ jobs:
   jvm:
     name: JVM minimal app and tests against Ditto SDK ${{ matrix.sdk }}
     runs-on: ubuntu-latest
+    # The documented lines block; the release candidate is a forward check only.
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         sdk: ['5.0.3', '5.1.0']
+        experimental: [false]
+        include:
+          - sdk: '5.2.0-rc.2'
+            experimental: true
     steps:
       - uses: actions/checkout@v7
 
@@ -32,16 +38,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Caches Gradle; the version comes from the committed wrapper.
       - uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: '9.8.2'
 
       - name: Run the minimal app and assert its transcript
         working-directory: tests/kotlin-sdk/minimal-app
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
         run: |
-          gradle run -PdittoVersion="${{ matrix.sdk }}" --console=plain -q | tee run.log
+          ./gradlew run -PdittoVersion="${{ matrix.sdk }}" --console=plain -q | tee run.log
           grep -qx 'observer: 1 car(s)' run.log
           grep -qx 'read-back make: Toyota' run.log
           grep -qx "SDK version: ${{ matrix.sdk }}" run.log
@@ -50,4 +55,4 @@ jobs:
         working-directory: tests/kotlin-sdk/minimal-app
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
-        run: gradle test -PdittoVersion="${{ matrix.sdk }}" --console=plain
+        run: ./gradlew test -PdittoVersion="${{ matrix.sdk }}" --console=plain

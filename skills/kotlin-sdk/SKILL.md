@@ -105,8 +105,8 @@ Read [concurrency.md](references/concurrency.md) for the per-API table and reaso
 Core constraints:
 
 - **Observer handlers start on the SDK's scope: the main thread on Android
-  (`MainScope()`), `Dispatchers.Default` on JVM** — source-verified. Treat every
-  handler as UI-thread code.
+  (`MainScope()`), `Dispatchers.Default` on JVM** — source-verified and executed on a
+  Pixel. Treat every handler as UI-thread code.
 - **Hop inside the handler**: `withContext(Dispatchers.IO)` for extraction and decode,
   then plain data back to the UI. The result stays open while the handler is suspended.
   **`.flowOn()` does not reach the `observe()` transform** — it runs on the SDK scope.

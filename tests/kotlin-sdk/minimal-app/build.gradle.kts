@@ -68,7 +68,7 @@ dependencies {
 }
 
 // KEY=VALUE lines from the repo-root .env, used only for keys the environment lacks.
-val dotEnv: Map<String, String> = rootDir.resolve("../../.env").takeIf { it.isFile }
+val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.isFile }   // repo root
     ?.readLines()
     ?.mapNotNull { line ->
         val trimmed = line.trim()
@@ -76,15 +76,19 @@ val dotEnv: Map<String, String> = rootDir.resolve("../../.env").takeIf { it.isFi
         else trimmed.substringBefore('=').trim() to trimmed.substringAfter('=').trim().trim('"', '\'')
     }?.toMap() ?: emptyMap()
 val offlineLicense: String = System.getenv("DITTO_OFFLINE_LICENSE") ?: dotEnv["DITTO_OFFLINE_LICENSE"] ?: ""
+// Offline licenses are bound to a database ID; pass the matching one through (optional).
+val databaseId: String? = System.getenv("DITTO_DATABASE_ID") ?: dotEnv["DITTO_DATABASE_ID"]
 
 tasks.test {
     useJUnitPlatform()
     environment("DITTO_OFFLINE_LICENSE", offlineLicense)
+    databaseId?.let { environment("DITTO_DATABASE_ID", it) }
     testLogging { events("passed", "failed", "skipped") }
 }
 
 tasks.named<JavaExec>("run") {
     environment("DITTO_OFFLINE_LICENSE", offlineLicense)
+    databaseId?.let { environment("DITTO_DATABASE_ID", it) }
 }
 
 application {

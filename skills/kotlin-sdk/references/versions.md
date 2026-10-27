@@ -51,10 +51,10 @@ KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler sho
 
 **Android + AGP 9:** AGP 9 has built-in Kotlin support enabled by default — do
 **not** apply the `org.jetbrains.kotlin.android` plugin (AGP fails the build if you
-do). The v4 harness fixture builds this way (AGP 9.4.1, no KGP applied, **executed**).
-**v5 on Android has not been executed** by this skill — the AGP 9 guidance applied to
-`com.ditto:ditto-kotlin` is **[inference]** from the v4 build plus the install guide;
-the 2.3.21 KGP pin above is JVM-verified only.
+do). Both harness legs build this way (AGP 9.4.1, no KGP applied, **executed**: v4
+4.14.7 at `compileSdk` 35; v5 5.1.0 and 5.0.3 at `compileSdk` 36, run on a Pixel 10a /
+Android 17). The 5.x AARs enforce `compileSdk` ≥ 36 through AAR metadata — a 35 build
+fails `CheckAarMetadata` (**executed**).
 
 ## Package coordinates per version line
 

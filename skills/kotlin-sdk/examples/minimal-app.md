@@ -1,5 +1,16 @@
 # Minimal app — Ditto Kotlin SDK
 
+## Contents
+
+- [What it does](#what-it-does)
+- [Dependency (v5, JVM)](#dependency-v5-jvm)
+- [Program](#program)
+- [Running it](#running-it)
+- [Expected output](#expected-output)
+- [The v4 leg (Android, 4.14.7)](#the-v4-leg-android-4147)
+- [The v5 leg on Android (5.1.0 and 5.0.3)](#the-v5-leg-on-android-510-and-503)
+- [Verified on](#verified-on)
+
 A complete, runnable program. Every line needed to build it is present: imports,
 dependency declaration, and the enclosing `main` context. The source of truth lives in
 this repository and is compiled and run:
@@ -56,13 +67,15 @@ import kotlinx.coroutines.sync.withLock
 fun main() = runBlocking {
     val license = System.getenv("DITTO_OFFLINE_LICENSE")
         ?: error("DITTO_OFFLINE_LICENSE is not set")
+    // Offline licenses are issued per database ID; use the one the license was made for.
+    val databaseId = System.getenv("DITTO_DATABASE_ID") ?: "kotlin-minimal-app"
 
     buildDir().deleteRecursively()  // deterministic output across runs
     com.ditto.kotlin.DittoLogger.isEnabled = false
 
     val ditto = DittoFactory.create(
         DittoConfig(
-            databaseId = "kotlin-minimal-app",
+            databaseId = databaseId,
             connect = DittoConfig.Connect.SmallPeersOnly(),
             persistenceDirectory = buildDir().absolutePath,
         )
@@ -160,9 +173,9 @@ differences matter (details in [../references/versions.md](../references/version
 
 ```bash
 cd tests/kotlin-sdk/android-app
-gradle installDebug -PdittoLicense="$DITTO_OFFLINE_LICENSE"
-adb -s emulator-5554 shell am start -n live.ditto.minimal/.MainActivity
-adb -s emulator-5554 logcat -d -s DittoMinimal
+./gradlew installDebug -PdittoLine=v4 -PdittoVersion=4.14.7   # license from .env or DITTO_OFFLINE_LICENSE
+adb shell am start -n live.ditto.minimal/.MainActivity
+adb logcat -d | grep DittoMinimal
 ```
 
 Actual logcat, 4.14.7, emulator `android-35` (google_apis arm64):
@@ -178,10 +191,44 @@ I DittoMinimal: EXIT=0
 Note the v4 version string is platform-tagged (`AndJ4.14.7_7506fa2fd0`), not the plain
 semver v5 prints.
 
+## The v5 leg on Android (5.1.0 and 5.0.3)
+
+The same Android project builds the v5 API with `-PdittoLine=v5` (`compileSdk` 36 — the
+5.x AARs enforce it). Its activity runs the JVM program's flow and adds two probes for
+the claims the JVM cannot answer for Android: which thread a `registerObserver` handler
+starts on, and whether `.flowOn(Dispatchers.IO)` moves an `observe()` transform.
+
+```bash
+cd tests/kotlin-sdk/android-app
+./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.1.0 -PdittoAbi=arm64-v8a
+adb shell am start -n live.ditto.minimal/.MainActivity
+adb logcat -d | grep DittoMinimal
+```
+
+Actual logcat, 5.1.0, Pixel 10a (Android 17):
+
+```
+I DittoMinimal: observer: 0 car(s) [thread=main main=true]
+I DittoMinimal: observe() transform under flowOn(IO) ran on thread=main
+I DittoMinimal: observer: 1 car(s) [thread=main main=true]
+I DittoMinimal: read-back make: Toyota
+I DittoMinimal: SDK version: 5.1.0
+I DittoMinimal: EXIT=0
+```
+
+5.0.3 prints the same lines with `SDK version: 5.0.3`. Both probes confirm
+[../references/concurrency.md](../references/concurrency.md): the handler is on the
+main thread, and `flowOn` does not reach the transform.
+
 ## Verified on
 
 | Line | Patch | Target | Host | Date |
 |---|---|---|---|---|
-| 5.1.x | 5.1.0 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2 | 2026-10-21 |
-| 5.0.x | 5.0.3 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2 | 2026-10-21 |
-| 4.14.x | 4.14.7 | Android emulator (API 35, arm64) | macOS, AGP 9.4.1 | 2026-10-21 |
+| 5.1.x | 5.1.0 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
+| 5.1.x | 5.1.0 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
+| 5.0.x | 5.0.3 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
+| 5.0.x | 5.0.3 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
+| 4.14.x | 4.14.7 | Android emulator (API 35, arm64); Pixel 10a | macOS, AGP 9.4.1, compileSdk 35 | 2026-10-27 |
+
+`5.2.0-rc.2` (not GA; not documented) also runs the JVM program and tests green, and the
+Android v5 leg on the Pixel 10a prints the same lines with `SDK version: 5.2.0-rc.2`.

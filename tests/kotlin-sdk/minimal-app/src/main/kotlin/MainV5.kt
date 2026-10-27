@@ -13,13 +13,15 @@ import kotlinx.coroutines.sync.withLock
 fun main() = runBlocking {
     val license = System.getenv("DITTO_OFFLINE_LICENSE")
         ?: error("DITTO_OFFLINE_LICENSE is not set")
+    // Offline licenses are issued per database ID; use the one the license was made for.
+    val databaseId = System.getenv("DITTO_DATABASE_ID") ?: "kotlin-minimal-app"
 
     buildDir().deleteRecursively()  // deterministic output across runs
     com.ditto.kotlin.DittoLogger.isEnabled = false
 
     val ditto = DittoFactory.create(
         DittoConfig(
-            databaseId = "kotlin-minimal-app",
+            databaseId = databaseId,
             connect = DittoConfig.Connect.SmallPeersOnly(),
             persistenceDirectory = buildDir().absolutePath,
         )
