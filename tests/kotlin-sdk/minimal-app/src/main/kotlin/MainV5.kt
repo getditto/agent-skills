@@ -1,7 +1,10 @@
+// Minimal Ditto Kotlin SDK program, v5 (JVM). Everything below the marker is the
+// program published verbatim in skills/kotlin-sdk/examples/minimal-app.md; the
+// validator fails if the two drift. Run: gradle run -PdittoVersion=5.1.0
+// MARK: - begin documented program
 import com.ditto.kotlin.DittoConfig
 import com.ditto.kotlin.DittoFactory
 import com.ditto.kotlin.Ditto
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex

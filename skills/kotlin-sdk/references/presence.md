@@ -1,8 +1,18 @@
 # Presence and connection requests — Ditto Kotlin SDK
 
-> **Sources for this file.** `sdk/latest/sync/using-mesh-presence`,
-> `sdk/latest/sync/handling-connection-requests`, and the verified
-> `sdk/latest/migration-guides/kotlin-v4` PRESENCE / PEER & CONNECTION sections.
+## Contents
+
+- [CAP-13 Presence graph and connection requests](#cap-13-presence-graph-and-connection-requests)
+  - [The graph](#the-graph)
+  - [Observing the graph](#observing-the-graph)
+  - [Local peer metadata](#local-peer-metadata)
+  - [Identity service metadata](#identity-service-metadata)
+  - [Connection requests](#connection-requests)
+  - [What works on one device vs. two](#what-works-on-one-device-vs-two)
+
+> **Sources for this file.** <https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>,
+> <https://docs.ditto.live/sdk/latest/sync/handling-connection-requests>, and the verified
+> <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> PRESENCE / PEER & CONNECTION sections.
 >
 > **Do not restate mesh formation** — that is the `ditto-mesh-networking` skill.
 
@@ -24,10 +34,10 @@ graph.serializeToJson()     // JSON String for diagnostics / a presence viewer
 ```
 
 **v4 aside:** `DittoPresenceGraph.serializeToJson()` was `DittoPresenceGraph.json()`
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 `DittoPeer` fields and their v4 spellings
-(sdk/latest/migration-guides/kotlin-v4, PEER & CONNECTION):
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, PEER & CONNECTION):
 
 | v5 | v4 | Notes |
 |---|---|---|
@@ -38,26 +48,43 @@ graph.serializeToJson()     // JSON String for diagnostics / a presence viewer
 | `identityServiceMetadata: DittoJsonSerializable.ObjectValue` | `Map<String, Any?>` | Type changed |
 | — | `queryOverlapGroup: Int` | **Removed** |
 
+Unchanged fields, for completeness: `address: DittoAddress`,
+`connections: List<DittoConnection>`, `deviceName: String`,
+`dittoSdkVersion: String?`, `isCompatible: Boolean?` (confirmed against
+`com.ditto:ditto-kotlin-android:5.1.0`).
+
 `DittoPeerOs.Tvos` is **deprecated in 5.1.0 but retained on purpose** so peers
 running older SDK versions on tvOS can still be identified in the presence graph
-(sdk/latest/release-notes-hub/kotlin). Keep handling it.
+(<https://docs.ditto.live/sdk/latest/release-notes/kotlin>). Keep handling it — and note the Kotlin
+difference from Swift: naming `DittoPeerOs.Tvos` in a `when` branch emits a
+deprecation **warning**, which breaks builds with `allWarningsAsErrors`; put
+`@Suppress("DEPRECATION")` on that `when` (or the enclosing function).
 
 `DittoConnection` simplifies in v5: `peer1` and `peer2` are now plain `String`
 peer keys (v4: deprecated `DittoPeerKey` fields plus `peerKeyString1` /
 `peerKeyString2`), and `approximateDistanceInMeters` is **removed**
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Observing the graph
 
 `presence.observe()` is **Flow-based in v5** — it returns
 `Flow<DittoPresenceGraph>` and takes no handler. Collect it in a
 `CoroutineScope`; the upstream observer is cancelled with the scope, so no
-manual `close()` is needed:
+manual `close()` is needed. On Android collect inside
+`repeatOnLifecycle(Lifecycle.State.STARTED)` so the collector stops while the
+screen is in the background (a bare `lifecycleScope.launch { collect }` runs until
+the owner is destroyed):
 
 ```kotlin
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+
 lifecycleScope.launch {
-    ditto.presence.observe().collect { graph ->
-        // graph.localPeer, graph.remotePeers
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        ditto.presence.observe().collect { graph ->
+            // graph.localPeer, graph.remotePeers
+        }
     }
 }
 ```
@@ -68,18 +95,29 @@ finalizer ran on the `FinalizerDaemon` thread and — with a custom log callback
 registered — could exceed Android's 10-second finalizer timeout, crashing with
 `java.util.concurrent.TimeoutException`. The v5 Flow API collected in
 `lifecycleScope` eliminates that hazard. `DittoPresenceObserver`,
-`DittoPresenceObserverCallback`, `DittoPeersObserver`, `ditto.observePeers()`,
-and `ditto.observePeersV2()` are all **removed**; use `presence.observe()`
-(sdk/latest/migration-guides/kotlin-v4, sdk/latest/sync/using-mesh-presence).
+`DittoPresenceObserverCallback` and `DittoPeersObserver` (all present in
+`live.ditto:ditto:4.14.0`) are **removed**, as are the legacy `observePeers()` /
+`observePeersV2()` entry points the migration guide lists (in the 4.14.0 jar those
+live on `PresenceManagerV1` / `PresenceManagerV2`; the exact v4 call path was not
+re-verified here); use `presence.observe()`
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, <https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>).
 
 ### Local peer metadata
 
 Peer metadata travels with every connection handshake and is visible to every
 peer in the mesh — keep it small and non-sensitive, especially over BLE. The SDK
 enforces a **4 KB** limit (JSON-encoded): `peerMetadataMaxSizeInBytes = 4096` in
-`InternalDittoPresence.kt`, the setters reject oversize payloads via FFI, and the
-`DittoPresence.kt` KDoc says 4 KB (**[source-verified]** — the docs page's
-"128 KB" is wrong; 128 KB is the `smallPeerInfo.metadata` limit, a different field).
+`InternalDittoPresence.kt` (constant confirmed as
+`InternalDittoPresence.peerMetadataMaxSizeInBytes = 4096` in
+`com.ditto:ditto-internal-android:5.1.0`, and the same value in
+`live.ditto:ditto:4.14.0`'s `Presence`), and the `DittoPresence.kt` KDoc says 4 KB
+(**[source-verified]** — the docs page's "128 KB" is wrong; 128 KB is the
+`smallPeerInfo.metadata` limit, a different field). An oversize payload is
+rejected at set time; **which exception type** carries that rejection is not
+verified here — `setPeerMetadata(Map)` declares `DittoException` and
+`IllegalArgumentException`, and the Swift SDK reports it as a validation
+size-limit error, so expect `DittoException.ValidationException` but confirm by
+executing before matching on it.
 
 In v5, `presence.peerMetadata` is typed `DittoJsonSerializable.ObjectValue`, so
 wrap a plain Kotlin map with `.toDittoJson()` when assigning directly, or use
@@ -110,7 +148,7 @@ method does not exist in 5.0.x/5.1.0 (**[source-verified]** against
 `peerMetadata` (an `ObjectValue`) or parse `peerMetadataJsonString`.
 `setPeerMetadata(Map)` and `peerMetadataJsonBytes` are **new in v5**. The v4
 `Presence.peerMetadataMaxSizeInBytes` companion constant is removed from the
-public API (sdk/latest/migration-guides/kotlin-v4).
+public API (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 Remote peers' metadata is read off the graph:
 
@@ -123,10 +161,10 @@ firstPeer.peerMetadata   // DittoJsonSerializable.ObjectValue
 ### Identity service metadata
 
 Set during authentication (signed by the identity server, validated by reading
-peers — see `sdk/latest/auth-and-authorization/data-authorization`). Read it
+peers — see <https://docs.ditto.live/sdk/latest/auth-and-authorization/data-authorization>). Read it
 from the graph; the Kotlin docs show no `presence.identityServiceMetadata`
 namespace property, only the graph path
-(sdk/latest/sync/using-mesh-presence):
+(<https://docs.ditto.live/sdk/latest/sync/using-mesh-presence>):
 
 ```kotlin
 ditto.presence.graph.localPeer.identityServiceMetadata
@@ -135,11 +173,15 @@ ditto.presence.graph.localPeer.identityServiceMetadata
 ### Connection requests
 
 `presence.connectionRequestHandler` is a nullable
-`DittoPresence.ConnectionRequestHandler` **fun interface**. The handler fires
+`DittoPresence.ConnectionRequestHandler` **fun interface** whose single method,
+`handleConnectionRequest(request): DittoConnectionRequestAuthorization`, is
+**`suspend`** (confirmed against `com.ditto:ditto-kotlin-android:5.1.0`) — so the
+lambda may `await` an authorization service, but it gates every connection
+handshake: keep it fast and never block in it. The handler fires
 for **both inbound and outbound** connections after the handshake completes,
 and may be updated without stopping and restarting sync — the handler version
 set before a handshake started is the one that validates that request
-(sdk/latest/sync/handling-connection-requests):
+(<https://docs.ditto.live/sdk/latest/sync/handling-connection-requests>):
 
 ```kotlin
 ditto.presence.connectionRequestHandler =
@@ -155,16 +197,16 @@ Rules that matter:
 
 - **Once a handler is set, it must always return a decision.** Leaving requests
   unanswered risks request deadlocks and connection timeouts
-  (sdk/latest/sync/handling-connection-requests).
+  (<https://docs.ditto.live/sdk/latest/sync/handling-connection-requests>).
 - `DittoConnectionRequest.peerMetadata` and `.identityServiceMetadata` are
   `DittoJsonSerializable.ObjectValue` in v5 (were `Map<String, Any?>`).
 - **v4 aside:** the v4 `presence.connectionRequestHandlerJava` /
   `DittoConnectionRequestHandlerCallback` and the
   `DittoConnectionRequestHandler` typealias are all **removed** — use the fun
-  interface directly (sdk/latest/migration-guides/kotlin-v4).
+  interface directly (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 - In 5.1.0 the `connectionRequestHandler` setter no longer leaks the previous
   handler and its captured closure on every reassignment
-  (sdk/latest/release-notes-hub/kotlin).
+  (<https://docs.ditto.live/sdk/latest/release-notes/kotlin>).
 
 ### What works on one device vs. two
 

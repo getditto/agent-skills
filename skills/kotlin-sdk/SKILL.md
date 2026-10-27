@@ -20,33 +20,31 @@ Establish the version line first (`com.ditto:ditto-kotlin` = v5, `live.ditto:dit
 v4, Android-only); emit v5 code by default and say which version you assumed. Do not
 invent APIs from memory — the v4→v5 surface changed completely.
 
-Read only the reference sections needed for the task. For long files, inspect the
-contents first and read the matching section. Do not preload all references or the
-README; the latter holds the capability/evidence map for coverage reviews.
+Read only the reference sections the task needs; inspect a long file's contents first.
+Do not preload all references or the README (the capability/evidence map).
 
 ## What this skill does
 
 Writes and reviews Ditto Kotlin code: Gradle setup, initialization, authentication,
-store access (DQL), sync, observers and Flows, attachments, presence, transports,
-object lifetimes, threading, error types, and testing. Supports **4.14.x (LTS),
-5.0.x and 5.1.x**, on **Android** (both lines) and **plain JVM** (5.x only).
+DQL store access, sync, observers and Flows, attachments, presence, transports, object
+lifetimes, threading, errors and testing. Supports **4.14.x (LTS), 5.0.x and 5.1.x** on
+**Android** (both lines) and **plain JVM** (5.x only).
 
 ## When to use this skill
 
 Use this skill for **Kotlin** Ditto code: API shape, initialization, object
 lifetimes, threading, error types, and build configuration.
 
-Hand off rather than restating. Each row names a public docs URL because the concept
-skill ships as a separate plugin and may not be installed:
+Hand off rather than restating; each row names a public URL in case the concept skill
+is not installed:
 
 | Question | Skill, if installed | Otherwise |
 |---|---|---|
-| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.live/dql/dql> |
+| DQL syntax, operators, statement semantics | `write-dql` | <https://docs.ditto.live/dql/dql> |
 | Which CRDT type, embed vs split, document size, `dql_strict_mode` | `data-modeling` | <https://docs.ditto.live/key-concepts> |
 | What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
 | Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
-
-Do **not** use this skill for other languages — each SDK has its own skill.
+| v4 → v5 migration procedure | — | <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> and <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql> |
 
 ## Supported versions and packages
 
@@ -56,10 +54,8 @@ and `live.ditto:ditto` (4.14.x, Android-only). Published API reference:
 
 **[`references/versions.md`](references/versions.md) owns every fact that differs
 across version lines**, including package coordinates per version and the minimum
-toolchain. This section is a pointer, not a claim.
-
-**When the user's version is unknown, emit 5.1.x code and say which version you
-assumed.** v4 and v5 are different APIs, not two versions of one.
+toolchain. **When the user's version is unknown, emit 5.1.x code and say which version
+you assumed.** v4 and v5 are different APIs, not two versions of one.
 
 ## Capability exceptions
 
@@ -67,13 +63,13 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 
 | ID | Capability | Support | Required caveat |
 |---|---|---|---|
-| CAP-13 | Presence graph and connection requests | partial | Graph/metadata/`observe()` are docs-verified and single-device testable; `connectionRequestHandler` only fires with a second peer — docs-sourced, not executed here. [presence.md](references/presence.md) |
-| CAP-20 | Preview and platform-specific APIs | preview | Data Streams is 5.1.0-only, Kotlin-only, behind `@OptIn(PreviewDataStreams::class)`, "breaking changes without notice"; multicast is beta. [preview.md](references/preview.md) |
+| CAP-13 | Presence graph and connection requests | partial | Graph, metadata and `observe()` are docs-verified; `connectionRequestHandler` only fires with a second peer and was not executed. [presence.md](references/presence.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | Data Streams: 5.1.0-only, Kotlin-only, `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, "breaking changes without notice". Multicast: beta from 5.1.0, off by default. [preview.md](references/preview.md) |
 
 ## Minimum viable app
 
-The shortest form that actually runs — open → subscribe → observe → write (JVM
-shown; Android differs only in that no `ditto-binaries` classifier is needed):
+Open → subscribe → observe → write (JVM shown; on Android hold the instance in
+`Application`; no `ditto-binaries` classifier is needed there):
 
 ```kotlin
 fun main() = runBlocking {
@@ -100,152 +96,60 @@ fun main() = runBlocking {
 }
 ```
 
-Complete program with dependency declaration and real run transcripts for 5.1.0,
-5.0.3 (JVM) and 4.14.7 (Android emulator):
+Complete program, dependencies and run transcripts (5.1.0/5.0.3 JVM, 4.14.7 Android):
 [`examples/minimal-app.md`](examples/minimal-app.md).
 
 ## Concurrency and threading model
 
-v5 is coroutines-native: async work is `suspend` or `Flow`, never callbacks.
+Read [concurrency.md](references/concurrency.md) for the per-API table and reasoning.
+Core constraints:
 
-- **Observer handlers run on the SDK's internal scope, which is platform-dependent**
-  (source-verified, 5.0.3/5.1.0, `dittoCoroutineScope()`): **Android = `MainScope()` —
-  your handler starts on the main thread**; JVM/iOS = `Dispatchers.Default`.
-- **Do the handler's heavy work on `Dispatchers.IO`, on every target.** It is the one
-  dispatcher safe to recommend unconditionally — on Android it is mandatory (handler
-  starts on main), and it is a real off-main pool on JVM **and** iOS.
-  **[source-verified]** `Dispatchers.IO` exists and is functional on Kotlin/Native in
-  both kotlinx-coroutines 1.9.0 (what Ditto 5.1.0 builds against —
-  `sdks/kotlin/gradle/libs.versions.toml`) and 1.10.2 (what the harness executed): a
-  public `actual val Dispatchers.IO` backed by `DefaultIoScheduler` (never the main
-  thread). So the KMP rule "always use `Dispatchers.IO`, never main" holds on
-  android, jvm and ios. Use
-  `withContext(Dispatchers.IO)` / `.flowOn(Dispatchers.IO)` for extraction and I/O,
-  then back to `Dispatchers.Main` for View/UI writes.
+- **Observer handlers start on the SDK's scope: the main thread on Android
+  (`MainScope()`), `Dispatchers.Default` on JVM** — source-verified. Treat every
+  handler as UI-thread code.
+- **Hop inside the handler**: `withContext(Dispatchers.IO)` for extraction and decode,
+  then plain data back to the UI. The result stays open while the handler is suspended.
+  **`.flowOn()` does not reach the `observe()` transform** — it runs on the SDK scope.
 - `DittoFactory.create`, `sync.start()/stop()`, `registerSubscription`,
   `registerObserver` are **not** suspend. `store.execute`, `store.collect`,
   `auth.login`, attachment fetches **are** suspend.
-- `registerObserver`/`collect` handlers are **serialized with back-pressure**: Ditto
-  produces the next event only after your handler returns, coalescing intermediate
-  changes. `observe()` hands off rendezvous-style — never add `.buffer()`; use
-  `.conflate()` for latest-only UI. Detail:
-  [references/observers.md](references/observers.md).
-- Cancelling the collecting scope (`viewModelScope`, `lifecycleScope`) closes the
-  underlying native observer — `observe()`/`collect()` need no manual cleanup.
-- `store.execute` is safe to call from any dispatcher. Do not call blocking APIs
-  from the SDK's scope.
+- Handlers are **serialized with back-pressure**: the next event is produced only after
+  the handler returns, coalescing intermediate changes. Never `launch` per event, never
+  `.buffer()`; use `.conflate()`/`stateIn` for latest-only UI, `collect()` for ordered
+  pipelines.
+- Cancelling the collecting scope (`viewModelScope`, `lifecycleScope`) closes an
+  `observe()`/`collect()` observer; a `registerObserver` handle needs `close()`.
+- `expirationHandler` is a property holding a **suspend** lambda — call `login` directly
+  in its body, never inside `launch { }`.
 
 ## Object lifetimes and retention
 
-Everything resource-like implements `DittoResource` (`AutoCloseable`); closing the
-`Ditto` instance closes its children.
-
-| Object | Keep alive by | Symptom if dropped |
-|---|---|---|
-| `Ditto` | Application-level singleton (Android) or top-level `val` (JVM) for the process lifetime | all sync, observers and subscriptions stop when it closes |
-| `DittoSyncSubscription` | retain the handle (field/collection) until you want sync of that query to stop | you can't stop it except via `ditto.sync.subscriptions`; sync continues |
-| `DittoStoreObserver` (from `registerObserver`) | retain and `close()` explicitly | observer stays active — leak; no automatic cleanup |
-| `observe()`/`collect()` Flows | collect in a lifecycle-tied scope | `GlobalScope` collection leaks for the process lifetime; an uncollected cold Flow never registers |
-| `DittoQueryResult` / items | **never retain** — closed when the handler/lambda returns | `IllegalStateException: Query result item has already been closed.` |
-| attachment fetchers | `ditto.store.attachmentFetchers` tracks in-flight fetches | see [references/attachments.md](references/attachments.md) |
+One `Ditto` per process, owned by `Application`/a DI singleton (Android) or a top-level
+holder (JVM); closing it closes every child resource. Retain `DittoSyncSubscription`
+and `registerObserver` handles so you can `close()` them; **never retain
+`DittoQueryResult` or its items** — they die when the handler returns
+(`IllegalStateException: Query result item has already been closed.`). Flows from
+`observe()`/`collect()` need no handle: the collecting scope is the lifetime. Do not
+cache `ditto.sync.subscriptions` or `ditto.store.observers`; they are live views. Handle
+table and per-component cleanup: [lifetimes.md](references/lifetimes.md).
 
 ## Anti-patterns
 
-### Returning live query results out of the handler
+Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
-```kotlin
-// WRONG
-val cars = ditto.store.observe("SELECT * FROM cars") { result -> result.items }
-```
-
-**Symptom:** `IllegalStateException: Query result item has already been closed.` —
-or, returning the `DittoQueryResult` itself, an immediate
-`"You must not return DittoQueryResult from transform function. This will cause a
-memory leak!"` (both source-verified).
-
-```kotlin
-// CORRECT — extract plain data inside the lambda
-val cars = ditto.store.observe("SELECT * FROM cars") { result ->
-    result.items.map { it.jsonString() }
-}
-```
-
-### Letting an exception escape a `registerObserver` handler
-
-```kotlin
-// WRONG — if decodeFromString throws, the SDK logs and CLOSES the observer
-val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
-    render(result.items.map { json.decodeFromString<Car>(it.jsonString()) })
-}
-```
-
-**Symptom:** updates silently stop after one bad event; only a
-`"Unhandled exception in observer event handler"` log line (source-verified:
-the SDK catches, calls `onEventHandlerException`, then closes the observer).
-
-```kotlin
-// CORRECT — catch inside; never rethrow
-val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
-    try { /* extract + render */ } catch (t: Throwable) { Log.e("cars", "event", t) }
-}
-```
-
-### Buffering an `observe()` chain
-
-```kotlin
-// WRONG
-ditto.store.observe("SELECT * FROM cars") { … }.buffer(Channel.UNLIMITED).collect { … }
-```
-
-**Symptom:** heap grows without bound under write load; UI lags further and further
-behind. `observe()` already hands off one event at a time (source-verified rendezvous
-channel) — the buffer is pure queue.
-
-```kotlin
-// CORRECT — latest-only UI
-ditto.store.observe("SELECT * FROM cars") { … }.conflate().collect { … }
-```
-
-### Launching work per event inside a handler
-
-```kotlin
-// WRONG — breaks ordering, defeats back-pressure, then crashes on closed items
-ditto.store.registerObserver("SELECT * FROM cars") { result ->
-    scope.launch { process(result.items) }
-}
-```
-
-**Symptom:** interleaved processing plus
-`IllegalStateException: Query result item has already been closed.` Do the work in
-the suspend handler — suspension is the rate limiter.
-
-### `setExpirationHandler` / `launch` around `auth.login`
-
-**Symptom:** `setExpirationHandler` **does not compile** (no such method);
-`launch { auth.login(…) }` inside the handler races and can throw
-`AuthenticationException`/`ExpirationHandlerMissing`. `expirationHandler` is a
-**property** assigned a **suspend** lambda — call `login` directly in the body.
-See [references/connect.md](references/connect.md).
-
-### Plain re-INSERT of an existing `_id`
-
-**Symptom:** `DittoException.UnknownException: <dql> Query failed: … Identifier
-conflict on document "car1": using FAIL conflict policy` (executed). INSERT defaults
-to the FAIL conflict policy — add `ON ID CONFLICT DO UPDATE` for upserts.
-
-### Missing `ditto-binaries` on JVM
-
-**Symptom:** `IllegalStateException: Unable to find binary 'libdittoall.dylib' for
-Darwin ARM64 on classpath …` on the first `DittoFactory.create` (executed). Add
-`runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` —
-[references/setup.md](references/setup.md).
-
-### Heavy decode on the Android main thread
-
-**Symptom:** dropped frames / ANR risk during sync bursts — on Android, observer
-handlers start on `MainScope()` (source-verified). Move extraction and I/O to
-`Dispatchers.IO` (works and stays off-main on Android, JVM and iOS); only plain data
-crosses back to `Dispatchers.Main`.
+- Returning `result.items` (or the result) from a handler or `observe()` transform:
+  `Query result item has already been closed.` / "You must not return DittoQueryResult".
+- An exception escaping a `registerObserver` handler: the SDK logs
+  `Unhandled exception in observer event handler` and **closes the observer**.
+- `.buffer()` on an `observe()` chain: unbounded queue, eventual OOM.
+- `scope.launch { … }` per event inside a handler: lost ordering, closed-item crashes.
+- `.flowOn(Dispatchers.IO)` to move decoding off main: no effect on the transform.
+- Casting `item.value["x"] as String`: `ClassCastException` — use `.stringOrNull` or
+  `jsonString()`.
+- `setExpirationHandler(…)` does not compile; `launch` around `auth.login` abandons it.
+- Plain `INSERT` of an existing `_id`: `Identifier conflict … FAIL conflict policy` —
+  add `ON ID CONFLICT DO UPDATE`.
+- JVM without `ditto-binaries`: `Unable to find binary 'libdittoall…'` on create.
 
 ## Version differences
 
@@ -258,27 +162,31 @@ crosses back to `Dispatchers.Main`.
 | Query model | legacy collection API (deprecated) + DQL | DQL only, via `ditto.store.execute` |
 | Observers | non-suspend callback, `DittoSignalNext` | suspend handler / `observe()` Flow / `collect()` |
 | Errors | `DittoError` | `DittoException` sealed hierarchy |
-| On-disk store | default dir `ditto` | default dir `ditto-{databaseId}` for new stores; existing v4 stores keep their layout |
+| On-disk store | default dir `ditto` | default dir `ditto-{databaseId}` for new stores; a default-path v4 store is picked up |
 
-Full delta, including on-disk store migration and the removed-API table:
-[`references/versions.md`](references/versions.md).
+Full delta, on-disk migration and removed-API table: [`references/versions.md`](references/versions.md).
 
 ## References
 
+Choose the matching row and section; alternatives, not a reading checklist.
+
 | If you need to know… | Read |
 |---|---|
-| How do I install it and what are the platform minimums? | [references/setup.md](references/setup.md) |
-| How do I open Ditto, authenticate, and start syncing? | [references/connect.md](references/connect.md) |
-| How do I change which transports are used? | [references/transports.md](references/transports.md) |
-| How do I subscribe and check sync status? | [references/sync.md](references/sync.md) |
-| How do I run DQL, transact, index, or evict? | [references/store.md](references/store.md) |
-| How do I react to data changes without polling; how do Flows, cleanup and back-pressure work? | [references/observers.md](references/observers.md) |
-| How do I store and fetch a file? | [references/attachments.md](references/attachments.md) |
-| Who else is on the mesh right now? | [references/presence.md](references/presence.md) |
-| How do I turn on logs and see disk usage? | [references/observability.md](references/observability.md) |
-| What error is this and how do I recover? | [references/errors.md](references/errors.md) |
-| How do I test code that uses Ditto? | [references/testing.md](references/testing.md) |
-| What changed between 4.14.x and 5.x, on disk and in the API? | [references/versions.md](references/versions.md) |
-| What is preview or platform-specific here? | [references/preview.md](references/preview.md) |
-| How do I generate a whole runnable Gradle project? | [references/gradle-project-generation.md](references/gradle-project-generation.md) |
+| How do I install it and what are the platform minimums? | [setup.md](references/setup.md) |
+| How do I open Ditto, authenticate, and start syncing? | [connect.md](references/connect.md) |
+| Which thread does a handler run on; how do I hop safely? | [concurrency.md](references/concurrency.md) |
+| What must I retain or close, and where? | [lifetimes.md](references/lifetimes.md) |
+| Diagnose a symptom | [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md) |
+| How do I change which transports are used? | [transports.md](references/transports.md) |
+| How do I subscribe and check sync status? | [sync.md](references/sync.md) |
+| How do I run DQL, transact, index, or evict? | [store.md](references/store.md) |
+| How do observers, Flows, diffing and back-pressure work? | [observers.md](references/observers.md) |
+| How do I store and fetch a file? | [attachments.md](references/attachments.md) |
+| Who else is on the mesh right now? | [presence.md](references/presence.md) |
+| How do I turn on logs and see disk usage? | [observability.md](references/observability.md) |
+| How do I test code that uses Ditto? | [testing.md](references/testing.md) |
+| What changed between 4.14.x and 5.x, on disk and in the API? | [versions.md](references/versions.md) |
+| What is preview or platform-specific here? | [preview.md](references/preview.md) |
+| How do I generate a whole runnable Gradle project? | [gradle-project-generation.md](references/gradle-project-generation.md) |
 | Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
+| Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled and run) |

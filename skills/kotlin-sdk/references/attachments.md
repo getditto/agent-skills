@@ -1,40 +1,72 @@
 # Attachments — Ditto Kotlin SDK
 
+## Contents
+
+- [CAP-12 Attachments](#cap-12-attachments)
+  - [Creating](#creating)
+  - [Storing it in a document](#storing-it-in-a-document)
+  - [Fetching](#fetching)
+  - [Reading the bytes — functions, not properties](#reading-the-bytes--functions-not-properties)
+  - [Fetcher tracking](#fetcher-tracking)
+  - [Updating](#updating)
+  - [Deleting](#deleting)
+  - [Sync behaviour](#sync-behaviour)
+  - [v4 → v5 at a glance](#v4--v5-at-a-glance)
+
 ## CAP-12 Attachments
 
 An attachment is created on the store, then stored *in* a document as a field. What comes
 back out of a query is a **token**, not the bytes. Attachments carry large binary payloads
 (images, PDFs, audio) outside the ~2 GB per-device key-value budget and the per-document
 size limit; when to reach for one is `data-modeling`'s topic
-(sdk/latest/crud/working-with-attachments).
+(<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>).
 
 ### Creating
 
 ```kotlin
+import android.content.ContentResolver
+import android.net.Uri
+import com.ditto.kotlin.Ditto
+
 val metadata = mapOf(
     "name" to "japan.png",
     "description" to "This is an image of a sunset in Japan."
 )
 
-ditto.store.newAttachment(attachmentPathOrInputStream, metadata).use { attachment ->
+// 1. From a file-system path — a plain (non-suspend) function.
+ditto.store.newAttachment("/path/to/japan.png", metadata).use { attachment ->
     // ...
+}
+
+// 2. From an InputStream — `suspend`; call it from a coroutine. On Android this
+//    is the overload for content:// URIs, which have no file path:
+suspend fun attachFromUri(ditto: Ditto, resolver: ContentResolver, uri: Uri) {
+    resolver.openInputStream(uri)?.use { input ->
+        ditto.store.newAttachment(input, metadata).use { attachment ->
+            // ...
+        }
+    }
 }
 ```
 
-`store.newAttachment(path, metadata)` takes a file path (or input stream) plus metadata
-(sdk/latest/crud/working-with-attachments). The returned `DittoAttachment` is a
-`DittoResource` (`AutoCloseable`) — wrap it in `.use { }` (the Java counterpart uses
-try-with-resources).
+`store.newAttachment(path: String, metadata)` is a plain function;
+`store.newAttachment(inputStream: InputStream, metadata)` is **`suspend`** (both
+confirmed against `com.ditto:ditto-kotlin-android:5.1.0` and the published API
+reference; the docs page writes a single `attachmentPathOrInputStream` placeholder
+and does not show the difference). Both take metadata as `Map<String, Any?>` or
+`DittoCborSerializable.Dictionary` (<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>). The
+returned `DittoAttachment` is a `DittoResource` (`AutoCloseable`) — wrap it in
+`.use { }` (the Java counterpart uses try-with-resources).
 
 **Metadata — stick to `Map<String, String>`.** The v5 signature accepts
 `Map<String, Any?>` or `DittoCborSerializable.Dictionary`, but the DQL
 `INSERT INTO … ATTACHMENT` layer currently only accepts **string-valued** metadata:
 non-String values fail at insert time with `attachment property 'metadata' is invalid`
-(sdk/latest/migration-guides/kotlin-v4). `Map<String, String>` satisfies both layers.
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). `Map<String, String>` satisfies both layers.
 
 There is also a blocking counterpart, `store.newAttachmentBlocking(inputStream, metadata)`,
 which in v5 only has the `DittoCborSerializable.Dictionary` metadata overload
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Storing it in a document
 
@@ -43,7 +75,7 @@ the statement — and when you declare types explicitly, the `COLLECTION` keywor
 mandatory:
 
 ```kotlin
-ditto.store.newAttachment(attachmentPathOrInputStream, mapOf("name" to "image.png"))
+ditto.store.newAttachment("/path/to/image.png", mapOf("name" to "image.png"))
     .use { attachment ->
         val document = mapOf("_id" to "123", "my_attachment" to attachment)
 
@@ -54,18 +86,18 @@ ditto.store.newAttachment(attachmentPathOrInputStream, mapOf("name" to "image.pn
     }
 ```
 
-(sdk/latest/crud/working-with-attachments)
+(<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>)
 
 ### Fetching
 
 Query the document first; the field you get back is an **attachment token** — a pointer
 (`id` = content hash, `len` = blob length in bytes, `metadata`) — not the blob
-(sdk/latest/crud/working-with-attachments).
+(<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>).
 
 In v5, `DittoQueryResultItem.value` is a `DittoCborSerializable.Dictionary`, so read the
 token with the typed accessor `.attachmentTokenOrNull` — the v4-style cast
 `item.value["my_attachment"] as Map<String, Any>` **throws at runtime**
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 `fetchAttachment` is `suspend` and returns a `DittoAttachmentFetchResult` sealed class
 with two cases, `Completed` (carries the `attachment`) and `Deleted` (the blob was removed
@@ -98,7 +130,9 @@ ditto.store.executeRaw(
     when (fetchResult) {
         is DittoAttachmentFetchResult.Completed ->
             fetchResult.attachment.use { attachment ->
-                val bytes = attachment.getData()   // ByteArray
+                // Small blob: whole thing in memory. Large blob: see "Reading the bytes".
+                val bytes: ByteArray = attachment.getData()
+                // ...decode / display `bytes` here, inside the `use` block
             }
         is DittoAttachmentFetchResult.Deleted -> {
             // Attachment was deleted while fetching
@@ -107,25 +141,35 @@ ditto.store.executeRaw(
 }
 ```
 
-(query shape and `when` from sdk/latest/crud/working-with-attachments — note the docs
+(query shape and `when` from <https://docs.ditto.live/sdk/latest/crud/working-with-attachments> — note the docs
 page still shows the v4-shaped `.use`-on-`execute` + `tokenMap` call, which does not
 compile against v5; this sample follows the 5.1.0 signatures in
-`DittoStore.kt` — **[source-verified, compile-verified]**. `.attachmentTokenOrNull`
-from sdk/latest/migration-guides/kotlin-v4)
+`DittoStore.kt` — **[source-verified, compile-verified]**, parameter names
+`token` / `tokenMap` / `onFetchProgress` also confirmed against the published 5.1.0
+API reference. `.attachmentTokenOrNull` from <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 ### Reading the bytes — functions, not properties
 
-Byte access on a `DittoAttachment` is exposed as **functions**. Use
-`attachment.getInputStream().readBytes()` or `attachment.getData()` (returns `ByteArray`).
-`attachment.data` and `attachment.inputStream` do **not** resolve as Kotlin properties and
-will not compile (sdk/latest/migration-guides/kotlin-v4).
+Byte access on a `DittoAttachment` is exposed as **functions**:
+`attachment.getData(): ByteArray`, `attachment.getInputStream(): FileInputStream`
+and `attachment.copyToPath(path: String)` (all three confirmed against
+`com.ditto:ditto-kotlin-android:5.1.0`). `attachment.data` and
+`attachment.inputStream` do **not** resolve as Kotlin properties and will not
+compile (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
+
+Pick by size. `getData()` loads the whole blob onto the JVM heap — fine for a
+thumbnail, an OOM risk for the photos, PDFs and audio attachments exist for. For
+anything large, stream it: `attachment.getInputStream().use { it.copyTo(output) }`
+(e.g. into a `FileOutputStream` or a `ContentResolver` output stream on Android), or
+`attachment.copyToPath(destinationPath)` to let the SDK copy the file for you. Do
+the copy on `Dispatchers.IO`.
 
 ### Fetcher tracking
 
 `store.attachmentFetchers` exposes the fetchers currently running (it exists in v4 too,
 `@since 4.6.0` — **[source-verified]** `DittoStore.kt`; not new in v5). The
 manual-lifecycle `DittoAttachmentFetcher` class still exists, but the suspend
-`store.fetchAttachment()` form is preferred (sdk/latest/migration-guides/kotlin-v4).
+`store.fetchAttachment()` form is preferred (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Updating
 
@@ -142,20 +186,20 @@ ditto.store.execute(
 )
 ```
 
-(sdk/latest/crud/working-with-attachments)
+(<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>)
 
 ### Deleting
 
 There is no explicit delete API. Update the document to drop the token, or `EVICT` the
 whole document; unreferenced blobs are garbage-collected on a ~10-minute cadence
-(sdk/latest/crud/working-with-attachments).
+(<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>).
 
 ### Sync behaviour
 
 Metadata syncs with the document; the blob syncs lazily over a separate protocol, and only
 when a peer explicitly fetches it. A document holding a token can replicate through a mesh
 while the blob stays behind — design for `fetchAttachment` needing a peer that actually
-has the bytes (sdk/latest/crud/working-with-attachments).
+has the bytes (<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>).
 
 ### v4 → v5 at a glance
 
@@ -168,4 +212,4 @@ has the bytes (sdk/latest/crud/working-with-attachments).
 | `store.newAttachment(path, Map<String, String>)` | `store.newAttachment(path, Map<String, Any?>)` — but see the metadata caveat above |
 | Attachment/token metadata `Map<String, String>` | `Map<String, Any?>` or `DittoCborSerializable.Dictionary` on the object; string-only at the DQL layer |
 
-(sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)

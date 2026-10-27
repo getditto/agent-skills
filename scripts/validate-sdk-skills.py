@@ -606,6 +606,9 @@ def capability_detail(text: str, cap_id: str) -> str:
 # hard-coded map silently skips any skill nobody remembered to register, and silently
 # stops checking when a fixture is renamed — both of which were demonstrated.
 FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
+# Any host-language fence counts: the guard used to look for ```swift only, so a Kotlin
+# skill with a harness and no declaration passed silently. Proven.
+CODE_FENCE_RE = re.compile(r"^```(swift|kotlin|java|cs|csharp|cpp|rust|dart|go|js|javascript|ts|typescript)\s*$", re.M)
 
 
 def within(root: str, path: str) -> bool:
@@ -773,7 +776,7 @@ def check_one_example(name: str, example: str) -> None:
     if not declaration:
         # No declaration and no harness is fine — the skill has no fixture yet. A harness
         # with no declaration is a gap, not a pass.
-        if os.path.isdir(harness) and "```swift" in text:
+        if os.path.isdir(harness) and CODE_FENCE_RE.search(text):
             fail(
                 f"{example}: {harness}/ exists but the file does not declare which "
                 f"fixture it copies. Add: This is a copy of `<path>` in the fixture."

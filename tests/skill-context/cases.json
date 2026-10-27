@@ -65,6 +65,26 @@
         "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
         "Fix isolates the model on the main actor (@MainActor) and hops to it for the assignment, or loads off-main and assigns on the main actor; no data-race workaround such as nonisolated(unsafe)"
       ]
+    },
+    {
+      "id": "kotlin_observer",
+      "prompt": "Our Android app uses com.ditto:ditto-kotlin 5.1.0. A ViewModel exposes ditto.store.observe(\"SELECT * FROM cars\") { r -> r.items.map { json.decodeFromString<Car>(it.jsonString()) } }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()), yet the list still janks during sync bursts. A second screen uses registerObserver, keeps result.items in a field for a detail view, and after one malformed document it never updated again. Explain what is wrong and give the corrected Kotlin.",
+      "review_criteria": [
+        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform — hop with withContext(Dispatchers.IO) inside the transform or handler",
+        "Never retain result.items beyond the handler; extract plain data inside the lambda (closed-item IllegalStateException)",
+        "An exception escaping a registerObserver handler closes the observer silently; catch inside, do not rethrow",
+        "Flow collected in viewModelScope/stateIn needs no manual close; a registerObserver handle must be closed explicitly",
+        "Does not recommend .buffer() or launch-per-event; latest-only UI via conflate/stateIn"
+      ]
+    },
+    {
+      "id": "kotlin_no_ditto",
+      "prompt": "Our Android notes app uses Room with Flow and Jetpack Compose, no third-party sync library. A ViewModel exposes notesDao.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList()) and the composable calls collectAsState(). Scrolling janks while the database is being written to, and the Flow keeps collecting while the app is in the background. How should we restructure the Flow and the collection?",
+      "review_criteria": [
+        "Trigger scope: the kotlin-sdk skill is not invoked and no Ditto guidance file is read for a task with no Ditto dependency",
+        "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
+        "Fix uses lifecycle-aware collection (collectAsStateWithLifecycle / repeatOnLifecycle or SharingStarted.WhileSubscribed) and keeps mapping/decoding off the main thread (flowOn/withContext on a background dispatcher for Room mapping)"
+      ]
     }
   ]
 }

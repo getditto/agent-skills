@@ -23,7 +23,8 @@ v5 API shown throughout (`com.ditto:ditto-kotlin`, imports under
 
 All store reads and writes go through `ditto.store.execute` / `executeRaw` — six
 `execute` overloads and three `executeRaw` (Map vs `Dictionary` arguments, plus
-reified `@Serializable` variants — **[source-verified]** `DittoStore.kt`). All
+reified `@Serializable` variants — **[source-verified]** `DittoStore.kt`; overload
+set confirmed against `com.ditto:ditto-kotlin-android:5.1.0`). All
 are `suspend`. The overload you pick determines the result lifecycle:
 
 ```kotlin
@@ -40,7 +41,8 @@ val color: String? = ditto.store.execute(
     query = "SELECT * FROM cars WHERE _id = :id",
     arguments = mapOf("id" to id),
 ) { result ->
-    result.items.firstOrNull()?.value?.get("color")?.stringOrNull
+    // `value` and the String subscript are non-null — no safe calls needed past the item.
+    result.items.firstOrNull()?.let { it.value["color"].stringOrNull }
 }
 
 // 3. executeRaw — manual lifecycle. YOU must close the result (use .use { }).
@@ -62,7 +64,7 @@ removed in v5 — use `runBlocking { store.execute(...) }` if you must.)
 > next access. Extract plain Kotlin data — strings, numbers, decoded data
 > classes — *inside* the lambda.
 
-(sdk/latest/crud/read, sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/crud/read>, <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 ### Binding arguments
 
@@ -98,7 +100,7 @@ ditto.store.execute("SELECT * FROM cars WHERE color = :color", CarArgs("red")) {
 Nested maps bind document-valued arguments (e.g. `INSERT INTO cars DOCUMENTS
 (:newCar)` with `mapOf("newCar" to mapOf("color" to "blue"))`).
 
-(sdk/latest/crud/read, sdk/latest/crud/create, sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/crud/read>, <https://docs.ditto.live/sdk/latest/crud/create>, <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 ### Reading values out of a result
 
@@ -146,7 +148,8 @@ val cars: List<Car> = ditto.store.execute("SELECT * FROM cars") { result ->
 ```
 
 Raw encodings are also available per item: `item.cborData(): ByteArray` and
-`item.jsonString(): String` (neither result is cached — each call re-encodes).
+`item.jsonString(): String` (inference, not verified: treat each call as
+re-encoding and hold the result rather than calling repeatedly).
 
 For write statements executed with the handler overload, read the affected IDs
 from `result.mutatedDocumentIds()` inside the lambda:
@@ -161,8 +164,8 @@ ditto.store.execute(
 }
 ```
 
-(sdk/latest/crud/read, sdk/latest/crud/create, sdk/latest/crud/delete,
-sdk/latest/migration-guides/kotlin-v4, sdk/latest/migration-guides/kotlin-dql)
+(<https://docs.ditto.live/sdk/latest/crud/read>, <https://docs.ditto.live/sdk/latest/crud/create>, <https://docs.ditto.live/sdk/latest/crud/delete>,
+<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql>)
 
 ## CAP-09 Transactions
 
@@ -206,7 +209,9 @@ Semantics to know:
   *not* abort the transaction — it keeps running.
 - **Read-only transactions.** `isReadOnly = true` allows many concurrent
   read-only transactions (including alongside a read-write one); executing a
-  mutating statement (`UPDATE`, `DELETE`, …) inside one throws:
+  mutating statement (`UPDATE`, `DELETE`, …) inside one throws
+  `DittoException.StoreException` with reason `StoreExceptionReason.TransactionReadOnly`
+  (reason class present in `com.ditto:ditto-kotlin-android:5.1.0`):
 
   ```kotlin
   ditto.store.transaction(hint = "Read-only transaction", isReadOnly = true) { transaction ->
@@ -238,15 +243,18 @@ Semantics to know:
 
 (4.14.x: `store.transaction { txn -> DittoTransactionCompletionAction.Commit }` —
 the v4 enum is `Commit` / `Rollback`; there is no `Abort` (**[source-verified]**
-v4 `DittoTransactionCompletionAction.kt` — the migration guide's "Abort" is a
-Swift-ism). v4 also had a generic value-returning `transaction` overload;
-`store.write(block)` write transactions were removed in v5.)
+v4 `DittoTransactionCompletionAction.kt`; confirmed against `live.ditto:ditto:4.14.0` —
+the migration guide's "Abort" is a Swift-ism). The enum is **still present in v5**
+(`com.ditto.kotlin.DittoTransactionCompletionAction`, `com.ditto:ditto-kotlin-android:5.1.0`)
+but `store.transaction` no longer accepts it — return `DittoTransaction.Result`
+and ignore the autocomplete suggestion. v4 also had a generic value-returning
+`transaction` overload; `store.write(block)` write transactions were removed in v5.)
 
 Replication caveat: peers whose subscriptions cover only part of a
 transaction's changes receive only that part — see the `sync-subscriptions`
 skill.
 
-(sdk/latest/crud/transactions, sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/crud/transactions>, <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 ## CAP-10 Indexing
 
@@ -273,20 +281,23 @@ ditto.store.execute("DROP INDEX idx_cars_color ON cars")
 (Composite/multi-column `CREATE INDEX` requires 5.1.x; on 4.14.x and 5.0.x only
 single-field indexes are supported.)
 
-Create indexes on fields used in observer and query `WHERE` clauses, and create
-them **before** registering the observers that rely on them — DQL observers
-supporting aggregates and projections otherwise fall back to full scans.
+Create indexes on fields used in observer and query `WHERE` clauses. (Inference,
+not documented: create them before registering the observers that rely on them;
+the docs do not state whether an already-registered observer picks up a later
+index.)
 
-For query-plan inspection, `EXPLAIN <statement>` and `EXPLAIN <statement>
-#profile` run through `execute` like any other statement; read the plan rows
-from the handler. From 5.1.x, `ADVISE <statement>` names the index a statement
+For query-plan inspection, `EXPLAIN <statement>` (plan only, nothing executes) and
+`PROFILE <select>` — or the equivalent directive
+`/*+ {"#profile": true} */ SELECT …` — run through `execute` like any other
+statement; read the plan/profile rows from the handler
+(<https://docs.ditto.live/dql/explain>, <https://docs.ditto.live/dql/profile>). From 5.1.x, `ADVISE <statement>` names the index a statement
 is missing (and `ADVISE AND PROVISION` creates it) — both are rejected by the
 parser on 4.14.x/5.0.x, so gate them on the SDK version. Which queries an index
 actually helps, composite-index column order, and EXPLAIN/ADVISE output shapes
 belong to the `write-dql` skill or <https://docs.ditto.live/dql/indexing>,
 <https://docs.ditto.live/dql/explain>, <https://docs.ditto.live/dql/advise>.
 
-(sdk/latest/migration-guides/kotlin-dql, dql/indexing, dql/explain, dql/advise)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql>, <https://docs.ditto.live/dql/indexing>, <https://docs.ditto.live/dql/explain>, <https://docs.ditto.live/dql/profile>, <https://docs.ditto.live/dql/advise>)
 
 ## CAP-17 Device storage management and eviction
 
@@ -332,5 +343,5 @@ Rules of engagement:
   disk the store is using is `ditto.diskUsage` — see
   [observability.md](observability.md) (CAP-15).
 
-(sdk/latest/sync/device-storage-management, sdk/latest/crud/delete,
-sdk/latest/migration-guides/kotlin-dql, dql/evict)
+(<https://docs.ditto.live/sdk/latest/sync/device-storage-management>, <https://docs.ditto.live/sdk/latest/crud/delete>,
+<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql>, <https://docs.ditto.live/dql/evict>)

@@ -1,5 +1,14 @@
 # Ditto Kotlin SDK Skill
 
+## Contents
+
+- [Scope](#scope)
+- [Supported versions](#supported-versions)
+- [Capability map](#capability-map)
+- [Verification](#verification)
+- [Installation](#installation)
+- [Maintenance](#maintenance)
+
 Agent skill for writing and reviewing Ditto **Kotlin** SDK code.
 
 ## Scope
@@ -12,7 +21,7 @@ in [`docs/SDK-SKILL-TEMPLATE.md`](../../docs/SDK-SKILL-TEMPLATE.md).
 
 Deliberately **out of scope** — these have their own skills:
 
-- DQL syntax and semantics → `dql`
+- DQL syntax and semantics → `write-dql`
 - CRDT type selection and document structure → `data-modeling`
 - Subscription semantics and mesh propagation → `sync-subscriptions`
 - Transport strategy and mesh formation → `ditto-mesh-networking`
@@ -76,10 +85,11 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   UInt`) are not fully shown in Kotlin docs samples; verified against
   `sdks/kotlin/api/ditto-kotlin/src/commonMain/kotlin/com/ditto/kotlin/transports/DittoTransportConfig.kt`
   at `sdk-release-5.1.0`.
-- **CAP-17 `inference`** — `sync/device-storage-management` publishes no Kotlin sample;
-  the EVICT statement itself is harness-verified DQL (`tests/dql`, 5.1.0) and the
-  Kotlin call shape is the documented `store.execute` overload. The composition was
-  not executed.
+- **CAP-17 `inference`** — `sdk/latest/sync/device-storage-management.mdx` publishes no
+  Kotlin sample; the EVICT statement is documented in `dql/evict.mdx`, and the Kotlin
+  call shape is the `execute(query, arguments)` overload in
+  `commonMain/com/ditto/kotlin/DittoStore.kt` of the published `sdk-release-5.1.0`
+  sources jar. The composition was not executed.
 - **CAP-12 `source`** — the fetch sample's v5 signatures (`executeRaw` returns the
   closeable result; `fetchAttachment(token: DittoAttachmentToken, …)` vs the
   `tokenMap: Map<String, Any>` overload) verified against
@@ -133,10 +143,20 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   (`ffi/src/store/dql/ffi_access.rs`); the 4.14.7 AAR (javap) for identity constructor
   shapes and the `live.ditto.android` package layout.
 
-**Not verified:** two-peer mesh sync (no second device run); attachments fetch
-lifecycle; transactions; Data Streams (preview); ProGuard/R8 release-build behavior;
-in-place on-disk store migration semantics on a shipped 4.14.x store; cloud
-authentication round-trip.
+- Published 5.1.0 artifacts (`ditto-kotlin-5.1.0-sources.jar`, `ditto-internal-jvm-5.1.0.jar`
+  bytecode): `collect()` registers an observer with no context switch and the FFI
+  callback launches every handler on the SDK scope, so an `observe()` transform runs on
+  that scope and `.flowOn()` does not reach it
+  ([`references/concurrency.md`](references/concurrency.md#why-flowon-does-not-move-the-observe-transform)).
+  `sync.subscriptions` / `store.observers` are delegated live views, not snapshots.
+
+**Not verified:** **v5 on Android** — every Android run used 4.14.7; the 5.x runs are
+JVM-only, so the Android-specific v5 claims (handlers on `MainScope()`, AGP 9 built-in
+Kotlin, permissions helper) are source- or docs-sourced, not executed; two-peer mesh
+sync (no second device run); attachments fetch lifecycle; transactions; Data Streams
+(preview); ProGuard/R8 release-build behavior; in-place on-disk store migration
+semantics on a shipped 4.14.x store; cloud authentication round-trip; the `flowOn`
+finding above (bytecode-read, not executed).
 
 **Last verified:** 2026-10-21.
 

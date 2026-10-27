@@ -1,7 +1,7 @@
 {
   "name": "ditto-plugins",
   "interface": {
-    "displayName": "Ditto Swift"
+    "displayName": "Ditto"
   },
   "plugins": [
     {
@@ -9,6 +9,18 @@
       "source": {
         "source": "local",
         "path": "./plugins/ditto-swift"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "ditto-kotlin",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ditto-kotlin"
       },
       "policy": {
         "installation": "AVAILABLE",

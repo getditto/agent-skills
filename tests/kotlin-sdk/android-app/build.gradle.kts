@@ -28,11 +28,11 @@ android {
         buildConfig = true
     }
 
-    buildTypes {
-        debug {
-            val license = providers.gradleProperty("dittoLicense").orElse("").get()
-            buildConfigField("String", "DITTO_LICENSE", "\"$license\"")
-        }
+    // Declared in defaultConfig so every variant compiles; `assembleRelease` used to
+    // fail with an unresolved BuildConfig.DITTO_LICENSE when this lived under `debug`.
+    defaultConfig {
+        val license = providers.gradleProperty("dittoLicense").getOrElse("")
+        buildConfigField("String", "DITTO_LICENSE", "\"$license\"")
     }
 }
 

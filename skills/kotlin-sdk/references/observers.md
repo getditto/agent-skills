@@ -1,8 +1,21 @@
 # Observers, Flows and back-pressure — Ditto Kotlin SDK
 
-> **Sources for this file.** `sdk/latest/crud/observing-data-changes` and the
+## Contents
+
+- [The three observer shapes](#the-three-observer-shapes)
+- [Choosing a shape](#choosing-a-shape)
+- [The critical memory rule: extract inside the lambda](#the-critical-memory-rule-extract-inside-the-lambda)
+- [Exceptions kill observers](#exceptions-kill-observers)
+- [Threads: where the handler runs](#threads-where-the-handler-runs)
+- [Back-pressure: what the source actually does](#back-pressure-what-the-source-actually-does)
+- [Flow lifecycle: cancellation destroys the native observer](#flow-lifecycle-cancellation-destroys-the-native-observer)
+- [Diffing with `DittoDiff`](#diffing-with-dittodiff)
+- [Query constraints](#query-constraints)
+- [Migrating from v4](#migrating-from-v4)
+
+> **Sources for this file.** <https://docs.ditto.live/sdk/latest/crud/observing-data-changes> and the
 > `OBSERVERS` / `Observer Changes` / `Back-pressure` blocks in
-> `sdk/latest/migration-guides/kotlin-v4`. Sections marked **[source-verified]** were
+> <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>. Sections marked **[source-verified]** were
 > checked against the SDK source at tags `sdk-release-5.1.0` / `sdk-release-5.0.3`
 > (`sdks/kotlin/api/ditto-kotlin`, `sdks/kotlin/ditto-internal`) — where docs and
 > source disagree, this file follows the source and says so. DQL semantics belong to
@@ -18,7 +31,7 @@ first; this file is the detail.
 ### The three observer shapes
 
 v5 replaces v4's single callback model with three shapes, all under `ditto.store`
-(sdk/latest/migration-guides/kotlin-v4). The handler is `suspend`; the
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). The handler is `suspend`; the
 `DittoQueryResult` is managed by the observer (auto-closed when the lambda returns),
 so you do **not** need a `use { }` block.
 
@@ -38,7 +51,7 @@ val observer = ditto.store.registerObserver(
 ```
 
 Returns a `DittoStoreObserver` — you own it and must call `observer.close()` when done
-(sdk/latest/crud/observing-data-changes). It stays active until you close it or the
+(<https://docs.ditto.live/sdk/latest/crud/observing-data-changes>). It stays active until you close it or the
 owning `Ditto` instance is closed.
 
 **2. `observe` — cold `Flow<T>`, scope-managed lifetime:**
@@ -78,7 +91,7 @@ lifecycleScope.launch {
 ```
 
 Ditto only signals the core to produce the next event after the handler returns —
-coroutine suspension *is* the back-pressure (sdk/latest/migration-guides/kotlin-v4).
+coroutine suspension *is* the back-pressure (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Choosing a shape
 
@@ -109,7 +122,7 @@ IllegalStateException: Query result item has already been closed.
 ```
 
 (exact string, `InternalDittoQueryResultItem.getPointer()` — **[source-verified]**;
-also in sdk/latest/migration-guides/kotlin-v4). Treat results like database cursors:
+also in <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). Treat results like database cursors:
 extract immediately; never keep live references between emissions.
 
 Two extraction paths, both inside the lambda:
@@ -126,7 +139,7 @@ val colors = result.items.map { it.value["color"].stringOrNull ?: "unknown" }
 Do **not** cast `item.value["field"] as SomeType` — in v5 `value` is a
 `DittoCborSerializable.Dictionary`, not a `Map<String, Any>`, and the cast throws at
 runtime. Use the typed accessors or `jsonString()`. Full detail:
-[store.md](store.md) (sdk/latest/migration-guides/kotlin-v4).
+[store.md](store.md) (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 The same rule applies to the `observe()` transform: it must return plain Kotlin data.
 Returning the `DittoQueryResult` itself from the transform throws immediately —
@@ -158,40 +171,18 @@ inside, as in shape 1 above, and do NOT rethrow (rethrowing closes the observer)
 For `observe()`, decide explicitly whether a terminated stream should be re-collected
 (`retryWhen`) — Flows do not restart themselves.
 
-### Threads: Android handlers start on the main thread
+### Threads: where the handler runs
 
-**[source-verified]** — the dispatcher your handler starts on is platform-dependent
-(`dittoCoroutineScope()`, 5.0.3 and 5.1.0):
+**[source-verified]** every handler — `registerObserver`, `collect`, and the `observe()`
+transform — is launched on the SDK's scope: **`MainScope()` on Android (the main
+thread)**, `Dispatchers.Default` on JVM and iOS. Per-API table, the `Dispatchers.IO`
+rationale and the scope-override option: [concurrency.md](concurrency.md#where-each-callback-runs).
 
-| Target | SDK-internal scope | Handler starts on |
-|---|---|---|
-| Android | `MainScope()` | **the main thread** |
-| JVM | `Dispatchers.Default` | a background pool thread |
-| iOS (KMP) | `Dispatchers.Default` | a background pool thread |
+Consequences for observers:
 
-**Do the handler's heavy work on `Dispatchers.IO`, on every target** — it is the one
-dispatcher safe to recommend unconditionally:
-
-- **Android** — a real off-main elastic pool; mandatory, since the handler starts on
-  `MainScope()` (main thread).
-- **JVM** — same real elastic pool; off-main.
-- **iOS (KMP)** — `Dispatchers.IO` **exists and is functional on Native** in both
-  kotlinx-coroutines 1.9.0 (what Ditto 5.1.0 builds against) and 1.10.2 (what the
-  harness executed). **[source-verified]** in
-  `kotlinx-coroutines-core/native/src/Dispatchers.kt` (both versions): a public
-  `actual val Dispatchers.IO` backed by `DefaultIoScheduler` (2048-thread pool,
-  `limitedParallelism(64)`) — never the main thread.
-
-So the KMP-wide rule holds: **`Dispatchers.IO` always works and never runs on main, on
-all three targets.** iOS nuance: there `IO` is a *separate* pool that does not share
-threads with `Dispatchers.Default` (on JVM/Android they multiplex one pool) — prefer
-`IO` over `Default` for observer/decode work so behavior doesn't diverge per platform.
-
-Consequences:
-
-- **On Android, heavy work inside the handler janks the UI** unless you hop. Decoding
-  hundreds of documents with `jsonString()`/kotlinx-serialization is CPU work — move
-  it to `Dispatchers.IO`, then back for the UI update:
+- **On Android, heavy work inside the handler janks the UI** unless you hop. The handler
+  is `suspend` and the result stays open while it is suspended, so move decode to
+  `Dispatchers.IO` and come back:
 
 ```kotlin
 val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
@@ -204,15 +195,17 @@ val observer = ditto.store.registerObserver("SELECT * FROM cars") { result ->
 
   Extraction from another dispatcher *inside* the handler is safe: the result is only
   closed when the handler returns, and item materialization is internally synchronized.
-- With `observe()`, the equivalent is `.flowOn(Dispatchers.IO)` upstream of
-  collection.
+- **With `observe()`, hop inside the transform the same way.** `.flowOn(Dispatchers.IO)`
+  on the returned Flow does **not** move the transform: it runs inside the SDK-launched
+  handler, not in the Flow's producer
+  ([why](concurrency.md#why-flowon-does-not-move-the-observe-transform)).
 - On JVM the reverse caution applies: never touch Swing/Compose-desktop UI state
   directly from the handler; hop to the UI dispatcher.
 - `DittoFactory.create(config, coroutineScope = …)` overrides the scope — but the SDK
   **detaches your scope's `Job`** (unparented `SupervisorJob()`, **[source-verified]**
   `InternalDittoResource.kt`): cancelling it does NOT cancel observers; `ditto.close()` does.
 
-This replaces v4's `runOnUiThread { ... }` (sdk/latest/migration-guides/kotlin-v4).
+This replaces v4's `runOnUiThread { ... }` (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Back-pressure: what the source actually does
 
@@ -224,13 +217,13 @@ returns and the query result is closed.
 
 > **Coalescing**: changes that occur while your handler is running are merged — the
 > next callback delivers the **latest state, not every intermediate change**
-> (sdk/latest/migration-guides/kotlin-v4). Never treat deliveries as an event log;
+> (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). Never treat deliveries as an event log;
 > your handler must be correct against "latest state".
 
 **`observe()` — the docs overstate the risk; the source is more precise.** The
 migration guide says `observe()` "does not back-pressure" because the Flow "signals
 Ditto to produce the next event right after emitting succeeds"
-(sdk/latest/migration-guides/kotlin-v4). **[source-verified]** the implementation
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). **[source-verified]** the implementation
 (`InternalDittoStore.observe`, 5.0.3 and 5.1.0) is `callbackFlow { collect(…) { result
 -> send(transform(result)) } }.buffer(Channel.RENDEZVOUS)`.
 
@@ -280,9 +273,10 @@ The idiomatic Android patterns that get this right:
 class CarsViewModel(private val ditto: Ditto) : ViewModel() {
     val cars: StateFlow<List<Car>> = ditto.store
         .observe("SELECT * FROM cars ORDER BY make") { result ->
-            result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
+            withContext(Dispatchers.IO) {     // decode off the main thread (see Threads)
+                result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }
+            }
         }
-        .flowOn(Dispatchers.IO)               // decode off the main thread (see Threads)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     // viewModelScope cancellation closes the observer — nothing else to do.
 }
@@ -296,39 +290,14 @@ re-created when it starts again.
 Anti-pattern: `observe()` collected with `GlobalScope.launch { … }` (leaks the observer
 for the process lifetime) or stored in a `val` and never collected (the Flow is **cold**
 — nothing registers until collection). Introspect live registrations with
-`ditto.store.observers` (sdk/latest/crud/observing-data-changes).
+`ditto.store.observers` (<https://docs.ditto.live/sdk/latest/crud/observing-data-changes>).
 
-### Common client mistakes
-
-Seen in the field; each maps to a rule above:
-
-1. **`IllegalStateException: Query result item has already been closed.`** — escaping
-   `result.items`: storing them, returning them from the `observe()` transform, or
-   reading them in a coroutine launched from the handler. Fix: extract to plain Kotlin
-   data inside the lambda.
-2. **Observer silently stops after one bad event** — an exception escaped a
-   `registerObserver` handler; the SDK logged it and closed the observer. Fix:
-   try/catch inside the handler.
-3. **UI jank on every sync burst (Android)** — heavy deserialization ran on the main
-   thread (Android handlers start on `MainScope()`). Fix: `withContext(
-   Dispatchers.IO)` for extraction or `.flowOn(Dispatchers.IO)`.
-4. **Memory climbs until OOM under write load** — `.buffer()` on an `observe()` chain
-   decoupled the producer from a slow collector. Fix: remove the buffer; use
-   `.conflate()` or `collect()`.
-5. **`scope.launch { process(result) }` per event** — breaks ordering, defeats
-   back-pressure, *and* trips mistake #1 when the launched coroutine reads the items
-   after the handler returned. Fix: do the work in the suspend handler; suspension is
-   the rate limiter.
-6. **Leaked observers** — `registerObserver` handle dropped without `close()`, or
-   `observe()` collected in `GlobalScope`. Fix: close the handle, or collect in
-   `viewModelScope`/`lifecycleScope`.
-7. **Expecting every intermediate state** — observers coalesce while your handler runs;
-   deliveries are "latest state", not a change log. Fix: derive progress/history from
-   your own writes, not from observer emissions.
+Wrong/right forms for the mistakes seen in the field are collected in
+[anti-patterns.md](anti-patterns.md).
 
 ### Diffing with `DittoDiff`
 
-Available from v4.11+ (sdk/latest/crud/observing-data-changes). All three observer
+Available from v4.11+ (<https://docs.ditto.live/sdk/latest/crud/observing-data-changes>). All three observer
 shapes have an overload whose lambda takes a second `DittoDiff` parameter:
 
 ```kotlin
@@ -355,7 +324,7 @@ val observer = ditto.store.registerObserver("SELECT * FROM cars") { result, diff
 indices) plus `moves: List<DittoDiff.Move>` (index pairs for items that changed
 position). The differ deep-compares each item's **value**; it does not give you the old
 and new items — retain whatever you need (e.g. the IDs above) yourself
-(sdk/latest/crud/observing-data-changes).
+(<https://docs.ditto.live/sdk/latest/crud/observing-data-changes>).
 
 **v5 change:** the standalone `com.ditto.kotlin.DittoDiffer()` is no longer
 user-constructible — its lifecycle is managed by the SDK (**[source-verified]**:
@@ -363,9 +332,9 @@ created as a child of the `Ditto` instance, closed in the observer's `onClose` �
 `InternalDittoStore.kt`). Migrating manual
 `DittoDiffer().diff(result.items)` code means switching to the `(result, diff)`
 overload, which also closes a v4 native-memory leak footgun
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
-Costs, stated plainly (sdk/latest/crud/observing-data-changes):
+Costs, stated plainly (<https://docs.ditto.live/sdk/latest/crud/observing-data-changes>):
 
 - **Memory.** The differ keeps the previous result set in memory — two result sets'
   worth of state for the observer's lifetime. Opt in only where you consume the diff.
@@ -383,11 +352,11 @@ not observable statements. For DQL semantics see the `write-dql` skill or
 ### Migrating from v4
 
 Short asides only — the extended tables live in [versions.md](versions.md)
-(sdk/latest/migration-guides/kotlin-v4):
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>):
 
 - **v4's `registerObserver` callback was not `suspend`.** v5 handlers are `suspend`;
   replace `runOnUiThread { ... }` with `withContext(Dispatchers.Main)` — but read
-  [Threads](#threads-android-handlers-start-on-the-main-thread) first: on Android the
+  [Threads](#threads-where-the-handler-runs) first: on Android the
   handler already starts on the main thread; the hop you usually need is *off* it.
 - **`DittoSignalNext` back-pressure is removed.** v4's
   `registerObserver(query, args) { result, signalNext -> }` overload and the

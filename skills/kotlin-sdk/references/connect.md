@@ -15,7 +15,7 @@ collected at the bottom of this file; broader version deltas live in
 
 Initialization is **four separate phases** — configure, initialize,
 authenticate, start sync — not a constructor that does everything
-(sdk/latest/migration-guides/kotlin-v4):
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>):
 
 ```kotlin
 import com.ditto.kotlin.*
@@ -60,7 +60,7 @@ Details that cost a build or a support ticket if missed:
   location — the SDK passes a `legacyPersistenceDirectoryPath` fallback
   (`<defaultRoot>/ditto`) to the core (**[source-verified]**
   `InternalDittoFactory.kt`). Pass the old path explicitly only if v4 used a
-  **custom** directory (sdk/latest/migration-guides/kotlin-v4):
+  **custom** directory (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>):
 
   ```kotlin
   val ditto = DittoFactory.create(
@@ -78,7 +78,7 @@ Details that cost a build or a support ticket if missed:
 ### Offline-only instances
 
 `DittoConfig.Connect.SmallPeersOnly(privateKey = null)` opens an instance with
-no server connection (sdk/latest/migration-guides/kotlin-v4). It needs an
+no server connection (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). It needs an
 offline license token before it will accept work — see
 [CAP-04](#offline-license-token). An optional `privateKey` enables SharedKey
 mesh authentication (see the v4 mapping table below).
@@ -89,11 +89,11 @@ mesh authentication (see the v4 mapping table below).
 application context itself through `DittoInitializer`, an AndroidX App Startup
 initializer shipped in the SDK's manifest and applied by manifest merger.
 **Remove any manual `DittoInitializer` entries from your `AndroidManifest.xml`**
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 "Autonomous context" does not mean "create it anywhere": hold the instance at
 the **Application level** so exactly one survives for the app's lifetime
-(sdk/latest/install-guides/kotlin):
+(<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```kotlin
 class MyApplication : Application() {
@@ -155,7 +155,7 @@ This section is the Kotlin mechanics.
 
 `ditto.auth` is `null` when the instance uses `DittoConfig.Connect.SmallPeersOnly`
 and non-null for `Connect.Server`. Guard every access with `?.let { }`
-(sdk/latest/install-guides/kotlin).
+(<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
 
 ### The expiration handler is a property holding a suspend lambda
 
@@ -175,7 +175,7 @@ ditto.sync.start()
 `expirationHandler` receives `(ditto: Ditto, timeUntilExpiration: Double)`.
 `timeUntilExpiration == 0.0` means initial authentication or an expired token;
 `> 0` means the token expires soon — refresh
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 Three syntax rules, each a top v4→v5 migration failure:
 
@@ -200,11 +200,11 @@ Three syntax rules, each a top v4→v5 migration failure:
 - `auth.login(token, provider)` is **suspend** — no callback parameter. It
   returns the webhook's `clientInfo` JSON as a `String?` and throws
   `DittoException.AuthenticationException` on failure
-  (sdk/latest/auth-and-authorization/cloud-authentication).
+  (<https://docs.ditto.live/sdk/latest/auth-and-authorization/cloud-authentication>).
 - Providers: `DittoAuthenticationProvider.development()` for portal playground
   tokens; `DittoAuthenticationProvider.custom("provider-name")` for a webhook
   provider registered in the portal. The string must match the provider **Name**
-  in the portal (sdk/latest/auth-and-authorization/cloud-authentication).
+  in the portal (<https://docs.ditto.live/sdk/latest/auth-and-authorization/cloud-authentication>).
 - `auth.observeStatus()` returns `StateFlow<DittoAuthenticationStatus>` —
   collect it in a coroutine scope; the v4 status-change callback interface is
   removed.
@@ -251,12 +251,12 @@ never fire. **v4:** `ditto.startSync()` /
 `ditto.stopSync()` / `ditto.isSyncActive`, catching `DittoError`.
 
 Start sync in the top-most scope of the app and leave it on for the app's
-lifetime (sdk/latest/sync/syncing-data). Stopping sync pauses subscriptions and
+lifetime (<https://docs.ditto.live/sdk/latest/sync/syncing-data>). Stopping sync pauses subscriptions and
 disconnects from peers but does not close the local store — it is the switch
 for a "work offline" mode, not instance teardown. On Android, the optional
 `DefaultDittoForegroundService` (declared in the manifest) is automatically
 started and stopped on `sync.start()`/`sync.stop()` so sync continues in the
-background (sdk/latest/install-guides/kotlin).
+background (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
 
 ### Activation state
 
@@ -266,7 +266,7 @@ background (sdk/latest/install-guides/kotlin).
 ### Shutdown
 
 `Ditto` implements `DittoResource`, which extends `AutoCloseable`
-(sdk/latest/migration-guides/kotlin-v4): call `ditto.close()` when a
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>): call `ditto.close()` when a
 short-lived instance is done — test harnesses, CLI tools, a second per-user
 instance. In an app you normally never call it: the instance is a singleton
 held for the whole process lifetime and dies with the process. Only one live
@@ -303,7 +303,7 @@ diagnostic logging. **v4:** it was the instance property `ditto.sdkVersion`.
 v4 initialization mixed everything into a `Ditto(dependencies, identity)`
 constructor with `live.ditto.android.DefaultAndroidDittoDependencies(context)` and a
 `DittoIdentity` sealed class — all removed in v5
-(sdk/latest/migration-guides/kotlin-v4; package layout javap-verified at 4.14.7).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>; package layout javap-verified at 4.14.7).
 Note the v4 quirk that identities **capture the dependencies object**:
 `DittoIdentity.OfflinePlayground(dependencies, appId = "…")` — the dependencies are
 the first constructor argument, not optional (javap-verified, 4.14.7):

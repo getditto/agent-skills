@@ -1,9 +1,9 @@
 # Versions and migration — Kotlin
 
-> **Sources for this file.** `sdk/latest/migration-guides/kotlin-v4` (API migration)
-> and `sdk/latest/migration-guides/kotlin-dql` (query migration — a separate guide),
-> `sdk/latest/v5-whats-new`, `sdk/latest/release-notes/kotlin`,
-> `sdk/latest/compatibility/kotlin`, `sdk/v4/install-guides/kotlin`. Facts marked
+> **Sources for this file.** <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> (API migration)
+> and <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql> (query migration — a separate guide),
+> <https://docs.ditto.live/sdk/latest/v5-whats-new>, <https://docs.ditto.live/sdk/latest/release-notes/kotlin>,
+> <https://docs.ditto.live/sdk/latest/compatibility/kotlin>, <https://docs.ditto.live/sdk/v4/install-guides/kotlin>. Facts marked
 > **executed** were run against the real artifact at the named patch version (see
 > `examples/minimal-app.md`); facts marked **javap/source-verified** were checked
 > against the published artifact or `ditto` repo at `sdk-release-4.14.7` /
@@ -11,7 +11,18 @@
 >
 > This file is the **single source of truth** for version claims in this skill,
 > including package coordinates per version line (`setup.md` shows only the v5 form).
-> Any inline tag elsewhere must agree with it. See `CONTRIBUTING.md` §2.
+> Any inline tag elsewhere must agree with it.
+
+## Contents
+
+- [Supported versions](#supported-versions)
+- [Package coordinates per version line](#package-coordinates-per-version-line)
+- [Capability availability matrix](#capability-availability-matrix)
+- [CAP-19 v4 to v5 migration](#cap-19-v4-to-v5-migration)
+  - [On-disk store migration](#on-disk-store-migration)
+  - [Removed APIs](#removed-apis)
+  - [New in v5](#new-in-v5)
+  - [Migration checklist](#migration-checklist)
 
 ## Supported versions
 
@@ -22,26 +33,35 @@
 | 4.14.x | 4.14.7 | 4.14.7 — executed (Android emulator, API 35) | LTS |
 
 **Kotlin toolchain:** docs say Kotlin 2.0+ (Ditto supports the four most recent stable
-releases, N−4) and JDK 17 (sdk/latest/compatibility/kotlin,
-sdk/latest/install-guides/kotlin). **Executed floor is higher than the docs imply:**
-the published artifacts embed Kotlin metadata 2.0.x (5.1.0) / 2.1.x (5.0.3)
-(**[source-verified]**: `kotlin.Metadata mv=[2,0,0]` / `mv=[2,1,0]` in the jars), and
-the harness failed to compile 5.0.3 under the Kotlin 2.0.x plugin (a 2.0 compiler
-cannot read 2.1 metadata). The executed-working pin is Kotlin Gradle plugin
-**2.3.21** with `kotlinx-coroutines-core:1.10.2`; treat 2.1+ as the practical
-minimum for v5 until a wider matrix is executed.
+releases, N−4) and JDK 17 (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>,
+<https://docs.ditto.live/sdk/latest/install-guides/kotlin>). **The published artifacts set a higher floor for
+5.1.x** (**[api-dump]** Maven Central POMs, `com/ditto/ditto-kotlin-jvm/<v>/`):
+
+| Artifact | `kotlin-stdlib` | `kotlinx-coroutines-core` |
+|---|---|---|
+| `ditto-kotlin-jvm` / `-android` 5.1.0 | **2.3.21** | 1.9.0 |
+| `ditto-kotlin-jvm` 5.0.3 | 2.1.0 | 1.10.1 |
+
+The Kotlin compiler reads class metadata at most one minor version newer than itself
+(N+1), so the practical floor is **KGP ≥ 2.2 for 5.1.0** and 2.0 for 5.0.3. The
+executed-working pin is Kotlin Gradle plugin **2.3.21** with
+`kotlinx-coroutines-core:1.10.2` (JVM). The harness also failed to compile 5.0.3 under
+KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler should read
+2.1 metadata under the N+1 rule — so do not quote that failure as the floor.
 
 **Android + AGP 9:** AGP 9 has built-in Kotlin support enabled by default — do
 **not** apply the `org.jetbrains.kotlin.android` plugin (AGP fails the build if you
-do). The v4 harness fixture builds this way (AGP 9.4.1, no KGP applied); the
-2.3.21 KGP pin above is JVM-verified only — v5 on Android has not been executed yet.
+do). The v4 harness fixture builds this way (AGP 9.4.1, no KGP applied, **executed**).
+**v5 on Android has not been executed** by this skill — the AGP 9 guidance applied to
+`com.ditto:ditto-kotlin` is **[inference]** from the v4 build plus the install guide;
+the 2.3.21 KGP pin above is JVM-verified only.
 
 ## Package coordinates per version line
 
 | Line | Coordinate | Notes |
 |---|---|---|
 | 5.0.x / 5.1.x | `com.ditto:ditto-kotlin:<version>` | KMP root module; Gradle resolves the `-android` or `-jvm` variant from the consuming project |
-| 5.0.x / 5.1.x, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers: `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64`. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
+| 5.0.x / 5.1.x, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers published for 5.1.0 (**[api-dump]** Maven Central `com/ditto/ditto-binaries/5.1.0/`): `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64` — there is **no `macos-x64`**, so Intel Macs cannot run the JVM target. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
 | 4.14.x | `live.ditto:ditto:<version>` | AAR, **Android-only**. There is no 4.14.x JVM artifact (`live.ditto:ditto-jvm` stalled at `4.11.0-preview.1`); the `com.ditto:ditto-kotlin` coordinate does not exist for 4.14.x |
 
 Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
@@ -67,7 +87,7 @@ Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
 
 `live.ditto.*` → `com.ditto.kotlin.*` (transports live in
 `com.ditto.kotlin.transports.*`; DittoTools 6 in `com.ditto.tools.*`). Replace imports
-by package family (sdk/latest/migration-guides/kotlin-v4).
+by package family (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 ### Initialization and identity
 
@@ -114,7 +134,7 @@ protocol flag no longer exists.
 the workaround is removed. **If the v4 app relied on strict-mode semantics**, set
 `ALTER SYSTEM SET DQL_STRICT_MODE = true` via `store.execute` *before* `sync.start()`
 when migrating, then plan the lenient migration mesh-wide
-(sdk/latest/migration-guides/kotlin-v4). The type-inference semantics are owned by the
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). The type-inference semantics are owned by the
 `data-modeling` skill — <https://docs.ditto.live/key-concepts>.
 
 ### Authentication
@@ -136,7 +156,7 @@ args?)` only. Subscriptions reject `LIMIT`/`ORDER BY` with
 The legacy collection API (`ditto.store["col"].find/upsert/…`) is removed; all access
 is DQL through `ditto.store.execute`. The query-side delta (type inference, `DOCUMENTS`
 vs `COLLECTION`, strict mode) is a separate guide:
-`sdk/latest/migration-guides/kotlin-dql`, and semantics are owned by the `dql` skill —
+<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-dql>, and semantics are owned by the `dql` skill —
 <https://docs.ditto.live/dql/dql>. Kotlin call shapes: [store.md](store.md).
 
 ### Observers
@@ -148,7 +168,7 @@ thread) — [observers.md](observers.md).
 
 ### On-disk store migration
 
-What is documented (sdk/latest/migration-guides/kotlin-v4, "Default Persistence
+What is documented (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, "Default Persistence
 Directory"):
 
 - v5's default directory name includes the database ID: `ditto-{databaseId}` instead
@@ -209,11 +229,12 @@ the v5 upgrade.)
 
 ### Migration checklist
 
-Condensed from `sdk/latest/migration-guides/kotlin-v4` (which has the full list):
+Condensed from <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> (which has the full list):
 
 - [ ] `live.ditto.*` → `com.ditto.kotlin.*`; coordinate `live.ditto:ditto` →
-      `com.ditto:ditto-kotlin`; raise `minSdk` to 24 if lower; Kotlin plugin to 2.3.x
-      (executed floor).
+      `com.ditto:ditto-kotlin`; raise `minSdk` to 24 if lower; Kotlin plugin to ≥ 2.2
+      for 5.1.0 (its artifacts depend on `kotlin-stdlib` 2.3.21 — see *Kotlin
+      toolchain* above; 2.3.21 is the executed pin).
 - [ ] `Ditto(deps, identity)` → `DittoFactory.create(DittoConfig(databaseId, connect))`;
       delete the dependencies/identity types.
 - [ ] Delete `disableSyncWithV3()`, `runGarbageCollection()`,

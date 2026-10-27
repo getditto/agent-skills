@@ -1,10 +1,16 @@
 import com.ditto.kotlin.Ditto
 import com.ditto.kotlin.DittoConfig
 import com.ditto.kotlin.DittoFactory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlin.test.assertNotEquals
+import kotlin.time.Duration.Companion.seconds
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -71,6 +77,43 @@ class DittoStoreTest {
             val seen = withTimeout(10_000) { counts.first { it == 1 } }
             assertEquals(1, seen)
         } finally {
+            ditto.close()
+        }
+    }
+
+    // The idiomatic alternative documented in references/testing.md: stay on runTest
+    // but wait on a dispatcher that does not use the virtual-time scheduler, so the
+    // timeout is real time. runTest's own `timeout` is real time as well.
+    @Test
+    fun observerReportsTheWriteUnderRunTest() = runTest(timeout = 30.seconds) {
+        val ditto = makeDitto()
+        try {
+            val counts = ditto.store.observe("SELECT * FROM cars") { result -> result.items.size }
+            ditto.store.execute("INSERT INTO cars DOCUMENTS (:doc)", mapOf("doc" to mapOf("_id" to "car1")))
+            val seen = withContext(Dispatchers.Default) { withTimeout(10_000) { counts.first { it == 1 } } }
+            assertEquals(1, seen)
+        } finally {
+            ditto.close()
+        }
+    }
+
+    // references/concurrency.md: `.flowOn()` does not reach the observe() transform.
+    // The transform runs inside the SDK-launched handler (SDK scope), not in the
+    // callbackFlow producer that flowOn moves. A dedicated single thread makes the
+    // check deterministic: if flowOn reached the transform, the thread name would match.
+    @Test
+    fun flowOnDoesNotReachTheObserveTransform() = runBlocking {
+        val ditto = makeDitto()
+        val probe = newSingleThreadContext("flowOn-probe")
+        try {
+            val threadNames = ditto.store.observe("SELECT * FROM cars") { _ -> Thread.currentThread().name }
+                .flowOn(probe)
+            val transformThread = withTimeout(10_000) { threadNames.first() }
+            assertNotEquals("flowOn-probe", transformThread, "transform ran on the flowOn dispatcher")
+            // On JVM the SDK scope is Dispatchers.Default — a shared-pool worker thread.
+            assert(transformThread.startsWith("DefaultDispatcher-worker")) { "unexpected transform thread: $transformThread" }
+        } finally {
+            probe.close()
             ditto.close()
         }
     }

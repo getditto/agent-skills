@@ -3,10 +3,11 @@
 > Rules for producing a **complete, compilable** Android or JVM project with Ditto —
 > the Kotlin analogue of a project generator. Every rule exists because the failure
 > was observed (see [`errors.md`](errors.md)) or because the build genuinely cannot
-> work otherwise. The reference implementations these rules describe are
-> [`../../../tests/kotlin-sdk/minimal-app/`](../../../tests/kotlin-sdk/minimal-app)
-> (JVM, v5) and [`../../../tests/kotlin-sdk/android-app/`](../../../tests/kotlin-sdk/android-app)
-> (Android, v4) — prefer copying them to typing from memory.
+> work otherwise. The reference implementations these rules describe are the
+> [JVM v5 harness project](../../../tests/kotlin-sdk/minimal-app) and the
+> [Android v4 harness project](../../../tests/kotlin-sdk/android-app) — prefer
+> copying them to typing from memory. Note the Android one is **v4** (`live.ditto:ditto`,
+> `compileSdk 35`); a v5 Android project has **not** been built by this skill.
 
 ## Mandatory rules, in order
 
@@ -20,10 +21,13 @@
    `DittoFactory.create` throws `IllegalStateException: Unable to find binary
    'libdittoall.dylib' …` (executed).
 3. **Pin the toolchain that is known to work:** JDK 17, `kotlinx-coroutines` 1.10.x,
-   Android `minSdk` 24 / `compileSdk` 36. JVM projects: Kotlin Gradle plugin 2.3.x
-   (executed: 2.3.21 — the 2.0.x plugin cannot read the 5.0.3 artifacts' Kotlin 2.1
-   metadata). Android projects on AGP 9: use built-in Kotlin — applying
-   `org.jetbrains.kotlin.android` fails the build.
+   Android `minSdk` 24 / `compileSdk` 36 (the v5 install guide's values,
+   <https://docs.ditto.live/sdk/latest/install-guides/kotlin>; the Android fixture is v4 at `compileSdk 35`).
+   Kotlin Gradle plugin **≥ 2.2 for 5.1.0** — its artifacts depend on `kotlin-stdlib`
+   2.3.21 and the compiler reads metadata at most one minor newer; executed pin 2.3.21
+   on JVM (see [`versions.md`](versions.md) § Kotlin toolchain). Android projects on
+   AGP 9: use built-in Kotlin — applying `org.jetbrains.kotlin.android` fails the build
+   (executed on the v4 fixture; **inference** for v5 Android).
 4. **One `Ditto` instance, owned at application scope** (Android `Application`/DI
    singleton; JVM top-level). Never construct it in an Activity or per-request.
 5. **The config is immutable and complete at construction:** `DittoConfig(databaseId,
@@ -39,15 +43,21 @@
 7. **Auth is a property assignment of a suspend lambda, set before `sync.start()`:**
    `ditto.auth?.expirationHandler = { d, _ -> d.auth?.login(token, DittoAuthenticationProvider.development()) }`.
    There is no `setExpirationHandler()`; do not wrap the body in `launch { }`.
-8. **Android manifest:** no permission declarations of your own are needed (the SDK
-   merges them); do not add a manual `DittoInitializer` entry. Add the runtime
-   permission flow (`DittoSyncPermissions` → `ditto.refreshPermissions()`) where the
-   app first needs P2P.
+8. **Android manifest:** no *transport* permission declarations of your own are
+   needed (the SDK merges them); do not add a manual `DittoInitializer` entry. The
+   one exception is `DefaultDittoForegroundService`: if you declare it, the app must
+   also declare `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE` and
+   `POST_NOTIFICATIONS` ([`preview.md`](preview.md)). Add the runtime permission flow
+   (`DittoSyncPermissions` → `ditto.refreshPermissions()`) where the app first
+   needs P2P.
 9. **Release builds need the keep rules** — emit `proguard-rules.pro` with
    `-keep class com.ditto.** { *; }` **and**
    `-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }`
    (TLS to Ditto Server breaks without the second) and wire them into the release
    build type, or the minified build crashes with `NoSuchMethodError … DittoFFI`.
+   5.1.0's AARs bundle `consumer-rules.pro` for SDK internals (5.1.0 Kotlin changelog,
+   #SDKS-2626), so the init crash may not reproduce there — the install guide still
+   requires both rules; keep them.
 10. **Generate a diagnostics surface.** A new project is not done until its author can
     see whether sync works — see below.
 11. **Verify by building.** The deliverable is a project that compiles; run
@@ -76,13 +86,14 @@ A single debug screen or JVM block that answers "is it working?" at a glance:
 Point the author at [`testing.md`](testing.md): JVM unit tests run the real SDK with
 `SmallPeersOnly` + a temp persistence directory; two-emulator P2P testing must ride a
 shared `Connect.Server` WebSocket URL (the emulator supports no radios — only
-WebSockets per `sdk/latest/compatibility/kotlin`).
+WebSockets per <https://docs.ditto.live/sdk/latest/compatibility/kotlin>).
 
 ## Coming from the Swift SDK?
 
-Common confusions when generating Kotlin after seeing Swift Ditto code:
+Common confusions when generating Kotlin after seeing **v4** Swift Ditto code (Swift v5
+has the same `DittoConfig`/`sync`/DQL shape as Kotlin v5):
 
-| Swift SDK | Kotlin SDK (v5) |
+| Swift SDK (v4) | Kotlin SDK (v5) |
 |---|---|
 | `Ditto(identity:)` / `Ditto.open(config:)` | `DittoFactory.create(DittoConfig(...))` — not suspend |
 | `ditto.store["cars"].findAll().observe()` | `ditto.store.observe("SELECT * FROM cars") { … }` (Flow) |

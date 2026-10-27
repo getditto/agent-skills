@@ -37,8 +37,11 @@ tests/                         # Per-skill test harnesses
 ├── data-modeling/             # data-modeling: live-model JSON-review evals
 │   ├── cases/  runner/
 │   └── README.md
-└── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
-    ├── Sources/  Tests/  scripts/
+├── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
+│   ├── Sources/  Tests/  scripts/
+│   └── README.md
+└── kotlin-sdk/                # kotlin-sdk: Gradle fixtures — JVM (5.x) and Android (4.14.x)
+    ├── minimal-app/  android-app/
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
@@ -55,15 +58,18 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-data-modeling/
 │   ├── .claude-plugin/plugin.json
 │   └── skills/data-modeling -> ../../../skills/data-modeling
-└── ditto-swift/
-    ├── .claude-plugin/plugin.json
-    └── skills/swift-sdk -> ../../../skills/swift-sdk
+├── ditto-swift/
+│   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
+│   └── skills/swift-sdk -> ../../../skills/swift-sdk
+└── ditto-kotlin/
+    ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
+    └── skills/kotlin-sdk -> ../../../skills/kotlin-sdk
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
-.agents/plugins/marketplace.json # Swift: Codex
-.cursor-plugin/marketplace.json  # Swift: Cursor
-.github/plugin/marketplace.json  # Swift: Copilot CLI
+.agents/plugins/marketplace.json # SDK plugins: Codex
+.cursor-plugin/marketplace.json  # SDK plugins: Cursor
+.github/plugin/marketplace.json  # SDK plugins: Copilot CLI
 
 docs/                          # Contributor-facing docs
 ├── SKILLS-TEMPLATE.md         # Template for any skill
@@ -104,11 +110,12 @@ under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
 — if it ships agents — an `agents` symlink pointing at that plugin's namespaced
 subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
 
-Swift also has generated portable/Codex/Cursor metadata and a Gemini extension
-manifest. Run `python3 scripts/package-swift-plugin.py --sync-manifests` after changing
-its canonical Claude manifest. Release packages materialize scoped symlinks into real
-files in ignored build outputs or CI artifacts. See `docs/install-swift.md` for all
-installation surfaces.
+The SDK plugins (`ditto-swift`, `ditto-kotlin`) also have generated portable/Codex/Cursor
+metadata and a Gemini extension manifest. Run
+`python3 scripts/package-sdk-plugin.py --plugin <name> --sync-manifests` after changing
+a plugin's canonical Claude manifest; `--check` is enforced in CI. Release packages materialize scoped symlinks into real
+files in ignored build outputs or CI artifacts. See `docs/install-swift.md` and `docs/install-kotlin.md`
+for all installation surfaces.
 
 **Agents must be linked as a directory, not as individual files.** Claude Code
 follows a symlinked *directory* but not a symlinked *file*: an
@@ -130,18 +137,25 @@ against real Ditto SDK versions (see `tests/dql/README.md`). For
 data-modeling: `tests/data-modeling` feeds raw-JSON cases plus the skill to
 live AI models and deterministically scores the recommendations against the
 rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
-`tests/data-modeling/README.md`). CI workflows:
+`tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
+`tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
+against the supported SDK versions; `scripts/validate-sdk-skills.py` fails when the
+published program drifts from the fixture. CI workflows:
 
 - `.github/workflows/ci.yml` — validates JSON manifests and SKILL.md
   frontmatter, checks marketplace `source` targets exist, and enforces that
   each plugin wrapper only symlinks the skills/agents it declares.
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
   harness; triggers on changes to `skills/write-dql/**` or `tests/dql/**`.
+- `.github/workflows/swift-skill-tests.yml` — macOS matrix run of the Swift fixtures,
+  generated starter and platform builds.
+- `.github/workflows/kotlin-skill-tests.yml` — Ubuntu run of the Kotlin JVM fixture
+  against 5.0.3 and 5.1.0; the Android (4.14.x) leg is manual.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
 environment variables (and CI secrets) always take precedence. Keys:
-`DITTO_OFFLINE_LICENSE` (tests/dql and tests/swift-sdk, required),
+`DITTO_OFFLINE_LICENSE` (tests/dql, tests/swift-sdk and tests/kotlin-sdk, required),
 `DITTO_DATABASE_ID` (optional), `DITTO_URL` + `DITTO_TOKEN` (tests/swift-sdk,
 optional — enables the server-authentication leg), `DM_MODEL_CMD`
 (tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` read the same

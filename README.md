@@ -43,10 +43,20 @@ an existing Swift app in place.
 Codex CLI and Desktop, Cursor, Copilot CLI, Antigravity CLI, Gemini CLI and OpenCode.
 Standalone packages and per-skill upload ZIPs are generated from the canonical skill.
 
+## Kotlin getting started
+
+The Kotlin skill covers Android (4.14.x and 5.x) and the JVM (5.x): Gradle setup,
+coroutine-native observers, lifetimes and threading, plus a Gradle project-generation
+guide. Its JVM fixture runs in CI against 5.0.3 and 5.1.0.
+
+**[Install Ditto Kotlin in your agent](docs/install-kotlin.md)** — the same hosts as
+Swift; standalone packages are generated with `--plugin ditto-kotlin`.
+
 ## Installation by tool
 
-For Swift, use the [host-specific guide](docs/install-swift.md) for local/PR packages,
-activation, updates and removal. Existing concept skills retain the routes below.
+For the SDK skills, use the host-specific guides ([Swift](docs/install-swift.md),
+[Kotlin](docs/install-kotlin.md)) for local/PR packages, activation, updates and
+removal. Existing concept skills retain the routes below.
 
 ### Claude Code
 
@@ -61,6 +71,7 @@ you want:
 /plugin install ditto-mesh           # ditto-mesh-networking skill
 /plugin install ditto-subscriptions  # sync-subscriptions skill
 /plugin install ditto-data-modeling  # data-modeling skill
+/plugin install ditto-kotlin         # kotlin-sdk skill
 /plugin install ditto-swift          # swift-sdk skill
 ```
 

@@ -1,18 +1,36 @@
 // Minimal Ditto Kotlin SDK harness — JVM target (v5 only).
 //
 // Run a specific SDK version:
-//   gradle run -PdittoLine=v5 -PdittoVersion=5.1.0
-//   gradle run -PdittoLine=v5 -PdittoVersion=5.0.3
+//   gradle run -PdittoVersion=5.1.0      (default when -PdittoVersion is omitted)
+//   gradle run -PdittoVersion=5.0.3
 //
 // 4.14.x is NOT runnable here: `live.ditto:ditto` is an Android-only AAR with no
 // JVM artifact, so it cannot resolve on this target. The v4 leg lives in
 // ../android-app (runs on an emulator).
 //
-// Requires DITTO_OFFLINE_LICENSE in the environment (the repo-root .env is NOT
-// auto-loaded here; export it first).
+// Requires DITTO_OFFLINE_LICENSE: read from the environment, else from the gitignored
+// repo-root .env (copy .env-sample). Environment variables take precedence, matching
+// tests/lib/load-env.mjs.
 
-val dittoLine: String by project
-val dittoVersion: String by project
+// Both properties default to the current line so `gradle run` works without -P flags.
+val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v5")
+val dittoVersion: String = providers.gradleProperty("dittoVersion").getOrElse("5.1.0")
+
+// The JVM variant loads its native library from a classifier jar; pick the host's.
+// Published classifiers: macos-arm64 | linux-x64 | linux-arm64 | windows-x64 (no macos-x64).
+val dittoBinariesClassifier: String = run {
+    val os = System.getProperty("os.name").lowercase()
+    val arch = System.getProperty("os.arch").lowercase()
+    val isArm = arch == "aarch64" || arch == "arm64"
+    when {
+        os.contains("mac") && isArm -> "macos-arm64"
+        os.contains("mac") -> error("Ditto $dittoVersion publishes no macos-x64 binaries; run on Apple silicon or Linux")
+        os.contains("linux") && isArm -> "linux-arm64"
+        os.contains("linux") -> "linux-x64"
+        os.contains("windows") -> "windows-x64"
+        else -> error("unsupported host for ditto-binaries: $os/$arch")
+    }
+}
 
 plugins {
     kotlin("jvm") version "2.3.21"
@@ -33,7 +51,7 @@ dependencies {
         // "Unable to find binary 'libdittoall' ... on classpath".
         "v5" -> {
             implementation("com.ditto:ditto-kotlin:$dittoVersion")
-            runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:macos-arm64")
+            runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:$dittoBinariesClassifier")
         }
         else -> error(
             "unknown dittoLine: $dittoLine — only 'v5' runs on JVM; " +
@@ -49,24 +67,27 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
 
+// KEY=VALUE lines from the repo-root .env, used only for keys the environment lacks.
+val dotEnv: Map<String, String> = rootDir.resolve("../../.env").takeIf { it.isFile }
+    ?.readLines()
+    ?.mapNotNull { line ->
+        val trimmed = line.trim()
+        if (trimmed.isEmpty() || trimmed.startsWith("#") || '=' !in trimmed) null
+        else trimmed.substringBefore('=').trim() to trimmed.substringAfter('=').trim().trim('"', '\'')
+    }?.toMap() ?: emptyMap()
+val offlineLicense: String = System.getenv("DITTO_OFFLINE_LICENSE") ?: dotEnv["DITTO_OFFLINE_LICENSE"] ?: ""
+
 tasks.test {
     useJUnitPlatform()
-    // The tests read the offline license from the environment.
-    environment("DITTO_OFFLINE_LICENSE", System.getenv("DITTO_OFFLINE_LICENSE") ?: "")
+    environment("DITTO_OFFLINE_LICENSE", offlineLicense)
+    testLogging { events("passed", "failed", "skipped") }
+}
+
+tasks.named<JavaExec>("run") {
+    environment("DITTO_OFFLINE_LICENSE", offlineLicense)
 }
 
 application {
     mainClass.set("MainV5Kt")
 }
 
-// Each line's main imports packages that only exist in that line's artifact.
-// MainV4.kt is excluded permanently: it documents the v4 shape for reference but
-// cannot compile here (no v4 JVM artifact). The runnable v4 harness is
-// ../android-app.
-sourceSets {
-    main {
-        kotlin {
-            exclude("MainV4.kt")
-        }
-    }
-}

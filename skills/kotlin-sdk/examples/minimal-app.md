@@ -12,6 +12,10 @@ this repository and is compiled and run:
 
 Longer form of `SKILL.md` § *Minimum viable app*.
 
+**This is a copy of `minimal-app/src/main/kotlin/MainV5.kt` in the fixture**, which CI
+compiles and runs against 5.0.3 and 5.1.0; `scripts/validate-sdk-skills.py` fails when the
+program block below drifts from it.
+
 ## What it does
 
 Configures Ditto (offline identity, no cloud), activates a license, starts sync,
@@ -23,7 +27,8 @@ closes everything in reverse order.
 ```kotlin
 // tests/kotlin-sdk/minimal-app/build.gradle.kts (excerpt)
 plugins {
-    kotlin("jvm") version "2.3.21"   // 2.3.x required: 5.x artifacts embed stdlib 2.3.x metadata
+    kotlin("jvm") version "2.3.21"   // 5.1.0 depends on kotlin-stdlib 2.3.21 → KGP ≥ 2.2;
+                                     // 5.0.3 depends on 2.1.0. See references/versions.md
     application
 }
 
@@ -37,14 +42,12 @@ dependencies {
 }
 ```
 
-## Program (v5)
+## Program
 
 ```kotlin
-// tests/kotlin-sdk/minimal-app/src/main/kotlin/MainV5.kt
 import com.ditto.kotlin.DittoConfig
 import com.ditto.kotlin.DittoFactory
 import com.ditto.kotlin.Ditto
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex

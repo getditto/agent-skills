@@ -1,5 +1,18 @@
 # Sync subscriptions, scopes and status — Ditto Kotlin SDK
 
+## Contents
+
+- [CAP-07 Sync subscriptions and sync scopes](#cap-07-sync-subscriptions-and-sync-scopes)
+  - [Registering](#registering)
+  - [Cancelling — `close()`, not `cancel()`](#cancelling--close-not-cancel)
+  - [Subscription query restrictions](#subscription-query-restrictions)
+  - [Sync scopes — DQL, not a Kotlin type](#sync-scopes--dql-not-a-kotlin-type)
+- [CAP-14 Sync status and local commit tracking](#cap-14-sync-status-and-local-commit-tracking)
+  - [start / stop / isActive](#start--stop--isactive)
+  - [`system:data_sync_info` — per-peer sync status (SDK 4.12.0+)](#systemdata_sync_info--per-peer-sync-status-sdk-4120)
+  - [Commit IDs — tracking local commits](#commit-ids--tracking-local-commits)
+- [v4 → v5 notes](#v4--v5-notes)
+
 *What* a subscription is, how it propagates through the mesh, and which queries a
 subscription accepts belong to the `sync-subscriptions` skill, or
 <https://docs.ditto.live/sdk/latest/sync/syncing-data>. DQL grammar belongs to the
@@ -29,7 +42,7 @@ val subscription = ditto.sync.registerSubscription(
 
 `registerSubscription` returns a `DittoSyncSubscription`. Arguments accept a
 plain `Map<String, Any?>` or a `DittoCborSerializable.Dictionary`
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 **Retain the handle.** It is the only way to cancel the subscription later.
 
@@ -38,7 +51,7 @@ plain `Map<String, Any?>` or a `DittoCborSerializable.Dictionary`
 `DittoSyncSubscription` is `AutoCloseable` (via `DittoResource`). **Verified by
 execution:** `subscription.close()` cancels it; there is **no** `cancel()`
 method — calling one is `Unresolved reference: cancel`. The published docs
-(sdk/latest/sync/syncing-data) agree: the Kotlin snippet uses
+(<https://docs.ditto.live/sdk/latest/sync/syncing-data>) agree: the Kotlin snippet uses
 `subscription.close()` where other languages use `cancel()`.
 
 ```kotlin
@@ -52,7 +65,7 @@ subscription.isClosed   // true once closed (the Kotlin name; other SDKs use isC
 val activeSubscriptions = ditto.sync.subscriptions
 ```
 
-(sdk/latest/sync/syncing-data)
+(<https://docs.ditto.live/sdk/latest/sync/syncing-data>)
 
 ### Subscription query restrictions
 
@@ -61,20 +74,22 @@ registering a query containing `LIMIT` or `ORDER BY` fails with
 `<dql> Unsupported feature: Limit or Order by` — remove the clauses and sort or
 page at query/render time in an `execute` or `registerObserver` query instead.
 Joins in a subscription query likewise fail; subscribe to each collection
-separately and join in the read query. Queries must be `SELECT *` — no
-projections (sdk/latest/sync/syncing-data).
+separately and join in the read query. Use `SELECT *` in subscription queries —
+the published samples use nothing else, and the syncing-data page documents only
+the `LIMIT`/`ORDER BY` and JOIN restrictions, so treat projections as unverified
+rather than supported (<https://docs.ditto.live/sdk/latest/sync/syncing-data>).
 
 ### Registering vs. sync state
 
 The docs do not prescribe an ordering between `registerSubscription` and
-`sync.start()`. What is documented (sdk/latest/sync/syncing-data): calling
+`sync.start()`. What is documented (<https://docs.ditto.live/sdk/latest/sync/syncing-data>): calling
 `ditto.sync.stop()` disconnects from peers and **pauses** all active
 subscriptions — the registrations survive a stop/start cycle.
 
 ### Sync scopes — DQL, not a Kotlin type
 
 There is no `SyncScope` type in the Kotlin SDK. Scopes are set with
-`ALTER SYSTEM` through `ditto.store.execute` (sdk/latest/sync/sync-scopes):
+`ALTER SYSTEM` through `ditto.store.execute` (<https://docs.ditto.live/sdk/latest/sync/sync-scopes>):
 
 ```kotlin
 ditto.store.execute(
@@ -122,12 +137,16 @@ try {
 
 ditto.sync.isActive   // true once started
 
-ditto.sync.stop()     // declares no checked error — a try/catch here can never fire
+ditto.sync.stop()     // not annotated @Throws (start() is); no failure mode is documented
 ```
+
+Kotlin has no checked exceptions, so the missing `@Throws` on `stop()` is a hint
+about intent, not a guarantee — the docs' own snippet still wraps it in
+`try/catch (e: DittoException)`; either form is acceptable.
 
 Start sync in the top-most scope of the app and keep it running for the app
 lifecycle. `stop()` disconnects from all peers and pauses subscriptions
-(sdk/latest/sync/syncing-data).
+(<https://docs.ditto.live/sdk/latest/sync/syncing-data>).
 
 **`isActive` answers "did I start sync", not "am I connected to anything".**
 For connectivity and reachability, use presence — see
@@ -142,7 +161,7 @@ foreground service so the mesh stays alive off-UI — details in
 
 A built-in, **local-only** collection reporting real-time sync status per peer
 connection. It never syncs between peers; each peer has its own view
-(sdk/latest/sync/monitoring-sync-status).
+(<https://docs.ditto.live/sdk/latest/sync/monitoring-sync-status>).
 
 Document shape:
 
@@ -211,7 +230,7 @@ SELECT * FROM COLLECTION system:data_sync_info (documents MAP)
 
 Every `INSERT`, `UPDATE`, or `DELETE` returns a commit ID on its
 `DittoQueryResult`; `SELECT` does not. In Kotlin the commit ID is a `ULong`
-read via the handler form of `execute` (sdk/latest/sync/tracking-local-commits):
+read via the handler form of `execute` (<https://docs.ditto.live/sdk/latest/sync/tracking-local-commits>):
 
 ```kotlin
 ditto.store.execute(
@@ -230,7 +249,7 @@ compare its commit ID with that peer's `synced_up_to_local_commit_id`:
 val commitId: ULong = ditto.store.execute(
     query = "UPDATE orders SET status = 'shipped' WHERE _id = :id",
     arguments = mapOf("id" to "order-456"),
-) { result -> result.commitId!! }
+) { result -> checkNotNull(result.commitId) { "a top-level UPDATE always has a commit ID" } }
 
 // Step 2: Check if it synced to cloud.
 ditto.store.execute(
@@ -239,7 +258,7 @@ ditto.store.execute(
     val item = syncResult.items.firstOrNull()
     val syncedUpTo = item?.value?.get("documents")?.dictionaryOrNull
         ?.let { it["synced_up_to_local_commit_id"].uLongOrNull }
-        ?: 0u.toULong()
+        ?: 0uL
 
     if (syncedUpTo >= commitId) {
         println("Commit synced to cloud")
@@ -269,29 +288,38 @@ For several in-flight writes, keep a `MutableList<ULong>` of commit IDs and
 watch progress with a `registerObserver` on
 `SELECT * FROM system:data_sync_info WHERE is_ditto_server = true`, removing
 commits as `synced_up_to_local_commit_id` passes them (full Kotlin sample:
-sdk/latest/sync/tracking-local-commits, "Monitoring Multiple Commits").
+<https://docs.ditto.live/sdk/latest/sync/tracking-local-commits>, "Monitoring Multiple Commits").
 
 **Transaction behavior:** a commit ID is assigned only when the transaction
 commits. Inside the block, `execute` reports `null`:
 
 ```kotlin
 // Inside an explicit transaction, txnResult.commitId is null — nothing is
-// committed yet. Result.Commit(value) carries whatever you captured, so the
-// final value here is null too, NOT the assigned ID:
-val captured: ULong? = (ditto.store.transaction { transaction ->
+// committed yet. Result.Commit(value) carries whatever you captured:
+val result = ditto.store.transaction { transaction ->
     transaction.execute(
         query = "INSERT INTO orders DOCUMENTS (:doc)",
         arguments = mapOf("doc" to mapOf("_id" to "order-123", "total" to 99.99))
     ) { txnResult ->
         DittoTransaction.Result.Commit(txnResult.commitId)   // null at this point
     }
-} as? DittoTransaction.Result.Commit)?.value
+}
 
-println(captured ?: "null") // null — to learn the assigned commit ID, use a
-                            // top-level execute (result.commitId is populated
-                            // after auto-commit) or read system:data_sync_info
-                            // afterwards, as shown above
+val captured: ULong? = when (result) {
+    is DittoTransaction.Result.Commit -> result.value
+    DittoTransaction.Result.Rollback -> null
+}
 ```
+
+**Not executed — inference from capture semantics:** `captured` is the `ULong?`
+that was `null` when the handler ran, and a captured value cannot change after
+the fact, so `captured` stays `null` after the commit. The docs' Kotlin sample
+(<https://docs.ditto.live/sdk/latest/sync/tracking-local-commits>) annotates the same final line with
+`// e.g. 1548 — assigned now that the txn committed`, which disagrees with that
+reasoning; until one of the two is executed, do not rely on `Result.Commit` to
+carry a commit ID. To learn the assigned ID, use a top-level `execute`
+(`result.commitId` is populated after auto-commit) or read
+`system:data_sync_info` afterwards, as shown above.
 
 Best practices from the source page: don't block user operations on sync
 tracking (Ditto is offline-first), use it for progress UI on critical writes,
@@ -308,4 +336,4 @@ and prune old commit IDs from tracking lists.
   rejects them at registration with `<dql> Unsupported feature: Limit or Order
   by`. Strip the clauses and sort at query time.
 
-(sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)

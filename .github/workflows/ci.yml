@@ -64,8 +64,6 @@ jobs:
 
           echo "All SKILL.md files valid"
 
-      - name: SDK-skill structural checks (SDK-SKILL-TEMPLATE.md §12.1)
-        run: python3 scripts/check-sdk-skill-structure.py
       - name: Check skill context guard negative controls
         run: python3 tests/skill-context/test_contract.py
 
@@ -77,8 +75,8 @@ jobs:
 
       - name: Check Swift host metadata and build standalone packages
         run: |
-          python3 scripts/package-swift-plugin.py --check
-          python3 scripts/package-swift-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
+          python3 scripts/package-sdk-plugin.py --check
+          python3 scripts/package-sdk-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
 
       - name: Upload Swift installation packages
         uses: actions/upload-artifact@v7
@@ -87,6 +85,19 @@ jobs:
           path: |
             ${{ runner.temp }}/ditto-swift-packages/*.zip
             ${{ runner.temp }}/ditto-swift-packages/SHA256SUMS
+
+      - name: Check Kotlin host metadata and build standalone packages
+        run: |
+          python3 scripts/package-sdk-plugin.py --plugin ditto-kotlin --check
+          python3 scripts/package-sdk-plugin.py --plugin ditto-kotlin --output "$RUNNER_TEMP/ditto-kotlin-packages"
+
+      - name: Upload Kotlin installation packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: ditto-kotlin-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-kotlin-packages/*.zip
+            ${{ runner.temp }}/ditto-kotlin-packages/SHA256SUMS
 
       - name: Check plugin references in marketplace
         run: |

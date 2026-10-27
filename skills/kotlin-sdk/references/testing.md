@@ -3,17 +3,27 @@
 Everything here is the **v5** (5.0.x / 5.1.x) form with tagged v4 asides.
 [versions.md](versions.md) owns package coordinates per version line.
 
-Sources: `sdk/latest/deployment/testing`, `sdk/latest/install-guides/kotlin`
-(ProGuard + crash-reporter sections), `sdk/latest/compatibility/kotlin`
+Sources: <https://docs.ditto.live/sdk/latest/deployment/testing>, <https://docs.ditto.live/sdk/latest/install-guides/kotlin>
+(ProGuard + crash-reporter sections), <https://docs.ditto.live/sdk/latest/compatibility/kotlin>
 (transport support matrix). The JVM-unit-test pattern below is **executed** against
-5.0.3 and 5.1.0 — the runnable copy is
-[`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
+5.0.3 and 5.1.0; the runnable copy is
+[the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
+
+## Contents
+
+- [CAP-18 Testing](#cap-18-testing)
+- [JVM unit and integration tests (v5)](#jvm-unit-and-integration-tests-v5)
+- [Android instrumented tests](#android-instrumented-tests)
+- [ProGuard / R8](#proguard--r8)
+- [Crash-reporter verification](#crash-reporter-verification)
+- [v4 testing constraints](#v4-testing-constraints)
+- [What a unit test cannot cover](#what-a-unit-test-cannot-cover)
 
 ## CAP-18 Testing
 
 ### What the testing page documents
 
-`sdk/latest/deployment/testing` is language-generic with per-language snippets. Its
+<https://docs.ditto.live/sdk/latest/deployment/testing> is language-generic with per-language snippets. Its
 Kotlin-relevant guidance:
 
 - **Unit tests**: "wrap Ditto behind an interface in your app code and inject a mock
@@ -75,6 +85,9 @@ dependencies {
                                         // the kotlin("jvm") plugin does not add it
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    // Gradle 9 no longer auto-loads the JUnit Platform launcher; without kotlin("test")
+    // you typically also need (not executed by this harness, which has kotlin("test")):
+    // testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {
@@ -87,7 +100,7 @@ tasks.test {
 
 **Executed** pattern — offline-only instance, unique temp `persistenceDirectory` per
 test, `runTest` for the suspend store APIs. The file below is
-[`../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
+[the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
 executed green against 5.0.3 and 5.1.0 (`gradle test -PdittoLine=v5
 -PdittoVersion=<v>`; 2 tests, 0 failures):
 
@@ -106,6 +119,7 @@ class DittoStoreTest {
     @TempDir
     lateinit var tempDir: File   // unique per test — two live instances on one
                                  // directory fail with a persistence-directory lock
+                                 // (exception type not captured by this harness)
 
     private fun makeDitto(): Ditto {
         val ditto = DittoFactory.create(
@@ -159,8 +173,32 @@ delivery itself. One executed pitfall: **do not await observer deliveries inside
 `runTest`** — Ditto delivers events from real background FFI threads while `runTest`
 fast-forwards *virtual* time, so `withTimeout(10_000) { … }` expires instantly-ish
 with `TimeoutCancellationException: Timed out after 10s of _virtual_ time …`
-(**executed**, twice, on 5.1.0). Use `runBlocking` for observer tests; `runTest` is
-fine for straight-line `store.execute` calls:
+(**executed**, twice, on 5.1.0). The executed workaround is `runBlocking` for observer
+tests; `runTest` is fine for straight-line `store.execute` calls.
+
+The idiomatic alternative, per the kotlinx-coroutines-test `runTest` docs
+(<https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html>:
+"Delays in code that runs inside dispatchers that don't use a TestCoroutineScheduler
+don't get skipped"), keeps one runner across the suite — **not executed by this
+harness**:
+
+```kotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.seconds
+
+@Test
+fun observerReportsTheWrite() = runTest {            // or runTest(timeout = 15.seconds)
+    // …
+    val seen = withContext(Dispatchers.Default) {   // real time inside this block
+        withTimeout(10_000) { counts.first { it == 1 } }
+    }
+    // …
+}
+```
+
+`runTest(timeout = …)` is a *real-time* bound on the whole test body (default 60 s), so
+with it you can drop the inner `withTimeout`. The executed `runBlocking` form:
 
 ```kotlin
 import kotlinx.coroutines.flow.first
@@ -199,7 +237,7 @@ device.
 
 **Two-emulator mesh testing.** Launch two AVDs and install the instrumented APK on
 both (`adb -s emulator-5554 install …` / `adb -s emulator-5556 install …`). Then check
-the compatibility matrix before choosing a transport — `sdk/latest/compatibility/kotlin`
+the compatibility matrix before choosing a transport — <https://docs.ditto.live/sdk/latest/compatibility/kotlin>
 marks the **Android Emulator** row `--` (unsupported) for **BLE 5.0+**, **AWDL**,
 **Wi-Fi Aware** *and* **LAN**; only **WebSockets** is supported. So:
 
@@ -211,8 +249,9 @@ marks the **Android Emulator** row `--` (unsupported) for **BLE 5.0+**, **AWDL**
 
 ## ProGuard / R8
 
-From `sdk/latest/install-guides/kotlin` (§ Proguard): a minified release build without
-the keep rules crashes at runtime, typically as:
+From <https://docs.ditto.live/sdk/latest/install-guides/kotlin> (§ Proguard): a minified release build without
+the keep rules crashes at runtime. The guide's illustrative crash line
+(`someNativeMethod(...)` is its placeholder, not an executed output):
 
 ```
 java.lang.NoSuchMethodError: no static method "Lcom/ditto/internal/dittoffi/DittoFFI;.someNativeMethod(...)"
@@ -220,7 +259,7 @@ java.lang.NoSuchMethodError: no static method "Lcom/ditto/internal/dittoffi/Ditt
 
 The required rules, quoted exactly:
 
-```
+```proguard
 -keep class com.ditto.** { *; }
 -keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
 ```
@@ -233,17 +272,21 @@ The required rules, quoted exactly:
 - `{ *; }` preserves all members.
 
 This is why a smoke test must run against the **release-minified** build, not only
-`debug` — the crash only exists post-shrink.
+`debug` — the crash only exists post-shrink. Note that the 5.1.0 Kotlin changelog
+(<https://docs.ditto.live/sdk/latest/release-notes/kotlin>, #SDKS-2626) says the published AARs now bundle
+`consumer-rules.pro` so `isMinifyEnabled = true` no longer crashes on initialization;
+the install guide still mandates both rules above, so keep them — the bundled rules
+cover SDK internals, not the TLS verifier.
 
 > **v4 aside.** v4 (`live.ditto:ditto`) needs different rules and shows a different
-> crash (`sdk/v4/install-guides/kotlin`):
+> crash (<https://docs.ditto.live/sdk/v4/install-guides/kotlin>):
 > `NoSuchMethodError: … Llive/ditto/internal/swig/ffi/dittoffiJNI;.SwigDirector_Retainable_retain…`.
 > Its rules: `-keep class live.ditto.internal.swig.ffi.** { *; }`,
 > `-keep class live.ditto.** { *; }`, `-keepnames class com.fasterxml.jackson.** { *; }`.
 
 ## Crash-reporter verification
 
-From `sdk/latest/install-guides/kotlin` (§ Using crash reporters in Android apps) —
+From <https://docs.ditto.live/sdk/latest/install-guides/kotlin> (§ Using crash reporters in Android apps) —
 run this once per crash reporter (Crashlytics, Sentry, BugSnag):
 
 1. **Setup** — integrate the reporter SDK per its own docs.
@@ -262,7 +305,10 @@ run this once per crash reporter (Crashlytics, Sentry, BugSnag):
 
 In v5 the same panic also surfaces in-process as
 `DittoException.DittoPanicException` with `nativeCrashMessage` /
-`nativeCrashStackTrace` — see [errors.md](errors.md).
+`nativeCrashStackTrace` — **only** when the instance was created with
+`DittoConfig.Experimental(coreExceptionBridgingEnabled = true)`
+([preview.md](preview.md)); otherwise it is a hard native crash. See
+[errors.md](errors.md).
 
 ## v4 testing constraints
 

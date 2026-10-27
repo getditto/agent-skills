@@ -1,5 +1,18 @@
 # Transports — Ditto Kotlin SDK
 
+## Contents
+
+- [CAP-06 Customizing transports](#cap-06-customizing-transports)
+  - [Always mutate through `updateTransportConfig`](#always-mutate-through-updatetransportconfig)
+  - [BLE advertisement tuning enums are PascalCase in v5](#ble-advertisement-tuning-enums-are-pascalcase-in-v5)
+  - [Cloud sync: `connect.websocketUrls` exists but is no longer needed](#cloud-sync-connectwebsocketurls-exists-but-is-no-longer-needed)
+  - [Listening for incoming TCP connections](#listening-for-incoming-tcp-connections)
+  - [Connecting to remote small peers](#connecting-to-remote-small-peers)
+  - [Transport conditions](#transport-conditions)
+  - [Android runtime permissions](#android-runtime-permissions)
+  - [Foreground service (background sync)](#foreground-service-background-sync)
+- [v4 notes (4.14.x)](#v4-notes-414x)
+
 > **Sources for this file.** `sdk/latest/sync/customizing-transport-configurations.mdx`,
 > `sdk/latest/migration-guides/kotlin-v4.mdx` (transport config + transport condition
 > sections), `sdk/latest/install-guides/kotlin.mdx` (permissions, foreground service).
@@ -7,7 +20,10 @@
 > `global{}`, `interfaceIp`, `Global.syncGroup: UInt` vs the removed `*Long` setters)
 > is **[source-verified]** against
 > `sdks/kotlin/api/ditto-kotlin/src/commonMain/kotlin/com/ditto/kotlin/transports/DittoTransportConfig.kt`
-> at `sdk-release-5.1.0` — the docs do not show the full Kotlin DSL.
+> at `sdk-release-5.1.0` — the docs do not show the full Kotlin DSL. The same
+> builder surface (nested `*.Builder` classes, `Set<String>` URL fields, `UInt`
+> sync group) is confirmed against the published
+> `com.ditto:ditto-kotlin-android:5.1.0` AAR.
 >
 > **Do not restate transport strategy, mesh formation, or the per-platform radio
 > capability matrix** — that is the `ditto-mesh-networking` skill (or
@@ -37,7 +53,7 @@ ditto.updateTransportConfig { config ->
 ditto.sync.start()
 ```
 
-(sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 The nested builder blocks correspond one-to-one with the nested config classes:
 
@@ -47,14 +63,15 @@ The nested builder blocks correspond one-to-one with the nested config classes:
 | `bluetoothLe { }` | `DittoTransportConfig.PeerToPeer.BluetoothLE` |
 | `lan { }` | `DittoTransportConfig.PeerToPeer.Lan` |
 | `wifiAware { }` | `DittoTransportConfig.PeerToPeer.WifiAware` |
+| `multicastBeta { }` | `DittoTransportConfig.PeerToPeer.MulticastBeta` — private beta, see [preview.md](preview.md) |
 | `connect { }` | `DittoTransportConfig.Connect` |
 | `listen { }` | `DittoTransportConfig.Listen` |
 | `tcp { }` (inside `listen`) | `DittoTransportConfig.Listen.TcpConfig` |
 | `http { }` (inside `listen`) | `DittoTransportConfig.Listen.HttpConfig` |
 | `global { }` | `DittoTransportConfig.Global` |
 
-Facts about the API (sdk/latest/sync/customizing-transport-configurations,
-sdk/latest/migration-guides/kotlin-v4):
+Facts about the API (<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>,
+<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>):
 
 - **`enableAllPeerToPeer()` is removed in v5.** Configure each peer-to-peer
   transport explicitly with `enabled = true/false`.
@@ -72,12 +89,13 @@ sdk/latest/migration-guides/kotlin-v4):
 | `DittoAdvertisementPower` | `VERY_LOW`, `LOW`, `MEDIUM`, `HIGH` | `VeryLow`, `Low`, `Medium`, `High` |
 | `DittoAdvertisementFrequency` | `LOW`, `MEDIUM`, `HIGH` | `Low`, `Medium`, `High` |
 
-(sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 ### Cloud sync: `connect.websocketUrls` exists but is no longer needed
 
 `DittoTransportConfig.Connect.websocketUrls` **still exists in v5**
 (`DittoTransportConfig.kt:411,441`, both published jars — **[source-verified]**;
+`Connect.websocketUrls: Set<String>` confirmed against `com.ditto:ditto-kotlin-android:5.1.0`;
 the docs' transport page still shows it). What changed is the *workflow*: the v4
 workaround of adding the Ditto Server websocket URL to the transport config is
 unnecessary — the cloud URL is inferred from the identity/config you construct
@@ -98,7 +116,7 @@ val ditto = DittoFactory.create(
 )
 ```
 
-(sdk/latest/migration-guides/kotlin-v4). See [connect.md](connect.md) for the
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). See [connect.md](connect.md) for the
 full `DittoConfig.Connect` surface.
 
 ### Listening for incoming TCP connections
@@ -123,8 +141,8 @@ ditto.updateTransportConfig { config ->
 ditto.sync.start()
 ```
 
-(sdk/latest/sync/customizing-transport-configurations — field semantics; builder
-nesting per sdk/latest/migration-guides/kotlin-v4.)
+(<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> — field semantics; builder
+nesting per <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>.)
 
 ### Connecting to remote small peers
 
@@ -148,7 +166,7 @@ ditto.store.execute("""
   change on every `sync.start()` and is used when replacing mDNS discovery.
 - Changes can be made at any time but only take effect while sync is active.
 
-(sdk/latest/sync/customizing-transport-configurations)
+(<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>)
 
 ### Transport conditions
 
@@ -156,11 +174,17 @@ v5 replaces the `ditto.callback` / `DittoCallback` interface with a Kotlin
 `Flow`:
 
 ```kotlin
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+
 lifecycleScope.launch {
-    ditto.transportCondition.collect { event ->
-        // event.condition: DittoTransportCondition
-        // event.subsystem: DittoTransportCondition.Source
-        println("${event.subsystem}: ${event.condition}")
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        ditto.transportCondition.collect { event ->
+            // event.condition: DittoTransportCondition
+            // event.subsystem: DittoTransportCondition.Source
+            println("${event.subsystem}: ${event.condition}")
+        }
     }
 }
 ```
@@ -170,10 +194,12 @@ lifecycleScope.launch {
   two separate callback parameters.
 - `DittoTransportCondition.Source` is a nested enum: `Bluetooth`, `Tcp`, `Awdl`,
   `Mdns`.
-- Collect within `lifecycleScope` (or another lifecycle-bound scope) so collection
-  is cancelled automatically.
+- Collect inside `repeatOnLifecycle(Lifecycle.State.STARTED)` (or `flowWithLifecycle`)
+  so collection stops while the Activity/Fragment is in the background and resumes
+  on return; a bare `lifecycleScope.launch { collect }` keeps collecting until the
+  owner is destroyed. On a plain JVM target use any structured scope you cancel.
 
-(sdk/latest/migration-guides/kotlin-v4)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
 
 **What the condition *values* mean** (e.g. BLE disabled vs. missing permission)
 is owned by the `ditto-mesh-networking` skill if installed, otherwise
@@ -183,33 +209,46 @@ is owned by the `ditto-mesh-networking` skill if installed, otherwise
 
 BLE, Wi-Fi Aware, and LAN transports require Android runtime permissions. Use the
 SDK helper `DittoSyncPermissions` (`com.ditto.kotlin.transports.DittoSyncPermissions`)
-rather than hand-rolling the permission list (sdk/latest/install-guides/kotlin):
+rather than hand-rolling the permission list (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```kotlin
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import com.ditto.kotlin.Ditto
 import com.ditto.kotlin.transports.DittoSyncPermissions
 
-fun requestPermissions() {
-    val missing = DittoSyncPermissions(this).missingPermissions()
-    if (missing.isNotEmpty()) {
-        this.requestPermissions(missing, 0)
+class MainActivity : ComponentActivity() {
+    private lateinit var ditto: Ditto   // obtained from your Application-level holder
+
+    // Register at construction/onCreate time — before the Activity is STARTED.
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            // Ditto does not notice a grant on its own — tell it, so sync starts
+            // on the newly permitted transports without waiting for a restart.
+            ditto.refreshPermissions()
+        }
+
+    private fun requestMissingSyncPermissions() {
+        val missing: Array<String> = DittoSyncPermissions(this).missingPermissions()
+        if (missing.isNotEmpty()) {
+            requestPermissionLauncher.launch(missing)
+        }
     }
 }
 ```
 
-After the user grants permissions, Ditto does not notice immediately — call
-`ditto.refreshPermissions()` so sync starts without delay:
+`missingPermissions()` returns `Array<String>` (the type
+`RequestMultiplePermissions.launch` takes) and defaults to checking
+`requiredPermissions()`. Use the Activity Result API as shown — the install guide's
+snippet calls the older `requestPermissions(missing, 0)` *and* declares a launcher
+it never launches, so its callback (and `refreshPermissions()`) never runs;
+`ComponentActivity.requestPermissions` is also deprecated in AndroidX Activity.
 
-```kotlin
-private val requestPermissionLauncher =
-    registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        this.ditto.refreshPermissions()
-    }
-```
-
-**Manifest declarations are merged automatically.** The Ditto SDK's own
-`AndroidManifest.xml` declares every permission its mesh transports need, and the
-manifest merger adds them to your app. The SDK's declarations include
-(sdk/latest/install-guides/kotlin):
+**Manifest declarations are merged automatically.** The permissions the mesh
+transports need are declared in the SDK's own manifest — in the transitive
+`com.ditto:ditto-internal-android` AAR, not in `ditto-kotlin-android` (confirmed on
+5.1.0) — and the manifest merger adds them to your app. The SDK's declarations
+include (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 - BLE: `BLUETOOTH` / `BLUETOOTH_ADMIN` (`maxSdkVersion="30"`),
   `BLUETOOTH_ADVERTISE`, `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`
@@ -229,7 +268,7 @@ your own manifest with `tools:remove`:
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:remove="android:maxSdkVersion" />
 ```
 
-(sdk/latest/install-guides/kotlin)
+(<https://docs.ditto.live/sdk/latest/install-guides/kotlin>)
 
 *Why* each radio needs which permission, and which transports work on which
 Android version/hardware, belongs to `ditto-mesh-networking` — see
@@ -239,7 +278,7 @@ Android version/hardware, belongs to `ditto-mesh-networking` — see
 
 Without a foreground service, sync stops when the app is backgrounded. Declare
 `DefaultDittoForegroundService` and it is **automatically started and stopped by
-`sync.start()` and `sync.stop()`** (sdk/latest/install-guides/kotlin):
+`sync.start()` and `sync.stop()`** (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```xml
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -265,10 +304,17 @@ Without a foreground service, sync stops when the app is backgrounded. Declare
 Customize the `meta-data` — it is shown in the foreground-service notification,
 and the `small_app_icon` drawable must be monochrome white.
 
+Two things the SDK does **not** do for you here: the `FOREGROUND_SERVICE*` and
+`POST_NOTIFICATIONS` permissions above are app-declared — they are not in the SDK
+manifest (confirmed on `com.ditto:ditto-internal-android:5.1.0`) — and
+`POST_NOTIFICATIONS` is a **runtime** permission on API 33+. Declaring it is not
+enough for the notification to appear; request it (e.g. via the same
+`RequestMultiplePermissions` launcher). The service itself still runs without it.
+
 ## v4 notes (4.14.x)
 
 Only relevant when reading or migrating v4 code
-(sdk/latest/migration-guides/kotlin-v4):
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>):
 
 - `DittoTransportConfig` was a **mutable data class**; the idiomatic update was
   direct mutation inside the lambda:
@@ -285,11 +331,18 @@ Only relevant when reading or migrating v4 code
 - Top-level config classes were standalone (`DittoPeerToPeer`,
   `DittoBluetoothLeConfig`, `DittoLanConfig`, `DittoWifiAwareConfig`,
   `DittoConnect`, `DittoListen`, `DittoTcpListenConfig`, `DittoHttpListenConfig`,
-  `DittoGlobalConfig`) rather than nested under `DittoTransportConfig`.
+  `DittoGlobalConfig`) rather than nested under `DittoTransportConfig`. In
+  `live.ditto:ditto:4.14.0` the `Lan`/`WifiAware`/`TcpListen`/`HttpListen`/`Global`
+  classes live in `live.ditto.transports.java`; only `DittoTransportConfig`,
+  `DittoPeerToPeer`, `DittoBluetoothLeConfig`, `DittoConnect` and `DittoListen`
+  have Kotlin wrappers in `live.ditto.transports`.
 - Transport conditions arrived via `ditto.callback = object : DittoCallback {
   override fun transportConditionDidChange(...) }`.
 - Removed config fields with no v5 replacement: `BluetoothLE.maxOutgoing`,
-  `BluetoothLE.mtuRequest`, `Listen.HttpConfig.staticContentPath`,
-  `Global.syncGroupLong` / `Global.routingHintLong` (use `UInt` directly on
-  `Global.syncGroup` / `Global.routingHint`).
+  `BluetoothLE.mtuRequest`, `Listen.HttpConfig.staticContentPath`, and the
+  `Long` form of the global fields (the migration guide calls them
+  `Global.syncGroupLong` / `Global.routingHintLong`; in the `4.14.0` jar they are
+  `DittoGlobalConfig.syncGroup: Long` / `routingHint: Long` beside
+  `syncGroupUInt` / `routingHintUInt`) — v5 has only `UInt` on
+  `Global.syncGroup` / `Global.routingHint`.
 - v4 package root: `live.ditto.*` / `live.ditto.transports.*`.

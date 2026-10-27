@@ -1,0 +1,25 @@
+{
+  "name": "ditto-kotlin",
+  "version": "1.0.0",
+  "description": "Ditto Kotlin SDK assistance — Android and JVM apps: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "database",
+    "ditto",
+    "dql",
+    "gradle",
+    "kotlin",
+    "kmp",
+    "multi-version",
+    "offline-first",
+    "sync"
+  ],
+  "repository": "https://github.com/getditto/agent-skills",
+  "homepage": "https://docs.ditto.live/sdk/latest/install-guides/kotlin",
+  "skills": "./skills/"
+}

@@ -1,7 +1,17 @@
 # Setup — Kotlin
 
-> **Sources for this file.** `sdk/latest/install-guides/kotlin`,
-> `sdk/latest/compatibility/kotlin`, `sdk/v4/install-guides/kotlin`, and executed
+## Contents
+
+- [CAP-01 Prerequisites and install](#cap-01-prerequisites-and-install)
+- [CAP-02 Permissions and platform configuration](#cap-02-permissions-and-platform-configuration)
+- [Android manifest — permissions are auto-merged](#android-manifest--permissions-are-auto-merged)
+- [Runtime permissions](#runtime-permissions)
+- [Foreground service (Android)](#foreground-service-android)
+- [ProGuard / R8 (release builds)](#proguard--r8-release-builds)
+- [JVM target](#jvm-target)
+
+> **Sources for this file.** <https://docs.ditto.live/sdk/latest/install-guides/kotlin>,
+> <https://docs.ditto.live/sdk/latest/compatibility/kotlin>, <https://docs.ditto.live/sdk/v4/install-guides/kotlin>, and executed
 > builds of `tests/kotlin-sdk/minimal-app` (JVM) and `tests/kotlin-sdk/android-app`
 > (emulator) at the versions named in [versions.md](versions.md). Facts that differ
 > across version lines — including the v4 coordinate — live in
@@ -12,8 +22,8 @@
 **Toolchain (v5):**
 
 - JDK 17, Android `minSdk` 24 (Android 7.0), `compileSdk` 36
-  (sdk/latest/install-guides/kotlin).
-- Kotlin: docs say 2.0+ (N−4 support window, sdk/latest/compatibility/kotlin), but the
+  (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
+- Kotlin: docs say 2.0+ (N−4 support window, <https://docs.ditto.live/sdk/latest/compatibility/kotlin>), but the
   **executed floor is higher** — 5.1.0/5.0.3 artifacts embed Kotlin metadata 2.0.x/2.1.x
   (jar-verified) and the harness failed under the Kotlin 2.0.x plugin. Executed-working
   pin: Kotlin **2.3.21** with `kotlinx-coroutines` 1.10.x (JVM). On Android with AGP 9,
@@ -45,7 +55,7 @@ implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 `-android` variant automatically. No `Context` wiring: the SDK initializes its Android
 context itself via AndroidX Startup (`DittoInitializer`) — do **not** add a manual
 `DittoInitializer` entry to your manifest, and remove one if migrating from v4
-(sdk/latest/migration-guides/kotlin-v4).
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>).
 
 **Plain JVM (server/desktop) — two coordinates:**
 
@@ -83,7 +93,7 @@ is not `suspend` (see [connect.md](connect.md)).
 ### Android manifest — permissions are auto-merged
 
 The SDK's own manifest declares every permission its transports need, and manifest
-merger adds them to your app (sdk/latest/install-guides/kotlin):
+merger adds them to your app (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```xml
 <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -111,7 +121,7 @@ permission is owned by the `ditto-mesh-networking` skill —
 ### Runtime permissions
 
 Bluetooth/Wi-Fi Aware permissions are *runtime* permissions. The SDK ships a helper
-(sdk/latest/install-guides/kotlin):
+(<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```kotlin
 import com.ditto.kotlin.transports.DittoSyncPermissions
@@ -131,18 +141,18 @@ blaming the mesh.
 
 `sync.start()` can run `DefaultDittoForegroundService` so sync survives backgrounding;
 declare it in your manifest (full snippet and behavior:
-[transports.md](transports.md), sdk/latest/install-guides/kotlin).
+[transports.md](transports.md), <https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
 
 ### ProGuard / R8 (release builds)
 
-Required keep rule (sdk/latest/install-guides/kotlin):
+Required keep rule (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>):
 
 ```proguard
 -keep class com.ditto.** { *; }
 -keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
 ```
 
-Both rules are required (sdk/latest/install-guides/kotlin): the second keeps the TLS
+Both rules are required (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>): the second keeps the TLS
 platform verifier, or `Connect.Server` connections break in minified builds. Yes, the
 first rule is package-wide — it is the vendor-mandated rule. The SDK's own AARs have
 bundled consumer rules for their *internals* since 5.0.1 (**[source-verified]**:
@@ -168,5 +178,5 @@ smoke-test a minified build ([testing.md](testing.md)).
 None of the Android items above apply: no permissions, no manifest, no ProGuard (the
 native binary loads from the `ditto-binaries` JAR at runtime). Firewall/proxy egress
 rules for the Big Peer are platform-neutral — see
-`sdk/latest/deployment/network-deployment`
+<https://docs.ditto.live/sdk/latest/deployment/network-deployment>
 (<https://docs.ditto.live/sdk/latest/deployment/network-deployment>).
