@@ -1,6 +1,6 @@
 # On-disk store — Ditto Swift SDK
 
-How a Ditto store on disk behaves across the three supported version lines: where it
+How a Ditto store on disk behaves across the four supported version lines: where it
 lives, what an upgrade does to it, and what a rollback does. The API-surface differences
 are in [versions.md](versions.md); this is the part of CAP-19 that is about bytes on
 disk rather than symbols.

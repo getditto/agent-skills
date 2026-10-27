@@ -114,7 +114,8 @@ SDK 5.0. V3 sync is no longer supported.
 | 4.14.6 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 | 5.0.3 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 | 5.1.0 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
+| 5.2.0-rc.2 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 
 The same source also compiles for the iOS Simulator, an iOS device, and Mac Catalyst at
-all three versions. Nothing here was run on `x86_64`: 5.1.0 ships no Intel slice
-([versions.md](versions.md#shipped-xcframework-slices)).
+all four versions. Nothing here was run on `x86_64`: 5.1.0 and 5.2.0-rc.2 ship no Intel
+slice ([versions.md](versions.md#shipped-xcframework-slices)).

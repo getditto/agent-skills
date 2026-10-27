@@ -78,9 +78,9 @@ alternative for large payloads is an attachment
 
 | Platform | Status |
 |---|---|
-| iOS, iPadOS, iOS Simulator | supported on all three lines |
-| macOS (AppKit) | supported on all three lines |
-| Mac Catalyst | supported on all three lines |
+| iOS, iPadOS, iOS Simulator | supported on all four lines |
+| macOS (AppKit) | supported on all four lines |
+| Mac Catalyst | supported on all four lines |
 | tvOS | **not supported on any v5 line.** Binaries still ship at 5.0.3 and are gone at 5.1.0 — a tvOS app should stay on 4.14.x and contact Ditto support |
 | visionOS | listed as a v4 beta platform in the migration guide, but no SPM slice ships on any line |
 | watchOS | excluded on every line |

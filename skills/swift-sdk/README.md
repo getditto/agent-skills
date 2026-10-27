@@ -82,7 +82,7 @@ Rows that are not `Support: yes`:
   `Ditto.open(config:)`, `Ditto.openSync(config:)` and `Ditto.config` are labelled
   *(Preview)* in the release notes (`sdk/v4/release-notes/swift.mdx:419,421,427`). There
   is no opt-in flag — using the type is the opt-in. They are GA on 5.0.x and later. The
-  skill recommends them on all three lines because the alternative,
+  skill recommends them on all four lines because the alternative,
   `Ditto(identity:persistenceDirectory:)`, is deprecated on 4.14.x and removed in v5.
   **Stability:** the preview label means "this is the shape v5 standardizes on", which is
   what shipped; it does not mean the API is unstable.
@@ -119,7 +119,7 @@ beginning `sdk/` or `snippets/` are pages of the published documentation at
 
 **Executed against:** Ditto **4.14.6**, **5.0.3** and **5.1.0** on Apple silicon. The code
 samples and both examples are compiled for macOS, iOS Simulator, iOS device and Mac
-Catalyst on all three versions, and the minimal app is run in CI. Contributors: see
+Catalyst on all four versions, and the minimal app is run in CI. Contributors: see
 [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md).
 
 **Not covered by automated tests:**
