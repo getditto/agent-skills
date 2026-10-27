@@ -20,7 +20,7 @@ body:
     attributes:
       label: Where is it?
       description: File path, and section or line number if you have it.
-      placeholder: skills/dql/references/versions.md §4.5, line 126
+      placeholder: skills/write-dql/references/versions.md §4.5, line 126
     validations:
       required: true
 

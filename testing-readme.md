@@ -8,11 +8,14 @@ local environment (`.env`), and what each config key means.
 
 | Feature / skill | Harness | What it does | Docs |
 |---|---|---|---|
-| [`dql`](skills/dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.6, 5.0.3, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
+| [`dql`](skills/write-dql) (`write-dql`) | [`tests/dql/`](tests/dql/) | Runs every `sql` code block in the skill against real Ditto SDK builds (4.14.6, 5.0.3, 5.1.0), proving each documented query works on the versions it claims | [tests/dql/README.md](tests/dql/README.md) |
 | [`data-modeling`](skills/data-modeling) | [`tests/data-modeling/`](tests/data-modeling/) | Live-model evals: feeds raw-JSON cases plus the skill to a real AI model and deterministically scores its recommendations against the rubric finding IDs | [tests/data-modeling/README.md](tests/data-modeling/README.md) |
+| [`swift-sdk`](skills/swift-sdk) | [`tests/swift-sdk/`](tests/swift-sdk/) | A SwiftPM fixture whose Ditto version pin is an environment variable: one source tree compiled and run against 4.14.6, 5.0.3 and 5.1.0, built for macOS / iOS Simulator / iOS device / Mac Catalyst, plus an executed cross-version on-disk upgrade and rollback. Requires macOS and Xcode. | [tests/swift-sdk/README.md](tests/swift-sdk/README.md) |
 
-Both runners share the same config mechanism: the repo-root `.env`, loaded at
-startup via `tests/lib/load-env.mjs`. New harnesses should reuse it.
+The Node runners share one config mechanism: the repo-root `.env`, loaded at
+startup via `tests/lib/load-env.mjs`. The Swift fixture is shell-driven and
+parses the same `.env` itself, with the same precedence rules. New harnesses
+should reuse one of the two.
 
 ## Configuring your environment (`.env`)
 
@@ -37,8 +40,10 @@ startup via `tests/lib/load-env.mjs`. New harnesses should reuse it.
 
 | Key | Used by | Required | What it is |
 |---|---|---|---|
-| `DITTO_OFFLINE_LICENSE` | `tests/dql` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
-| `DITTO_DATABASE_ID` | `tests/dql` | No | Your Ditto database ID from the portal. Defaults to the offline-playground zero UUID (`00000000-1111-2222-3333-444444444444`) — fine for local-only harness runs. |
+| `DITTO_OFFLINE_LICENSE` | `tests/dql`, `tests/swift-sdk` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
+| `DITTO_DATABASE_ID` | `tests/dql`, `tests/swift-sdk` | No | Your Ditto database ID from the portal. Defaults to the offline-playground zero UUID (`00000000-1111-2222-3333-444444444444`) — fine for local-only harness runs. |
+| `DITTO_URL` | `tests/swift-sdk` | No | The portal's **Connect via SDK** URL. Set together with `DITTO_TOKEN` to additionally exercise the server-authentication path; without them those tests skip themselves and the minimal app runs offline. CI leaves both unset. |
+| `DITTO_TOKEN` | `tests/swift-sdk` | No | Development-provider token, paired with `DITTO_URL`. |
 | `DM_MODEL_CMD` | `tests/data-modeling` | Yes, unless `--prompts-only` | Shell command that runs the model under test. See below. |
 
 ### `DM_MODEL_CMD` in detail
@@ -60,8 +65,15 @@ Full contract and tips: [tests/data-modeling/README.md](tests/data-modeling/READ
 
 ## CI
 
-GitHub Actions does not use `.env` — the DQL matrix workflow
-(`.github/workflows/dql-skill-tests.yml`, triggers on `skills/dql/**` or
-`tests/dql/**` changes) injects the `DITTO_OFFLINE_LICENSE` repo secret
-directly into the environment, which takes precedence per the rule above. The
-data-modeling harness is run manually (it spends live-model tokens).
+GitHub Actions does not use `.env` — the two matrix workflows inject the
+`DITTO_OFFLINE_LICENSE` repo secret directly into the environment, which takes
+precedence per the rule above:
+
+- `.github/workflows/dql-skill-tests.yml` — triggers on `skills/write-dql/**` or
+  `tests/dql/**` changes.
+- `.github/workflows/swift-skill-tests.yml` — triggers on `skills/swift-sdk/**`
+  or `tests/swift-sdk/**` changes, and runs three jobs: the fixture per version
+  line, the four-platform compile matrix, and the cross-version persistence
+  matrix.
+
+The data-modeling harness is run manually (it spends live-model tokens).

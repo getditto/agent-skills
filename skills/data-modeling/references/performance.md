@@ -5,6 +5,17 @@ description: How document size, structure, hardware, and transports interact —
 
 # Performance dimensions of data models
 
+## Contents
+
+- [Document size limits (hard facts)](#document-size-limits-hard-facts)
+- [What actually costs when a document changes](#what-actually-costs-when-a-document-changes)
+- [Transports: the bandwidth budget](#transports-the-bandwidth-budget)
+- [Hardware tiers](#hardware-tiers)
+- [Observers (live queries)](#observers-live-queries)
+- [Counters and actor growth](#counters-and-actor-growth)
+- [Tombstones and churn](#tombstones-and-churn)
+- [Quick budget table for reviews](#quick-budget-table-for-reviews)
+
 Performance in Ditto is not "fast vs slow queries" — it's the product of **document size × merge granularity × hardware × transport**. This file gives the numbers; the modeling conclusions are in [`../best-practices.md`](../best-practices.md).
 
 ## Document size limits (hard facts)

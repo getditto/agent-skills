@@ -1,0 +1,20 @@
+{
+  "name": "ditto-plugins",
+  "interface": {
+    "displayName": "Ditto Swift"
+  },
+  "plugins": [
+    {
+      "name": "ditto-swift",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ditto-swift"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

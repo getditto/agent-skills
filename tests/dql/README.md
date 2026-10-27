@@ -10,13 +10,13 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 | `@dittolive/ditto@5.0.3`  | 222 | 36 | 0 | 0 | 0 |
 | `@dittolive/ditto@5.1.0`  | 252 | 6  | 0 | 0 | 0 |
 
-Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/write-dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
 
 **Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.6 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
 ## How it works
 
-1. **Extraction.** `scripts/extract-queries.mjs` walks every `.md` file under `skills/dql/`, pulls every ` ```sql ` code block, and emits a draft catalog entry per query. Each entry has a content-addressed ID — see **Entry IDs** below. It also writes `catalog/blocks.json` (every block, including ignored ones) and stashes the curated catalog's `expect` goldens into `catalog/goldens.json` before overwriting it.
+1. **Extraction.** `scripts/extract-queries.mjs` walks every `.md` file under `skills/write-dql/`, pulls every ` ```sql ` code block, and emits a draft catalog entry per query. Each entry has a content-addressed ID — see **Entry IDs** below. It also writes `catalog/blocks.json` (every block, including ignored ones) and stashes the curated catalog's `expect` goldens into `catalog/goldens.json` before overwriting it.
 
 2. **Curation.** `scripts/curate-catalog.mjs` splits multi-statement blocks (paren-depth aware, so subqueries aren't chopped), substitutes concrete values for `:param` placeholders, marks version-gated features with `availableIn`, strips statement-terminator semicolons (the SDK takes exactly one statement, no `;`), ignores `SELECT`s with no top-level `FROM` clause, and applies the manual decisions in `catalog/overrides.json` — version corrections for features the tested SDKs don't actually ship, plus ignores with reasons. It re-attaches the stashed goldens by ID and prunes ignore entries whose block no longer exists.
 
@@ -30,7 +30,7 @@ Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/dql/**/*.
 
 An entry's ID is `sk_<file-slug>_<sha1(repo-relative-path + normalized-sql + occurrence)>`, where *normalized* means `--` comments stripped (quote-aware) and whitespace runs collapsed, and *occurrence* disambiguates byte-identical queries within one file.
 
-**The invariant: an ID changes when, and only when, the statement itself changes.** Editing prose above a block, reflowing or reindenting the SQL, and rewording a `--` comment all leave IDs untouched. That matters because `ignore.json`, `ignore-reasons.json`, `overrides.json` and `goldens.json` are all keyed by ID — under the previous scheme, which hashed `(file, line, raw sql)`, inserting a paragraph silently re-keyed every entry below it, orphaning its override and dropping its assertions with no error anywhere.
+**Within one source file, an ID changes when the normalized statement or its duplicate occurrence changes.** Moving a block to another file also changes its ID: migrate every golden, version override and ignore key before regenerating. Editing prose above a block, reflowing or reindenting the SQL, and rewording a `--` comment all leave IDs untouched. That matters because `ignore.json`, `ignore-reasons.json`, `overrides.json` and `goldens.json` are all keyed by ID — under the previous scheme, which hashed `(file, line, raw sql)`, inserting a paragraph silently re-keyed every entry below it, orphaning its override and dropping its assertions with no error anywhere.
 
 Consequences worth knowing:
 
@@ -120,7 +120,7 @@ npm run test:v5 -- --fail-fast
 
 ## Adding a new query to the skill
 
-1. Add the ` ```sql ` block to the appropriate file under `skills/dql/`.
+1. Add the ` ```sql ` block to the appropriate file under `skills/write-dql/`.
 2. Regenerate: `node scripts/extract-queries.mjs && node scripts/curate-catalog.mjs` — your new query appears in `catalog/catalog.json` with a new hash ID.
 3. Run the harness: `npm test`. If your new query passes on the SDK version(s) you intended, you're done.
 4. If it errors:
@@ -170,7 +170,7 @@ tests/dql/
 
 ## CI
 
-`.github/workflows/dql-skill-tests.yml` runs the matrix on macOS for every PR touching `skills/dql/`, `tests/dql/`, or the workflow itself. Requires the `DITTO_OFFLINE_LICENSE` repo secret.
+`.github/workflows/dql-skill-tests.yml` runs the matrix on macOS for every PR touching `skills/write-dql/`, `tests/dql/`, or the workflow itself. Requires the `DITTO_OFFLINE_LICENSE` repo secret.
 
 ## Caveats
 

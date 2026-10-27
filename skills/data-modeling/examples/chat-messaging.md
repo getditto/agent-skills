@@ -1,5 +1,13 @@
 # Cookbook: chat with media
 
+## Contents
+
+- [The input JSON](#the-input-json)
+- [Findings](#findings)
+- [Recommended model](#recommended-model)
+- [Reads](#reads)
+- [Budget](#budget)
+
 Covers SDK **4.14.x and 5.1.x**; version gates tagged inline. All statements assume `dql_strict_mode = false` on every peer (the 5.x default; the migration target for 4.14.x meshes). Chat is the canonical case where "put it all in one doc" collapses: messages are unbounded, multi-writer, and include binaries.
 
 ## The input JSON

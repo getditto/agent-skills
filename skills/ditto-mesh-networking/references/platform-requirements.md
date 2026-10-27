@@ -1,5 +1,16 @@
 # Platform Requirements and Diagnosis
 
+## Contents
+
+- [1. The first question: config or platform?](#1-the-first-question-config-or-platform)
+- [2. iOS / macOS](#2-ios--macos)
+- [3. Android](#3-android)
+- [4. Linux](#4-linux)
+- [5. Windows](#5-windows)
+- [6. Browsers and Wasm](#6-browsers-and-wasm)
+- [7. Network environment (not a device setting, but the same class of problem)](#7-network-environment-not-a-device-setting-but-the-same-class-of-problem)
+- [8. Diagnosis order](#8-diagnosis-order)
+
 Transports depend on OS permissions, entitlements, manifest declarations, and hardware
 support. **Configuration cannot override any of them.** When a transport is enabled in
 config but produces no connections, this file is where to look before suspecting Ditto.

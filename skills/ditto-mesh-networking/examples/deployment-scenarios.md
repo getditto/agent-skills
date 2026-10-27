@@ -1,5 +1,14 @@
 # Deployment Scenarios
 
+## Contents
+
+- [1. Restaurant point-of-sale — mixed iPads and Android handhelds, venue Wi-Fi that sometimes dies](#1-restaurant-point-of-sale--mixed-ipads-and-android-handhelds-venue-wi-fi-that-sometimes-dies)
+- [2. Warehouse / airside operations — Android-only fleet, no usable Wi-Fi](#2-warehouse--airside-operations--android-only-fleet-no-usable-wi-fi)
+- [3. Kiosk / fixed infrastructure on a routed enterprise network](#3-kiosk--fixed-infrastructure-on-a-routed-enterprise-network)
+- [4. Browser dashboard alongside a native fleet](#4-browser-dashboard-alongside-a-native-fleet)
+- [5. Air-gapped deployment — no cloud at all](#5-air-gapped-deployment--no-cloud-at-all)
+- [6. Runtime reconfiguration: disabling BLE while the app is running](#6-runtime-reconfiguration-disabling-ble-while-the-app-is-running)
+
 Worked examples matching a real deployment to a transport configuration and a data model.
 Each one states the constraint, the transport choice, what the mesh looks like, and — the
 part that's easy to skip — what the transport choice implies for the schema.

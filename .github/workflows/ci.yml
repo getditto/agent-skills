@@ -7,6 +7,21 @@ on:
     branches: [main]
 
 jobs:
+  package-portability:
+    name: Swift packaging on ${{ matrix.os }} (Python 3.9)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.9'
+      - name: Check portable installation archives
+        run: python -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
+
   validate:
     name: Validate plugins
     runs-on: ubuntu-latest
@@ -51,6 +66,27 @@ jobs:
 
       - name: SDK-skill structural checks (SDK-SKILL-TEMPLATE.md §12.1)
         run: python3 scripts/check-sdk-skill-structure.py
+      - name: Check skill context guard negative controls
+        run: python3 tests/skill-context/test_contract.py
+
+      - name: Check Swift runner regressions
+        run: python3 tests/swift-sdk/test_runner.py
+
+      - name: Check Swift package integrity and failure controls
+        run: python3 -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
+
+      - name: Check Swift host metadata and build standalone packages
+        run: |
+          python3 scripts/package-swift-plugin.py --check
+          python3 scripts/package-swift-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
+
+      - name: Upload Swift installation packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: ditto-swift-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-swift-packages/*.zip
+            ${{ runner.temp }}/ditto-swift-packages/SHA256SUMS
 
       - name: Check plugin references in marketplace
         run: |
@@ -144,7 +180,7 @@ jobs:
 
                   # Shape (b): a real directory whose entries are symlinks into
                   # the canonical tree, e.g.
-                  #   plugins/ditto-dql/skills/dql -> ../../../skills/dql
+                  #   plugins/ditto-dql/skills/write-dql -> ../../../skills/write-dql
                   entries = [e for e in sorted(os.listdir(wrapper)) if not e.startswith('.')]
                   if not entries:
                       errors.append(f"{wrapper} is empty")
@@ -163,6 +199,12 @@ jobs:
                           continue
                       if suffix and not os.path.isfile(os.path.join(target, suffix)):
                           errors.append(f"{path} has no {suffix}")
+                          continue
+                      if suffix and entry != os.path.basename(target):
+                          errors.append(
+                              f"{path} must use the canonical skill directory name "
+                              f"'{os.path.basename(target)}' for portable discovery"
+                          )
                           continue
                       ships_anything = True
                       shipped[canonical].add(os.path.basename(target))
@@ -185,3 +227,6 @@ jobs:
 
           print("All plugin wrappers are correctly scoped")
           EOF
+
+      - name: Validate SDK skill structure
+        run: python3 scripts/validate-sdk-skills.py
