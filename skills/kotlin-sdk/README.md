@@ -117,10 +117,11 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   including the `disableSyncWithV3()` requirement and its exact failure string.
 - JUnit pattern (5.0.3 and 5.1.0, same JVM host):
   [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
-  — `insertThenReadBack` and `observerReportsTheWrite`, 2 tests green
-  (`gradle test -PdittoLine=v5 -PdittoVersion=<v>`). The observer test runs under
-  `runBlocking`, not `runTest`: Ditto delivers on real FFI threads, so `runTest`'s
-  virtual time expires first (executed failure).
+  — `insertThenReadBack`, `observerReportsTheWrite`, `observerReportsTheWriteUnderRunTest`
+  and `flowOnDoesNotReachTheObserveTransform`, 4 tests green on macOS arm64 and in CI on
+  Linux x64 (`gradle test -PdittoVersion=<v>`). The plain observer test runs under
+  `runBlocking`: Ditto delivers on real FFI threads, so `runTest`'s virtual time expires
+  first (executed failure); the `runTest` form waits under `withContext(Dispatchers.Default)`.
 - Executed failure modes: missing `ditto-binaries` classifier on JVM; plain re-INSERT
   FAIL-conflict `UnknownException`; v4 INSERT without `disableSyncWithV3()`.
   Transcripts: [`examples/minimal-app.md`](examples/minimal-app.md).
@@ -146,7 +147,7 @@ Evidence notes (spec §7 requires the tier's extra information inline for
 - Published 5.1.0 artifacts (`ditto-kotlin-5.1.0-sources.jar`, `ditto-internal-jvm-5.1.0.jar`
   bytecode): `collect()` registers an observer with no context switch and the FFI
   callback launches every handler on the SDK scope, so an `observe()` transform runs on
-  that scope and `.flowOn()` does not reach it
+  that scope and `.flowOn()` does not reach it — executed as the `flowOn` probe test
   ([`references/concurrency.md`](references/concurrency.md#why-flowon-does-not-move-the-observe-transform)).
   `sync.subscriptions` / `store.observers` are delegated live views, not snapshots.
 
@@ -155,10 +156,9 @@ JVM-only, so the Android-specific v5 claims (handlers on `MainScope()`, AGP 9 bu
 Kotlin, permissions helper) are source- or docs-sourced, not executed; two-peer mesh
 sync (no second device run); attachments fetch lifecycle; transactions; Data Streams
 (preview); ProGuard/R8 release-build behavior; in-place on-disk store migration
-semantics on a shipped 4.14.x store; cloud authentication round-trip; the `flowOn`
-finding above (bytecode-read, not executed).
+semantics on a shipped 4.14.x store; cloud authentication round-trip.
 
-**Last verified:** 2026-10-21.
+**Last verified:** 2026-10-27 (JVM legs in CI); Android 4.14.7 leg 2026-10-21.
 
 ## Installation
 

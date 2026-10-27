@@ -126,9 +126,10 @@ reads the producer's context, so the transform's dispatcher is the SDK's, not
 `flowOn`'s. The docs' own warning that `observe()` "does not back-pressure" refers to
 this hand-off; see [observers.md](observers.md#back-pressure-what-the-source-actually-does).
 
-This was established from the published 5.1.0 bytecode, not executed. A one-line probe
-confirms it on JVM: a transform that records `Thread.currentThread().name` under
-`.flowOn(newSingleThreadContext("probe"))` never reports `probe`.
+Established from the published 5.1.0 bytecode and **executed** on JVM (5.0.3 and 5.1.0,
+CI): a transform that records `Thread.currentThread().name` under
+`.flowOn(newSingleThreadContext("probe"))` reports a `DefaultDispatcher-worker` thread,
+never `probe`.
 
 ## Overriding the SDK scope
 

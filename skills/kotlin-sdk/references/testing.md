@@ -179,8 +179,8 @@ tests; `runTest` is fine for straight-line `store.execute` calls.
 The idiomatic alternative, per the kotlinx-coroutines-test `runTest` docs
 (<https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html>:
 "Delays in code that runs inside dispatchers that don't use a TestCoroutineScheduler
-don't get skipped"), keeps one runner across the suite — **not executed by this
-harness**:
+don't get skipped"), keeps one runner across the suite. **Executed** on 5.0.3 and 5.1.0
+(JVM, CI) as `observerReportsTheWriteUnderRunTest`:
 
 ```kotlin
 import kotlinx.coroutines.Dispatchers
