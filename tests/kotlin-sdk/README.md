@@ -97,17 +97,17 @@ Recorded runs: Pixel 10a (Android 17) for 5.1.0, 5.0.3 and 4.14.7; emulator API 
 4.14.7. A `compileSdk` 35 build of the v5 leg fails `CheckAarMetadata` — the 5.x AARs
 enforce 36 — which is why `compileSdk` follows the line.
 
-## Forward check: 5.2.0-rc.2
+## 5.2.0-rc.2
 
-`com.ditto:ditto-kotlin:5.2.0` is not on Maven Central (only `5.2.0-rc.2`), so the skill
-documents 4.14.x, 5.0.x and 5.1.x. Both legs also run against `-PdittoVersion=5.2.0-rc.2`
-to catch breakage early; CI runs that JVM leg as a non-blocking matrix entry. Move the
-documented coverage to 5.2.x when GA is installable.
+`com.ditto:ditto-kotlin:5.2.0` GA is not on Maven Central yet (only `5.2.0-rc.2`), so the
+release candidate is the 5.2 target: both legs run against `-PdittoVersion=5.2.0-rc.2`
+(JVM locally and in CI, Android on the Pixel 10a) and the skill marks it as such.
+Switch the pin to `5.2.0` and re-run both legs when GA publishes.
 
 ## CI
 
 `.github/workflows/kotlin-skill-tests.yml` runs the JVM leg on `ubuntu-latest` for
-5.0.3 and 5.1.0 (blocking) and 5.2.0-rc.2 (non-blocking) whenever `skills/kotlin-sdk/**`,
+5.0.3, 5.1.0 and 5.2.0-rc.2 whenever `skills/kotlin-sdk/**`,
 `tests/kotlin-sdk/**` or the workflow changes, using the `DITTO_OFFLINE_LICENSE`
 repository secret. The Android leg needs a device and is run manually; its transcripts
 are recorded in `skills/kotlin-sdk/examples/minimal-app.md`.

@@ -137,6 +137,9 @@ default, with availability limited to supported platforms during the beta. On
 Android and iOS, changes requested while sync is active take effect after sync is
 stopped and successfully started again, when Ditto validates platform
 prerequisites."* No multicast guide exists yet; the changelog is the only source.
+5.2.0-rc.2 adds `DittoSyncPermissions.requiredMulticastPermissions()` — the
+permissions multicast needs beyond `requiredPermissions()` (**[api-dump]**, rc.2
+sources; see [versions.md](versions.md#new-in-520-rc2)).
 
 ### DittoAndroidTools — platform-adjacent diagnostics
 

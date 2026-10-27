@@ -7,7 +7,7 @@ description: >
   DittoFactory.create, registerObserver, ditto.store.execute, and errors like
   "Query result item has already been closed.", "Unable to find binary
   'libdittoall'", "Identifier conflict … FAIL conflict policy". Android and JVM
-  targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x.
+  targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0-rc.2.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -27,7 +27,8 @@ Do not preload all references or the README (the capability/evidence map).
 
 Writes and reviews Ditto Kotlin code: Gradle setup, initialization, authentication,
 DQL store access, sync, observers and Flows, attachments, presence, transports, object
-lifetimes, threading, errors and testing. Supports **4.14.x (LTS), 5.0.x and 5.1.x** on
+lifetimes, threading, errors and testing. Supports **4.14.x (LTS), 5.0.x, 5.1.x and
+5.2.0-rc.2** (release candidate; 5.2.0 GA is not yet on Maven Central) on
 **Android** (both lines) and **plain JVM** (5.x only).
 
 ## When to use this skill
@@ -54,7 +55,7 @@ and `live.ditto:ditto` (4.14.x, Android-only). Published API reference:
 
 **[`references/versions.md`](references/versions.md) owns every fact that differs
 across version lines**, including package coordinates per version and the minimum
-toolchain. **When the user's version is unknown, emit 5.1.x code and say which version
+toolchain. **When the user's version is unknown, emit 5.1.x code (the latest GA) and say which version
 you assumed.** v4 and v5 are different APIs, not two versions of one.
 
 ## Capability exceptions
@@ -153,7 +154,7 @@ Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
 ## Version differences
 
-| Concern | 4.14.x | 5.0.x / 5.1.x |
+| Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.0-rc.2 |
 |---|---|---|
 | Package / namespace | `live.ditto:ditto`, `live.ditto.*` (Android-only) | `com.ditto:ditto-kotlin`, `com.ditto.kotlin.*` (Android + JVM) |
 | Initialization | `Ditto(deps, DittoIdentity.…)` | `DittoFactory.create(DittoConfig(…))`, not suspend |

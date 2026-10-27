@@ -30,7 +30,8 @@ Deliberately **out of scope** — these have their own skills:
 
 | Ditto SDK | Package version | Status |
 |---|---|---|
-| 5.1.x | 5.1.0 | Current — executed |
+| 5.2.x | 5.2.0-rc.2 | Release candidate — executed (JVM, Android); 5.2.0 GA not on Maven Central |
+| 5.1.x | 5.1.0 | Current GA — executed |
 | 5.0.x | 5.0.3 | Supported — executed |
 | 4.14.x | 4.14.7 | LTS — executed (Android; no JVM artifact exists for this line) |
 
@@ -121,10 +122,12 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   `registerObserver` handler runs on `main`, and an `observe()` transform under
   `.flowOn(Dispatchers.IO)` also runs on `main`. A `compileSdk` 35 build fails
   `CheckAarMetadata` (executed).
-- Forward check, not part of the documented coverage: `5.2.0-rc.2` (the newest
-  `com.ditto:ditto-kotlin` on Maven Central; 5.2.0 GA is not published) runs the JVM
-  minimal app and all four tests green, and the Android v5 leg on the Pixel 10a with
-  both probes unchanged. Coverage moves to 5.2.x when GA is installable.
+- **5.2.0-rc.2** (the newest `com.ditto:ditto-kotlin` on Maven Central; 5.2.0 GA is not
+  published): the JVM minimal app and all four tests green locally and in CI, and the
+  Android v5 leg on the Pixel 10a with both probes unchanged. Its public API was diffed
+  against 5.1.0 from the published sources jar: nothing the skill documents was removed;
+  the additions are listed in [`references/versions.md`](references/versions.md#new-in-520-rc2).
+  Re-verify against 5.2.0 GA when it publishes.
 - JUnit pattern (5.0.3 and 5.1.0, same JVM host):
   [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
   — `insertThenReadBack`, `observerReportsTheWrite`, `observerReportsTheWriteUnderRunTest`

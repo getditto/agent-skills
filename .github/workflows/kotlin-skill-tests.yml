@@ -20,16 +20,11 @@ jobs:
   jvm:
     name: JVM minimal app and tests against Ditto SDK ${{ matrix.sdk }}
     runs-on: ubuntu-latest
-    # The documented lines block; the release candidate is a forward check only.
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['5.0.3', '5.1.0']
-        experimental: [false]
-        include:
-          - sdk: '5.2.0-rc.2'
-            experimental: true
+        # 5.2.0-rc.2 is the 5.2 target until 5.2.0 GA reaches Maven Central.
+        sdk: ['5.0.3', '5.1.0', '5.2.0-rc.2']
     steps:
       - uses: actions/checkout@v7
 

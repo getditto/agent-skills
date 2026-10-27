@@ -229,6 +229,6 @@ main thread, and `flowOn` does not reach the transform.
 | 5.0.x | 5.0.3 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
 | 5.0.x | 5.0.3 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
 | 4.14.x | 4.14.7 | Android emulator (API 35, arm64); Pixel 10a | macOS, AGP 9.4.1, compileSdk 35 | 2026-10-27 |
+| 5.2.x (rc) | 5.2.0-rc.2 | JVM; Android, Pixel 10a | as 5.1.0 rows; CI Linux x64 | 2026-10-27 |
 
-`5.2.0-rc.2` (not GA; not documented) also runs the JVM program and tests green, and the
-Android v5 leg on the Pixel 10a prints the same lines with `SDK version: 5.2.0-rc.2`.
+`5.2.0-rc.2` prints the same lines with `SDK version: 5.2.0-rc.2` on both targets.

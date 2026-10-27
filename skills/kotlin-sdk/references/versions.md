@@ -22,15 +22,17 @@
   - [On-disk store migration](#on-disk-store-migration)
   - [Removed APIs](#removed-apis)
   - [New in v5](#new-in-v5)
+  - [New in 5.2.0-rc.2](#new-in-520-rc2)
   - [Migration checklist](#migration-checklist)
 
 ## Supported versions
 
 | Ditto SDK | Package version | Verified on | Status |
 |---|---|---|---|
-| 5.1.x | 5.1.0 | 5.1.0 — executed (JVM, macOS arm64) | Current |
-| 5.0.x | 5.0.3 | 5.0.3 — executed (JVM, macOS arm64) | Supported |
-| 4.14.x | 4.14.7 | 4.14.7 — executed (Android emulator, API 35) | LTS |
+| 5.2.x | 5.2.0-rc.2 | 5.2.0-rc.2 — executed (JVM; Android, Pixel 10a) | Release candidate — 5.2.0 GA is not on Maven Central yet |
+| 5.1.x | 5.1.0 | 5.1.0 — executed (JVM; Android, Pixel 10a) | Current GA |
+| 5.0.x | 5.0.3 | 5.0.3 — executed (JVM; Android, Pixel 10a) | Supported |
+| 4.14.x | 4.14.7 | 4.14.7 — executed (Android emulator API 35; Pixel 10a) | LTS |
 
 **Kotlin toolchain:** docs say Kotlin 2.0+ (Ditto supports the four most recent stable
 releases, N−4) and JDK 17 (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>,
@@ -226,6 +228,34 @@ the v5 upgrade.)
 - JVM/server target (`-jvm` variant + `ditto-binaries` classifier), KMP layout.
 - 5.1.x adds: JOINs, composite indexes, `RETURNING`, `ADVISE`, Data Streams (preview).
 - `com.ditto:ditto-tools-android:6.x` replaces `live.ditto:ditto-tools-android`.
+
+### New in 5.2.0-rc.2
+
+Observed by diffing the public declarations in `ditto-kotlin-android-5.2.0-rc.2-sources.jar`
+against 5.1.0 (**[api-dump]**); the Kotlin release notes do not yet list 5.2.0. Nothing
+the rest of this skill documents was removed. Toolchain unchanged: `kotlin-stdlib`
+2.3.21, coroutines 1.9.0, AAR `minCompileSdk` 36, `minSdk` 24.
+
+- **Local store encryption:** `DittoConfig(encryptionKey = DittoEncryptionKey.raw(bytes))`
+  with exactly 32 key bytes; the SDK copies them once into zeroized native memory, and
+  `destroy()` releases them (idempotent — afterwards no config built with that key can
+  open a store). Opening a store with a missing, wrong or unexpected key throws
+  `DittoException.EncryptionException` with `reason` `KeyRequired`, `KeyInvalid`,
+  `KeyUnexpected`, `UnsupportedScheme` or `MetadataCorrupt`. Keep the bytes in the
+  Android Keystore and pass them at open; the SDK never reads them back.
+- **`DittoFactory.deleteStore(databaseId, persistenceDirectory = null)`** deletes a store
+  on disk; throws `DittoException` while any instance holds it, if the directory is not
+  a Ditto store, or if deletion fails partway.
+- **`DittoConfig.systemParameters: Map<String, Any>`** sets system parameters at open
+  (the equivalent of `ALTER SYSTEM SET …` before `sync.start()`).
+- **`DittoSyncPermissions.requiredMulticastPermissions(): List<String>`** — always
+  `CHANGE_WIFI_MULTICAST_STATE`; on Android 17+ (API 37+) when the app targets API 37
+  or newer, also `ACCESS_LOCAL_NETWORK`. These are *not* part of `requiredPermissions()`;
+  declare and grant them before starting sync when using the multicast transport.
+- **`DittoException.AuthenticationException`** gains `failureCode: AuthenticationFailureCode?`
+  (stable categories for how to respond to a failed login) and `clientInfoJson: String?`
+  (the webhook's `clientInfo`, `null` when absent or when the error is not from `login`).
+- **`DittoTransactionInfo.hintOrNull: String?`**; `hint` stays non-null.
 
 ### Migration checklist
 
