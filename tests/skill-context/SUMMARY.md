@@ -53,6 +53,23 @@ concurrency task with no Ditto dependency, where `swift-sdk` must not fire.
 - OpenCode/Kimi K3 was not available for the rerun. Claude reported USD 0.78 for the
   seven runs; Codex does not report cost.
 
+## Kotlin SDK skill addition — 2026-10-27
+
+With `kotlin-sdk` added alongside `swift-sdk`, two new cases and the Swift observer case
+were run once per host against the tree that includes both SDK skills.
+
+| Task | Claude Code 2.1.311 (Opus 5.5) | Codex 0.163.0 (`gpt-6.1-sol`) |
+|---|---|---|
+| Kotlin observer: `flowOn` jank, retained items, silent observer close | Pass, all five criteria; read `concurrency.md` only | Pass, all five criteria |
+| Plain Room/Compose Flow, no Ditto (new, trigger scope) | Pass; `kotlin-sdk` not invoked | Pass; no skill file read, no Ditto mention |
+| Swift 5.0.3 observer (routing check with both SDK skills installed) | Pass; `swift-sdk` only | Pass; `swift-sdk` only |
+
+- The `kotlin_observer` case targets the corrected guidance that `.flowOn(Dispatchers.IO)`
+  does not move an `observe()` transform off the Android main thread; both answers made
+  that point and hopped with `withContext` inside the transform.
+- One run per host and case; OpenCode/Kimi K3 was not available. Claude reported USD 0.37
+  for the three runs; Codex does not report cost.
+
 ## Final bounded regressions
 
 The same natural relay and order-model prompts were rerun on fresh Claude and Kimi
@@ -104,7 +121,7 @@ preserving prose and code blocks is not a semantic correctness check.
 - Generated Swift and extra SQL were not compiled or executed by this smoke suite.
   Core-task passes do not certify all ancillary statements or snippet completeness.
 
-`results.json` preserves 30 primary/retry/regression/rerun records including the timeout
+`results.json` preserves 36 primary/retry/regression/rerun records including the timeout
 and blocked Codex record. Pilot setup failures and all raw traces remain private.
 `cases.json` contains prompts and separate review criteria. `README.md` describes the
 reproducible method and command templates without credentials, private endpoints,
