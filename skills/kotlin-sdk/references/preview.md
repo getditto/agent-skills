@@ -10,7 +10,7 @@
 ## Contents
 
 - [CAP-20 Preview and platform-specific APIs](#cap-20-preview-and-platform-specific-apis)
-  - [Data Streams — 5.1.0, Public Preview, Kotlin-only](#data-streams--510-public-preview-kotlin-only)
+  - [Data Streams — preview, 5.1.0 floor](#data-streams--preview-510-floor)
   - [DittoConfig.Experimental](#dittoconfigexperimental)
   - [DittoExperimental.triggerTestPanic()](#dittoexperimentaltriggertestpanic)
   - [Multicast transport — 5.1.0, opt-in beta](#multicast-transport--510-opt-in-beta)
@@ -20,75 +20,29 @@
 
 ## CAP-20 Preview and platform-specific APIs
 
-### Data Streams — 5.1.0, Public Preview, Kotlin-only
+### Data Streams — preview, 5.1.0 floor
 
-Data Streams are low-latency, bidirectional, peer-to-peer channels that carry
-**raw bytes** between two reachable Ditto peers over named topics. They are
-ephemeral and **never write to the Ditto store** — the non-preview alternative
-for data that must persist, be queried, or converge is document sync (or an
-attachment) (<https://docs.ditto.live/sdk/latest/sync/data-streams>).
-
-Three facts to state wherever this API is used:
-
-1. **Kotlin-only preview.** The Data Streams guide covers the *"Android
-   (Kotlin)"* preview and its samples are Kotlin-specific; no other SDK
-   documents the API. The docs name **Ditto SDK 5.1.0** as the requirement
-   (<https://docs.ditto.live/sdk/latest/sync/data-streams>). The classes do ship in the 5.0.3 jar
-   (**[source-verified]**), but their preview status there is untested and the
-   KDoc still carries the closed-preview warning — treat 5.1.0 as the floor.
-2. **Stability warning, verbatim:** *"Data Streams are in Public Preview and
-   may receive breaking changes without notice. You must acknowledge this in
-   code by opting in with `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`."*
-   (<https://docs.ditto.live/sdk/latest/sync/data-streams>)
-3. **Opt-in is per-file.** Every file that calls into the API needs:
-
-   ```kotlin
-   @file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)
-   ```
-
-**Setup.** Data Streams run over NGN (next-generation networking), which must
-be enabled *before* `DittoFactory.create(...)` — set both environment variables
-in `Application.onCreate()`:
-
-```kotlin
-import android.system.Os
-
-Os.setenv("DITTO_NETWORK_ENABLE_NGN", "true", true)   // required; streams run over NGN
-Os.setenv("DITTO_REPLICATION_OVER_NGN", "false", true) // keep document sync on stable transports
-
-// ... then DittoFactory.create(config), then:
-ditto.sync.start()   // sync must run so presence can discover peers
-```
-
-A TCP listener is **not** a prerequisite for Data Streams
+Low-latency, bidirectional, peer-to-peer **raw-byte** channels over named topics that
+**never write to the Ditto store**; the non-preview alternative for data that must
+persist, be queried or converge is document sync or an attachment
 (<https://docs.ditto.live/sdk/latest/sync/data-streams>).
 
-**API surface** (package `com.ditto.kotlin`; entry point `ditto.dataStreams`,
-a `DittoDataStreamsEndpoint`) (<https://docs.ditto.live/sdk/latest/sync/data-streams>):
+1. **Preview.** *"Data Streams are in Public Preview and may receive breaking changes
+   without notice. You must acknowledge this in code by opting in with
+   `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`."*
+   (<https://docs.ditto.live/sdk/latest/sync/data-streams>). The opt-in is per file.
+2. **Versions.** The docs name **5.1.0** as the requirement and cover Android. The classes
+   ship in 5.0.3 as well, and the two-peer fixture passes on 5.0.3, 5.1.0 and 5.2.0 on the
+   JVM (**executed**); treat 5.1.0 as the supported floor. Not Kotlin-only any more: the
+   Swift SDK exposes the same API from 5.2.0 behind `@_spi(PreviewDataStreams)`.
+3. **NGN first.** Streams run over NGN, enabled before `DittoFactory.create` through
+   `DITTO_NETWORK_ENABLE_NGN=true` (Android `Os.setenv` in `Application.onCreate()`; the
+   process environment on the JVM) or, from 5.2.0, `DittoConfig(systemParameters =
+   mapOf("network_enable_ngn" to true, …))` (**executed**).
 
-| Type | Purpose |
-|---|---|
-| `DittoDataStreamsEndpoint` | `bindTopic(topic, reliability = Reliable, onNewCandidate)`; suspending `connect(peer, topic, requestCompression = false, reliability = Reliable, timeoutMs = 0, arguments: ByteArray? = null) { candidate -> ... }` — **named args required**: `requestCompression` sits between `topic` and `reliability` positionally (**[api-dump]** 5.1.0 API reference, `com.ditto.kotlin/-ditto-data-streams-endpoint`). The API-reference KDoc writes the opt-in as `com.ditto.PreviewDataStreams`; the annotation actually lives in `com.ditto.kotlin` (package index) — use the guide's spelling |
-| `DittoAcceptor` | Handle returned by `bindTopic`; keep it alive to keep accepting. One acceptor per topic at a time |
-| `DittoStreamCandidate` | Callback-scoped; `open()` it inside the callback or `take()` it (then close the taken candidate yourself) |
-| `DittoStream` | `suspend send(payload): DittoSendStatus`; `sendAndForget(payload)`; `send(payload) { op -> }` monitor overload; `maxSendSize()`; `close()`; `suspend closeSync()`; `suspend waitUntilClosed()` |
-| `DittoInbound` | A received message; `payload()` returns an owned `ByteArray` |
-| `DittoSendOperation` | `currentStatus()` / `awaitStatusChange()` / `cancel()` — for backpressure |
-| `DittoReliability` | `Reliable` (in order or the connection fails) / `Unreliable` (may lose, reorder, duplicate). Binder and connector **must match** or the connection is rejected |
-| `DittoStreamStatus` | `Open`, `ClosedByRemote`, `ClosedByLocal` |
-| `DittoSendStatus` | `Unknown`, `Pending`, `Sent`, `Failed`, `Cancelled` |
-
-Topics must match `^[a-zA-Z0-9_ ]{1,15}$`. Lifecycle rules that bite: the
-receive callback runs on the connection's **driver thread** (non-blocking work
-only); closing an acceptor unbinds the topic but does **not** close streams
-already open on it; streams do **not** reconnect automatically; and never call
-`connect` from inside a presence-observer callback — copy the peer key out and
-launch the connect on a separate coroutine (<https://docs.ditto.live/sdk/latest/sync/data-streams>).
-
-Stream failures surface as `DittoException.DataStreamsException`, a v5-new
-exception type (<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). Catch
-`CancellationException` first and rethrow it before handling a
-`DataStreamsException` on retry paths (<https://docs.ditto.live/sdk/latest/sync/data-streams>).
+Implementation guide, API table, executed error strings and the two JVM defects to code
+around (`arguments()` throwing when none were sent; `topic()` returning garbage):
+[data-streams.md](data-streams.md). Concepts and design patterns: the `data-streams` skill.
 
 ### `DittoConfig.Experimental`
 

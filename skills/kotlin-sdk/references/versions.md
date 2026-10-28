@@ -77,7 +77,7 @@ Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
 | DQL mutations (`INSERT`/`UPDATE`/`DELETE`) | Only after `ditto.disableSyncWithV3()` (see below) | ✓ | ✓ | 4.14.x without the call: ``DittoError.StoreError: <dql> Unsupported feature: Encountered `INSERT` statement. … disable sync with V3 …`` (executed) |
 | `dql_strict_mode` default | `true` (strict) | `false` | `false` | Under 4.14.x strict default, bare-object fields are stored as REGISTERs and dropped from undeclared reads — see the `data-modeling` skill or <https://docs.ditto.live/key-concepts> |
 | `JOIN`, composite indexes, `RETURNING`, `ADVISE` | ✗ | ✗ | ✓ | `DittoException.StoreException` on parse |
-| Data Streams | ✗ | Classes ship in the jar; preview status untested | Preview (opt-in annotation) | Docs name 5.1.0 as the floor; `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)` required — see [preview.md](preview.md) |
+| Data Streams | ✗ | Classes ship in the jar; two-peer fixture passes (executed, JVM) | Preview (opt-in annotation); 5.2.0 adds `systemParameters` to enable NGN at open | Docs name 5.1.0 as the floor; `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)` and NGN required — see [data-streams.md](data-streams.md) |
 | `observe()` / `collect()` Flow APIs | ✗ (callback `registerObserver` only) | ✓ | ✓ | Unresolved references on 4.14.x |
 | `DittoFactory.create(DittoConfig)` | ✗ | ✓ | ✓ | v4 uses the `Ditto(deps, identity)` constructor |
 | JVM target | ✗ | ✓ | ✓ | No artifact |

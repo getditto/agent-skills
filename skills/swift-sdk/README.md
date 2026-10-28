@@ -40,6 +40,7 @@ Deliberately **out of scope** — these have their own skills:
 | 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line. |
 | 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
+| 5.2.x | 5.2.0 | **Data Streams only.** The fixture's test suite also passes on 5.2.0, but the skill's other content is documented against 5.1.0; see [`references/data-streams.md`](references/data-streams.md). |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
 skill's verified code targets 4.14.6, 5.0.3 or 5.1.0.
@@ -105,9 +106,12 @@ Rows that are not `Support: yes`:
   `com.apple.developer.networking.multicast` entitlement
   (`5-1-capabilities/swift-specific-changelog.mdx:4-5`); contact Ditto before deploying
   them in production (`5-1-capabilities/common-capabilities.mdx:201-203`). The opt-in is
-  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams is not exposed by the
-  Swift SDK** — `sdk/latest/sync/data-streams.mdx` carries Kotlin samples only; for large
-  payloads use an attachment.
+  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams exist in Swift from
+  5.2.0 only**, as `@_spi(PreviewDataStreams) import DittoSwift`; the docs page
+  `sdk/latest/sync/data-streams.mdx` carries Kotlin samples only, so the Swift surface is
+  taken from the 5.2.0 module interface and executed by the two-peer fixture
+  (`DataStreamsTests`, 9 tests, macOS). Below 5.2.0 use an attachment for a large
+  payload. Guide: [`references/data-streams.md`](references/data-streams.md).
 
 `Evidence: docs-sample` on CAP-02 cites `sdk/latest/install-guides/swift.mdx`. Paths
 beginning `sdk/` or `snippets/` are pages of the published documentation at

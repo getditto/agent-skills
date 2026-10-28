@@ -80,11 +80,25 @@ val offlineLicense: String = System.getenv("DITTO_OFFLINE_LICENSE") ?: dotEnv["D
 // Offline licenses are bound to a database ID; pass the matching one through (optional).
 val databaseId: String? = System.getenv("DITTO_DATABASE_ID") ?: dotEnv["DITTO_DATABASE_ID"]
 
+// DittoConfig.systemParameters exists from 5.2.0; the test that uses it compiles only there.
+val isAtLeast52 = !dittoVersion.startsWith("5.0.") && !dittoVersion.startsWith("5.1.")
+if (isAtLeast52) {
+    sourceSets.test { kotlin.srcDir("src/test52/kotlin") }
+}
+
 tasks.test {
     useJUnitPlatform()
     environment("DITTO_OFFLINE_LICENSE", offlineLicense)
     databaseId?.let { environment("DITTO_DATABASE_ID", it) }
-    testLogging { events("passed", "failed", "skipped") }
+    // Data Streams (DataStreamsTest) run over NGN, which the native core enables from the
+    // process environment at start-up — the JVM equivalent of Android's Os.setenv() in
+    // Application.onCreate(). Set here so every Ditto instance in the test JVM gets it.
+    environment("DITTO_NETWORK_ENABLE_NGN", "true")
+    environment("DITTO_REPLICATION_OVER_NGN", "false")
+    testLogging {
+        events("passed", "failed", "skipped")
+        showStandardStreams = true
+    }
 }
 
 tasks.named<JavaExec>("run") {

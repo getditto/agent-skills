@@ -4,8 +4,9 @@
 //
 // The Ditto version under test is selected by the DITTO_SWIFT_VERSION environment
 // variable, which is read when SwiftPM evaluates this manifest. Supported values are
-// the three lines the skill documents: 4.14.6, 5.0.3 and 5.1.0. All three resolve from
-// the same SPM URL, so only the pin changes between runs.
+// the three lines the skill documents, 4.14.6, 5.0.3 and 5.1.0, plus 5.2.0 for the
+// Data Streams tests (the API is 5.2.0-only in Swift). All resolve from the same SPM
+// URL, so only the pin changes between runs.
 //
 //   DITTO_SWIFT_VERSION=5.1.0 ./scripts/run.sh
 //
@@ -20,8 +21,13 @@ let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ??
 // 4.14.x is a different API in a handful of places (`activated` vs `isActivated`,
 // `disableSyncWithV3()`), so the sources compile against it behind an explicit flag
 // rather than by probing for symbols.
-let versionFlags: [SwiftSetting] =
-    dittoVersion.hasPrefix("4.") ? [.define("DITTO_V4")] : []
+// Data Streams exist in DittoSwift from 5.2.0 only (as `@_spi(PreviewDataStreams)`), so
+// Tests/SwiftSDKSkillTests/DataStreamsTests.swift compiles behind DITTO_DATA_STREAMS.
+let versionFlags: [SwiftSetting] = {
+    if dittoVersion.hasPrefix("4.") { return [.define("DITTO_V4")] }
+    if dittoVersion.hasPrefix("5.0.") || dittoVersion.hasPrefix("5.1.") { return [] }
+    return [.define("DITTO_DATA_STREAMS")]
+}()
 
 let package = Package(
     name: "DittoSwiftSkillTests",

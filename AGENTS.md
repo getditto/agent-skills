@@ -58,6 +58,9 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-data-modeling/
 │   ├── .claude-plugin/plugin.json
 │   └── skills/data-modeling -> ../../../skills/data-modeling
+├── ditto-data-streams/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/data-streams -> ../../../skills/data-streams
 ├── ditto-swift/
 │   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
 │   └── skills/swift-sdk -> ../../../skills/swift-sdk
@@ -96,7 +99,7 @@ docs/                          # Contributor-facing docs
   declared rather than silently absent. Copy `docs/templates/sdk-skill/` rather than
   scaffolding by hand.
 - **Concept skills own semantics; SDK skills own syntax.** `dql`, `data-modeling`,
-  `sync-subscriptions` and `ditto-mesh-networking` explain how Ditto works once,
+  `sync-subscriptions`, `ditto-mesh-networking` and `data-streams` explain how Ditto works once,
   language-agnostically. An SDK skill explains how to express that in one language
   and links back rather than restating — duplicated concept material drifts, and
   `CONTRIBUTING.md` §4 forbids citing one file in this repo as the source for another.
@@ -140,7 +143,9 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
 `tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
 against the supported SDK versions; `scripts/validate-sdk-skills.py` fails when the
-published program drifts from the fixture. CI workflows:
+published program drifts from the fixture. The `data-streams` concept skill has no
+harness of its own: its executed claims come from the two-peer Data Streams tests in
+both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows:
 
 - `.github/workflows/ci.yml` — validates JSON manifests and SKILL.md
   frontmatter, checks marketplace `source` targets exist, and enforces that
@@ -148,9 +153,10 @@ published program drifts from the fixture. CI workflows:
 - `.github/workflows/dql-skill-tests.yml` — macOS matrix run of the DQL
   harness; triggers on changes to `skills/write-dql/**` or `tests/dql/**`.
 - `.github/workflows/swift-skill-tests.yml` — macOS matrix run of the Swift fixtures,
-  generated starter and platform builds.
+  generated starter and platform builds; the test job also runs 5.2.0 for Data Streams.
 - `.github/workflows/kotlin-skill-tests.yml` — Ubuntu run of the Kotlin JVM fixture
-  against 5.0.3, 5.1.0 and 5.2.0; the Android (4.14.x) leg is manual.
+  against 5.0.3, 5.1.0 and 5.2.0, including the two-peer Data Streams tests; the
+  Android (4.14.x) leg is manual.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;

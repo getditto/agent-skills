@@ -62,7 +62,7 @@ Deliberately **out of scope** — these have their own skills:
 | CAP-17 | Device storage management and eviction | yes | inference | both |
 | CAP-18 | Testing | yes | executed | both |
 | CAP-19 | v4 to v5 migration, API and on-disk store | yes | executed | both |
-| CAP-20 | Preview and platform-specific APIs | preview | docs-sample | both |
+| CAP-20 | Preview and platform-specific APIs | preview | executed | both |
 
 Rows that are not `Support: yes`:
 
@@ -71,11 +71,12 @@ Rows that are not `Support: yes`:
   `DittoPresence.ConnectionRequestHandler` only fires when a second peer connects, and
   no two-peer run was executed — the handler samples are docs-sourced only
   ([`references/presence.md`](references/presence.md)).
-- **CAP-20 `preview`** — Data Streams is opt-in preview: 5.1.0+, Kotlin-only,
-  requires `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, and the docs warn
+- **CAP-20 `preview`** — Data Streams is opt-in preview: 5.1.0+ (docs floor; executed
+  on 5.0.3, 5.1.0 and 5.2.0 on the JVM), requires
+  `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)` and NGN, and the docs warn
   "breaking changes without notice". Multicast is beta (5.1.0). The opt-in mechanism
-  and stability warning are quoted verbatim in
-  [`references/preview.md`](references/preview.md).
+  and stability warning are quoted in [`references/preview.md`](references/preview.md);
+  the implementation guide is [`references/data-streams.md`](references/data-streams.md).
 
 Evidence notes (spec §7 requires the tier's extra information inline for
 `source`/`inference`):
@@ -97,8 +98,11 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   `sdks/kotlin/api/ditto-kotlin/src/commonMain/kotlin/com/ditto/kotlin/DittoStore.kt`
   at `sdk-release-5.1.0` and compile-verified against the published 5.1.0 jar; the
   fetch *lifecycle* (progress events, `Deleted` race) was not executed end-to-end.
-- **CAP-02 / CAP-09 / CAP-10 / CAP-14 / CAP-20 `docs-sample`** — working
+- **CAP-02 / CAP-09 / CAP-10 / CAP-14 `docs-sample`** — working
   Kotlin samples exist on the cited doc pages; they were not re-executed here.
+- **CAP-20 `executed`** covers Data Streams through the two-peer JVM fixture
+  (`DataStreamsTest`, 10 tests, plus the 5.2.0-only `systemParameters` test); the
+  Android `Os.setenv` form and multicast are docs-sourced.
 - **CAP-04 `executed`** covers offline-license activation; the cloud
   `expirationHandler`/`login` round-trip needs a Ditto Cloud app and is docs-sourced.
 - **CAP-15 `executed`** covers logger enable/disable behavior observed during the
@@ -138,6 +142,18 @@ Evidence notes (spec §7 requires the tier's extra information inline for
 - Executed failure modes: missing `ditto-binaries` classifier on JVM; plain re-INSERT
   FAIL-conflict `UnknownException`; v4 INSERT without `disableSyncWithV3()`.
   Transcripts: [`examples/minimal-app.md`](examples/minimal-app.md).
+- **Data Streams, two peers in one JVM** (5.0.3, 5.1.0 and 5.2.0, same results; NGN via
+  `DITTO_NETWORK_ENABLE_NGN` on the test task, TCP loopback listener, LAN off):
+  bytes round-trip both ways on one reliable stream; `sendAndForget` delivers; the
+  monitoring `send` reaches `Sent`; `closeSync()` is `ClosedByRemote` on the other side;
+  reliability mismatch `Rejected(ConnectionRejected)`; invalid topics `Err(InvalidTopic)`;
+  second bind `Err(TopicAlreadyBound)`; a borrowed candidate is unusable after its callback
+  while a `take()`n one works; closing the acceptor leaves open streams alive and new
+  connects fail; arguments travel both ways; the receive callback is off the main thread.
+  Two defects recorded: acceptor-side `arguments()` throws when none were sent, and
+  `topic()` returns garbage on acceptor and streams. 5.2.0 only: NGN enabled through
+  `DittoConfig.systemParameters` carries a stream
+  ([`references/data-streams.md`](references/data-streams.md)).
 
 **Verified from source** (`github.com/getditto/ditto` at the named tags):
 
@@ -166,11 +182,12 @@ Evidence notes (spec §7 requires the tier's extra information inline for
 
 **Not verified:** the runtime-permissions helper and foreground service on Android (the
 harness app is offline-only and declares neither); two-peer mesh sync (no second device
-run); attachments fetch lifecycle; transactions; Data Streams (preview); ProGuard/R8
+run); attachments fetch lifecycle; transactions; Data Streams on Android devices and over
+multi-hop routes (JVM loopback only); ProGuard/R8
 release-build behavior; in-place on-disk store migration semantics on a shipped 4.14.x
 store; cloud authentication round-trip.
 
-**Last verified:** 2026-10-27 (JVM legs in CI; all three Android legs on a Pixel 10a).
+**Last verified:** 2026-10-28 (JVM legs in CI; all three Android legs on a Pixel 10a).
 
 ## Installation
 

@@ -60,11 +60,14 @@ public enum SkillTestEnvironment {
 
 public enum SkillTestError: Error, CustomStringConvertible {
     case missingEnvironment(String)
+    case timedOut(String)
 
     public var description: String {
         switch self {
         case .missingEnvironment(let key):
             return "Missing required environment variable \(key). Copy .env-sample to .env at the repo root and fill it in."
+        case .timedOut(let what):
+            return "Timed out waiting for \(what)."
         }
     }
 }

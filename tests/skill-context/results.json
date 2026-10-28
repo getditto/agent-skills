@@ -9,6 +9,7 @@
     "codex_rerun": "0.163.0"
   },
   "source_digests": [
+    "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
     "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
     "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
     "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
@@ -16,14 +17,15 @@
     "10ad14c6454eb7b3cfbbee12637b5cb9587d2847bdebba029379c37ab3ef2f7f",
     "3f8501ec5c7890b094610e13fda027cb70aba6254f4e2fa53dfe1a6506bca8b6"
   ],
-  "latest_evaluated_digest": "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+  "latest_evaluated_digest": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
   "post_evaluation_changes": [
     "Conditional movies/reviews schema lead-wording clarification after final copies was not behaviorally rerun.",
     "Final traces identified conflicting data-modeling reference examples for unscoped child joins and unchanged blob transmission, for static correction after the bounded evaluation iteration. No subsequent model result is claimed.",
     "Corrected workflow and order/relational-migration examples to preserve complete scoped parent references, and corrected unchanged-blob transmission claims in order-management and best-practices. These final semantic corrections were not model-retested; scoped JOINs were checked separately against the SDK.",
     "Superseded on 2026-10-27: all five cases plus the new swift_no_ditto trigger-scope case were rerun on Claude Code and Codex against the final skill tree (commit 7538627). The data-modeling corrections and the narrowed swift-sdk description are now model-tested; see SUMMARY.md.",
     "2026-10-27 (later): with the kotlin-sdk skill added to the tree, the new kotlin_observer and kotlin_no_ditto cases and the existing swift_observer case were run on Claude Code and Codex. All passed; both SDK skills route correctly when installed together.",
-    "2026-10-27 (later still): the Kotlin skill moved from 5.2.0-rc.2 to the 5.2.0 GA release (version pins, default-version guidance, 5.2.0 transcripts). kotlin_observer and kotlin_no_ditto were rerun on Claude Code and Codex against that tree; all passed with the same routing. The GA sources are identical to rc.2's, so no API claim changed."
+    "2026-10-27 (later still): the Kotlin skill moved from 5.2.0-rc.2 to the 5.2.0 GA release (version pins, default-version guidance, 5.2.0 transcripts). kotlin_observer and kotlin_no_ditto were rerun on Claude Code and Codex against that tree; all passed with the same routing. The GA sources are identical to rc.2's, so no API claim changed.",
+    "2026-10-28: the data-streams concept skill and the Kotlin/Swift data-streams references were added; kotlin_data_streams and swift_data_streams were run on Claude Code and Codex and passed on both. After the run, wording-only edits followed (description trimmed under 500 characters; the Swift use-after-close error type and Swift-specific observations added to the references); no routing or guidance claim changed."
   ],
   "limitations": [
     "No before/after model experiment.",
@@ -2364,6 +2366,207 @@
       "swift_description_variant": "current",
       "final_answer": "For **Ditto Kotlin 5.1.0**, the local guidance identifies three issues:\n\n- Android observer handlers\u2014including the `observe` transform\u2014start on **Main**. `flowOn(IO)` changes the Flow producer\u2019s context, but cannot move the SDK-launched transform. Move extraction and decoding **inside `withContext`**.\n- Results and items close when the handler returns. Retain decoded `Car` objects or copied JSON strings for the detail screen.\n- An exception escaping `registerObserver` causes Ditto to log it and **close the observer**. Handle malformed documents inside the handler.\n\nThe following skips malformed documents while continuing to display valid cars. It assumes your existing serializable `Car` model.\n\n```kotlin\nimport android.util.Log\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.ditto.kotlin.Ditto\nimport com.ditto.kotlin.DittoQueryResult\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.flow.*\nimport kotlinx.coroutines.withContext\nimport kotlinx.serialization.decodeFromString\nimport kotlinx.serialization.json.Json\n\nprivate val carJson = Json { ignoreUnknownKeys = true }\n\nprivate suspend fun decodeCars(result: DittoQueryResult): List<Car> =\n    withContext(Dispatchers.IO) {\n        result.items.mapNotNull { item ->\n            try {\n                carJson.decodeFromString<Car>(item.jsonString())\n            } catch (e: CancellationException) {\n                throw e\n            } catch (e: Exception) {\n                Log.w(\"Cars\", \"Skipping malformed car\", e)\n                null\n            }\n        }\n    }\n```\n\nUse it inside the Flow transform:\n\n```kotlin\nclass CarsViewModel(ditto: Ditto) : ViewModel() {\n    val cars: StateFlow<List<Car>> =\n        ditto.store.observe(\"SELECT * FROM cars\") { result ->\n            decodeCars(result)\n        }.stateIn(\n            viewModelScope,\n            SharingStarted.WhileSubscribed(5_000),\n            emptyList()\n        )\n}\n```\n\nFor the imperative observer, retain plain data and close the handle:\n\n```kotlin\nclass DetailCarsViewModel(ditto: Ditto) : ViewModel() {\n    private val _cars = MutableStateFlow<List<Car>>(emptyList())\n    val cars: StateFlow<List<Car>> = _cars.asStateFlow()\n\n    private val observer =\n        ditto.store.registerObserver(\"SELECT * FROM cars\") { result ->\n            try {\n                _cars.value = decodeCars(result)\n            } catch (e: CancellationException) {\n                throw e // Preserve cancellation during teardown.\n            } catch (e: Exception) {\n                // Keep the previous snapshot; later events can still arrive.\n                Log.e(\"Cars\", \"Could not process car snapshot\", e)\n            }\n        }\n\n    override fun onCleared() {\n        observer.close()\n        super.onCleared()\n    }\n}\n```\n\nThe result remains open throughout the suspended `withContext` call. Avoid launching a separate coroutine per callback: it can outlive the result and defeats serialized processing.\n\n`stateIn` already provides latest-value UI state. Ditto coalesces changes while handlers run; adding a buffer will queue stale snapshots. A terminal Flow `catch` also does **not** resume future events after a decoding failure\u2014handling bad documents inside the transform avoids terminating the stream.",
       "note": "rerun after the 5.2.0 GA pin flip"
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 27.47,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:data-streams"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "kotlin-sdk/references/data-streams.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 25715,
+      "cache_write_tokens": 14845,
+      "output_tokens": 2593,
+      "reported_cost_usd": 0.175787,
+      "num_turns": 4,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:data-streams",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "Six separate problems. Any one of them would be enough to stop frames arriving.\n\n## What's wrong\n\n1. **NGN is turned on too late.** Data Streams run over NGN, and Ditto reads that setting only once, when the instance is created. `Os.setenv` must run before `DittoFactory.create(...)`. On 5.2.0 you can drop the environment variable and pass `systemParameters = mapOf(\"network_enable_ngn\" to true, \"replication_over_ngn\" to false)` in `DittoConfig` instead.\n2. **The topic name is invalid.** Topics must match `^[a-zA-Z0-9_ ]{1,15}$`, so the dash in `\"sensor-data\"` makes the bind fail with `Failed to bind topic: Err(InvalidTopic)`. Use `\"sensor_data\"`.\n3. **The two sides use different reliability.** The tablet binds Reliable and the phone connects Unreliable, so the connect is refused with `Rejected(ConnectionRejected)`. Use **Unreliable** on both sides, which suits frames that the next reading replaces anyway.\n4. **The tablet keeps the candidate after the callback.** A candidate only works inside the bind callback; using it later throws \"Attempted to use a DittoStreamCandidate after it was closed\". The phone's `connect` waits until the tablet opens the candidate, so it times out with `Rejected(HandshakeTimedOut)`. Open the candidate inside the callback. If you must open it elsewhere, call `take()` first and close the taken candidate yourself.\n5. **`connect()` runs inside the presence callback.** That's not allowed. Copy the peer key out of the callback and connect from your own coroutine.\n6. **The phone connects once per frame.** Each call starts a new handshake and they overlap. Connect once, keep the `DittoStream`, and send every frame on it with `sendAndForget`. Streams don't reconnect by themselves, so retry with backoff only if the stream closes.\n\nAlso check that `ditto.sync.start()` is called (presence needs sync running), that each file has the opt-in, and that `com.ditto.kotlin.open` is imported. It's an extension function, and a missing import is the usual cause of \"unresolved reference: open\".\n\n## Corrected code\n\n```kotlin\n// App.kt\noverride fun onCreate() {\n    super.onCreate()\n    Os.setenv(\"DITTO_NETWORK_ENABLE_NGN\", \"true\", true)     // BEFORE create\n    Os.setenv(\"DITTO_REPLICATION_OVER_NGN\", \"false\", true)\n    ditto = DittoFactory.create(config)                       // or systemParameters on 5.2.0\n    ditto.sync.start()\n}\n```\n\n```kotlin\n// Tablet (receiver)\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\nclass SensorReceiver(ditto: Ditto, private val frames: MutableSharedFlow<ByteArray>) : AutoCloseable {\n    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)\n    private val streams = ConcurrentHashMap<String, DittoStream>()\n\n    private val acceptor = ditto.dataStreams.bindTopic(\n        topic = \"sensor_data\",\n        reliability = DittoReliability.Unreliable,\n    ) { candidate ->\n        val peer = candidate.peerKeyString()\n        val stream = candidate.open { inbound ->\n            frames.tryEmit(inbound.payload())     // driver thread: hand off, return\n        }\n        streams.put(peer, stream)?.let { old -> scope.launch { old.closeSync() } }\n        scope.launch { stream.waitUntilClosed(); streams.remove(peer, stream) }\n    }\n\n    override fun close() {\n        acceptor.close()                           // does NOT close open streams\n        val open = streams.values.toList(); streams.clear()\n        scope.launch { open.map { launch { it.closeSync() } }.joinAll(); scope.cancel() }\n    }\n}\n```\n\n```kotlin\n// Phone (sender)\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\n// Presence callback only records the key:\nval tabletKey = MutableStateFlow<String?>(null)\n// ditto.presence.observe { graph -> tabletKey.value = graph.remotePeers.firstOrNull()?.peerKey }\n\nsuspend fun streamReadings(ditto: Ditto, readings: Flow<ByteArray>) {\n    var backoff = 500L\n    while (currentCoroutineContext().isActive) {\n        val key = tabletKey.filterNotNull().first()\n        try {\n            val stream = ditto.dataStreams.connect(\n                peer = key,\n                topic = \"sensor_data\",\n                reliability = DittoReliability.Unreliable,\n                timeoutMs = 10_000,\n            ) { candidate -> candidate.open() }    // connect does not open it for you\n            backoff = 500\n            val max = stream.maxSendSize()\n            try {\n                coroutineScope {\n                    val pump = launch {\n                        readings.collect { f -> if (f.size <= max) stream.sendAndForget(f) }\n                    }\n                    stream.waitUntilClosed(); pump.cancel()   // remote closed \u2192 reconnect\n                }\n            } finally {\n                withContext(NonCancellable) { stream.closeSync() }\n            }\n        } catch (e: CancellationException) {\n            throw e\n        } catch (e: DittoException.DataStreamsException) {\n            currentCoroutineContext().ensureActive()\n            // early HandshakeTimedOut is normal while the tablet starts up\n        }\n        delay(backoff); backoff = minOf(backoff * 2, 10_000)\n    }\n}\n```\n\nThe fixes come from the installed Ditto Data Streams guidance; I haven't compiled or run this code. Note that Data Streams is a preview API and can change without notice. The code needs the `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)` line at the top of each file that uses it, and the Kotlin SDK needs version 5.1.0 or later, so your 5.2.0 is fine.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "claude",
+      "case": "swift_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 23.29,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:data-streams",
+        "ditto-eval:swift-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/data-streams.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 29623,
+      "cache_write_tokens": 17909,
+      "output_tokens": 1786,
+      "reported_cost_usd": 0.1849406,
+      "num_turns": 6,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:data-streams",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "**No, not on 5.1.0.** DittoSwift 5.1.0 has no Data Streams symbols at all. They first appear in **DittoSwift 5.2.0**, and only as a preview that you opt into with `@_spi(PreviewDataStreams)`. Ditto does not document this preview for Swift (its Data Streams guide is Kotlin-only), and the API may change without notice. Kotlin has had it since 5.1.0, but that doesn't help you here.\n\nSo you have two choices: upgrade to 5.2.0 and accept the preview API, or stay on 5.1.0 and use document sync (which writes documents, so it doesn't meet your requirement).\n\n## Minimal setup (5.2.0)\n\n1. **Pin the package exactly:** `.package(url: \"https://github.com/getditto/DittoSwiftPackage\", exact: \"5.2.0\")`\n2. **Import with the SPI in every file that uses streams.** A plain `import DittoSwift` won't see the stream types.\n   ```swift\n   @_spi(PreviewDataStreams) import DittoSwift\n   ```\n3. **Turn on NGN when you open Ditto.** It can't be enabled after the instance is created. `systemParameters` is new in 5.2.0.\n   ```swift\n   let ditto = try await Ditto.open(config: DittoConfig(\n       databaseID: \"...\", connect: /* your existing connect */,\n       systemParameters: [\n           \"network_enable_ngn\": .bool(true),     // required for streams\n           \"replication_over_ngn\": .bool(false),  // keep doc sync on the current transports\n       ]))\n   try ditto.sync.start()   // presence needs sync running\n   ```\n   - You don't need a TCP listener.\n   - If you change transports, use `ditto.updateTransportConfig { \u2026 }` to edit the live config. A fresh config turns the other radios off.\n   - With NGN on, `sync.start()` needs a large stack in debug builds. If you call it from a Swift `Task` rather than the main thread, run it on a `Thread` with `stackSize = 64 << 20`.\n\n## Receiver: bind the topic and keep the acceptor\n\n```swift\nlet acceptor = try ditto.dataStreams.bindTopic(\"cursor\", reliability: .unreliable) { candidate in\n    // Open the candidate inside this callback, or take() it. Don't let anything throw out.\n    guard let stream = try? candidate.open(onReceive: { inbound in\n        if let data = try? inbound.payload { cursorQueue.async { apply(data) } } // driver thread: hand off and return\n    }) else { return }\n    store(stream)   // keep a strong reference\n}\n```\n\n## Sender: connect once and reuse the stream\n\n```swift\n// peerKey comes from ditto.presence.graph.remotePeers. Call connect from your own Task,\n// not from inside a presence callback.\nlet stream = try await ditto.dataStreams.connect(\n    peerKey: peerKey, topic: \"cursor\",\n    reliability: .unreliable,        // must match the binder, or you get Rejected(ConnectionRejected)\n    timeoutMs: 10_000\n) { candidate in try candidate.open() }   // connect doesn't open the candidate for you\n\nlet max = try stream.maxSendSize\nfor position in cursorUpdates where position.count <= max {\n    try stream.sendAndForget(position)    // lowest overhead; fine for frames the next one replaces\n}\n// To shut down: try await stream.closeAndWait(), then acceptor.close(), then release ditto.\n```\n\n## Rules to follow\n\n- **Reliability:** `.unreliable` suits cursor positions. Messages can be lost, reordered or duplicated, so send absolute positions, not deltas.\n- **Topic names:** they must match `^[a-zA-Z0-9_ ]{1,15}$`. Anything else fails with `Err(InvalidTopic)`.\n- **One acceptor per topic:** a second bind fails with `TopicAlreadyBound`.\n- **No automatic reconnect:** a closed stream stays closed. Run a connect loop with bounded backoff yourself.\n- **Closing the acceptor doesn't close its streams:** close each open stream yourself.\n- **Errors:** every stream failure comes through as `DittoError.dataStreamsError(message:)`.\n\nThese details come from the installed Ditto skill guidance, which says they were run against 5.2.0 on macOS. I didn't build or run anything here.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 39.41,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [
+        "data-streams",
+        "kotlin-sdk"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-streams/SKILL.md .agents/skills/kotlin-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 19340
+        },
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/references/data-streams.md .agents/skills/kotlin-sdk/references/presence.md .agents/skills/data-streams/references/setup-and-transports.md'",
+          "exit_code": 0,
+          "output_bytes": 28644
+        }
+      ],
+      "input_tokens_uncached": 28387,
+      "cache_read_tokens": 68480,
+      "output_tokens": 1142,
+      "reasoning_tokens": 18,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "Data Streams fit this use case: ephemeral bytes sent to one peer, without writing readings to the store. They are **Public Preview**, supported in Kotlin from **5.1.0**, and may change without notice.\n\nThe local Data Streams and Kotlin SDK guidance identifies these problems:\n\n- **NGN enabled too late:** set it before creating Ditto, on both devices. In 5.2.0, use config parameters.\n- **Invalid topic:** `\"sensor-data\"` contains a hyphen. Topics must match `^[a-zA-Z0-9_ ]{1,15}$`; use `\"sensor_data\"`.\n- **Reliability mismatch:** both ends must agree. Use `Unreliable` for readings superseded by the next frame; frames may be lost, reordered or duplicated.\n- **Expired candidate:** open it inside the callback. To defer opening, call `take()` inside the callback and close that owned candidate afterward.\n- **Wrong connection lifecycle:** copy the tablet\u2019s peer key out of presence, connect from your own coroutine, open the connector\u2019s candidate, and reuse that stream for all frames.\n\nUse this setup on **both devices**, retaining the Ditto instance in your application owner:\n\n```kotlin\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\nimport com.ditto.kotlin.*\nimport com.ditto.kotlin.open\nimport kotlinx.coroutines.*\nimport kotlinx.coroutines.channels.Channel\nimport kotlinx.coroutines.flow.*\n\nval ditto = DittoFactory.create(\n    DittoConfig(\n        databaseId = \"your-app-id\",\n        connect = DittoConfig.Connect.SmallPeersOnly(),\n        persistenceDirectory = filesDir.resolve(\"ditto\").absolutePath,\n        systemParameters = mapOf(\n            \"network_enable_ngn\" to true,\n            \"replication_over_ngn\" to false,\n        ),\n    )\n)\n// Apply your normal authentication/license setup.\nditto.sync.start()\n```\n\nOn the **tablet**, retain the acceptor and opened stream. The receive callback copies bytes into a queue and returns immediately:\n\n```kotlin\nval received = Channel<ByteArray>(Channel.CONFLATED)\nval opened = Channel<DittoStream>(Channel.UNLIMITED)\n\nval acceptor = ditto.dataStreams.bindTopic(\n    topic = \"sensor_data\",\n    reliability = DittoReliability.Unreliable,\n) { candidate ->\n    val stream = candidate.open { inbound ->\n        received.trySend(inbound.payload()) // owned byte copy\n    }\n    if (opened.trySend(stream).isFailure) stream.close()\n}\n\n// Retain this stream in your session owner; this example accepts one phone.\nval receiverStream = opened.receive()\n\n// Decode/render elsewhere, outside the receive callback:\nscope.launch {\n    for (bytes in received) {\n        // Decode bytes and dispatch the reading to your UI.\n    }\n}\n```\n\nOn the **phone**, extract the selected tablet\u2019s key through presence, then connect after that observation has returned:\n\n```kotlin\nsuspend fun sendReadings(\n    ditto: Ditto,\n    tabletPeerKey: String,       // selected tablet, not an arbitrary nearby peer\n    readings: Flow<ByteArray>,   // encoded accelerometer frames\n) {\n    val key = ditto.presence.observe()\n        .map { graph ->\n            graph.remotePeers\n                .firstOrNull { it.peerKey == tabletPeerKey }\n                ?.peerKey\n        }\n        .filterNotNull()\n        .first()\n\n    // Runs in this caller's coroutine, outside the presence transform.\n    val stream = ditto.dataStreams.connect(\n        peer = key,\n        topic = \"sensor_data\",\n        reliability = DittoReliability.Unreliable,\n        timeoutMs = 10_000,\n    ) { candidate ->\n        candidate.open()\n    }\n\n    try {\n        readings.conflate().collect { frame ->\n            require(frame.size.toLong() <= stream.maxSendSize())\n            stream.sendAndForget(frame)\n        }\n    } finally {\n        withContext(NonCancellable) {\n            stream.closeSync()\n        }\n    }\n}\n```\n\nRun the phone function in a session coroutine. Include a sequence number or timestamp in each frame so the tablet can discard stale or duplicate readings.\n\nMaintain only **one connection attempt/session per peer and topic**. Retry startup failures with capped backoff: presence means reachable, not that the tablet has bound its topic. Streams never reconnect automatically.\n\nAt shutdown, cancel session jobs and close streams explicitly, then the acceptor and Ditto. Closing the acceptor alone does **not** close its streams. No document subscription or extra TCP listener is required.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "codex",
+      "case": "swift_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 36.8,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [
+        "data-streams",
+        "swift-sdk"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-streams/SKILL.md .agents/skills/swift-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 18472
+        },
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/data-streams.md .agents/skills/data-streams/references/setup-and-transports.md'",
+          "exit_code": 0,
+          "output_bytes": 15704
+        }
+      ],
+      "input_tokens_uncached": 21713,
+      "cache_read_tokens": 70144,
+      "output_tokens": 892,
+      "reasoning_tokens": 20,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "**DittoSwift 5.1.0 has no Data Streams API.** Swift support starts in **5.2.0**, through an **undocumented preview SPI** that may change without notice. Kotlin\u2019s 5.1.0 support does not apply to Swift. Pin Swift to `5.2.0` for the API shown below.\n\nData Streams provide bidirectional, ephemeral bytes between two reachable peers without writing documents. For cursor positions, use `.unreliable`: updates may be lost, duplicated or reordered, so include a sequence number and discard stale updates.\n\nOn **both peers**, enable NGN before opening Ditto, retain the instance, and start sync:\n\n```swift\n@_spi(PreviewDataStreams) import DittoSwift\nimport Foundation\n\nlet config = DittoConfig(\n    databaseID: databaseID,\n    connect: .smallPeersOnly(),\n    persistenceDirectory: directory,\n    systemParameters: [\n        \"network_enable_ngn\": .bool(true),\n        \"replication_over_ngn\": .bool(false)\n    ]\n)\nlet ditto = try await Ditto.open(config: config)\ntry ditto.setOfflineOnlyLicenseToken(token)\ntry ditto.sync.start()\n```\n\nUse your existing authentication configuration if appropriate. No document subscription or TCP listener is required. Keep `replication_over_ngn` consistent across peers that replicate documents.\n\nThe receiver binds first and **opens each candidate inside the callback**:\n\n```swift\nlet acceptor = try ditto.dataStreams.bindTopic(\n    \"cursor\", reliability: .unreliable\n) { candidate in\n    do {\n        let stream = try candidate.open { inbound in\n            guard let bytes = try? inbound.payload else { return }\n            enqueueCursor(bytes) // Hand off promptly; callback is off-main.\n        }\n        retainIncomingStream(stream) // App-owned, thread-safe storage.\n    } catch {\n        // Report or handle the failed open.\n    }\n}\n```\n\nRetain `acceptor` and the incoming stream. The helper functions above represent your app\u2019s queue and storage.\n\nOn the sender, obtain the receiver\u2019s key from `ditto.presence.graph.remotePeers`, then connect from your own task:\n\n```swift\nlet stream: DittoStream = try await ditto.dataStreams.connect(\n    peerKey: receiverPeerKey,\n    topic: \"cursor\",\n    reliability: .unreliable,\n    timeoutMs: 10_000\n) { candidate in\n    try candidate.open() // connect does NOT open it automatically.\n}\n\n// Repeat for each encoded cursor update; reuse this stream.\nif payload.count <= (try stream.maxSendSize) {\n    try stream.sendAndForget(payload)\n}\n```\n\nFor send status instead, use `try await stream.send(payload)`; `.sent` means handed to the local transport, not processed remotely.\n\nBorrowed candidates expire after their callback; use `take()` if opening later. Streams do not reconnect automatically. Close streams with `closeAndWait()` and close the acceptor separately.\n\n**Swift 5.2.0 startup caveat:** NGN startup can exceed a cooperative task thread\u2019s stack in debug builds. Start sync on the main thread or a dedicated large-stack thread.\n\nThese version and API details come from the installed [Swift Data Streams guidance](.agents/skills/swift-sdk/references/data-streams.md), verified there on macOS with 5.2.0.",
+      "note": "data-streams skill addition"
     }
   ],
   "rerun_date": "2026-10-27"

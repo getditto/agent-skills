@@ -64,7 +64,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | ID | Capability | Support | Required caveat |
 |---|---|---|---|
 | CAP-13 | Presence graph and connection requests | partial | Graph, metadata and `observe()` are docs-verified; `connectionRequestHandler` only fires with a second peer and was not executed. [presence.md](references/presence.md) |
-| CAP-20 | Preview and platform-specific APIs | preview | Data Streams: 5.1.0+, Kotlin-only, `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, "breaking changes without notice". Multicast: beta from 5.1.0, off by default. [preview.md](references/preview.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | Data Streams: 5.1.0+, `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, "breaking changes without notice", NGN required; two-peer fixture executed on the JVM. [data-streams.md](references/data-streams.md). Multicast: beta from 5.1.0, off by default. [preview.md](references/preview.md) |
 
 ## Minimum viable app
 
@@ -188,6 +188,7 @@ Choose the matching row and section; alternatives, not a reading checklist.
 | How do I test code that uses Ditto? | [testing.md](references/testing.md) |
 | What changed between 4.14.x and 5.x, on disk and in the API? | [versions.md](references/versions.md) |
 | What is preview or platform-specific here? | [preview.md](references/preview.md) |
+| Stream raw bytes to one peer (Data Streams, preview) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
 | How do I generate a whole runnable Gradle project? | [gradle-project-generation.md](references/gradle-project-generation.md) |
 | Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
 | Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled and run) |

@@ -78,6 +78,22 @@ tree: `kotlin_observer` passed all five criteria on both (Claude read `anti-patt
 only; Codex read the skill), and `kotlin_no_ditto` again invoked no skill and read no
 Ditto file on either host. Claude reported USD 0.20 for the two runs.
 
+## Data Streams skill addition — 2026-10-28
+
+With the new `data-streams` concept skill and the `data-streams.md` references in both SDK
+skills, two new cases were run once per host against the tree holding all seven skills.
+
+| Task | Claude Code (Opus 5.5) | Codex (`gpt-6.1-sol`) |
+|---|---|---|
+| Kotlin 5.2.0 sensor streaming with six planted faults (NGN after create, dashed topic, reliability mismatch, stored candidate, connect in presence callback, connect per frame) | Pass, all five criteria; invoked `data-streams`, read `kotlin-sdk/references/data-streams.md` | Pass, all five criteria; read `data-streams` and `kotlin-sdk` |
+| Swift 5.1.0 app asking whether Data Streams exist and how to use them | Pass, all five criteria; invoked `data-streams` and `swift-sdk`, read `swift-sdk/references/data-streams.md` | Pass, all five criteria; read `data-streams` and `swift-sdk` |
+
+- Both hosts stated the version floors correctly (Kotlin 5.1.0; Swift 5.2.0 only, via
+  `@_spi(PreviewDataStreams)`, undocumented by Ditto) and the preview status, and neither
+  invented a 5.1.0 Swift API.
+- One run per host and case; OpenCode/Kimi K3 was not available. Claude reported USD 0.36
+  for the two runs; Codex does not report cost.
+
 ## Final bounded regressions
 
 The same natural relay and order-model prompts were rerun on fresh Claude and Kimi

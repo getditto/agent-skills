@@ -298,7 +298,7 @@ struct StoreTests {
         )
         let statement = "ADVISE SELECT * FROM cars WHERE mileage > 100 ORDER BY make"
 
-        guard Ditto.version.hasPrefix("5.1.") else {
+        guard isV51OrLater else {
             // 4.14.x and 5.0.x reject it at the parser.
             do {
                 _ = try await peer.ditto.store.execute(query: statement)

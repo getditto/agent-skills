@@ -85,6 +85,28 @@
         "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
         "Fix uses lifecycle-aware collection (collectAsStateWithLifecycle / repeatOnLifecycle or SharingStarted.WhileSubscribed) and keeps mapping/decoding off the main thread (flowOn/withContext on a background dispatcher for Room mapping)"
       ]
+    },
+    {
+      "id": "kotlin_data_streams",
+      "prompt": "Android app on com.ditto:ditto-kotlin 5.2.0. We want to send live accelerometer readings (about 50 small frames a second) from a phone to one nearby tablet without storing them. A teammate tried ditto.dataStreams: Application.onCreate() creates Ditto first and then calls Os.setenv(\"DITTO_NETWORK_ENABLE_NGN\", \"true\", true); the tablet binds the topic \"sensor-data\" as Reliable and stores the candidate in a field to open it later from a coroutine; the phone calls connect() with Unreliable inside the presence observer callback and calls connect() again for every frame. Nothing ever arrives. What is wrong, and what should the code look like?",
+      "review_criteria": [
+        "Routing: the data-streams skill and/or kotlin-sdk data-streams reference is consulted (not only generic knowledge)",
+        "Identifies that NGN must be enabled before DittoFactory.create (Os.setenv first, or 5.2.0 DittoConfig.systemParameters) and that the API is preview with @file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)",
+        "Identifies the invalid topic (dash; pattern ^[a-zA-Z0-9_ ]{1,15}$) and the reliability mismatch between the Reliable binding and the Unreliable connect, and picks one mode deliberately (unreliable is a reasonable choice for 50 Hz frames)",
+        "Identifies that a candidate stored for later use must be take()n (and the taken one closed), otherwise it is closed when the bind callback returns",
+        "Identifies connect-per-frame and connect inside the presence callback as wrong: connect once from a separate coroutine, reuse one stream, check maxSendSize, keep the receive callback non-blocking"
+      ]
+    },
+    {
+      "id": "swift_data_streams",
+      "prompt": "We have an iOS/macOS app on DittoSwift 5.1.0 and want a low-latency channel to push cursor positions to one other peer without writing documents. Does the Swift SDK have Ditto Data Streams, and if so what is the minimal setup and the correct way to open and send on a stream? Please be explicit about versions.",
+      "review_criteria": [
+        "Routing: the data-streams skill and/or swift-sdk data-streams reference is consulted",
+        "States that Data Streams are not available in Swift on 5.1.0 and appear only in 5.2.0, as a preview via @_spi(PreviewDataStreams) import DittoSwift, undocumented in the Ditto docs for Swift",
+        "Setup includes enabling NGN at open (DittoConfig systemParameters network_enable_ngn = true, replication_over_ngn kept consistent) and starting sync so presence can discover the peer",
+        "Open/send pattern: bindTopic on the receiver keeping the acceptor alive, connect(peerKey:topic:...) with a continuation that opens the candidate, reuse one stream, choose reliability deliberately for cursor positions (unreliable acceptable), check maxSendSize, close with closeAndWait",
+        "Does not invent a 5.1.0 Swift Data Streams API or recommend document sync as if it were equivalent for low-latency ephemeral data"
+      ]
     }
   ]
 }
