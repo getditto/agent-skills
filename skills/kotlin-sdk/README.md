@@ -30,8 +30,8 @@ Deliberately **out of scope** — these have their own skills:
 
 | Ditto SDK | Package version | Status |
 |---|---|---|
-| 5.2.x | 5.2.0-rc.2 | Release candidate — executed (JVM, Android); 5.2.0 GA not on Maven Central |
-| 5.1.x | 5.1.0 | Current GA — executed |
+| 5.2.x | 5.2.0 | Current GA — executed (JVM, Android) |
+| 5.1.x | 5.1.0 | Supported — executed |
 | 5.0.x | 5.0.3 | Supported — executed |
 | 4.14.x | 4.14.7 | LTS — executed (Android; no JVM artifact exists for this line) |
 
@@ -71,7 +71,7 @@ Rows that are not `Support: yes`:
   `DittoPresence.ConnectionRequestHandler` only fires when a second peer connects, and
   no two-peer run was executed — the handler samples are docs-sourced only
   ([`references/presence.md`](references/presence.md)).
-- **CAP-20 `preview`** — Data Streams is opt-in preview: 5.1.0 only, Kotlin-only,
+- **CAP-20 `preview`** — Data Streams is opt-in preview: 5.1.0+, Kotlin-only,
   requires `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, and the docs warn
   "breaking changes without notice". Multicast is beta (5.1.0). The opt-in mechanism
   and stability warning are quoted verbatim in
@@ -117,18 +117,18 @@ Evidence notes (spec §7 requires the tier's extra information inline for
 - 4.14.7 (Android emulator, API 35 arm64, AGP 9.4.1; re-run on a Pixel 10a / Android
   17): same flow as an Android app, including the `disableSyncWithV3()` requirement
   and its exact failure string.
-- **5.1.0 and 5.0.3 on Android** (Pixel 10a, Android 17, AGP 9.4.1 built-in Kotlin,
+- **5.2.0, 5.1.0 and 5.0.3 on Android** (Pixel 10a, Android 17, AGP 9.4.1 built-in Kotlin,
   `compileSdk` 36): the same flow as an Android app, plus two on-device probes — the
   `registerObserver` handler runs on `main`, and an `observe()` transform under
   `.flowOn(Dispatchers.IO)` also runs on `main`. A `compileSdk` 35 build fails
   `CheckAarMetadata` (executed).
-- **5.2.0-rc.2** (the newest `com.ditto:ditto-kotlin` on Maven Central; 5.2.0 GA is not
-  published): the JVM minimal app and all four tests green locally and in CI, and the
-  Android v5 leg on the Pixel 10a with both probes unchanged. Its public API was diffed
-  against 5.1.0 from the published sources jar: nothing the skill documents was removed;
-  the additions are listed in [`references/versions.md`](references/versions.md#new-in-520-rc2).
-  Re-verify against 5.2.0 GA when it publishes.
-- JUnit pattern (5.0.3 and 5.1.0, same JVM host):
+- **5.2.0** (JVM, same host, and in CI on Linux x64): the minimal app and all four
+  tests green; the Android v5 leg on the Pixel 10a with both probes unchanged. Its
+  public API was diffed against 5.1.0 from the published sources jar: nothing the skill
+  documents was removed; the additions are listed in
+  [`references/versions.md`](references/versions.md#new-in-520). The GA sources are
+  identical to `5.2.0-rc.2`'s, which was executed the same way before GA.
+- JUnit pattern (5.0.3, 5.1.0 and 5.2.0, same JVM host):
   [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
   — `insertThenReadBack`, `observerReportsTheWrite`, `observerReportsTheWriteUnderRunTest`
   and `flowOnDoesNotReachTheObserveTransform`, 4 tests green on macOS arm64 and in CI on

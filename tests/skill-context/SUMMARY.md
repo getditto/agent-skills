@@ -70,6 +70,14 @@ were run once per host against the tree that includes both SDK skills.
 - One run per host and case; OpenCode/Kimi K3 was not available. Claude reported USD 0.37
   for the three runs; Codex does not report cost.
 
+### Rerun after the 5.2.0 GA pin flip — 2026-10-27
+
+The Kotlin skill moved from `5.2.0-rc.2` to the released `5.2.0` (pins, "latest GA"
+guidance, transcripts). The two Kotlin cases were rerun on the same hosts against that
+tree: `kotlin_observer` passed all five criteria on both (Claude read `anti-patterns.md`
+only; Codex read the skill), and `kotlin_no_ditto` again invoked no skill and read no
+Ditto file on either host. Claude reported USD 0.20 for the two runs.
+
 ## Final bounded regressions
 
 The same natural relay and order-model prompts were rerun on fresh Claude and Kimi

@@ -1,7 +1,7 @@
 // Minimal Ditto Kotlin SDK harness — Android target, both version lines.
 //
 //   gradle installDebug -PdittoLine=v4 -PdittoVersion=4.14.7   (default)
-//   gradle installDebug -PdittoLine=v5 -PdittoVersion=5.1.0
+//   gradle installDebug -PdittoLine=v5 -PdittoVersion=5.2.0   (v5 default)
 //   adb shell am start -n live.ditto.minimal/.MainActivity
 //   adb logcat -d -s DittoMinimal:I
 //
@@ -16,7 +16,7 @@
 
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v4")
 val dittoVersion: String = providers.gradleProperty("dittoVersion")
-    .getOrElse(if (dittoLine == "v4") "4.14.7" else "5.1.0")
+    .getOrElse(if (dittoLine == "v4") "4.14.7" else "5.2.0")
 
 val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.isFile }   // repo root
     ?.readLines()

@@ -7,7 +7,7 @@ description: >
   DittoFactory.create, registerObserver, ditto.store.execute, and errors like
   "Query result item has already been closed.", "Unable to find binary
   'libdittoall'", "Identifier conflict … FAIL conflict policy". Android and JVM
-  targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0-rc.2.
+  targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.x.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -28,8 +28,7 @@ Do not preload all references or the README (the capability/evidence map).
 Writes and reviews Ditto Kotlin code: Gradle setup, initialization, authentication,
 DQL store access, sync, observers and Flows, attachments, presence, transports, object
 lifetimes, threading, errors and testing. Supports **4.14.x (LTS), 5.0.x, 5.1.x and
-5.2.0-rc.2** (release candidate; 5.2.0 GA is not yet on Maven Central) on
-**Android** (both lines) and **plain JVM** (5.x only).
+5.2.x** on **Android** (both lines) and **plain JVM** (5.x only).
 
 ## When to use this skill
 
@@ -51,11 +50,11 @@ is not installed:
 
 Packages: `com.ditto:ditto-kotlin` (v5; KMP root — Gradle resolves `-android` / `-jvm`)
 and `live.ditto:ditto` (4.14.x, Android-only). Published API reference:
-<https://software.ditto.live/kotlin/ditto-kotlin/5.1.0/api-reference/>.
+<https://software.ditto.live/kotlin/ditto-kotlin/5.2.0/api-reference/>.
 
 **[`references/versions.md`](references/versions.md) owns every fact that differs
 across version lines**, including package coordinates per version and the minimum
-toolchain. **When the user's version is unknown, emit 5.1.x code (the latest GA) and say which version
+toolchain. **When the user's version is unknown, emit 5.2.x code (the latest GA) and say which version
 you assumed.** v4 and v5 are different APIs, not two versions of one.
 
 ## Capability exceptions
@@ -65,7 +64,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | ID | Capability | Support | Required caveat |
 |---|---|---|---|
 | CAP-13 | Presence graph and connection requests | partial | Graph, metadata and `observe()` are docs-verified; `connectionRequestHandler` only fires with a second peer and was not executed. [presence.md](references/presence.md) |
-| CAP-20 | Preview and platform-specific APIs | preview | Data Streams: 5.1.0-only, Kotlin-only, `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, "breaking changes without notice". Multicast: beta from 5.1.0, off by default. [preview.md](references/preview.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | Data Streams: 5.1.0+, Kotlin-only, `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)`, "breaking changes without notice". Multicast: beta from 5.1.0, off by default. [preview.md](references/preview.md) |
 
 ## Minimum viable app
 
@@ -97,7 +96,8 @@ fun main() = runBlocking {
 }
 ```
 
-Complete program, dependencies and run transcripts (5.1.0/5.0.3 JVM, 4.14.7 Android):
+Complete program, dependencies and run transcripts (5.2.0/5.1.0/5.0.3 JVM and Android,
+4.14.7 Android):
 [`examples/minimal-app.md`](examples/minimal-app.md).
 
 ## Concurrency and threading model
@@ -154,7 +154,7 @@ Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
 ## Version differences
 
-| Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.0-rc.2 |
+| Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.x |
 |---|---|---|
 | Package / namespace | `live.ditto:ditto`, `live.ditto.*` (Android-only) | `com.ditto:ditto-kotlin`, `com.ditto.kotlin.*` (Android + JVM) |
 | Initialization | `Ditto(deps, DittoIdentity.…)` | `DittoFactory.create(DittoConfig(…))`, not suspend |

@@ -8,7 +8,7 @@
 > [Android harness project](../../../tests/kotlin-sdk/android-app) — prefer copying
 > them to typing from memory. The Android project builds either line
 > (`-PdittoLine=v4|v5`); its v5 leg was built with AGP 9.4.1 at `compileSdk 36` and run
-> on a Pixel 10a (5.1.0, 5.0.3).
+> on a Pixel 10a (5.2.0, 5.1.0, 5.0.3).
 
 ## Mandatory rules, in order
 
@@ -25,7 +25,7 @@
    Android `minSdk` 24 / `compileSdk` 36 (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>;
    the 5.x AARs enforce the 36 floor through AAR metadata — a 35 build fails
    `CheckAarMetadata`, executed; the v4 leg still builds at 35).
-   Kotlin Gradle plugin **≥ 2.2 for 5.1.0** — its artifacts depend on `kotlin-stdlib`
+   Kotlin Gradle plugin **≥ 2.2 for 5.1.0 and 5.2.0** — their artifacts depend on `kotlin-stdlib`
    2.3.21 and the compiler reads metadata at most one minor newer; executed pin 2.3.21
    on JVM (see [`versions.md`](versions.md) § Kotlin toolchain). Android projects on
    AGP 9: use built-in Kotlin — applying `org.jetbrains.kotlin.android` fails the build

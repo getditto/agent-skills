@@ -1,7 +1,8 @@
 // Minimal Ditto Kotlin SDK harness — JVM target (v5 only).
 //
 // Run a specific SDK version:
-//   gradle run -PdittoVersion=5.1.0      (default when -PdittoVersion is omitted)
+//   gradle run -PdittoVersion=5.2.0      (default when -PdittoVersion is omitted)
+//   gradle run -PdittoVersion=5.1.0
 //   gradle run -PdittoVersion=5.0.3
 //
 // 4.14.x is NOT runnable here: `live.ditto:ditto` is an Android-only AAR with no
@@ -14,7 +15,7 @@
 
 // Both properties default to the current line so `gradle run` works without -P flags.
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v5")
-val dittoVersion: String = providers.gradleProperty("dittoVersion").getOrElse("5.1.0")
+val dittoVersion: String = providers.gradleProperty("dittoVersion").getOrElse("5.2.0")
 
 // The JVM variant loads its native library from a classifier jar; pick the host's.
 // Published classifiers: macos-arm64 | linux-x64 | linux-arm64 | windows-x64 (no macos-x64).

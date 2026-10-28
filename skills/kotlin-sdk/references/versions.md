@@ -22,30 +22,30 @@
   - [On-disk store migration](#on-disk-store-migration)
   - [Removed APIs](#removed-apis)
   - [New in v5](#new-in-v5)
-  - [New in 5.2.0-rc.2](#new-in-520-rc2)
+  - [New in 5.2.0](#new-in-520)
   - [Migration checklist](#migration-checklist)
 
 ## Supported versions
 
 | Ditto SDK | Package version | Verified on | Status |
 |---|---|---|---|
-| 5.2.x | 5.2.0-rc.2 | 5.2.0-rc.2 — executed (JVM; Android, Pixel 10a) | Release candidate — 5.2.0 GA is not on Maven Central yet |
-| 5.1.x | 5.1.0 | 5.1.0 — executed (JVM; Android, Pixel 10a) | Current GA |
+| 5.2.x | 5.2.0 | 5.2.0 — executed (JVM; Android, Pixel 10a) | Current GA |
+| 5.1.x | 5.1.0 | 5.1.0 — executed (JVM; Android, Pixel 10a) | Supported |
 | 5.0.x | 5.0.3 | 5.0.3 — executed (JVM; Android, Pixel 10a) | Supported |
 | 4.14.x | 4.14.7 | 4.14.7 — executed (Android emulator API 35; Pixel 10a) | LTS |
 
 **Kotlin toolchain:** docs say Kotlin 2.0+ (Ditto supports the four most recent stable
 releases, N−4) and JDK 17 (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>,
 <https://docs.ditto.live/sdk/latest/install-guides/kotlin>). **The published artifacts set a higher floor for
-5.1.x** (**[api-dump]** Maven Central POMs, `com/ditto/ditto-kotlin-jvm/<v>/`):
+5.1.x and 5.2.x** (**[api-dump]** Maven Central POMs, `com/ditto/ditto-kotlin-jvm/<v>/`):
 
 | Artifact | `kotlin-stdlib` | `kotlinx-coroutines-core` |
 |---|---|---|
-| `ditto-kotlin-jvm` / `-android` 5.1.0 | **2.3.21** | 1.9.0 |
+| `ditto-kotlin-jvm` / `-android` 5.1.0 and 5.2.0 | **2.3.21** | 1.9.0 |
 | `ditto-kotlin-jvm` 5.0.3 | 2.1.0 | 1.10.1 |
 
 The Kotlin compiler reads class metadata at most one minor version newer than itself
-(N+1), so the practical floor is **KGP ≥ 2.2 for 5.1.0** and 2.0 for 5.0.3. The
+(N+1), so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0** and 2.0 for 5.0.3. The
 executed-working pin is Kotlin Gradle plugin **2.3.21** with
 `kotlinx-coroutines-core:1.10.2` (JVM). The harness also failed to compile 5.0.3 under
 KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler should read
@@ -54,7 +54,7 @@ KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler sho
 **Android + AGP 9:** AGP 9 has built-in Kotlin support enabled by default — do
 **not** apply the `org.jetbrains.kotlin.android` plugin (AGP fails the build if you
 do). Both harness legs build this way (AGP 9.4.1, no KGP applied, **executed**: v4
-4.14.7 at `compileSdk` 35; v5 5.1.0 and 5.0.3 at `compileSdk` 36, run on a Pixel 10a /
+4.14.7 at `compileSdk` 35; v5 5.2.0, 5.1.0 and 5.0.3 at `compileSdk` 36, run on a Pixel 10a /
 Android 17). The 5.x AARs enforce `compileSdk` ≥ 36 through AAR metadata — a 35 build
 fails `CheckAarMetadata` (**executed**).
 
@@ -63,7 +63,7 @@ fails `CheckAarMetadata` (**executed**).
 | Line | Coordinate | Notes |
 |---|---|---|
 | 5.0.x / 5.1.x | `com.ditto:ditto-kotlin:<version>` | KMP root module; Gradle resolves the `-android` or `-jvm` variant from the consuming project |
-| 5.0.x / 5.1.x, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers published for 5.1.0 (**[api-dump]** Maven Central `com/ditto/ditto-binaries/5.1.0/`): `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64` — there is **no `macos-x64`**, so Intel Macs cannot run the JVM target. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
+| 5.0.x / 5.1.x, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers published for 5.1.0 and 5.2.0 (**[api-dump]** Maven Central `com/ditto/ditto-binaries/<v>/`): `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64` — there is **no `macos-x64`**, so Intel Macs cannot run the JVM target. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
 | 4.14.x | `live.ditto:ditto:<version>` | AAR, **Android-only**. There is no 4.14.x JVM artifact (`live.ditto:ditto-jvm` stalled at `4.11.0-preview.1`); the `com.ditto:ditto-kotlin` coordinate does not exist for 4.14.x |
 
 Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
@@ -229,12 +229,13 @@ the v5 upgrade.)
 - 5.1.x adds: JOINs, composite indexes, `RETURNING`, `ADVISE`, Data Streams (preview).
 - `com.ditto:ditto-tools-android:6.x` replaces `live.ditto:ditto-tools-android`.
 
-### New in 5.2.0-rc.2
+### New in 5.2.0
 
-Observed by diffing the public declarations in `ditto-kotlin-android-5.2.0-rc.2-sources.jar`
-against 5.1.0 (**[api-dump]**); the Kotlin release notes do not yet list 5.2.0. Nothing
-the rest of this skill documents was removed. Toolchain unchanged: `kotlin-stdlib`
-2.3.21, coroutines 1.9.0, AAR `minCompileSdk` 36, `minSdk` 24.
+Observed by diffing the public declarations in `ditto-kotlin-android-5.2.0-sources.jar`
+against 5.1.0 (**[api-dump]**); the Kotlin release notes page did not list 5.2.0 when
+checked (2026-10-27). Nothing the rest of this skill documents was removed. Toolchain
+unchanged: `kotlin-stdlib` 2.3.21, coroutines 1.9.0, AAR `minCompileSdk` 36, `minSdk`
+24. The GA sources are identical to `5.2.0-rc.2`'s; only the version string differs.
 
 - **Local store encryption:** `DittoConfig(encryptionKey = DittoEncryptionKey.raw(bytes))`
   with exactly 32 key bytes; the SDK copies them once into zeroized native memory, and
@@ -263,7 +264,7 @@ Condensed from <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> (
 
 - [ ] `live.ditto.*` → `com.ditto.kotlin.*`; coordinate `live.ditto:ditto` →
       `com.ditto:ditto-kotlin`; raise `minSdk` to 24 if lower; Kotlin plugin to ≥ 2.2
-      for 5.1.0 (its artifacts depend on `kotlin-stdlib` 2.3.21 — see *Kotlin
+      for 5.1.0 and 5.2.0 (their artifacts depend on `kotlin-stdlib` 2.3.21 — see *Kotlin
       toolchain* above; 2.3.21 is the executed pin).
 - [ ] `Ditto(deps, identity)` → `DittoFactory.create(DittoConfig(databaseId, connect))`;
       delete the dependencies/identity types.

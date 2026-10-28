@@ -24,11 +24,11 @@
 - JDK 17, Android `minSdk` 24 (Android 7.0), `compileSdk` 36
   (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
 - Kotlin: docs say 2.0+ (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>), but
-  the 5.1.0 artifacts depend on `kotlin-stdlib` **2.3.21** (5.0.3: 2.1.0 — Maven Central
-  POMs), and the compiler reads metadata at most one minor version newer, so the
-  practical floor is **KGP ≥ 2.2 for 5.1.0**. Executed-working pin: Kotlin **2.3.21**
+  the 5.1.0 and 5.2.0 artifacts depend on `kotlin-stdlib` **2.3.21** (5.0.3: 2.1.0 —
+  Maven Central POMs), and the compiler reads metadata at most one minor version newer,
+  so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0**. Executed-working pin: Kotlin **2.3.21**
   with `kotlinx-coroutines` 1.10.x. On Android with AGP 9, use built-in Kotlin — do
-  **not** apply `org.jetbrains.kotlin.android` (**executed**: v5 5.1.0 and 5.0.3 built
+  **not** apply `org.jetbrains.kotlin.android` (**executed**: v5 5.2.0, 5.1.0 and 5.0.3 built
   with AGP 9.4.1 and no KGP applied, run on a Pixel 10a / Android 17).
 - **`compileSdk` 36 is enforced, not advisory:** the 5.x AARs declare a minimum
   `compileSdk`, and a project at 35 fails `CheckAarMetadata` with "requires libraries
@@ -41,7 +41,7 @@
 ```kotlin
 // build.gradle.kts (app module)
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.1.0")
+    implementation("com.ditto:ditto-kotlin:5.2.0")
 }
 ```
 
@@ -67,15 +67,15 @@ context itself via AndroidX Startup (`DittoInitializer`) — do **not** add a ma
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.1.0")
+    implementation("com.ditto:ditto-kotlin:5.2.0")
     // The JVM variant ships without native binaries; add the one for the host:
-    runtimeOnly("com.ditto:ditto-binaries:5.1.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
     // classifiers: macos-arm64 | linux-x64 | linux-arm64 | windows-x64
 }
 ```
 
 Without the `ditto-binaries` classifier the first `DittoFactory.create` throws
-(**executed**, 5.0.3/5.1.0):
+(**executed**, 5.0.3/5.1.0/5.2.0):
 
 ```
 IllegalStateException: Unable to find binary 'libdittoall.dylib' for Darwin ARM64

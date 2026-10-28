@@ -5,9 +5,9 @@ projects cover the two version lines, because `live.ditto:ditto` (4.14.x) ships 
 Android AAR and `com.ditto:ditto-kotlin` (5.x) ships Android and JVM variants:
 
 ```
-minimal-app/                       v5 on the JVM — 5.0.3 and 5.1.0
+minimal-app/                       v5 on the JVM — 5.0.3, 5.1.0 and 5.2.0
   gradlew, gradle/wrapper/         Gradle 9.8.2 wrapper (committed)
-  build.gradle.kts                 version from -PdittoVersion (default 5.1.0);
+  build.gradle.kts                 version from -PdittoVersion (default 5.2.0);
                                    host-detected ditto-binaries classifier; .env loading
   src/main/kotlin/MainV5.kt        the normative program in examples/minimal-app.md
   src/test/kotlin/DittoStoreTest.kt  JUnit 5: execute round-trip, observer delivery
@@ -36,8 +36,10 @@ android-app/                       both lines on a device or emulator
 
 ```bash
 cd tests/kotlin-sdk/minimal-app
-./gradlew run  -PdittoVersion=5.1.0 --console=plain -q    # prints the transcript in examples/minimal-app.md
-./gradlew test -PdittoVersion=5.1.0                       # 4 tests
+./gradlew run  -PdittoVersion=5.2.0 --console=plain -q    # prints the transcript in examples/minimal-app.md
+./gradlew test -PdittoVersion=5.2.0                       # 4 tests
+./gradlew run  -PdittoVersion=5.1.0 --console=plain -q
+./gradlew test -PdittoVersion=5.1.0
 ./gradlew run  -PdittoVersion=5.0.3 --console=plain -q
 ./gradlew test -PdittoVersion=5.0.3
 ```
@@ -48,7 +50,7 @@ Expected `run` output (the observer fires once with the empty store, then with t
 observer: 0 car(s)
 observer: 1 car(s)
 read-back make: Toyota
-SDK version: 5.1.0
+SDK version: 5.2.0
 ```
 
 The program text below `// MARK: - begin documented program` in `MainV5.kt` must stay
@@ -66,6 +68,7 @@ byte-identical to the `## Program` block in `skills/kotlin-sdk/examples/minimal-
 
 ```bash
 cd tests/kotlin-sdk/android-app
+./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.2.0 -PdittoAbi=arm64-v8a
 ./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.1.0 -PdittoAbi=arm64-v8a
 ./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.0.3 -PdittoAbi=arm64-v8a
 ./gradlew installDebug -PdittoLine=v4 -PdittoVersion=4.14.7 -PdittoAbi=arm64-v8a
@@ -86,28 +89,21 @@ observer: 0 car(s) [thread=main main=true]
 observe() transform under flowOn(IO) ran on thread=main
 observer: 1 car(s) [thread=main main=true]
 read-back make: Toyota
-SDK version: 5.1.0
+SDK version: 5.2.0
 EXIT=0
 ```
 
 Expected logcat, v4: `observer: 0 car(s)`, `observer: 1 car(s)`, `read-back make: Toyota`,
 `SDK version: AndJ4.14.7_7506fa2fd0`, `EXIT=0`.
 
-Recorded runs: Pixel 10a (Android 17) for 5.1.0, 5.0.3 and 4.14.7; emulator API 35 for
+Recorded runs: Pixel 10a (Android 17) for 5.2.0, 5.1.0, 5.0.3 and 4.14.7; emulator API 35 for
 4.14.7. A `compileSdk` 35 build of the v5 leg fails `CheckAarMetadata` — the 5.x AARs
 enforce 36 — which is why `compileSdk` follows the line.
-
-## 5.2.0-rc.2
-
-`com.ditto:ditto-kotlin:5.2.0` GA is not on Maven Central yet (only `5.2.0-rc.2`), so the
-release candidate is the 5.2 target: both legs run against `-PdittoVersion=5.2.0-rc.2`
-(JVM locally and in CI, Android on the Pixel 10a) and the skill marks it as such.
-Switch the pin to `5.2.0` and re-run both legs when GA publishes.
 
 ## CI
 
 `.github/workflows/kotlin-skill-tests.yml` runs the JVM leg on `ubuntu-latest` for
-5.0.3, 5.1.0 and 5.2.0-rc.2 whenever `skills/kotlin-sdk/**`,
+5.0.3, 5.1.0 and 5.2.0 whenever `skills/kotlin-sdk/**`,
 `tests/kotlin-sdk/**` or the workflow changes, using the `DITTO_OFFLINE_LICENSE`
 repository secret. The Android leg needs a device and is run manually; its transcripts
 are recorded in `skills/kotlin-sdk/examples/minimal-app.md`.

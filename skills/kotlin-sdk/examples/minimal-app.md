@@ -8,7 +8,7 @@
 - [Running it](#running-it)
 - [Expected output](#expected-output)
 - [The v4 leg (Android, 4.14.7)](#the-v4-leg-android-4147)
-- [The v5 leg on Android (5.1.0 and 5.0.3)](#the-v5-leg-on-android-510-and-503)
+- [The v5 leg on Android (5.2.0, 5.1.0 and 5.0.3)](#the-v5-leg-on-android-520-510-and-503)
 - [Verified on](#verified-on)
 
 A complete, runnable program. Every line needed to build it is present: imports,
@@ -24,7 +24,7 @@ this repository and is compiled and run:
 Longer form of `SKILL.md` § *Minimum viable app*.
 
 **This is a copy of `minimal-app/src/main/kotlin/MainV5.kt` in the fixture**, which CI
-compiles and runs against 5.0.3 and 5.1.0; `scripts/validate-sdk-skills.py` fails when the
+compiles and runs against 5.0.3, 5.1.0 and 5.2.0; `scripts/validate-sdk-skills.py` fails when the
 program block below drifts from it.
 
 ## What it does
@@ -38,17 +38,17 @@ closes everything in reverse order.
 ```kotlin
 // tests/kotlin-sdk/minimal-app/build.gradle.kts (excerpt)
 plugins {
-    kotlin("jvm") version "2.3.21"   // 5.1.0 depends on kotlin-stdlib 2.3.21 → KGP ≥ 2.2;
+    kotlin("jvm") version "2.3.21"   // 5.1.0/5.2.0 depend on kotlin-stdlib 2.3.21 → KGP ≥ 2.2;
                                      // 5.0.3 depends on 2.1.0. See references/versions.md
     application
 }
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("com.ditto:ditto-kotlin:5.1.0")
+    implementation("com.ditto:ditto-kotlin:5.2.0")
     // Mandatory on JVM — without it DittoFactory.create throws
     // "Unable to find binary 'libdittoall.dylib' …":
-    runtimeOnly("com.ditto:ditto-binaries:5.1.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
     // other classifiers: linux-x64 | linux-arm64 | windows-x64
 }
 ```
@@ -136,24 +136,24 @@ Three things this program demonstrates that bite people:
 ```bash
 export DITTO_OFFLINE_LICENSE=…        # repo-root .env is NOT auto-loaded here
 cd tests/kotlin-sdk/minimal-app
-gradle run -PdittoLine=v5 -PdittoVersion=5.1.0 --console=plain -q
+gradle run -PdittoLine=v5 -PdittoVersion=5.2.0 --console=plain -q
 ```
 
 ## Expected output
 
-Actual run, 5.1.0 (macOS arm64, OpenJDK 17), trailing lines:
+Actual run, 5.2.0 (macOS arm64, OpenJDK 17), trailing lines:
 
 ```
-Loading native library at path: jar:file:…/ditto-binaries-5.1.0-macos-arm64.jar!/macos/arm64/libdittoall.dylib
+Loading native library at path: jar:file:…/ditto-binaries-5.2.0-macos-arm64.jar!/macos/arm64/libdittoall.dylib
 …
 observer: 0 car(s)
 observer: 1 car(s)
 read-back make: Toyota
-SDK version: 5.1.0
+SDK version: 5.2.0
 ```
 
-The same run against 5.0.3 prints `SDK version: 5.0.3` with identical observer and
-read-back lines. (`DittoLogger.isEnabled = false` does not suppress the INFO init
+The same run against 5.1.0 and 5.0.3 prints `SDK version: 5.1.0` / `5.0.3` with
+identical observer and read-back lines. (`DittoLogger.isEnabled = false` does not suppress the INFO init
 lines the SDK prints during `DittoFactory.create` — they precede logger
 configuration; see [../references/observability.md](../references/observability.md).)
 
@@ -191,7 +191,7 @@ I DittoMinimal: EXIT=0
 Note the v4 version string is platform-tagged (`AndJ4.14.7_7506fa2fd0`), not the plain
 semver v5 prints.
 
-## The v5 leg on Android (5.1.0 and 5.0.3)
+## The v5 leg on Android (5.2.0, 5.1.0 and 5.0.3)
 
 The same Android project builds the v5 API with `-PdittoLine=v5` (`compileSdk` 36 — the
 5.x AARs enforce it). Its activity runs the JVM program's flow and adds two probes for
@@ -200,23 +200,23 @@ starts on, and whether `.flowOn(Dispatchers.IO)` moves an `observe()` transform.
 
 ```bash
 cd tests/kotlin-sdk/android-app
-./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.1.0 -PdittoAbi=arm64-v8a
+./gradlew installDebug -PdittoLine=v5 -PdittoVersion=5.2.0 -PdittoAbi=arm64-v8a
 adb shell am start -n live.ditto.minimal/.MainActivity
 adb logcat -d | grep DittoMinimal
 ```
 
-Actual logcat, 5.1.0, Pixel 10a (Android 17):
+Actual logcat, 5.2.0, Pixel 10a (Android 17):
 
 ```
 I DittoMinimal: observer: 0 car(s) [thread=main main=true]
 I DittoMinimal: observe() transform under flowOn(IO) ran on thread=main
 I DittoMinimal: observer: 1 car(s) [thread=main main=true]
 I DittoMinimal: read-back make: Toyota
-I DittoMinimal: SDK version: 5.1.0
+I DittoMinimal: SDK version: 5.2.0
 I DittoMinimal: EXIT=0
 ```
 
-5.0.3 prints the same lines with `SDK version: 5.0.3`. Both probes confirm
+5.1.0 and 5.0.3 print the same lines with `SDK version: 5.1.0` / `5.0.3`. Both probes confirm
 [../references/concurrency.md](../references/concurrency.md): the handler is on the
 main thread, and `flowOn` does not reach the transform.
 
@@ -224,11 +224,13 @@ main thread, and `flowOn` does not reach the transform.
 
 | Line | Patch | Target | Host | Date |
 |---|---|---|---|---|
+| 5.2.x | 5.2.0 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
+| 5.2.x | 5.2.0 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
 | 5.1.x | 5.1.0 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
 | 5.1.x | 5.1.0 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
 | 5.0.x | 5.0.3 | JVM | macOS arm64, OpenJDK 17.0.20.1, Gradle 9.8.2; CI Linux x64 | 2026-10-27 |
 | 5.0.x | 5.0.3 | Android, Pixel 10a (Android 17, arm64) | macOS, AGP 9.4.1, compileSdk 36 | 2026-10-27 |
 | 4.14.x | 4.14.7 | Android emulator (API 35, arm64); Pixel 10a | macOS, AGP 9.4.1, compileSdk 35 | 2026-10-27 |
-| 5.2.x (rc) | 5.2.0-rc.2 | JVM; Android, Pixel 10a | as 5.1.0 rows; CI Linux x64 | 2026-10-27 |
 
-`5.2.0-rc.2` prints the same lines with `SDK version: 5.2.0-rc.2` on both targets.
+`5.2.0-rc.2` (sources identical to 5.2.0 GA) was executed the same way on both targets
+before GA and printed `SDK version: 5.2.0-rc.2`.

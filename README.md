@@ -47,7 +47,7 @@ Standalone packages and per-skill upload ZIPs are generated from the canonical s
 
 The Kotlin skill covers Android (4.14.x and 5.x) and the JVM (5.x): Gradle setup,
 coroutine-native observers, lifetimes and threading, plus a Gradle project-generation
-guide. Its JVM fixture runs in CI against 5.0.3 and 5.1.0.
+guide. Its JVM fixture runs in CI against 5.0.3, 5.1.0 and 5.2.0.
 
 **[Install Ditto Kotlin in your agent](docs/install-kotlin.md)** — the same hosts as
 Swift; standalone packages are generated with `--plugin ditto-kotlin`.

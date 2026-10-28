@@ -150,7 +150,7 @@ published program drifts from the fixture. CI workflows:
 - `.github/workflows/swift-skill-tests.yml` — macOS matrix run of the Swift fixtures,
   generated starter and platform builds.
 - `.github/workflows/kotlin-skill-tests.yml` — Ubuntu run of the Kotlin JVM fixture
-  against 5.0.3 and 5.1.0; the Android (4.14.x) leg is manual.
+  against 5.0.3, 5.1.0 and 5.2.0; the Android (4.14.x) leg is manual.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;

@@ -75,7 +75,7 @@ Details that cost a build or a support ticket if missed:
   The resolved absolute path is readable as `ditto.absolutePersistenceDirectory`
   (v4's `ditto.persistenceDirectory` is removed).
 
-**5.2.0-rc.2 additions** (release candidate; see [versions.md](versions.md#new-in-520-rc2)):
+**5.2.0 additions** (see [versions.md](versions.md#new-in-520)):
 `DittoConfig(encryptionKey = DittoEncryptionKey.raw(bytes))` encrypts the local store,
 `DittoConfig(systemParameters = mapOf(…))` sets system parameters at open, and
 `DittoFactory.deleteStore(databaseId, persistenceDirectory)` removes a closed store.

@@ -6,7 +6,7 @@ Everything here is the **v5** (5.0.x / 5.1.x) form with tagged v4 asides.
 Sources: <https://docs.ditto.live/sdk/latest/deployment/testing>, <https://docs.ditto.live/sdk/latest/install-guides/kotlin>
 (ProGuard + crash-reporter sections), <https://docs.ditto.live/sdk/latest/compatibility/kotlin>
 (transport support matrix). The JVM-unit-test pattern below is **executed** against
-5.0.3 and 5.1.0; the runnable copy is
+5.0.3, 5.1.0 and 5.2.0; the runnable copy is
 [the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
 
 ## Contents
@@ -62,7 +62,7 @@ Kotlin-relevant guidance:
 
 The v5 SDK is Kotlin Multiplatform: a JVM target resolves `com.ditto:ditto-kotlin` to
 its **`-jvm` variant**, so plain JUnit tests — no emulator, no Robolectric — can open
-a **real** Ditto. **Executed** on 5.0.3 and 5.1.0 with exactly this pattern:
+a **real** Ditto. **Executed** on 5.0.3, 5.1.0 and 5.2.0 with exactly this pattern:
 `DittoConfig.Connect.SmallPeersOnly` + `setOfflineOnlyLicenseToken` (2 tests green —
 see the skeleton section below for the fixture path).
 
@@ -76,10 +76,10 @@ The JVM variant loads the native core from a separate classifier artifact. Witho
 ```kotlin
 // build.gradle.kts — JVM module
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.1.0")
+    implementation("com.ditto:ditto-kotlin:5.2.0")
     // Pick the classifier for the CI/dev host:
     //   macos-arm64 | linux-x64 | linux-arm64 | windows-x64
-    runtimeOnly("com.ditto:ditto-binaries:5.1.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
 
     testImplementation(kotlin("test"))  // REQUIRED for kotlin.test.assertEquals —
                                         // the kotlin("jvm") plugin does not add it
@@ -101,7 +101,7 @@ tasks.test {
 **Executed** pattern — offline-only instance, unique temp `persistenceDirectory` per
 test, `runTest` for the suspend store APIs. The file below is
 [the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
-executed green against 5.0.3 and 5.1.0 (`gradle test -PdittoLine=v5
+executed green against 5.0.3, 5.1.0 and 5.2.0 (`gradle test -PdittoLine=v5
 -PdittoVersion=<v>`; 2 tests, 0 failures):
 
 ```kotlin
@@ -179,7 +179,7 @@ tests; `runTest` is fine for straight-line `store.execute` calls.
 The idiomatic alternative, per the kotlinx-coroutines-test `runTest` docs
 (<https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html>:
 "Delays in code that runs inside dispatchers that don't use a TestCoroutineScheduler
-don't get skipped"), keeps one runner across the suite. **Executed** on 5.0.3 and 5.1.0
+don't get skipped"), keeps one runner across the suite. **Executed** on 5.0.3, 5.1.0 and 5.2.0
 (JVM, CI) as `observerReportsTheWriteUnderRunTest`:
 
 ```kotlin

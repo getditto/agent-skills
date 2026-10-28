@@ -67,7 +67,7 @@ Carried over from v4, renamed `*Error` → `*Exception`
 | Subclass | Payload |
 |---|---|
 | `DittoException.ActivationException` | `reason: ActivationExceptionReason` |
-| `DittoException.AuthenticationException` | `reason: AuthenticationExceptionReason`; 5.2.0-rc.2 adds `failureCode: AuthenticationFailureCode?` and `clientInfoJson: String?` |
+| `DittoException.AuthenticationException` | `reason: AuthenticationExceptionReason`; 5.2.0 adds `failureCode: AuthenticationFailureCode?` and `clientInfoJson: String?` |
 | `DittoException.FatalException` | message |
 | `DittoException.IoException` | `reason: IoExceptionReason` |
 | `DittoException.PresenceException` | `reason: PresenceExceptionReason` |
