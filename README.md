@@ -19,6 +19,24 @@ customer use.**
 | [data-modeling](skills/data-modeling) (`data-modeling`) | `ditto-data-modeling` | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x. |
 | [swift-sdk](skills/swift-sdk) (`swift-sdk`) | `ditto-swift` | Ditto Swift SDK for iOS, iPadOS, macOS (AppKit) and Mac Catalyst: `DittoConfig`/`Ditto.open`, sync and subscriptions, DQL execution, store observers and `DittoDiffer`, attachments, presence, Swift 6 concurrency and object lifetimes. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 
+## JavaScript and mobile app skills
+
+Install **ditto-js** once to build Node.js, web/React, React Native or Expo apps.
+The platform recipe selects the shared SDK/provider assets and native configuration.
+[Installation and getting started](docs/install-js.md).
+
+| Skill | Responsibility |
+|---|---|
+| [js-sdk](skills/js-sdk) | JavaScript/TypeScript SDK contract and tested runtime/provider/query assets |
+| [js-node](skills/js-node) | Node services, native binaries, persistence and shutdown |
+| [js-web](skills/js-web) | Browser WASM, React/SSR boundaries and memory-only storage |
+| [js-react-native](skills/js-react-native) | Native integration, permissions, lifecycle and device acceptance |
+| [js-expo](skills/js-expo) | Runnable Expo starter, config plugin, prebuild and development builds |
+| [native-app-config](skills/native-app-config) | Reusable Apple plist/entitlements and Android manifest/runtime permissions |
+
+The native configuration skill also ships separately as **ditto-native-config** for
+other SDK languages. [Verification and limits](tests/js-sdk/README.md).
+
 ## Repository layout
 
 ```

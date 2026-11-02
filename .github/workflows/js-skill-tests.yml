@@ -1,0 +1,110 @@
+name: JavaScript SDK Skill Tests
+
+on:
+  pull_request:
+    paths:
+      - 'skills/js-*/**'
+      - 'skills/native-app-config/**'
+      - 'tests/js-sdk/**'
+      - 'scripts/package-js-plugin.py'
+      - 'plugins/ditto-js/**'
+      - '.github/workflows/js-skill-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/js-*/**'
+      - 'skills/native-app-config/**'
+      - 'tests/js-sdk/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate skill contracts and scoped installation archives
+        run: |
+          python3 scripts/validate-sdk-skills.py
+          python3 scripts/package-js-plugin.py --check
+          python3 tests/js-sdk/test_artifacts.py
+          python3 scripts/package-js-plugin.py --output "$RUNNER_TEMP/ditto-js-packages"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ditto-js-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-js-packages/*.zip
+            ${{ runner.temp }}/ditto-js-packages/SHA256SUMS
+
+  runtime:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['5.0.3', '5.1.0', '5.2.0']
+    defaults:
+      run:
+        working-directory: tests/js-sdk
+    env:
+      DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/js-sdk/package-lock.json
+      - run: npm ci
+      - name: Select exact SDK release without changing the committed lockfile
+        run: npm install --no-save --package-lock=false @dittolive/ditto@${{ matrix.sdk }}
+      - run: npm run typecheck
+      - run: npm test
+      - run: node minimal.mjs
+      - run: npx playwright install chromium
+      - run: npm run test:browser
+      - run: python3 test_artifacts.py
+
+  mobile:
+    runs-on: xcode-27
+    defaults:
+      run:
+        working-directory: tests/js-sdk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/js-sdk/mobile-package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v5
+      - run: python3 stage-mobile.py
+      - run: npm ci --prefix mobile
+      - run: npm run typecheck --prefix mobile
+      - name: Bundle real native entry points
+        working-directory: tests/js-sdk/mobile
+        run: npx expo export --platform ios --platform android
+      - name: Generate native configuration twice and inspect both results
+        run: |
+          cd mobile
+          npx expo prebuild --no-install
+          cd ..
+          python3 test_artifacts.py --native
+          cd mobile
+          npx expo prebuild --no-install
+          cd ..
+          python3 test_artifacts.py --native
+      - name: Compile Android native dependencies and application
+        working-directory: tests/js-sdk/mobile/android
+        run: ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --console=plain
+      - name: Resolve iOS native dependencies
+        working-directory: tests/js-sdk/mobile/ios
+        run: pod install --repo-update
+      - name: Compile iOS simulator application
+        working-directory: tests/js-sdk/mobile/ios
+        run: xcodebuild -workspace DittoTasks.xcworkspace -scheme DittoTasks -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/ditto-js-ios" CODE_SIGN_IDENTITY=- ARCHS=arm64 ONLY_ACTIVE_ARCH=YES build

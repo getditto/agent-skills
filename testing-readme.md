@@ -77,3 +77,10 @@ precedence per the rule above:
   matrix.
 
 The data-modeling harness is run manually (it spends live-model tokens).
+
+## JavaScript / React Native / Expo
+
+[JavaScript harness](tests/js-sdk/README.md) tests the shipped assets against real Node
+and browser SDKs, verifies permission boundaries and generated native configuration,
+and supplies the Expo native build fixture. See its evidence table before treating a
+passing typecheck or simulator run as radio/background validation.

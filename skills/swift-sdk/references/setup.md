@@ -69,76 +69,17 @@ see [connect.md](connect.md).
 
 ## CAP-02 Platform permissions, entitlements, build config
 
-The declarations below are build configuration and belong to this skill. *Why* each
-radio needs a permission, and which platforms carry which radios, belongs to the
-`ditto-mesh-networking` skill, or
-<https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations>.
+Shared Apple declarations are maintained in the
+[native-app-config Apple reference](../../native-app-config/references/apple.md):
+Info.plist privacy/Bonjour keys, optional background modes and data protection,
+macOS sandbox entitlements, and restricted multicast capabilities. Apply them to the
+application target. These OS settings also serve React Native, Expo, Flutter and .NET
+hosts; this Swift skill owns SwiftPM, target linking and signing below.
 
-### iOS, iPadOS and Mac Catalyst `Info.plist`
-
-```xml
-<key>NSBluetoothAlwaysUsageDescription</key>
-<string>Uses Bluetooth to connect and sync with nearby devices</string>
-<key>NSBluetoothPeripheralUsageDescription</key>
-<string>Uses Bluetooth to connect and sync with nearby devices</string>
-<key>NSLocalNetworkUsageDescription</key>
-<string>Uses Wi-Fi to connect and sync with nearby devices</string>
-<key>NSBonjourServices</key>
-<array>
-  <string>_http-alt._tcp.</string>
-</array>
-```
-
-**Symptom when one is missing:** sync never starts over that transport and no error is
-raised. A missing `NSLocalNetworkUsageDescription` or `NSBonjourServices` entry means
-mDNS discovery silently finds no peers; a missing Bluetooth string means the system
-never prompts and BLE stays dark. `ditto.sync.isActive` is still `true` — it reports that
-*sync was started*, not that any transport came up.
-
-`NSBonjourServices` must list `_http-alt._tcp.` exactly, including the trailing dot.
-
-### Background sync on iOS
-
-Add the **Background Modes** capability to the app target and enable both:
-
-- *Uses Bluetooth LE accessories*
-- *Acts as a Bluetooth LE accessory*
-
-Without these, sync stops when the app is backgrounded or the device locks.
-
-### Data protection entitlement
-
-If the app enables Data Protection, set it to
-`NSFileProtectionCompleteUntilFirstUserAuthentication`. Ditto's persistence directory has
-to be readable while the device is locked but after the first unlock following a restart;
-the stricter `NSFileProtectionComplete` makes the store unreadable in the background.
-
-### macOS (AppKit)
-
-A sandboxed Mac app needs both network entitlements, and keeps the local-network
-`Info.plist` keys above:
-
-```xml
-<key>com.apple.security.network.client</key><true/>
-<key>com.apple.security.network.server</key><true/>
-```
-
-`com.apple.security.network.client` is what lets the app reach Ditto Server;
-`com.apple.security.network.server` is what lets peers reach it.
-**Symptom when missing:** `Operation not permitted (os error 1)` when Ditto tries to
-connect. The requirement comes from the macOS App Sandbox and applies to every Ditto
-macOS app; Ditto documents it in the
-[Flutter install guide](https://docs.ditto.live/sdk/latest/install-guides/flutter).
-
-A sandboxed Mac app that uses the Bluetooth transport also needs Apple's
-`com.apple.security.device.bluetooth` App Sandbox entitlement. That requirement comes
-from Apple's sandbox, not from Ditto's documentation.
-
-### Multicast entitlement (5.1 beta transport only)
-
-`DittoMulticastBetaConfig` additionally requires Apple's restricted
-`com.apple.developer.networking.multicast` entitlement, which Apple grants per app on
-request. See [preview.md](preview.md) before using it at all.
+If only the standalone Swift skill is installed, use the public
+[Swift install guide](https://docs.ditto.live/sdk/latest/install-guides/swift) or
+install the `ditto-native-config` companion. Keep existing protection policies explicit;
+background modes do not guarantee continuous sync or execution after force quit.
 
 ### Code signing and the embedded XCFramework
 
