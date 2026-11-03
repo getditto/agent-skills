@@ -107,7 +107,7 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     when (dittoLine) {
         "v4" -> {
             implementation("live.ditto:ditto:$dittoVersion")
