@@ -34,6 +34,23 @@ docs/            Contributor docs (skill templates, SDK skill spec, plans)
 Skill content lives exactly once in `skills/`. Everything tool-specific wraps
 or points at it.
 
+## Releases
+
+Tags (`v*`) publish a GitHub release via the [Release workflow](.github/workflows/release.yml)
+with two assets:
+
+- **`ditto-skills.tar.gz`** — a slim archive of `skills/` + `LICENSE.md` +
+  `skills-manifest.json`. This is what the Ditto CLI downloads for
+  `dittosh skills add|update`; it excludes `tests/`, `docs/`, `plugins/` and
+  other repo-only directories, so installs stay fast as the test suites grow.
+- **`skills-manifest.json`** — every skill's name, path, and description,
+  parsed from the `SKILL.md` frontmatter, for tooling that lists available
+  skills without downloading the archive.
+
+Cut a release by pushing a tag (`git tag v1.0.0 && git push origin v1.0.0`)
+or from the Actions tab (Release workflow → Run workflow). The workflow runs
+`scripts/validate-sdk-skills.py` first and refuses to publish a broken skill.
+
 ## Swift getting started
 
 The Swift skill includes a runnable SwiftUI project generator, diagnostics screen,
