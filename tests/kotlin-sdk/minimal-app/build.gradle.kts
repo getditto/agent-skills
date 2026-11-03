@@ -45,7 +45,7 @@ repositories {
 dependencies {
     // Align the SDK's transitive Java telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     when (dittoLine) {
         // v5: KMP root module; Gradle resolves the -jvm variant. The JVM
         // variant also needs the native binary for the host platform as an
@@ -67,7 +67,7 @@ dependencies {
     // add it automatically.
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
 
 // KEY=VALUE lines from the repo-root .env, used only for keys the environment lacks.
