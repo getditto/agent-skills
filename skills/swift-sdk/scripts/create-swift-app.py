@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 
-VERSIONS = ("4.14.6", "5.0.3", "5.1.0")
+VERSIONS = ("4.14.6", "5.0.3", "5.1.0", "5.2.0")
 SKILL = Path(__file__).resolve().parents[1]
 
 
@@ -81,7 +81,10 @@ def project(name, bundle_id, version):
         "PRODUCT_NAME": "$(TARGET_NAME)", "PRODUCT_BUNDLE_IDENTIFIER": bundle_id,
         "INFOPLIST_FILE": "App/Info.plist", "GENERATE_INFOPLIST_FILE": "NO",
         "SWIFT_VERSION": "6.0", "SDKROOT": "auto",
-        **({"ARCHS": "arm64"} if version == "5.1.0" else {}),
+        # 5.1.x and later ship arm64-only slices: no x86_64 slice for any platform, so a
+        # generic destination that also wants x86_64 fails to link. 5.0.3 and 4.14.6
+        # still carry x86_64.
+        **({"ARCHS": "arm64"} if version.startswith(("5.1", "5.2")) else {}),
         "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator macosx",
         "SUPPORTS_MACCATALYST": "YES", "TARGETED_DEVICE_FAMILY": "1,2",
         "IPHONEOS_DEPLOYMENT_TARGET": "15.0", "MACOSX_DEPLOYMENT_TARGET": "12.0",

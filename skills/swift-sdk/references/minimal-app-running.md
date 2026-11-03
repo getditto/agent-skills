@@ -8,7 +8,7 @@
 - [Verified on](#verified-on)
 
 Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.x; version-specific notes remain inline. Read only the topic needed.
 
 ## Dependency
 
@@ -18,7 +18,7 @@ Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14
 import PackageDescription
 import Foundation
 
-// One SPM URL serves all three supported lines; only the pin changes.
+// One SPM URL serves all four supported lines; only the pin changes.
 let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ?? "5.1.0"
 
 // 4.14.x needs `@preconcurrency import DittoSwift` and `disableSyncWithV3()`, both of
@@ -114,7 +114,8 @@ SDK 5.0. V3 sync is no longer supported.
 | 4.14.6 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 | 5.0.3 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
 | 5.1.0 | macOS 27.0, arm64 | Apple Swift 6.4 | offline and server |
+| 5.2.0 | macOS 27.2, arm64 | Apple Swift 6.4.2 | offline and server |
 
 The same source also compiles for the iOS Simulator, an iOS device, and Mac Catalyst at
-all three versions. Nothing here was run on `x86_64`: 5.1.0 ships no Intel slice
-([versions.md](versions.md#shipped-xcframework-slices)).
+all four versions. Nothing here was run on `x86_64`: 5.1.0 and 5.2.0 ship no Intel
+slice ([versions.md](versions.md#shipped-xcframework-slices)).

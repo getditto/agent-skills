@@ -4,9 +4,8 @@
 //
 // The Ditto version under test is selected by the DITTO_SWIFT_VERSION environment
 // variable, which is read when SwiftPM evaluates this manifest. Supported values are
-// the three lines the skill documents, 4.14.6, 5.0.3 and 5.1.0, plus 5.2.0 for the
-// Data Streams tests (the API is 5.2.0-only in Swift). All resolve from the same SPM
-// URL, so only the pin changes between runs.
+// the four lines the skill documents: 4.14.6, 5.0.3, 5.1.0 and 5.2.0. All resolve from
+// the same SPM URL, so only the pin changes between runs.
 //
 //   DITTO_SWIFT_VERSION=5.1.0 ./scripts/run.sh
 //

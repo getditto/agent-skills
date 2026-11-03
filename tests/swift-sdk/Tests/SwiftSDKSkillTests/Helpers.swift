@@ -53,11 +53,29 @@ var isV50: Bool {
     Ditto.version.hasPrefix("5.0.")
 }
 
-/// True from 5.1.0 onward (5.1.x, 5.2.x, …): the line that introduced the 5 MiB
-/// per-document limit, `ADVISE` and the multicast connection type. Gates that used to
-/// test `hasPrefix("5.1.")` failed on 5.2.0 for features 5.2.0 kept.
-var isV51OrLater: Bool {
-    !isV4 && !isV50
+/// True when the pinned SDK is at least `version`.
+///
+/// Compares major/minor/patch numerically and ignores any pre-release suffix, so
+/// "5.2.0-rc.2" counts as 5.2.0. Use this — not `Ditto.version.hasPrefix("5.1.")` —
+/// to gate a behaviour that was introduced in a line and still exists in later
+/// ones: an exact-prefix check silently takes the "before" branch on a newer line
+/// and inverts the assertion. That is how the 5.2.0-rc.2 leg failed three tests
+/// whose SDK behaviour was correct.
+func isAtLeast(_ version: String) -> Bool {
+    func components(_ value: String) -> [Int] {
+        // Drop the pre-release suffix first: "5.2.0-rc.2" -> "5.2.0".
+        let release = value.split(separator: "-").first.map(String.init) ?? value
+        return release.split(separator: ".").map { Int($0) ?? 0 }
+    }
+
+    let actual = components(Ditto.version)
+    let required = components(version)
+    for index in 0..<max(actual.count, required.count) {
+        let mine = index < actual.count ? actual[index] : 0
+        let theirs = index < required.count ? required[index] : 0
+        if mine != theirs { return mine > theirs }
+    }
+    return true
 }
 
 extension DittoError {

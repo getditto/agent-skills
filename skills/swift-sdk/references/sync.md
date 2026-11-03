@@ -26,7 +26,7 @@ let subscription = try ditto.sync.registerSubscription(
 )
 ```
 
-4.14.x has only the `[String: Any?]` overload, so this does not compile there. If one source tree must build against all three lines, use the dictionary form.
+4.14.x has only the `[String: Any?]` overload, so this does not compile there. If one source tree must build against all four lines, use the dictionary form.
 
 `registerSubscription` is `@discardableResult`, which makes it easy to drop the handle by
 accident. Keep it: **the handle is the only way to cancel**, not the thing that keeps the
