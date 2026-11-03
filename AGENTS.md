@@ -182,3 +182,17 @@ at the same remote endpoints with their own MCP config.
 - The DQL skill documents Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x. 5.1.x
   ships JOINs, composite (multi-column) indexes, `RETURNING` on INSERT/UPDATE,
   and `ADVISE`; all are harness-verified against `@dittolive/ditto@5.1.0`.
+
+## JavaScript platform family
+
+`skills/js-sdk/` owns the twenty-capability JavaScript/TypeScript API contract.
+`js-node`, `js-web`, `js-react-native`, and `js-expo` are companion platform workflows;
+`native-app-config` owns reusable Apple/Android OS declarations. `ditto-js` ships all
+six scoped skill directories so sibling links and the Expo generator work after install.
+Swift links to the same native configuration; future SDK adapters should reuse it.
+
+`tests/js-sdk/` executes the shipped assets against Node and browser WASM, and generates
+the Expo native fixture. Run `python3 scripts/package-js-plugin.py --sync-manifests`
+after changing its Claude manifest; `--check` verifies generated host metadata.
+Native compilation, emulator runtime, and physical-radio checks are separate evidence
+levels and must be reported separately.

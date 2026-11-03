@@ -72,7 +72,7 @@ that CAP-02 and CAP-06 appear to ask an SDK author to write.
 
 | Topic | Owner | The other may |
 |---|---|---|
-| Manifest / entitlement / plist **declarations**, and the symptom of omitting one | **SDK skill** (build configuration) | mesh: keeps its cross-platform matrix; SDK links to it for *why* |
+| Manifest / entitlement / plist **declarations**, and the symptom of omitting one | **SDK/platform skill**, delegating shared declarations to `native-app-config` | mesh: keeps its cross-platform matrix; SDK links to it for *why* |
 | *Why* a radio needs a given permission; per-platform capability matrix | **`ditto-mesh-networking`** | SDK: link only |
 | Transport config **field names, types, builder shape** in this language | **SDK skill** | mesh: describes the config model generically |
 | Transport **selection strategy**, defaults, cost of a runtime change | **`ditto-mesh-networking`** | SDK: link only |
@@ -83,8 +83,8 @@ that CAP-02 and CAP-06 appear to ask an SDK author to write.
 
 `skills/ditto-mesh-networking/references/platform-requirements.md` §2–§3 already contain
 the iOS and Android permission tables with symptoms. Under the table above an SDK skill
-still writes its own declarations block — that is build configuration — but must not
-restate the capability matrix around it.
+delegates reusable declarations to `native-app-config` and owns its framework-specific
+adapter. It must not restate the capability matrix around those declarations.
 
 ### The worked boundary
 
@@ -120,12 +120,14 @@ way `ditto-mesh-networking` already does:
   CI enforces this for every skill, without legacy exceptions.
 - **One plugin per language skill**, per the scoping rule in
   [`../AGENTS.md`](../AGENTS.md): `plugins/ditto-<lang>/` with a real `skills/`
-  directory holding a single symlink. A developer writing Swift must not be forced to
+  directory holding scoped symlinks. A developer writing Swift must not be forced to
   load the Kotlin skill.
 - One skill covers one **SDK package**, not one platform. `js-sdk` covers
-  `@dittolive/ditto` across Web, Node.js and React Native. Do not create
-  `react-native-sdk`. Per-runtime variance goes in the `Targets` column (§6), not in a
-  separate skill.
+  `@dittolive/ditto` across Web, Node.js and React Native. Its twenty-capability contract
+  stays in `js-sdk`; companion workflow skills `js-node`, `js-web`, `js-react-native`,
+  and `js-expo` own platform implementation. These ship together in `ditto-js` with
+  `native-app-config`. Platform skills use the general skill template and do not repeat
+  the capability contract. Per-runtime API availability remains in `Targets` (§6).
 
 ---
 

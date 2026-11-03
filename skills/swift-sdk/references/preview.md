@@ -59,7 +59,7 @@ Five constraints, all of which must be stated wherever this is used:
    `com.apple.developer.networking.multicast` entitlement**, which Apple grants per app on
    request. Without it the build cannot ship.
 4. **On iOS `NSLocalNetworkUsageDescription` is required** — see
-   [setup.md](setup.md#ios-ipados-and-mac-catalyst-infoplist).
+   [setup.md](../../native-app-config/references/apple.md#infoplist-declarations).
 5. **On iOS a change requested while sync is active does not take effect** until sync is
    stopped and successfully started again, when Ditto validates the platform
    configuration.
