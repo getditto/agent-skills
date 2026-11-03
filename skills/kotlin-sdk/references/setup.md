@@ -26,7 +26,7 @@
 - Kotlin: docs say 2.0+ (<https://docs.ditto.live/sdk/latest/compatibility/kotlin>), but
   the 5.1.0 and 5.2.0 artifacts depend on `kotlin-stdlib` **2.3.21** (5.0.3: 2.1.0 —
   Maven Central POMs), and the compiler reads metadata at most one minor version newer,
-  so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0**. Executed-working pin: Kotlin **2.3.21**
+  so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0**. Security-updated JVM pin: Kotlin **2.4.21**
   with `kotlinx-coroutines` 1.10.x. On Android with AGP 9, use built-in Kotlin — do
   **not** apply `org.jetbrains.kotlin.android` (**executed**: v5 5.2.0, 5.1.0 and 5.0.3 built
   with AGP 9.4.1 and no KGP applied, run on a Pixel 10a / Android 17).
@@ -35,6 +35,26 @@
   and applications that depend on it to compile against … a newer compileSdk"
   (**executed**, 5.1.0). `minSdk` 24 is unchanged.
 - Repository: `mavenCentral()`.
+
+**Security pins:** use KGP **2.4.21**; versions before 2.4.20 are affected by the
+[Kotlin build-cache deserialization advisory](https://github.com/advisories/GHSA-r937-wjx7-w2jp).
+AGP 9.4.1 embeds KGP 2.2.10 (its Google Maven POM). Keep built-in Kotlin enabled and
+select the patched KGP through `buildscript.dependencies.classpath`, as supported by
+the [AGP guidance](https://developer.android.com/build/releases/agp-9-0-0-release-notes#upgrade-to-a-higher-kgp-version):
+
+```kotlin
+buildscript {
+    dependencies { classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21") }
+}
+```
+
+The fixture also aligns Java OpenTelemetry through BOM **1.67.0** for the
+[trace-context parsing fix](https://github.com/advisories/GHSA-ccrj-gw8r-854m), and v4
+Android Jackson through BOM **2.18.12**, including the
+[parser resource-limit fix](https://github.com/advisories/GHSA-7hhh-6rmp-j9qf).
+These are application dependency constraints; they do not change the SDK's published
+POM metadata. JVM behavior is verified on 5.0.3, 5.1.0 and 5.2.0; the updated Android
+dependency graphs resolve, but APK builds require a local Android SDK.
 
 **Android app — the only Ditto dependency line you need:**
 

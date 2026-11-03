@@ -1,0 +1,32 @@
+// Usage: ./gradlew dependencyInventory -I <repo>/scripts/dependency-inventory.gradle
+// Set DEPENDENCY_AUDIT_OUTPUT to a JSON file outside the checkout.
+import groovy.json.JsonOutput
+
+allprojects {
+    afterEvaluate {
+        tasks.register("dependencyInventory") {
+            doLast {
+                def modules = [] as Set
+                (configurations + buildscript.configurations).findAll {
+                    it.canBeResolved
+                }.each { config ->
+                    def result = config.incoming.resolutionResult
+                    result.allDependencies.each { dependency ->
+                        if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                            throw new GradleException("Cannot audit ${config.name}: ${dependency.attempted}", dependency.failure)
+                        }
+                    }
+                    result.allComponents.each { component ->
+                        if (component.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                            def module = component.moduleVersion
+                            modules.add([group: module.group, name: module.name, version: module.version])
+                        }
+                    }
+                }
+                new File(System.getenv("DEPENDENCY_AUDIT_OUTPUT")).text = JsonOutput.prettyPrint(
+                    JsonOutput.toJson(modules.sort { it.group + ":" + it.name }))
+                println("Inventoried ${modules.size()} Maven modules")
+            }
+        }
+    }
+}

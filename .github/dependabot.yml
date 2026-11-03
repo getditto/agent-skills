@@ -4,3 +4,34 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: "npm"
+    directories:
+      - "/tests/dql/sdks/v4.14.6"
+      - "/tests/dql/sdks/v5.0.3"
+      - "/tests/dql/sdks/v5.1.0"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    versioning-strategy: lockfile-only
+    groups:
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+  - package-ecosystem: "gradle"
+    directories:
+      - "/tests/kotlin-sdk/minimal-app"
+      - "/tests/kotlin-sdk/android-app"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    groups:
+      gradle-security:
+        applies-to: security-updates
+        patterns: ["*"]

@@ -1,0 +1,250 @@
+{
+  "audit_started_at": "2026-11-03T17:09:20Z",
+  "maximum_publication_time": "2026-10-31T17:09:20Z",
+  "minimum_age_hours": 72,
+  "actions": [
+    {
+      "repo": "actions/checkout",
+      "tag": "v7.0.1",
+      "published": "2026-07-20T15:10:05Z",
+      "sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "latest": {
+        "tag": "v7.0.1",
+        "published": "2026-07-20T15:10:05Z"
+      }
+    },
+    {
+      "repo": "actions/download-artifact",
+      "tag": "v8.0.2",
+      "published": "2026-10-07T10:09:51Z",
+      "sha": "9000827ccba6bdab643e8b6fd33ac0654aef8333",
+      "latest": {
+        "tag": "v8.0.2",
+        "published": "2026-10-07T10:09:51Z"
+      }
+    },
+    {
+      "repo": "actions/setup-java",
+      "tag": "v6.1.0",
+      "published": "2026-10-14T20:17:01Z",
+      "sha": "b843ebf9b913146b38da2eaa7aeddf76074ae1ad",
+      "latest": {
+        "tag": "v6.1.0",
+        "published": "2026-10-14T20:17:01Z"
+      }
+    },
+    {
+      "repo": "actions/setup-node",
+      "tag": "v7.1.0",
+      "published": "2026-10-08T02:52:34Z",
+      "sha": "949feb2413d6458794dcd2491c4babbbce0c15c1",
+      "latest": {
+        "tag": "v7.1.0",
+        "published": "2026-10-08T02:52:34Z"
+      }
+    },
+    {
+      "repo": "actions/setup-python",
+      "tag": "v7.1.0",
+      "published": "2026-10-22T02:56:04Z",
+      "sha": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+      "latest": {
+        "tag": "v7.1.0",
+        "published": "2026-10-22T02:56:04Z"
+      }
+    },
+    {
+      "repo": "actions/upload-artifact",
+      "tag": "v7.0.2",
+      "published": "2026-10-07T10:08:14Z",
+      "sha": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+      "latest": {
+        "tag": "v7.0.2",
+        "published": "2026-10-07T10:08:14Z"
+      }
+    },
+    {
+      "repo": "gradle/actions",
+      "tag": "v6.4.1",
+      "published": "2026-10-28T12:34:50Z",
+      "sha": "8da46b539cd8fe6ab27ca75128919a18d757604c",
+      "latest": {
+        "tag": "v6.4.1",
+        "published": "2026-10-28T12:34:50Z"
+      }
+    }
+  ],
+  "npm": {
+    "committed_trees": {
+      "tests/dql/sdks/v4.14.6": {
+        "before_packages": 618,
+        "after_packages": 66,
+        "advisories": 0
+      },
+      "tests/dql/sdks/v5.0.3": {
+        "packages": 1,
+        "advisories": 0
+      },
+      "tests/dql/sdks/v5.1.0": {
+        "packages": 1,
+        "advisories": 0
+      }
+    },
+    "mcp_remote": {
+      "version": "0.15.2",
+      "published": "2026-10-20T17:19:09.950Z",
+      "resolution_before": "2026-10-31T17:09:20Z",
+      "resolved_packages": 81,
+      "advisories": 0,
+      "installation": "Committed tools/mcp-remote/package-lock.json; isolated npm ci --ignore-scripts per MCP process"
+    },
+    "all_resolved_package_versions_checked": 148,
+    "young_versions": 0
+  },
+  "maven": {
+    "distinct_resolved_modules_checked": 322,
+    "advisories": 0,
+    "jvm_sdk_versions": [
+      "5.0.3",
+      "5.1.0",
+      "5.2.0"
+    ],
+    "android_sdk_versions": [
+      "4.14.7",
+      "5.0.3",
+      "5.1.0",
+      "5.2.0"
+    ],
+    "configurations": "All resolvable project and buildscript configurations, including compile, processor, compiler plugin and Android lint tool graphs"
+  },
+  "gradle": {
+    "version": "9.8.2",
+    "distribution": "21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607",
+    "wrapper": "3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98"
+  },
+  "runtimes": {
+    "node": {
+      "version": "24.22.2",
+      "release_date": "2026-10-27",
+      "source": "https://nodejs.org/dist/index.json"
+    },
+    "temurin": {
+      "version": "17.0.21+9",
+      "published": "2026-10-22T17:28:09Z",
+      "source": "https://github.com/adoptium/temurin17-binaries/releases/tag/jdk-17.0.21%2B9"
+    },
+    "python_current": {
+      "version": "3.14.10",
+      "published": "2026-10-26T14:30:18Z",
+      "url": "https://github.com/actions/python-versions/releases/tag/3.14.10-40336797752"
+    },
+    "python_compatibility": {
+      "version": "3.9.25",
+      "platform": "ubuntu-24.04",
+      "purpose": "minimum supported Python compatibility only; Windows uses supported Python 3.14.10"
+    }
+  },
+  "deferred_young_releases": [
+    {
+      "package": "mcp-remote",
+      "version": "0.16.0",
+      "published": "2026-11-02T05:25:09.871Z"
+    },
+    {
+      "package": "minimatch",
+      "version": "11.0.4",
+      "published": "2026-11-02T04:50:40.232Z"
+    },
+    {
+      "package": "com.google.guava:guava",
+      "version": "33.8.0-jre",
+      "repository_last_modified": "2026-11-02T18:06:39Z"
+    }
+  ],
+  "verification": {
+    "dql": {
+      "catalog_entries_per_version": 258,
+      "versions": [
+        "4.14.6",
+        "5.0.3",
+        "5.1.0"
+      ],
+      "failures": 0
+    },
+    "kotlin_jvm": {
+      "5.0.3": 14,
+      "5.1.0": 14,
+      "5.2.0": 15,
+      "failures": 0,
+      "minimal_apps_pass": true
+    },
+    "release_policy_tests": 18,
+    "packaging_tests": 14,
+    "android_dependency_resolution": "passed for all four fixture versions",
+    "android_apk_compilation": "not verified: no Android SDK platforms installed",
+    "mcp_installation": "Isolated npm ci --ignore-scripts: 81 packages installed successfully; package code not executed"
+  },
+  "limits": [
+    "Public advisory matches do not audit bundled native SDK internals.",
+    "Historical Ditto SDK pins remain unchanged to preserve regression coverage.",
+    "The Python 3.9 compatibility check remains a minimum-version test, not a deployment runtime.",
+    "Ignored host-managed .opencode package files are not part of this repository; their separate local audit reports zod and toml advisories."
+  ],
+  "sources": [
+    "https://registry.npmjs.org/",
+    "https://api.osv.dev/v1/querybatch",
+    "https://repo.maven.apache.org/maven2/",
+    "https://dl.google.com/dl/android/maven2/",
+    "https://services.gradle.org/versions/all",
+    "https://services.gradle.org/distributions/gradle-9.8.2-wrapper.jar.sha256",
+    "https://services.gradle.org/distributions/gradle-9.8.2-bin.zip.sha256"
+  ],
+  "adversarial_review": {
+    "independent_reviewers": 5,
+    "minimum_agreement_for_fixes": 3,
+    "findings": [
+      {
+        "id": "C1",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Unresolved Maven edges silently omitted"
+      },
+      {
+        "id": "C2",
+        "agree": 5,
+        "fixed": true,
+        "problem": "npm artifact identity not bound to age metadata"
+      },
+      {
+        "id": "C3",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Ambiguous duplicate MCP cutoff flags"
+      },
+      {
+        "id": "C4",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Compile, processor and compiler plugin graphs omitted"
+      },
+      {
+        "id": "C5",
+        "agree": 5,
+        "fixed": true,
+        "problem": "npx reused unreviewed installations despite cutoff"
+      }
+    ],
+    "android_lint_security_extension": {
+      "agree": 3,
+      "fixed": true,
+      "modules": [
+        "guava",
+        "commons-lang3",
+        "httpclient",
+        "bcpkix-jdk18on",
+        "bcprov-jdk18on",
+        "bcutil-jdk18on"
+      ]
+    }
+  }
+}
