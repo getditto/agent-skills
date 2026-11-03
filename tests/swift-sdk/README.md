@@ -2,16 +2,19 @@
 
 Every claim in the Swift SDK skill marked **executed** was produced here. The same
 sources build and run against Ditto **4.14.6**, **5.0.3** and **5.1.0**, and compile for
-macOS, the iOS Simulator, an iOS device and Mac Catalyst.
+macOS, the iOS Simulator, an iOS device and Mac Catalyst. **5.2.0** is run as well for the
+Data Streams tests, which exist only there (the API is 5.2.0-only in Swift).
 
 ```
 Package.swift                          version pin read from $DITTO_SWIFT_VERSION
 Sources/
-  SkillSupport/                        env + disposable-instance helpers
+  SkillSupport/                        env + disposable-instance helpers; TestPeer+DataStreams
+                                       opens NGN-enabled loopback-connected pairs (5.2.0)
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              94 @Test declarations (3 parameterized)
+Tests/SwiftSDKSkillTests/              94 @Test declarations (3 parameterized), plus
+                                       DataStreamsTests (9) compiled only for 5.2.0
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -41,7 +44,8 @@ Environment variables already set take precedence over `.env`, matching
 cd tests/swift-sdk
 
 ./scripts/run.sh 5.1.0                  # tests on one version
-./scripts/run.sh --all                  # 4.14.6, 5.0.3 and 5.1.0 in sequence
+./scripts/run.sh --all                  # 4.14.6, 5.0.3, 5.1.0 and 5.2.0 in sequence
+./scripts/run.sh 5.2.0                  # includes the Data Streams tests
 ./scripts/run.sh 5.1.0 --app            # tests, then the minimal app
 ./scripts/run.sh 5.1.0 --app --offline  # force the app's offline mode
 
@@ -105,7 +109,13 @@ also compile with `-DDITTO_V4`, which selects:
 
 Tests that cannot exist on a line are disabled with a Swift Testing `.enabled(if:)` trait
 **and** `#if` guards, because a trait is a runtime condition and the code still has to
-compile.
+compile. For 5.2.0 and later the manifest defines `DITTO_DATA_STREAMS` instead, which
+compiles `DataStreamsTests.swift` and `TestPeer+DataStreams.swift`: two instances in one
+process, one listening on a TCP loopback port and the other dialling it, LAN off, NGN
+enabled through `DittoConfig.systemParameters`, and `sync.start()` run on a 64 MB-stack
+thread because NGN's UDP start-up overflows a cooperative thread's stack in debug builds.
+Version gates that used to test `hasPrefix("5.1.")` now use `isV51OrLater`, so features
+5.2.0 kept (5 MiB limit, `ADVISE`, multicast) stay asserted there.
 
 ## Proving the harness can fail
 

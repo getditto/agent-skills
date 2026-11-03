@@ -47,7 +47,7 @@ From an accessible clone, using Python 3.9+ (Windows: substitute `py -3`):
 ```bash
 git clone https://github.com/getditto/agent-skills.git
 cd agent-skills
-python3 scripts/package-swift-plugin.py --output dist/swift
+python3 scripts/package-sdk-plugin.py --plugin ditto-swift --output dist/swift
 ```
 
 For an existing checkout, start at the Python command. Choose a fresh output directory
@@ -209,11 +209,11 @@ not change a generated customer's app or upgrade its pinned SDK.
 
 ## Maintainer notes and sources
 
-Regenerate metadata with `python3 scripts/package-swift-plugin.py --sync-manifests`;
+Regenerate metadata with `python3 scripts/package-sdk-plugin.py --sync-manifests`;
 check it with `--check`. The canonical Swift plugin identity/version comes from its
-Claude manifest. Sync updates the Swift entry and preserves entries added by other SDK PRs.
-Generated catalogs currently expose only Swift on the newly added
-surfaces; the existing Claude catalog retains its other plugins. Each host still
+Claude manifest. Sync updates the Swift entry and preserves entries owned by other SDK
+plugins (the same script serves `ditto-kotlin` via `--plugin ditto-kotlin`). The shared
+host catalogs list every SDK plugin; the Claude catalog retains its concept plugins. Each host still
 needs an installation/activation run on its supported client before being described
 as runtime-verified. Record client versions and outcomes separately from structural
 package checks. CI publishes package artifacts for review, not a marketplace listing.

@@ -16,7 +16,9 @@ customer use.**
 | [write-dql](skills/write-dql) | `ditto-dql` | DQL (Ditto Query Language) assistance for queries, subscriptions, and data operations. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x (JOINs, composite indexes, RETURNING, ADVISE). |
 | [ditto-mesh-networking](skills/ditto-mesh-networking) | `ditto-mesh` | Peer-to-peer mesh and transports — Bluetooth LE, LAN/mDNS, AWDL, Wi-Fi Aware, WebSocket, explicit TCP. Peer discovery and multihop routing, the transport configuration model and its runtime-update semantics, and how transport choice shapes your data model. |
 | [sync-subscriptions](skills/sync-subscriptions) (`sync-subscriptions`) | `ditto-subscriptions` | How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
+| [data-streams](skills/data-streams) (`data-streams`) | `ditto-data-streams` | Ditto Data Streams (preview): low-latency, bidirectional raw-byte channels between two peers over named topics — lifecycle, candidate ownership, reliable vs unreliable, NGN setup, troubleshooting. Kotlin 5.1.0+ and Swift 5.2.0+ (SPI); code in the SDK skills. |
 | [data-modeling](skills/data-modeling) (`data-modeling`) | `ditto-data-modeling` | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x. |
+| [kotlin-sdk](skills/kotlin-sdk) (`kotlin-sdk`) | `ditto-kotlin` | Ditto Kotlin SDK for Android and JVM: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 | [swift-sdk](skills/swift-sdk) (`swift-sdk`) | `ditto-swift` | Ditto Swift SDK for iOS, iPadOS, macOS (AppKit) and Mac Catalyst: `DittoConfig`/`Ditto.open`, sync and subscriptions, DQL execution, store observers and `DittoDiffer`, attachments, presence, Swift 6 concurrency and object lifetimes. Covers Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x. |
 
 ## JavaScript and mobile app skills
@@ -60,10 +62,20 @@ an existing Swift app in place.
 Codex CLI and Desktop, Cursor, Copilot CLI, Antigravity CLI, Gemini CLI and OpenCode.
 Standalone packages and per-skill upload ZIPs are generated from the canonical skill.
 
+## Kotlin getting started
+
+The Kotlin skill covers Android (4.14.x and 5.x) and the JVM (5.x): Gradle setup,
+coroutine-native observers, lifetimes and threading, plus a Gradle project-generation
+guide. Its JVM fixture runs in CI against 5.0.3, 5.1.0 and 5.2.0.
+
+**[Install Ditto Kotlin in your agent](docs/install-kotlin.md)** — the same hosts as
+Swift; standalone packages are generated with `--plugin ditto-kotlin`.
+
 ## Installation by tool
 
-For Swift, use the [host-specific guide](docs/install-swift.md) for local/PR packages,
-activation, updates and removal. Existing concept skills retain the routes below.
+For the SDK skills, use the host-specific guides ([Swift](docs/install-swift.md),
+[Kotlin](docs/install-kotlin.md)) for local/PR packages, activation, updates and
+removal. Existing concept skills retain the routes below.
 
 ### Claude Code
 
@@ -78,6 +90,8 @@ you want:
 /plugin install ditto-mesh           # ditto-mesh-networking skill
 /plugin install ditto-subscriptions  # sync-subscriptions skill
 /plugin install ditto-data-modeling  # data-modeling skill
+/plugin install ditto-data-streams   # data-streams skill
+/plugin install ditto-kotlin         # kotlin-sdk skill
 /plugin install ditto-swift          # swift-sdk skill
 ```
 

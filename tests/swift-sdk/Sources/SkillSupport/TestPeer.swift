@@ -20,7 +20,7 @@ public final class TestPeer {
     public let ditto: Ditto
     public let directory: URL
 
-    private init(ditto: Ditto, directory: URL) {
+    init(ditto: Ditto, directory: URL) {
         self.ditto = ditto
         self.directory = directory
     }

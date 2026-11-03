@@ -53,6 +53,13 @@ var isV50: Bool {
     Ditto.version.hasPrefix("5.0.")
 }
 
+/// True from 5.1.0 onward (5.1.x, 5.2.x, …): the line that introduced the 5 MiB
+/// per-document limit, `ADVISE` and the multicast connection type. Gates that used to
+/// test `hasPrefix("5.1.")` failed on 5.2.0 for features 5.2.0 kept.
+var isV51OrLater: Bool {
+    !isV4 && !isV50
+}
+
 extension DittoError {
     var storeReason: DittoError.StoreErrorReason? {
         if case .storeError(let reason) = self { return reason }

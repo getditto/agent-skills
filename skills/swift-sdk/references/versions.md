@@ -7,6 +7,7 @@
 - [5.0.x](#50x)
 - [5.1.x](#51x)
 - [All lines](#all-lines)
+  - [5.2.0 and Data Streams](#520-and-data-streams)
 - [Cross-version reference](#cross-version-reference)
 - [CAP-19 v4 to v5 migration, API and on-disk store](#cap-19-v4-to-v5-migration-api-and-on-disk-store)
 
@@ -221,6 +222,15 @@ the message, not the case. Documents should be far smaller than the limit anyway
 ---
 
 ## All lines
+
+### 5.2.0 and Data Streams
+
+5.2.0 is **not** one of this skill's documented lines; it is referenced only because the
+Data Streams preview exists in Swift from 5.2.0, as `@_spi(PreviewDataStreams) import
+DittoSwift` ([data-streams.md](data-streams.md)). The fixture's existing test suite passes
+on 5.2.0 unchanged (executed), and 5.2.0 adds a `DittoConfig` initializer with
+`systemParameters:` and the `DittoError.dataStreamsError(message:)` case. Pin 5.1.0 for
+everything else until this skill covers 5.2.x.
 
 ### `NO_COLOR` must be `true` or `false`
 
