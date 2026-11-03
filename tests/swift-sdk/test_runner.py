@@ -25,7 +25,7 @@ class RunnerTests(unittest.TestCase):
         source = (ROOT / "Sources/UIPatterns/StreamInbox.swift").read_text().splitlines()
         self.assertEqual(source[0], "#if DITTO_DATA_STREAMS")
         self.assertEqual(source[-1], "#endif")
-        self.assertEqual(programs[1], "\n".join(source[1:-1]))
+        self.assertIn("\n".join(source[1:-1]), programs)
 
     def make_bundle(self, root, name):
         binary = root / f"{name}.xctest/Contents/MacOS/{name}"

@@ -90,7 +90,7 @@ struct VersionTests {
         #expect(Ditto.defaultRootDirectory.path.contains("Application Support"))
     }
 
-    @Test("DittoConnectionType.multicast exists from 5.1.0 only")
+    @Test("DittoConnectionType.multicast exists from 5.1.0 onward")
     func multicastConnectionTypeIsNewIn51() throws {
         let hasMulticast = DittoConnectionType.allCases.contains { $0.rawValue == "Multicast" }
         if isAtLeast("5.1.0") {

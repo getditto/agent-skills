@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate Swift host manifests and self-contained installation archives."""
+"""Generate per-SDK-plugin host manifests and self-contained installation archives.
+
+One script serves every SDK plugin wrapper under plugins/. Select the plugin with
+--plugin (default: ditto-swift, which keeps the original Swift command lines working).
+"""
 
 import argparse
 import hashlib
@@ -11,8 +15,49 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN = ROOT / "plugins/ditto-swift"
 SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+
+# Per-plugin identity that is not derivable from the canonical Claude manifest. Add a
+# row when a new SDK plugin lands; everything else (version, description, author,
+# keywords) is read from plugins/<name>/.claude-plugin/plugin.json.
+PLUGINS = {
+    "ditto-swift": {
+        "skill": "swift-sdk",
+        "display_name": "Ditto Swift",
+        "short_description": "Build and troubleshoot Ditto Swift apps for Apple platforms.",
+        "homepage": "https://docs.ditto.live/sdk/latest/install-guides/swift",
+        "default_prompt": [
+            "Build a runnable SwiftUI app with Ditto and a diagnostics screen.",
+            "Integrate Ditto into this existing Swift app.",
+            "Diagnose why my Swift app writes locally but does not sync."],
+        "install_doc": "docs/install-swift.md",
+        "extra_docs": ["docs/swift-workflow-verification.md"],
+    },
+    "ditto-kotlin": {
+        "skill": "kotlin-sdk",
+        "display_name": "Ditto Kotlin",
+        "short_description": "Integrate and troubleshoot the Ditto Kotlin SDK on Android and the JVM.",
+        "homepage": "https://docs.ditto.live/sdk/latest/install-guides/kotlin",
+        "default_prompt": [
+            "Integrate Ditto into this Android app with a ViewModel-backed observer.",
+            "Generate a runnable Gradle project that syncs a collection with Ditto.",
+            "Diagnose why my Kotlin store observer stopped delivering updates."],
+        "install_doc": "docs/install-kotlin.md",
+        "extra_docs": [],
+    },
+}
+
+NAME = "ditto-swift"
+PLUGIN = ROOT / "plugins" / NAME
+META = PLUGINS[NAME]
+
+
+def configure(name):
+    """Select the plugin every other function operates on."""
+    global NAME, PLUGIN, META
+    if name not in PLUGINS:
+        raise ValueError(f"Unknown plugin {name!r}; known: {', '.join(sorted(PLUGINS))}")
+    NAME, PLUGIN, META = name, ROOT / "plugins" / name, PLUGINS[name]
 
 
 def write(path, content):
@@ -25,32 +70,37 @@ def encoded(value):
 
 
 def update_catalog(relative, default):
-    """Own the Swift entry while preserving plugins added by other SDK PRs."""
+    """Own this plugin's entry while preserving plugins added by other SDK PRs."""
     path = ROOT / relative
     existing = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-    entries = [entry for entry in existing.get("plugins", []) if entry["name"] != "ditto-swift"]
-    return {**default, **existing, "plugins": entries + default["plugins"]}
+    entries = list(existing.get("plugins", []))
+    # Replace in place so the catalog order does not depend on which plugin synced last;
+    # otherwise `--check` for one plugin fails right after `--sync-manifests` for another.
+    position = next((i for i, entry in enumerate(entries) if entry["name"] == NAME), None)
+    if position is None:
+        entries.extend(default["plugins"])
+    else:
+        entries[position:position + 1] = default["plugins"]
+    return {**default, **existing, "plugins": entries}
 
 
 def manifests():
     legacy = json.loads((PLUGIN / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
     identity = {key: legacy[key] for key in ("name", "version", "description", "author", "license", "keywords")}
-    identity.update(repository="https://github.com/getditto/agent-skills",
-                    homepage="https://docs.ditto.live/sdk/latest/install-guides/swift")
-    interface = {"displayName": "Ditto Swift", "shortDescription": "Build and troubleshoot Ditto Swift apps for Apple platforms.",
+    identity.update(repository="https://github.com/getditto/agent-skills", homepage=META["homepage"])
+    interface = {"displayName": META["display_name"], "shortDescription": META["short_description"],
                  "developerName": "Ditto", "category": "Developer Tools", "capabilities": ["Read", "Write"],
-                 "websiteURL": "https://ditto.com", "defaultPrompt": [
-                     "Build a runnable SwiftUI app with Ditto and a diagnostics screen.",
-                     "Integrate Ditto into this existing Swift app.",
-                     "Diagnose why my Swift app writes locally but does not sync."]}
+                 "websiteURL": "https://ditto.com", "defaultPrompt": list(META["default_prompt"])}
     portable = {"$schema": SCHEMA, **identity, "extensions": {"com.openai": {"interface": interface}}}
     codex = {**identity, "skills": "./skills/", "interface": interface}
     cursor = {**identity, "skills": "./skills/"}
     gemini = {"name": identity["name"], "version": identity["version"], "description": identity["description"]}
-    entry = {"name": identity["name"], "source": "./plugins/ditto-swift", "description": identity["description"]}
+    source = f"./plugins/{NAME}"
+    entry = {"name": identity["name"], "source": source, "description": identity["description"]}
     catalog = {"name": "ditto-plugins", "owner": identity["author"], "plugins": [entry]}
-    codex_catalog = {"name": "ditto-plugins", "interface": {"displayName": "Ditto Swift"}, "plugins": [{
-        "name": identity["name"], "source": {"source": "local", "path": "./plugins/ditto-swift"},
+    # The catalog is shared by every SDK plugin, so its display name is the vendor's.
+    codex_catalog = {"name": "ditto-plugins", "interface": {"displayName": "Ditto"}, "plugins": [{
+        "name": identity["name"], "source": {"source": "local", "path": source},
         "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}, "category": "Developer Tools",
     }]}
     claude_catalog = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
@@ -59,10 +109,10 @@ def manifests():
             entry.update(version=identity["version"], description=identity["description"], author=identity["author"])
     return {
         ".claude-plugin/marketplace.json": claude_catalog,
-        "plugins/ditto-swift/plugin.json": portable,
-        "plugins/ditto-swift/.codex-plugin/plugin.json": codex,
-        "plugins/ditto-swift/.cursor-plugin/plugin.json": cursor,
-        "plugins/ditto-swift/gemini-extension.json": gemini,
+        f"plugins/{NAME}/plugin.json": portable,
+        f"plugins/{NAME}/.codex-plugin/plugin.json": codex,
+        f"plugins/{NAME}/.cursor-plugin/plugin.json": cursor,
+        f"plugins/{NAME}/gemini-extension.json": gemini,
         ".agents/plugins/marketplace.json": update_catalog(".agents/plugins/marketplace.json", codex_catalog),
         ".cursor-plugin/marketplace.json": update_catalog(".cursor-plugin/marketplace.json", catalog),
         ".github/plugin/marketplace.json": update_catalog(".github/plugin/marketplace.json", catalog),
@@ -100,11 +150,11 @@ def archive(folder, destination):
 
 
 def copy_skill(destination):
-    source = ROOT / "skills/swift-sdk"
+    source = ROOT / "skills" / META["skill"]
     # Validate before copytree dereferences links: the archive guard cannot detect
     # an outside file once it has become a regular file in the staging directory.
     if source.is_symlink() or any(path.is_symlink() for path in source.rglob("*")):
-        raise ValueError("Canonical Swift skill must not contain symlinks; release only real scoped files.")
+        raise ValueError(f"Canonical {META['skill']} skill must not contain symlinks; release only real scoped files.")
     shutil.copytree(source, destination,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", ".env", ".git"))
     # Maintainer links to repository docs/tests are navigation, not runtime skill
@@ -131,12 +181,12 @@ def build(destination):
     destination.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=".ditto-package-", dir=destination.parent))
     try:
-        marketplace = staging / "ditto-swift-marketplace"
-        package = marketplace / "plugins/ditto-swift"
+        marketplace = staging / f"{NAME}-marketplace"
+        package = marketplace / "plugins" / NAME
         package.mkdir(parents=True)
         for relative, value in manifests().items():
             if relative.endswith("marketplace.json"):
-                value = {**value, "plugins": [entry for entry in value["plugins"] if entry["name"] == "ditto-swift"]}
+                value = {**value, "plugins": [entry for entry in value["plugins"] if entry["name"] == NAME]}
             target = marketplace / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             write(target, encoded(value))
@@ -144,31 +194,32 @@ def build(destination):
         legacy = json.loads((PLUGIN / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
         write(marketplace / ".claude-plugin/marketplace.json", encoded({
             "name": "ditto-plugins", "owner": legacy["author"], "plugins": [{
-                "name": "ditto-swift", "source": "./plugins/ditto-swift", "description": legacy["description"],
+                "name": NAME, "source": f"./plugins/{NAME}", "description": legacy["description"],
             }]}))
         (package / ".claude-plugin").mkdir()
         write(package / ".claude-plugin/plugin.json", encoded(legacy))
         # Materialize only the explicitly shipped canonical skill. Never copy the
         # repository root, environment, test credentials, or another plugin's skills.
-        copy_skill(package / "skills/swift-sdk")
+        copy_skill(package / "skills" / META["skill"])
         if (ROOT / "LICENSE").is_file():
             shutil.copy2(ROOT / "LICENSE", package / "LICENSE")
-        shutil.copy2(ROOT / "docs/install-swift.md", marketplace / "INSTALL.md")
-        shutil.copy2(ROOT / "docs/swift-workflow-verification.md", marketplace / "swift-workflow-verification.md")
+        shutil.copy2(ROOT / META["install_doc"], marketplace / "INSTALL.md")
+        for extra in META["extra_docs"]:
+            shutil.copy2(ROOT / extra, marketplace / Path(extra).name)
         hashes = {path.relative_to(package).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                   for path in sorted(package.rglob("*")) if path.is_file()}
-        write(package / "PACKAGE-MANIFEST.json", encoded({"plugin": "ditto-swift", "version": legacy["version"], "sha256": hashes}))
+        write(package / "PACKAGE-MANIFEST.json", encoded({"plugin": NAME, "version": legacy["version"], "sha256": hashes}))
 
         # Antigravity has its own small manifest schema; do not rename an Agent
         # Plugins manifest and assume its additional fields will be accepted.
-        antigravity = staging / "ditto-swift-antigravity"
+        antigravity = staging / f"{NAME}-antigravity"
         antigravity.mkdir()
-        write(antigravity / "plugin.json", encoded({"name": "ditto-swift", "description": legacy["description"]}))
+        write(antigravity / "plugin.json", encoded({"name": NAME, "description": legacy["description"]}))
         shutil.copytree(package / "skills", antigravity / "skills")
         if (ROOT / "LICENSE").is_file():
             shutil.copy2(ROOT / "LICENSE", antigravity / "LICENSE")
         # Standalone extension, so Gemini does not discover unrelated root skills.
-        gemini = staging / "ditto-swift-gemini"
+        gemini = staging / f"{NAME}-gemini"
         gemini.mkdir()
         shutil.copy2(package / "gemini-extension.json", gemini / "gemini-extension.json")
         shutil.copytree(package / "skills", gemini / "skills")
@@ -177,32 +228,36 @@ def build(destination):
         # Claude's per-skill upload fallback gets a skill folder at the archive root.
         uploads = staging / "skill-upload"
         uploads.mkdir()
-        shutil.copytree(package / "skills/swift-sdk", uploads / "swift-sdk")
-        archive(marketplace, staging / "ditto-swift-marketplace.zip")
-        archive(package, staging / "ditto-swift-plugin.zip")
-        archive(antigravity, staging / "ditto-swift-antigravity.zip")
-        archive(gemini, staging / "ditto-swift-gemini.zip")
-        archive(uploads / "swift-sdk", staging / "swift-sdk.zip")
+        shutil.copytree(package / "skills" / META["skill"], uploads / META["skill"])
+        archive(marketplace, staging / f"{NAME}-marketplace.zip")
+        archive(package, staging / f"{NAME}-plugin.zip")
+        archive(antigravity, staging / f"{NAME}-antigravity.zip")
+        archive(gemini, staging / f"{NAME}-gemini.zip")
+        archive(uploads / META["skill"], staging / f"{META['skill']}.zip")
         write(staging / "SHA256SUMS", "".join(
             f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in sorted(staging.glob("*.zip"))))
         staging.rename(destination)
     finally:
         if staging.exists():
             shutil.rmtree(staging)
-    print(f"Built Swift-only packages in {destination}")
+    print(f"Built {NAME}-only packages in {destination}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--check", action="store_true", help="check committed metadata matches the canonical Swift manifest")
+    parser.add_argument("--plugin", choices=sorted(PLUGINS), default="ditto-swift", help="which plugin wrapper to operate on")
+    mode.add_argument("--check", action="store_true", help="check committed metadata matches the plugin's canonical Claude manifest")
     mode.add_argument("--sync-manifests", action="store_true", help="regenerate host metadata")
-    parser.add_argument("--output", type=Path, default=ROOT / "dist/swift")
+    parser.add_argument("--output", type=Path, help="package output directory (default: dist/<language>)")
     args = parser.parse_args()
+    configure(args.plugin)
+    if args.output is None:
+        args.output = ROOT / "dist" / NAME.removeprefix("ditto-")
     try:
         if args.check or args.sync_manifests:
             sync(check=args.check)
-            print("Swift host metadata is current")
+            print(f"{META['display_name']} host metadata is current")
         else:
             build(args.output.expanduser().absolute())
     except (OSError, ValueError) as error:

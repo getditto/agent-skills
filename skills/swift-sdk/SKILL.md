@@ -165,7 +165,7 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Subscribe, scope sync or track status | [sync.md](references/sync.md) |
 | Update radios/endpoints | [transports.md](references/transports.md) |
 | Create/fetch attachments | [attachments.md](references/attachments.md); retain fetcher; token shape differs by version |
-| Stream ephemeral bytes between peers | [data-streams.md](references/data-streams.md); 5.2.0 preview, SPI opt-in, retain streams and copy inbound bytes in callbacks |
+| Stream ephemeral bytes | [data-streams.md](references/data-streams.md); 5.2.0 SPI; concepts in `data-streams` |
 | Presence/peer metadata | [presence.md](references/presence.md) |
 | Logging and disk usage | [observability.md](references/observability.md) |
 | On-disk upgrade/rollback | [storage.md](references/storage.md) |

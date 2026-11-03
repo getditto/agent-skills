@@ -9,17 +9,23 @@
     "codex_rerun": "0.163.0"
   },
   "source_digests": [
+    "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+    "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+    "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
     "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
     "be13e2f437cd9d732e156877c0debf9fce2842189086a4f5cf63e647ce0a67e0",
     "10ad14c6454eb7b3cfbbee12637b5cb9587d2847bdebba029379c37ab3ef2f7f",
     "3f8501ec5c7890b094610e13fda027cb70aba6254f4e2fa53dfe1a6506bca8b6"
   ],
-  "latest_evaluated_digest": "af58eb2c189c0e74ab8c71f7702711bad52c4e5f4f3387ae99336c4c6a5debfe",
+  "latest_evaluated_digest": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
   "post_evaluation_changes": [
     "Conditional movies/reviews schema lead-wording clarification after final copies was not behaviorally rerun.",
     "Final traces identified conflicting data-modeling reference examples for unscoped child joins and unchanged blob transmission, for static correction after the bounded evaluation iteration. No subsequent model result is claimed.",
     "Corrected workflow and order/relational-migration examples to preserve complete scoped parent references, and corrected unchanged-blob transmission claims in order-management and best-practices. These final semantic corrections were not model-retested; scoped JOINs were checked separately against the SDK.",
-    "Superseded on 2026-10-27: all five cases plus the new swift_no_ditto trigger-scope case were rerun on Claude Code and Codex against the final skill tree (commit 7538627). The data-modeling corrections and the narrowed swift-sdk description are now model-tested; see SUMMARY.md."
+    "Superseded on 2026-10-27: all five cases plus the new swift_no_ditto trigger-scope case were rerun on Claude Code and Codex against the final skill tree (commit 7538627). The data-modeling corrections and the narrowed swift-sdk description are now model-tested; see SUMMARY.md.",
+    "2026-10-27 (later): with the kotlin-sdk skill added to the tree, the new kotlin_observer and kotlin_no_ditto cases and the existing swift_observer case were run on Claude Code and Codex. All passed; both SDK skills route correctly when installed together.",
+    "2026-10-27 (later still): the Kotlin skill moved from 5.2.0-rc.2 to the 5.2.0 GA release (version pins, default-version guidance, 5.2.0 transcripts). kotlin_observer and kotlin_no_ditto were rerun on Claude Code and Codex against that tree; all passed with the same routing. The GA sources are identical to rc.2's, so no API claim changed.",
+    "2026-10-28: the data-streams concept skill and the Kotlin/Swift data-streams references were added; kotlin_data_streams and swift_data_streams were run on Claude Code and Codex and passed on both. After the run, wording-only edits followed (description trimmed under 500 characters; the Swift use-after-close error type and Swift-specific observations added to the references); no routing or guidance claim changed."
   ],
   "limitations": [
     "No before/after model experiment.",
@@ -1855,6 +1861,712 @@
       "quality_notes": [
         "Control: same case with the swift-sdk description from before e377ca7. swift-sdk not invoked and no skill file read. The model listed skill files matching *swift* with rg before answering without them."
       ]
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 19.29,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:kotlin-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Grep",
+          "path": "kotlin-sdk/references/concurrency.md",
+          "pattern": "withContext|observe\\(|flowOn|registerObserver"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 27510,
+      "cache_write_tokens": 11840,
+      "output_tokens": 1847,
+      "reported_cost_usd": 0.137186,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "I checked this against the local Ditto Kotlin SDK guidance (`kotlin-sdk/references/concurrency.md`). It describes SDK 5.1.0 as confirmed from the published 5.1.0 bytecode, not by running it.\n\n## Screen 1: jank in the list\n\n- On Android, Ditto runs every observer handler on the main thread. That includes the `observe()` transform, so `r.items.map { decodeFromString(...) }` decodes every document on the main thread.\n- `.flowOn(Dispatchers.IO)` doesn't help here. It only moves the `callbackFlow` code that registers the observer. Each event's transform is started separately on Ditto's main-thread scope. During a sync burst, every change decodes the whole collection on the main thread.\n- **Fix:** the transform is a `suspend` lambda, so switch threads inside it with `withContext(Dispatchers.IO)`. The query result stays open while the lambda is suspended. `stateIn` already keeps only the latest list, so don't add `.buffer()`.\n- **Also:** if one bad document makes the decode throw inside `observe()`, the whole Flow fails and the list stops updating. Decode each document separately and skip the ones that fail.\n\n## Screen 2: stops updating after one malformed document\n\nThere are two separate bugs:\n1. **Keeping `result.items` in a field.** Query results and their items are closed as soon as the handler returns. Reading the field later throws `IllegalStateException: Query result item has already been closed.` Turn the items into plain Kotlin objects inside the handler and keep those instead.\n2. **An exception escaping the handler.** If a `registerObserver` handler throws, the SDK logs `Unhandled exception in observer event handler` and **closes the observer**. Nothing visible happens and no further updates arrive. Catch errors inside the handler and don't rethrow them. You also need to keep the handle and call `close()` on it yourself, because cancelling a scope doesn't close a `registerObserver` observer.\n\n## Corrected Kotlin\n\n```kotlin\nprivate fun decodeCars(items: List<DittoQueryResultItem>): List<Car> =\n    items.mapNotNull { item ->\n        runCatching { json.decodeFromString<Car>(item.jsonString()) }\n            .onFailure { Log.w(\"Cars\", \"Skipping malformed car doc\", it) }\n            .getOrNull()\n    }\n\n// Screen 1 \u2014 list ViewModel\nclass CarListViewModel(ditto: Ditto) : ViewModel() {\n    val cars: StateFlow<List<Car>> =\n        ditto.store.observe(\"SELECT * FROM cars\") { result ->\n            withContext(Dispatchers.IO) { decodeCars(result.items) } // result still open here\n        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())\n}\n\n// Screen 2 \u2014 detail ViewModel using registerObserver\nclass CarDetailViewModel(ditto: Ditto, carId: String) : ViewModel() {\n    private val _car = MutableStateFlow<Car?>(null)   // plain data, never DittoQueryResult/items\n    val car: StateFlow<Car?> = _car\n\n    private val observer = ditto.store.registerObserver(\n        \"SELECT * FROM cars WHERE _id = :id\",\n        mapOf(\"id\" to carId),\n    ) { result ->\n        try {\n            val decoded = withContext(Dispatchers.IO) { decodeCars(result.items).firstOrNull() }\n            _car.value = decoded\n        } catch (e: CancellationException) {\n            throw e\n        } catch (e: Exception) {\n            Log.e(\"CarDetail\", \"Observer handler failed\", e) // never let it escape: SDK would close the observer\n        }\n    }\n\n    override fun onCleared() {\n        observer.close()\n    }\n}\n```\n\nCompose collects both with `collectAsStateWithLifecycle()`. When `viewModelScope` is cancelled, the Screen 1 observer closes automatically. Screen 2 needs the explicit `observer.close()`.",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "All five criteria: MainScope handler, flowOn does not reach the transform (withContext inside), extract inside the lambda, catch inside registerObserver, explicit close() for the handle, stateIn without buffer. Read concurrency.md only. Correctly says the flowOn finding is bytecode-read, not executed."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 15.3,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2,
+      "cache_read_tokens": 4791,
+      "cache_write_tokens": 4293,
+      "output_tokens": 1538,
+      "reported_cost_usd": 0.0660702,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "The Ditto skills don't apply here because this is plain Room, Flow and Compose, so I'm answering from general Android knowledge.\n\n## What's wrong\n\n- **`SharingStarted.Eagerly`** starts collecting as soon as the ViewModel is created and only stops when `viewModelScope` is cancelled. Room keeps re-running the query on every write, even with no UI on screen.\n- **`collectAsState()`** isn't lifecycle-aware. It keeps collecting while the app is stopped.\n- **Jank:** Room invalidates by table. Every write to `notes` re-runs `observeAll()` and emits a whole new `List`. If you map it on the main thread, compare large lists or recompose the whole list, scrolling stutters while writes are happening.\n\n## Restructure\n\n**DAO:** Observe only what the list needs, or page it.\n```kotlin\n@Query(\"SELECT id, title, updatedAt FROM notes ORDER BY updatedAt DESC\")\nfun observeSummaries(): Flow<List<NoteSummary>>   // no large body column\n\n@Query(\"SELECT id, title, updatedAt FROM notes ORDER BY updatedAt DESC\")\nfun pagingSource(): PagingSource<Int, NoteSummary> // for large lists\n```\n\n**ViewModel:**\n```kotlin\nval notes: StateFlow<List<NoteUi>> = notesDao.observeSummaries()\n    .distinctUntilChanged()               // drop re-queries that return identical rows\n    .map { list -> list.map(::toUi) }     // mapping/formatting off main\n    .flowOn(Dispatchers.Default)\n    .conflate()                           // a burst of writes \u2192 only the latest list\n    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())\n```\n`WhileSubscribed(5_000)` stops the upstream Room query 5 seconds after the last collector leaves. That covers backgrounding, and the 5 seconds lets it survive a configuration change without re-querying.\n\nWith Paging, use `Pager(PagingConfig(pageSize = 50)) { notesDao.pagingSource() }.flow.cachedIn(viewModelScope)`.\n\n**Composable:**\n```kotlin\nval notes by viewModel.notes.collectAsStateWithLifecycle() // androidx.lifecycle:lifecycle-runtime-compose\nLazyColumn {\n    items(notes, key = { it.id }, contentType = { \"note\" }) { NoteRow(it) }\n}\n```\nWith Paging, use `collectAsLazyPagingItems()` and `items(count, key = lazyItems.itemKey { it.id })`.\n\n`collectAsStateWithLifecycle` stops collecting below `STARTED`. Together with `WhileSubscribed`, that means nothing runs in the background.\n\n## Other jank fixes\n\n- **Batch writes:** Wrap bulk inserts/updates in a single `@Transaction` or `withTransaction {}`. Room then invalidates once instead of once per row.\n- **Stable UI models:** Make `NoteUi` an immutable data class with `val`s, marked `@Immutable` if it comes from another module. Use a stable or immutable list type (for example kotlinx `ImmutableList`) so unchanged rows skip recomposition.\n- **Keep `NoteRow` cheap:** Do date formatting and text truncation in `toUi`, not during composition.\n- **No main-thread writes:** Run writes as `suspend` DAO calls from a coroutine. Never use `allowMainThreadQueries`.",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "kotlin-sdk not invoked, no skill file read; says the Ditto skills do not apply. WhileSubscribed + collectAsStateWithLifecycle, mapping off main, distinctUntilChanged, projection/paging."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "swift_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 29.42,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:swift-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Grep",
+          "path": "swift-sdk/references/concurrency.md",
+          "pattern": "^#"
+        },
+        {
+          "tool": "Grep",
+          "path": "swift-sdk/references/lifetimes.md",
+          "pattern": "^#"
+        },
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/concurrency.md"
+        },
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/lifetimes.md"
+        }
+      ],
+      "input_tokens_uncached": 8,
+      "cache_read_tokens": 41127,
+      "cache_write_tokens": 12928,
+      "output_tokens": 2796,
+      "reported_cost_usd": 0.1676014,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "final_answer": "## What's wrong\n\n1. **`deliverOn: .main` does nothing on 5.0.3.** `registerObserver` ignores `deliverOn:` on 5.0.x, so callbacks run on an SDK thread, not on main. Using `deliverOn:` with Swift concurrency on 5.0.3 is also a known crash. The code has been assuming main-thread delivery that it never got. (4.14.6 and 5.1.0 do honour `deliverOn:`, but don't rely on it either way.)\n2. **One `Task` per callback causes the out-of-order updates.** Unstructured `Task`s have no ordering guarantee. During a burst of callbacks, an older result can be applied after a newer one, and the screen is left showing stale data.\n3. **Leaving the screen doesn't stop callbacks because the observer is never cancelled.** Releasing a `DittoStoreObserver` or `DittoSyncSubscription` handle does not stop it. Unlike Combine's `AnyCancellable`, a Ditto observer keeps firing, and keeps its closure's captures alive, for as long as the `Ditto` instance exists. Since your `Ditto` lives for the whole app, that means forever. You have to call `cancel()` explicitly.\n4. **`[String: Any?]` is not Sendable.** If the raw `result`/`item.value` is passed into a Task, it crosses actors unsafely, and any decoding then happens on main.\n\n## Corrected architecture\n\n**Ownership**\n- **App root:** the single strong `Ditto` reference, as you have now. Don't wrap it in an actor; it's already Sendable on v5. Don't keep only `ditto.store`, because child objects hold only weak references to `Ditto`.\n- **Screen model** (`@MainActor`): owns its observer, its subscription if the screen needs one, and one consumer task. It receives `Ditto` by injection.\n- **Observer callback:** a `@Sendable` closure. It converts each item to a Sendable value type, dematerializes the item, and yields the result into an `AsyncStream` with `.bufferingNewest(1)`, so only the latest snapshot is kept.\n- **One long-lived `@MainActor` consumer:** drains that stream in order and does only the final assignment.\n\n```swift\nimport DittoSwift\nimport Foundation\n\nstruct Car: Sendable, Identifiable { let id: String; let make: String }\n\n@MainActor @Observable\nfinal class CarsModel {\n    private(set) var cars: [Car] = []\n    private let ditto: Ditto                      // owned by the app root\n    private var observer: DittoStoreObserver?\n    private var subscription: DittoSyncSubscription?\n    private var consumer: Task<Void, Never>?\n\n    init(ditto: Ditto) { self.ditto = ditto }\n\n    func start() throws {\n        guard observer == nil else { return }     // onAppear can fire repeatedly\n        let query = \"SELECT * FROM cars WHERE mileage > :min\"\n        let args: [String: Any?] = [\"min\": 100]\n\n        let (updates, continuation) = AsyncStream<[Car]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))\n\n        subscription = try ditto.sync.registerSubscription(query: query, arguments: args)\n        let observer = try ditto.store.registerObserver(query: query, arguments: args) { @Sendable result in\n            // Off-main: decode here, send only Sendable values.\n            let cars = result.items.compactMap { item -> Car? in\n                defer { item.dematerialize() }\n                guard let id = item.value[\"_id\"] as? String,\n                      let make = item.value[\"make\"] as? String else { return nil }\n                return Car(id: id, make: make)\n            }\n            continuation.yield(cars)\n        }\n        // Weak capture breaks handler \u2192 continuation \u2192 onTermination \u2192 observer cycle.\n        continuation.onTermination = { [weak observer] _ in observer?.cancel() }\n        self.observer = observer\n\n        consumer = Task { @MainActor [weak self] in\n            for await cars in updates { self?.cars = cars }   // single ordered consumer\n        }\n    }\n\n    func stop() {                                  // reverse order of setup\n        consumer?.cancel();      consumer = nil\n        observer?.cancel();      observer = nil\n        subscription?.cancel();  subscription = nil\n        // Do NOT stop sync or release Ditto \u2014 it is app-lived.\n    }\n}\n\nstruct CarsView: View {\n    @State private var model: CarsModel\n    init(ditto: Ditto) { _model = State(initialValue: CarsModel(ditto: ditto)) }\n\n    var body: some View {\n        List(model.cars) { Text($0.make) }\n            .onAppear { try? model.start() }\n            .onDisappear { model.stop() }\n    }\n}\n```\n\n**Cancellation rules**\n- **Where to cancel:** in `.onDisappear`, or by using `.task(id:)`. Don't use `deinit`: a `@MainActor` model's properties are actor-isolated, and `deinit` can't touch them.\n- **Teardown order:** consumer, then observer, then subscription. Never call `sync.stop()` and never drop `Ditto` from a screen.\n- **Subscription scope:** if other screens need the same data to keep syncing, move the subscription up to an app-level owner and leave only the observer on the screen.\n- **Don't track observers through the SDK's lists:** `ditto.store.observers` and `ditto.sync.subscriptions` are computed in v5, so a cached copy goes stale. Keep your own handles, as the model above does.\n- **If you need back-pressure** (the next result held until the current one is processed): use `handlerWithSignalNext` instead of the stream. Call `signalNext()` exactly once per delivery, after the main-actor work, with `defer { signalNext() }` as the first line. Missing that call stops delivery silently.\n\nThe sketch follows the Swift SDK guidance installed here. Per your instructions, I haven't compiled or run it.",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean",
+      "quality_notes": [
+        "Routed to swift-sdk with kotlin-sdk installed alongside; all five criteria; read swift concurrency.md and lifetimes.md."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 26.57,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 11025
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/references/observers.md .agents/skills/kotlin-sdk/references/concurrency.md'",
+          "exit_code": 0,
+          "output_bytes": 29432
+        }
+      ],
+      "input_tokens_uncached": 38892,
+      "cache_read_tokens": 52992,
+      "output_tokens": 876,
+      "reasoning_tokens": 18,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "For **Ditto Kotlin 5.1.0**, there are three problems:\n\n- Observer handlers start on Android\u2019s **main thread**. `flowOn(IO)` changes the Flow producer\u2019s context, but cannot move the SDK\u2019s observer transform. Hop **inside** the transform.\n- Results and their items close when the handler returns. Store decoded `Car` objects, never `result.items`. The result stays valid during an awaited `withContext`.\n- An exception escaping `registerObserver` makes Ditto log it and **close that observer**. Handle malformed documents inside the handler. An uncaught `observe` transform exception also terminates its Flow.\n\nUsing the installed Kotlin SDK guidance, these ViewModel members correct both patterns. Assume your existing serializable `Car` model:\n\n```kotlin\nimport android.util.Log\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.ditto.kotlin.Ditto\nimport com.ditto.kotlin.DittoQueryResult\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.flow.*\nimport kotlinx.coroutines.withContext\nimport kotlinx.serialization.decodeFromString\nimport kotlinx.serialization.json.Json\n\n// Called only while the observer's result is open.\n// Policy: log and skip malformed documents; keep valid cars.\nprivate suspend fun decodeCars(\n    result: DittoQueryResult,\n    json: Json\n): List<Car> = withContext(Dispatchers.IO) {\n    result.items.mapNotNull { item ->\n        try {\n            json.decodeFromString<Car>(item.jsonString())\n        } catch (e: CancellationException) {\n            throw e\n        } catch (e: Exception) {\n            Log.w(\"Cars\", \"Skipping invalid car document\", e)\n            null\n        }\n    }\n}\n\nclass CarsViewModel(ditto: Ditto, json: Json) : ViewModel() {\n    val cars: StateFlow<List<Car>> =\n        ditto.store.observe(\"SELECT * FROM cars\") { result ->\n            decodeCars(result, json)\n        }.stateIn(\n            viewModelScope,\n            SharingStarted.WhileSubscribed(5_000),\n            emptyList()\n        )\n}\n\nclass DetailViewModel(ditto: Ditto, json: Json) : ViewModel() {\n    private val _cars = MutableStateFlow<List<Car>>(emptyList())\n    val cars: StateFlow<List<Car>> = _cars.asStateFlow()\n\n    private val observer =\n        ditto.store.registerObserver(\"SELECT * FROM cars\") { result ->\n            try {\n                _cars.value = decodeCars(result, json) // owned Kotlin data\n            } catch (e: CancellationException) {\n                throw e // preserve cancellation\n            } catch (e: Exception) {\n                Log.e(\"Cars\", \"Could not process observer snapshot\", e)\n                // Keep previous state; subsequent callbacks can still run.\n            }\n        }\n\n    override fun onCleared() {\n        observer.close()\n        super.onCleared()\n    }\n}\n```\n\nHandlers serialize delivery and coalesce changes while suspended. Keep that back-pressure: don\u2019t launch a coroutine per callback or add buffering to absorb bursts. `stateIn` already provides latest-state UI semantics. Flow collection handles observer cleanup automatically; the imperative handle requires `close()`.\n\nA downstream `catch { emit(emptyList()) }` alone would finish the failed Flow, not resume observation. Catching malformed documents inside the transform avoids that termination.",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "All five criteria, with CancellationException rethrow and a decode-per-item policy. Read SKILL.md, observers.md and concurrency.md."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 18.26,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2540,
+      "cache_read_tokens": 9600,
+      "output_tokens": 377,
+      "reasoning_tokens": 54,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "Use lifecycle-aware collection in Compose and make the ViewModel\u2019s upstream collection subscription-driven:\n\n```kotlin\n// ViewModel\nval notes = notesDao.observeAll()\n    .distinctUntilChanged()\n    .stateIn(\n        scope = viewModelScope,\n        started = SharingStarted.WhileSubscribed(5_000),\n        initialValue = emptyList()\n    )\n\n// Composable\nval notes by viewModel.notes.collectAsStateWithLifecycle()\n\nLazyColumn {\n    items(notes, key = { it.id }) { note ->\n        NoteRow(note)\n    }\n}\n```\n\n- `collectAsStateWithLifecycle()` stops collecting below `STARTED`. `WhileSubscribed(5_000)` stops the Room upstream five seconds after the last subscriber disappears. Use `0` if it should stop immediately.\n- Room observable queries already execute off the main thread. If you perform expensive mapping, sorting, or grouping, place it **before `stateIn`** and run that work on `Dispatchers.Default`, for example with `.mapLatest { \u2026 }.flowOn(Dispatchers.Default)`.\n- Room can rerun a query whenever its observed tables change, even when the query\u2019s results are unchanged. `distinctUntilChanged()` suppresses equal results and downstream work; it does not prevent query execution.\n- For write-related jank, use Room\u2019s suspend write APIs, batch related writes in transactions, and avoid main-thread processing. Stable item keys help Compose preserve list items during updates.\n\nLifecycle changes address background collection; profiling is still needed to identify the specific source of scrolling jank.",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "No skill file read; no mention of Ditto. WhileSubscribed + collectAsStateWithLifecycle, mapLatest/flowOn(Default), distinctUntilChanged."
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "swift_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 26.21,
+      "tree_sha256": "d85540554c3c0c9b72087b7d4629a3c9ea6674d7183d63c68036bf4d05eae9e0",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "invoked_skills": [],
+      "reads": [
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 10205
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/lifetimes.md'",
+          "exit_code": 0,
+          "output_bytes": 3950
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/concurrency.md'",
+          "exit_code": 0,
+          "output_bytes": 7059
+        },
+        {
+          "tool": "shell",
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/observers.md'",
+          "exit_code": 0,
+          "output_bytes": 18725
+        }
+      ],
+      "input_tokens_uncached": 25728,
+      "cache_read_tokens": 65536,
+      "output_tokens": 773,
+      "reasoning_tokens": 22,
+      "reported_cost_usd": null,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "final_answer": "There are three problems:\n\n- **5.0.3 ignores `deliverOn: .main`.** The callback can run off-main. Mark it explicitly `@Sendable` to avoid inheriting `@MainActor` isolation from registration; that mismatch can cause Swift 6 runtime traps.\n- **One `Task` per callback loses ordering.** Main-actor isolation prevents concurrent model mutation, but does not guarantee those independent tasks apply snapshots in delivery order.\n- **Dropping a `DittoStoreObserver` does not cancel it.** With your app-lived Ditto, it keeps firing and retaining its captures until explicitly cancelled.\n\nUse a screen-owned observation session:\n\n```swift\nlet (updates, continuation) = AsyncStream<[Row]>.makeStream(\n    bufferingPolicy: .bufferingNewest(1)\n)\n\nlet observer = try ditto.store.registerObserver(query: query) {\n    @Sendable result in\n    let rows = result.items.map { item in\n        defer { item.dematerialize() }\n        return Row(item.value) // Decode synchronously into your Sendable value type.\n    }\n    continuation.yield(rows)\n}\n\ncontinuation.onTermination = { [weak observer] _ in\n    observer?.cancel()\n}\n\nlet consumer = Task { @MainActor [weak model] in\n    for await rows in updates {\n        guard !Task.isCancelled else { break }\n        model?.rows = rows\n    }\n}\n```\n\n`Row` should be a `Sendable` struct. Decode inside the callback; do not carry `item.value` (`[String: Any?]`) across the actor boundary. The single consumer preserves snapshot order; `.bufferingNewest(1)` intentionally coalesces pending snapshots.\n\nThe screen\u2019s stable `@MainActor` model/session should retain the **consumer, observer, and continuation**. Make `start` idempotent; stop the old session before changing query identity. On disappearance, explicitly:\n\n1. Cancel the consumer.\n2. Cancel the observer.\n3. Finish the continuation and clear the retained handles.\n4. Cancel any subscription owned specifically by this screen.\n\nUse `.onDisappear { model.stop() }`, or put the consumption loop directly inside `.task(id:)` with explicit cleanup on exit. A separate unstructured task is not automatically cancelled with SwiftUI\u2019s task. Do not rely solely on `onTermination` or `deinit`; breaking a stream loop does not itself terminate the stream.\n\nKeep the existing app-owned Ditto and shared sync running.\n\nSource: installed [concurrency guidance](.agents/skills/swift-sdk/references/concurrency.md) and [lifetime guidance](.agents/skills/swift-sdk/references/lifetimes.md).",
+      "attempt": "kotlin_sdk_addition_run",
+      "time_limit_seconds": 120,
+      "core_result": "pass",
+      "isolation_result": "clean_fresh_home",
+      "quality_notes": [
+        "Routed to swift-sdk with kotlin-sdk installed alongside; all five criteria; reads limited to swift-sdk."
+      ]
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 17.53,
+      "tree_sha256": "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [],
+      "reads": [],
+      "input_tokens_uncached": 2,
+      "cache_read_tokens": 3846,
+      "cache_write_tokens": 5247,
+      "output_tokens": 1532,
+      "reported_cost_usd": 0.07339319999999999,
+      "num_turns": 1,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "No Ditto or sync library is involved here, so the local skills don't apply. These are standard Room, Flow and Compose fixes.\n\n## Why it janks and keeps running\n\n1. **`SharingStarted.Eagerly`** starts collecting immediately and never stops until `viewModelScope` is cleared. The Room query keeps running while the app is in the background.\n2. **`collectAsState()`** doesn't know about the lifecycle. It keeps collecting while the UI is stopped, so the upstream flow never sees zero subscribers.\n3. **Room re-runs the whole query on every write to the table.** A burst of single-row inserts causes a burst of full-list emissions. Each one rebuilds the list and recomposes the `LazyColumn` mid-scroll. This is worse if you map or sort on the main thread or the items aren't stable or keyed.\n\n## Restructure the Flow (ViewModel)\n\n```kotlin\nval notes: StateFlow<List<NoteRowUi>> =\n    notesDao.observeListRows()              // SELECT id, title, updatedAt ... (not full bodies)\n        .distinctUntilChanged()             // drop re-emits where the result didn't change\n        .map { rows -> rows.map(NoteRowUi::from) }  // mapping/sorting off main\n        .flowOn(Dispatchers.Default)\n        .conflate()                         // UI only ever gets the latest list\n        .stateIn(\n            viewModelScope,\n            SharingStarted.WhileSubscribed(5_000), // stops when UI stops; 5s survives rotation\n            emptyList()\n        )\n```\n\n- In the DAO, query only the columns the list needs, using a small projection data class. Load the full note body in the detail screen.\n- If the list can get large, return a `PagingSource<Int, NoteRow>` from Room and use Paging 3's `collectAsLazyPagingItems()` instead of loading everything.\n\n## Fix the writes\n\n- Batch writes inside `db.withTransaction { \u2026 }` or a `@Transaction`/`@Insert(List)` DAO method. That gives one invalidation and one emission per batch instead of one per row.\n- Keep DAO write methods `suspend`, so Room runs them off the main thread.\n\n## Fix the collection (Compose)\n\n```kotlin\n// implementation(\"androidx.lifecycle:lifecycle-runtime-compose:<ver>\")\nval notes by viewModel.notes.collectAsStateWithLifecycle()\n\nLazyColumn {\n    items(notes, key = { it.id }, contentType = { \"note\" }) { NoteRow(it) }\n}\n```\n\n- `collectAsStateWithLifecycle()` stops collecting below `STARTED`. Combined with `WhileSubscribed(5_000)`, the Room query is cancelled about 5 seconds after the app goes to the background and restarts when the app returns.\n- Stable `key`s let Compose diff the items and keep the scroll position, instead of rebinding every row.\n- Make `NoteRowUi` an immutable `data class` with only `val`s of stable types. Annotate it with `@Immutable` if needed, or use `kotlinx.collections.immutable` for the list, so unchanged rows skip recomposition.\n- Keep formatting such as dates and previews in `NoteRowUi.from` (which runs on `Default`), not in the composable.\n\n**In short:** use `WhileSubscribed(5000)` with `collectAsStateWithLifecycle` for the background problem. For the jank, use a narrow projection or paging, `distinctUntilChanged` with `flowOn(Default)` and `conflate`, transactional batch writes, and keyed, stable `LazyColumn` items.",
+      "note": "rerun after the 5.2.0 GA pin flip"
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 27.99,
+      "tree_sha256": "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:kotlin-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Grep",
+          "path": "kotlin-sdk/references/anti-patterns.md",
+          "pattern": "withContext|flowOn|Unhandled exception|registerObserver"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 28091,
+      "cache_write_tokens": 10058,
+      "output_tokens": 1947,
+      "reported_cost_usd": 0.1250462,
+      "num_turns": 4,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "You have three separate problems. I based this on the bundled Ditto Kotlin SDK guidance and didn't compile or run anything.\n\n## 1. The jank: `.flowOn(Dispatchers.IO)` doesn't move the decode\n\nThe transform you pass to `observe()` runs inside the SDK's own handler. On Android that handler runs on the main thread (`MainScope()`). `flowOn` only moves the upstream `callbackFlow` producer, not that handler. So every `jsonString()` and `decodeFromString` call during a sync burst still runs on `main`.\n\n**Fix:** switch threads *inside* the transform with `withContext(Dispatchers.IO)`. The result stays open while the handler is suspended, so reading the items there is safe. The handler also has back-pressure: the next event isn't produced until it returns, and changes in between are merged. Don't add `.buffer()` or `launch` per event.\n\n## 2. The detail view: storing `result.items` in a field\n\n`DittoQueryResult` and its items stop being valid once the handler returns. Reading them later throws `IllegalStateException: Query result item has already been closed.` Store plain decoded data, such as `List<Car>` or a `Map<String, Car>`, and never the items.\n\n## 3. Updates stop after one malformed document\n\nIf an exception escapes a `registerObserver` handler, the SDK logs `Unhandled exception in observer event handler` and **closes the observer**. Your `decodeFromString` threw once, so the observer was gone. Catch errors inside the handler. Ideally decode each document separately, so one bad document is skipped instead of losing the whole event. (With `observe()`, an exception ends the Flow instead, so the same per-document guard applies there.)\n\n## Corrected Kotlin (ditto-kotlin 5.1.0)\n\n```kotlin\nclass CarsViewModel(\n    private val ditto: Ditto,\n    private val json: Json,\n) : ViewModel() {\n\n    private fun decodeCars(result: DittoQueryResult): List<Car> =\n        result.items.mapNotNull { item ->\n            try {\n                json.decodeFromString<Car>(item.jsonString())\n            } catch (e: SerializationException) {\n                Log.w(\"Cars\", \"Skipping malformed car\", e)\n                null\n            }\n        }\n\n    // Screen 1: decode off the main thread, inside the transform\n    val cars: StateFlow<List<Car>> =\n        ditto.store.observe(\"SELECT * FROM cars\") { result ->\n            withContext(Dispatchers.IO) { decodeCars(result) }   // returns plain data only\n        }\n            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())\n}\n\nclass CarDetailViewModel(\n    private val ditto: Ditto,\n    private val json: Json,\n) : ViewModel() {\n\n    private val _cars = MutableStateFlow<Map<String, Car>>(emptyMap())\n    val cars: StateFlow<Map<String, Car>> = _cars   // decoded copies, never result.items\n\n    // Screen 2: keep the handle so you can close it; never let an exception escape\n    private val observer = ditto.store.registerObserver(\"SELECT * FROM cars\") { result ->\n        try {\n            val decoded = withContext(Dispatchers.IO) {\n                result.items.mapNotNull { item ->\n                    try {\n                        json.decodeFromString<Car>(item.jsonString())\n                    } catch (e: SerializationException) {\n                        Log.w(\"CarDetail\", \"Skipping malformed car\", e)\n                        null\n                    }\n                }.associateBy { it.id }\n            }\n            _cars.value = decoded\n        } catch (e: CancellationException) {\n            throw e\n        } catch (t: Throwable) {\n            Log.e(\"CarDetail\", \"Observer event failed\", t)   // swallow so the observer stays alive\n        }\n    }\n\n    override fun onCleared() {\n        observer.close()   // a registerObserver handle is not tied to viewModelScope\n    }\n}\n```\n\n**Notes:**\n- `Car.id` is assumed to map `_id`, for example `@SerialName(\"_id\") val id: String`.\n- With `observe()` plus `stateIn`, cancelling `viewModelScope` closes the observer for you. A `registerObserver` handle has to be closed explicitly, as in `onCleared()`.\n- If the detail view only needs one car, use `SELECT * FROM cars WHERE _id = :id` (with `observe(query, mapOf(\"id\" to id))`) instead of keeping the whole collection.",
+      "note": "rerun after the 5.2.0 GA pin flip"
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_no_ditto",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 15.85,
+      "tree_sha256": "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [],
+      "commands": [],
+      "input_tokens_uncached": 2554,
+      "cache_read_tokens": 9600,
+      "output_tokens": 356,
+      "reasoning_tokens": 28,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "Use subscription-driven sharing in the ViewModel and lifecycle-aware collection in Compose:\n\n```kotlin\nval notes: StateFlow<List<Note>> =\n    notesDao.observeAll()\n        .distinctUntilChanged()\n        .stateIn(\n            scope = viewModelScope,\n            started = SharingStarted.WhileSubscribed(5_000),\n            initialValue = emptyList()\n        )\n```\n\n```kotlin\n@Composable\nfun NotesScreen(viewModel: NotesViewModel) {\n    val notes by viewModel.notes.collectAsStateWithLifecycle()\n\n    LazyColumn {\n        items(notes, key = { it.id }) { note ->\n            NoteRow(note)\n        }\n    }\n}\n```\n\n- `collectAsStateWithLifecycle()` collects while the lifecycle is at least `STARTED` by default and stops when the app backgrounds.\n- `WhileSubscribed(5_000)` stops upstream Room observation five seconds after the last subscriber disappears, while tolerating brief configuration changes. `Eagerly` keeps it running for the ViewModel\u2019s lifetime.\n- Room already executes asynchronous Flow queries off the main thread. Move any **expensive downstream mapping or sorting** off Main with `map { \u2026 }.flowOn(Dispatchers.Default)` before `stateIn`.\n- Room can rerun an observable query whenever its tables are invalidated. `distinctUntilChanged()` suppresses equal results; stable list keys help Compose preserve item identity. Batch writes into transactions where appropriate to reduce invalidations.\n\nThese changes address unnecessary background work and common sources of jank; lifecycle-aware collection alone won\u2019t fix expensive rendering or excessive foreground updates.",
+      "note": "rerun after the 5.2.0 GA pin flip"
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 31.51,
+      "tree_sha256": "9782f0990f06d098c39783e261ddd9b5fda3c10e8650d6ac76f72eac3e42c454",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [
+        "kotlin-sdk"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 11101
+        },
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/references/observers.md .agents/skills/kotlin-sdk/references/concurrency.md .agents/skills/kotlin-sdk/references/anti-patterns.md'",
+          "exit_code": 0,
+          "output_bytes": 38452
+        }
+      ],
+      "input_tokens_uncached": 18775,
+      "cache_read_tokens": 34432,
+      "output_tokens": 919,
+      "reasoning_tokens": 92,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "For **Ditto Kotlin 5.1.0**, the local guidance identifies three issues:\n\n- Android observer handlers\u2014including the `observe` transform\u2014start on **Main**. `flowOn(IO)` changes the Flow producer\u2019s context, but cannot move the SDK-launched transform. Move extraction and decoding **inside `withContext`**.\n- Results and items close when the handler returns. Retain decoded `Car` objects or copied JSON strings for the detail screen.\n- An exception escaping `registerObserver` causes Ditto to log it and **close the observer**. Handle malformed documents inside the handler.\n\nThe following skips malformed documents while continuing to display valid cars. It assumes your existing serializable `Car` model.\n\n```kotlin\nimport android.util.Log\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.ditto.kotlin.Ditto\nimport com.ditto.kotlin.DittoQueryResult\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.flow.*\nimport kotlinx.coroutines.withContext\nimport kotlinx.serialization.decodeFromString\nimport kotlinx.serialization.json.Json\n\nprivate val carJson = Json { ignoreUnknownKeys = true }\n\nprivate suspend fun decodeCars(result: DittoQueryResult): List<Car> =\n    withContext(Dispatchers.IO) {\n        result.items.mapNotNull { item ->\n            try {\n                carJson.decodeFromString<Car>(item.jsonString())\n            } catch (e: CancellationException) {\n                throw e\n            } catch (e: Exception) {\n                Log.w(\"Cars\", \"Skipping malformed car\", e)\n                null\n            }\n        }\n    }\n```\n\nUse it inside the Flow transform:\n\n```kotlin\nclass CarsViewModel(ditto: Ditto) : ViewModel() {\n    val cars: StateFlow<List<Car>> =\n        ditto.store.observe(\"SELECT * FROM cars\") { result ->\n            decodeCars(result)\n        }.stateIn(\n            viewModelScope,\n            SharingStarted.WhileSubscribed(5_000),\n            emptyList()\n        )\n}\n```\n\nFor the imperative observer, retain plain data and close the handle:\n\n```kotlin\nclass DetailCarsViewModel(ditto: Ditto) : ViewModel() {\n    private val _cars = MutableStateFlow<List<Car>>(emptyList())\n    val cars: StateFlow<List<Car>> = _cars.asStateFlow()\n\n    private val observer =\n        ditto.store.registerObserver(\"SELECT * FROM cars\") { result ->\n            try {\n                _cars.value = decodeCars(result)\n            } catch (e: CancellationException) {\n                throw e // Preserve cancellation during teardown.\n            } catch (e: Exception) {\n                // Keep the previous snapshot; later events can still arrive.\n                Log.e(\"Cars\", \"Could not process car snapshot\", e)\n            }\n        }\n\n    override fun onCleared() {\n        observer.close()\n        super.onCleared()\n    }\n}\n```\n\nThe result remains open throughout the suspended `withContext` call. Avoid launching a separate coroutine per callback: it can outlive the result and defeats serialized processing.\n\n`stateIn` already provides latest-value UI state. Ditto coalesces changes while handlers run; adding a buffer will queue stale snapshots. A terminal Flow `catch` also does **not** resume future events after a decoding failure\u2014handling bad documents inside the transform avoids terminating the stream.",
+      "note": "rerun after the 5.2.0 GA pin flip"
+    },
+    {
+      "host": "claude",
+      "case": "kotlin_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 27.47,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:data-streams"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "kotlin-sdk/references/data-streams.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 25715,
+      "cache_write_tokens": 14845,
+      "output_tokens": 2593,
+      "reported_cost_usd": 0.175787,
+      "num_turns": 4,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:data-streams",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "Six separate problems. Any one of them would be enough to stop frames arriving.\n\n## What's wrong\n\n1. **NGN is turned on too late.** Data Streams run over NGN, and Ditto reads that setting only once, when the instance is created. `Os.setenv` must run before `DittoFactory.create(...)`. On 5.2.0 you can drop the environment variable and pass `systemParameters = mapOf(\"network_enable_ngn\" to true, \"replication_over_ngn\" to false)` in `DittoConfig` instead.\n2. **The topic name is invalid.** Topics must match `^[a-zA-Z0-9_ ]{1,15}$`, so the dash in `\"sensor-data\"` makes the bind fail with `Failed to bind topic: Err(InvalidTopic)`. Use `\"sensor_data\"`.\n3. **The two sides use different reliability.** The tablet binds Reliable and the phone connects Unreliable, so the connect is refused with `Rejected(ConnectionRejected)`. Use **Unreliable** on both sides, which suits frames that the next reading replaces anyway.\n4. **The tablet keeps the candidate after the callback.** A candidate only works inside the bind callback; using it later throws \"Attempted to use a DittoStreamCandidate after it was closed\". The phone's `connect` waits until the tablet opens the candidate, so it times out with `Rejected(HandshakeTimedOut)`. Open the candidate inside the callback. If you must open it elsewhere, call `take()` first and close the taken candidate yourself.\n5. **`connect()` runs inside the presence callback.** That's not allowed. Copy the peer key out of the callback and connect from your own coroutine.\n6. **The phone connects once per frame.** Each call starts a new handshake and they overlap. Connect once, keep the `DittoStream`, and send every frame on it with `sendAndForget`. Streams don't reconnect by themselves, so retry with backoff only if the stream closes.\n\nAlso check that `ditto.sync.start()` is called (presence needs sync running), that each file has the opt-in, and that `com.ditto.kotlin.open` is imported. It's an extension function, and a missing import is the usual cause of \"unresolved reference: open\".\n\n## Corrected code\n\n```kotlin\n// App.kt\noverride fun onCreate() {\n    super.onCreate()\n    Os.setenv(\"DITTO_NETWORK_ENABLE_NGN\", \"true\", true)     // BEFORE create\n    Os.setenv(\"DITTO_REPLICATION_OVER_NGN\", \"false\", true)\n    ditto = DittoFactory.create(config)                       // or systemParameters on 5.2.0\n    ditto.sync.start()\n}\n```\n\n```kotlin\n// Tablet (receiver)\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\nclass SensorReceiver(ditto: Ditto, private val frames: MutableSharedFlow<ByteArray>) : AutoCloseable {\n    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)\n    private val streams = ConcurrentHashMap<String, DittoStream>()\n\n    private val acceptor = ditto.dataStreams.bindTopic(\n        topic = \"sensor_data\",\n        reliability = DittoReliability.Unreliable,\n    ) { candidate ->\n        val peer = candidate.peerKeyString()\n        val stream = candidate.open { inbound ->\n            frames.tryEmit(inbound.payload())     // driver thread: hand off, return\n        }\n        streams.put(peer, stream)?.let { old -> scope.launch { old.closeSync() } }\n        scope.launch { stream.waitUntilClosed(); streams.remove(peer, stream) }\n    }\n\n    override fun close() {\n        acceptor.close()                           // does NOT close open streams\n        val open = streams.values.toList(); streams.clear()\n        scope.launch { open.map { launch { it.closeSync() } }.joinAll(); scope.cancel() }\n    }\n}\n```\n\n```kotlin\n// Phone (sender)\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\n// Presence callback only records the key:\nval tabletKey = MutableStateFlow<String?>(null)\n// ditto.presence.observe { graph -> tabletKey.value = graph.remotePeers.firstOrNull()?.peerKey }\n\nsuspend fun streamReadings(ditto: Ditto, readings: Flow<ByteArray>) {\n    var backoff = 500L\n    while (currentCoroutineContext().isActive) {\n        val key = tabletKey.filterNotNull().first()\n        try {\n            val stream = ditto.dataStreams.connect(\n                peer = key,\n                topic = \"sensor_data\",\n                reliability = DittoReliability.Unreliable,\n                timeoutMs = 10_000,\n            ) { candidate -> candidate.open() }    // connect does not open it for you\n            backoff = 500\n            val max = stream.maxSendSize()\n            try {\n                coroutineScope {\n                    val pump = launch {\n                        readings.collect { f -> if (f.size <= max) stream.sendAndForget(f) }\n                    }\n                    stream.waitUntilClosed(); pump.cancel()   // remote closed \u2192 reconnect\n                }\n            } finally {\n                withContext(NonCancellable) { stream.closeSync() }\n            }\n        } catch (e: CancellationException) {\n            throw e\n        } catch (e: DittoException.DataStreamsException) {\n            currentCoroutineContext().ensureActive()\n            // early HandshakeTimedOut is normal while the tablet starts up\n        }\n        delay(backoff); backoff = minOf(backoff * 2, 10_000)\n    }\n}\n```\n\nThe fixes come from the installed Ditto Data Streams guidance; I haven't compiled or run this code. Note that Data Streams is a preview API and can change without notice. The code needs the `@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)` line at the top of each file that uses it, and the Kotlin SDK needs version 5.1.0 or later, so your 5.2.0 is fine.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "claude",
+      "case": "swift_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 23.29,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "opus[1m]",
+      "reported_model": "claude-opus-5-5",
+      "invoked_skills": [
+        "ditto-eval:data-streams",
+        "ditto-eval:swift-sdk"
+      ],
+      "reads": [
+        {
+          "tool": "Read",
+          "path": "swift-sdk/references/data-streams.md"
+        }
+      ],
+      "input_tokens_uncached": 6,
+      "cache_read_tokens": 29623,
+      "cache_write_tokens": 17909,
+      "output_tokens": 1786,
+      "reported_cost_usd": 0.1849406,
+      "num_turns": 6,
+      "catalog": [
+        "deep-research",
+        "ditto-eval:data-modeling",
+        "ditto-eval:data-streams",
+        "ditto-eval:ditto-mesh-networking",
+        "ditto-eval:kotlin-sdk",
+        "ditto-eval:swift-sdk",
+        "ditto-eval:sync-subscriptions",
+        "ditto-eval:write-dql",
+        "design",
+        "design-sync",
+        "dataviz",
+        "update-config",
+        "verify",
+        "debug",
+        "code-review",
+        "simplify",
+        "batch",
+        "fewer-permission-prompts",
+        "doctor",
+        "loop",
+        "schedule",
+        "claude-api",
+        "workflow-authoring",
+        "run",
+        "run-skill-generator",
+        "plugin-authoring"
+      ],
+      "mcp": [],
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "claude_version": "2.1.312",
+      "swift_description_variant": "current",
+      "final_answer": "**No, not on 5.1.0.** DittoSwift 5.1.0 has no Data Streams symbols at all. They first appear in **DittoSwift 5.2.0**, and only as a preview that you opt into with `@_spi(PreviewDataStreams)`. Ditto does not document this preview for Swift (its Data Streams guide is Kotlin-only), and the API may change without notice. Kotlin has had it since 5.1.0, but that doesn't help you here.\n\nSo you have two choices: upgrade to 5.2.0 and accept the preview API, or stay on 5.1.0 and use document sync (which writes documents, so it doesn't meet your requirement).\n\n## Minimal setup (5.2.0)\n\n1. **Pin the package exactly:** `.package(url: \"https://github.com/getditto/DittoSwiftPackage\", exact: \"5.2.0\")`\n2. **Import with the SPI in every file that uses streams.** A plain `import DittoSwift` won't see the stream types.\n   ```swift\n   @_spi(PreviewDataStreams) import DittoSwift\n   ```\n3. **Turn on NGN when you open Ditto.** It can't be enabled after the instance is created. `systemParameters` is new in 5.2.0.\n   ```swift\n   let ditto = try await Ditto.open(config: DittoConfig(\n       databaseID: \"...\", connect: /* your existing connect */,\n       systemParameters: [\n           \"network_enable_ngn\": .bool(true),     // required for streams\n           \"replication_over_ngn\": .bool(false),  // keep doc sync on the current transports\n       ]))\n   try ditto.sync.start()   // presence needs sync running\n   ```\n   - You don't need a TCP listener.\n   - If you change transports, use `ditto.updateTransportConfig { \u2026 }` to edit the live config. A fresh config turns the other radios off.\n   - With NGN on, `sync.start()` needs a large stack in debug builds. If you call it from a Swift `Task` rather than the main thread, run it on a `Thread` with `stackSize = 64 << 20`.\n\n## Receiver: bind the topic and keep the acceptor\n\n```swift\nlet acceptor = try ditto.dataStreams.bindTopic(\"cursor\", reliability: .unreliable) { candidate in\n    // Open the candidate inside this callback, or take() it. Don't let anything throw out.\n    guard let stream = try? candidate.open(onReceive: { inbound in\n        if let data = try? inbound.payload { cursorQueue.async { apply(data) } } // driver thread: hand off and return\n    }) else { return }\n    store(stream)   // keep a strong reference\n}\n```\n\n## Sender: connect once and reuse the stream\n\n```swift\n// peerKey comes from ditto.presence.graph.remotePeers. Call connect from your own Task,\n// not from inside a presence callback.\nlet stream = try await ditto.dataStreams.connect(\n    peerKey: peerKey, topic: \"cursor\",\n    reliability: .unreliable,        // must match the binder, or you get Rejected(ConnectionRejected)\n    timeoutMs: 10_000\n) { candidate in try candidate.open() }   // connect doesn't open the candidate for you\n\nlet max = try stream.maxSendSize\nfor position in cursorUpdates where position.count <= max {\n    try stream.sendAndForget(position)    // lowest overhead; fine for frames the next one replaces\n}\n// To shut down: try await stream.closeAndWait(), then acceptor.close(), then release ditto.\n```\n\n## Rules to follow\n\n- **Reliability:** `.unreliable` suits cursor positions. Messages can be lost, reordered or duplicated, so send absolute positions, not deltas.\n- **Topic names:** they must match `^[a-zA-Z0-9_ ]{1,15}$`. Anything else fails with `Err(InvalidTopic)`.\n- **One acceptor per topic:** a second bind fails with `TopicAlreadyBound`.\n- **No automatic reconnect:** a closed stream stays closed. Run a connect loop with bounded backoff yourself.\n- **Closing the acceptor doesn't close its streams:** close each open stream yourself.\n- **Errors:** every stream failure comes through as `DittoError.dataStreamsError(message:)`.\n\nThese details come from the installed Ditto skill guidance, which says they were run against 5.2.0 on macOS. I didn't build or run anything here.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "codex",
+      "case": "kotlin_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 39.41,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [
+        "data-streams",
+        "kotlin-sdk"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-streams/SKILL.md .agents/skills/kotlin-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 19340
+        },
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/references/data-streams.md .agents/skills/kotlin-sdk/references/presence.md .agents/skills/data-streams/references/setup-and-transports.md'",
+          "exit_code": 0,
+          "output_bytes": 28644
+        }
+      ],
+      "input_tokens_uncached": 28387,
+      "cache_read_tokens": 68480,
+      "output_tokens": 1142,
+      "reasoning_tokens": 18,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "Data Streams fit this use case: ephemeral bytes sent to one peer, without writing readings to the store. They are **Public Preview**, supported in Kotlin from **5.1.0**, and may change without notice.\n\nThe local Data Streams and Kotlin SDK guidance identifies these problems:\n\n- **NGN enabled too late:** set it before creating Ditto, on both devices. In 5.2.0, use config parameters.\n- **Invalid topic:** `\"sensor-data\"` contains a hyphen. Topics must match `^[a-zA-Z0-9_ ]{1,15}$`; use `\"sensor_data\"`.\n- **Reliability mismatch:** both ends must agree. Use `Unreliable` for readings superseded by the next frame; frames may be lost, reordered or duplicated.\n- **Expired candidate:** open it inside the callback. To defer opening, call `take()` inside the callback and close that owned candidate afterward.\n- **Wrong connection lifecycle:** copy the tablet\u2019s peer key out of presence, connect from your own coroutine, open the connector\u2019s candidate, and reuse that stream for all frames.\n\nUse this setup on **both devices**, retaining the Ditto instance in your application owner:\n\n```kotlin\n@file:OptIn(com.ditto.kotlin.PreviewDataStreams::class)\n\nimport com.ditto.kotlin.*\nimport com.ditto.kotlin.open\nimport kotlinx.coroutines.*\nimport kotlinx.coroutines.channels.Channel\nimport kotlinx.coroutines.flow.*\n\nval ditto = DittoFactory.create(\n    DittoConfig(\n        databaseId = \"your-app-id\",\n        connect = DittoConfig.Connect.SmallPeersOnly(),\n        persistenceDirectory = filesDir.resolve(\"ditto\").absolutePath,\n        systemParameters = mapOf(\n            \"network_enable_ngn\" to true,\n            \"replication_over_ngn\" to false,\n        ),\n    )\n)\n// Apply your normal authentication/license setup.\nditto.sync.start()\n```\n\nOn the **tablet**, retain the acceptor and opened stream. The receive callback copies bytes into a queue and returns immediately:\n\n```kotlin\nval received = Channel<ByteArray>(Channel.CONFLATED)\nval opened = Channel<DittoStream>(Channel.UNLIMITED)\n\nval acceptor = ditto.dataStreams.bindTopic(\n    topic = \"sensor_data\",\n    reliability = DittoReliability.Unreliable,\n) { candidate ->\n    val stream = candidate.open { inbound ->\n        received.trySend(inbound.payload()) // owned byte copy\n    }\n    if (opened.trySend(stream).isFailure) stream.close()\n}\n\n// Retain this stream in your session owner; this example accepts one phone.\nval receiverStream = opened.receive()\n\n// Decode/render elsewhere, outside the receive callback:\nscope.launch {\n    for (bytes in received) {\n        // Decode bytes and dispatch the reading to your UI.\n    }\n}\n```\n\nOn the **phone**, extract the selected tablet\u2019s key through presence, then connect after that observation has returned:\n\n```kotlin\nsuspend fun sendReadings(\n    ditto: Ditto,\n    tabletPeerKey: String,       // selected tablet, not an arbitrary nearby peer\n    readings: Flow<ByteArray>,   // encoded accelerometer frames\n) {\n    val key = ditto.presence.observe()\n        .map { graph ->\n            graph.remotePeers\n                .firstOrNull { it.peerKey == tabletPeerKey }\n                ?.peerKey\n        }\n        .filterNotNull()\n        .first()\n\n    // Runs in this caller's coroutine, outside the presence transform.\n    val stream = ditto.dataStreams.connect(\n        peer = key,\n        topic = \"sensor_data\",\n        reliability = DittoReliability.Unreliable,\n        timeoutMs = 10_000,\n    ) { candidate ->\n        candidate.open()\n    }\n\n    try {\n        readings.conflate().collect { frame ->\n            require(frame.size.toLong() <= stream.maxSendSize())\n            stream.sendAndForget(frame)\n        }\n    } finally {\n        withContext(NonCancellable) {\n            stream.closeSync()\n        }\n    }\n}\n```\n\nRun the phone function in a session coroutine. Include a sequence number or timestamp in each frame so the tablet can discard stale or duplicate readings.\n\nMaintain only **one connection attempt/session per peer and topic**. Retry startup failures with capped backoff: presence means reachable, not that the tablet has bound its topic. Streams never reconnect automatically.\n\nAt shutdown, cancel session jobs and close streams explicitly, then the acceptor and Ditto. Closing the acceptor alone does **not** close its streams. No document subscription or extra TCP listener is required.",
+      "note": "data-streams skill addition"
+    },
+    {
+      "host": "codex",
+      "case": "swift_data_streams",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 36.8,
+      "tree_sha256": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": "gpt-6.1-sol",
+      "skills_read": [
+        "data-streams",
+        "swift-sdk"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/data-streams/SKILL.md .agents/skills/swift-sdk/SKILL.md'",
+          "exit_code": 0,
+          "output_bytes": 18472
+        },
+        {
+          "command": "/bin/zsh -lc 'cat .agents/skills/swift-sdk/references/data-streams.md .agents/skills/data-streams/references/setup-and-transports.md'",
+          "exit_code": 0,
+          "output_bytes": 15704
+        }
+      ],
+      "input_tokens_uncached": 21713,
+      "cache_read_tokens": 70144,
+      "output_tokens": 892,
+      "reasoning_tokens": 20,
+      "host_warnings": [
+        "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."
+      ],
+      "swift_description_variant": "current",
+      "final_answer": "**DittoSwift 5.1.0 has no Data Streams API.** Swift support starts in **5.2.0**, through an **undocumented preview SPI** that may change without notice. Kotlin\u2019s 5.1.0 support does not apply to Swift. Pin Swift to `5.2.0` for the API shown below.\n\nData Streams provide bidirectional, ephemeral bytes between two reachable peers without writing documents. For cursor positions, use `.unreliable`: updates may be lost, duplicated or reordered, so include a sequence number and discard stale updates.\n\nOn **both peers**, enable NGN before opening Ditto, retain the instance, and start sync:\n\n```swift\n@_spi(PreviewDataStreams) import DittoSwift\nimport Foundation\n\nlet config = DittoConfig(\n    databaseID: databaseID,\n    connect: .smallPeersOnly(),\n    persistenceDirectory: directory,\n    systemParameters: [\n        \"network_enable_ngn\": .bool(true),\n        \"replication_over_ngn\": .bool(false)\n    ]\n)\nlet ditto = try await Ditto.open(config: config)\ntry ditto.setOfflineOnlyLicenseToken(token)\ntry ditto.sync.start()\n```\n\nUse your existing authentication configuration if appropriate. No document subscription or TCP listener is required. Keep `replication_over_ngn` consistent across peers that replicate documents.\n\nThe receiver binds first and **opens each candidate inside the callback**:\n\n```swift\nlet acceptor = try ditto.dataStreams.bindTopic(\n    \"cursor\", reliability: .unreliable\n) { candidate in\n    do {\n        let stream = try candidate.open { inbound in\n            guard let bytes = try? inbound.payload else { return }\n            enqueueCursor(bytes) // Hand off promptly; callback is off-main.\n        }\n        retainIncomingStream(stream) // App-owned, thread-safe storage.\n    } catch {\n        // Report or handle the failed open.\n    }\n}\n```\n\nRetain `acceptor` and the incoming stream. The helper functions above represent your app\u2019s queue and storage.\n\nOn the sender, obtain the receiver\u2019s key from `ditto.presence.graph.remotePeers`, then connect from your own task:\n\n```swift\nlet stream: DittoStream = try await ditto.dataStreams.connect(\n    peerKey: receiverPeerKey,\n    topic: \"cursor\",\n    reliability: .unreliable,\n    timeoutMs: 10_000\n) { candidate in\n    try candidate.open() // connect does NOT open it automatically.\n}\n\n// Repeat for each encoded cursor update; reuse this stream.\nif payload.count <= (try stream.maxSendSize) {\n    try stream.sendAndForget(payload)\n}\n```\n\nFor send status instead, use `try await stream.send(payload)`; `.sent` means handed to the local transport, not processed remotely.\n\nBorrowed candidates expire after their callback; use `take()` if opening later. Streams do not reconnect automatically. Close streams with `closeAndWait()` and close the acceptor separately.\n\n**Swift 5.2.0 startup caveat:** NGN startup can exceed a cooperative task thread\u2019s stack in debug builds. Start sync on the main thread or a dedicated large-stack thread.\n\nThese version and API details come from the installed [Swift Data Streams guidance](.agents/skills/swift-sdk/references/data-streams.md), verified there on macOS with 5.2.0.",
+      "note": "data-streams skill addition"
     }
   ],
   "rerun_date": "2026-10-27"

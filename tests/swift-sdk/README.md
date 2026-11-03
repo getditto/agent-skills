@@ -7,11 +7,12 @@ and compile for macOS, the iOS Simulator, an iOS device and Mac Catalyst.
 ```
 Package.swift                          version pin read from $DITTO_SWIFT_VERSION
 Sources/
-  SkillSupport/                        env + disposable-instance helpers
+  SkillSupport/                        env + disposable-instance helpers; TestPeer+DataStreams
+                                       opens NGN-enabled loopback-connected pairs (5.2.0)
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              97 @Test declarations (4 parameterized; 3 declarations are 5.2-only)
+Tests/SwiftSDKSkillTests/              107 @Test declarations (4 parameterized; 13 declarations are 5.2-only)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -106,7 +107,13 @@ also compile with `-DDITTO_V4`, which selects:
 
 Tests that cannot exist on a line are disabled with a Swift Testing `.enabled(if:)` trait
 **and** `#if` guards, because a trait is a runtime condition and the code still has to
-compile.
+compile. For 5.2.0 and later the manifest defines `DITTO_DATA_STREAMS` instead, which
+compiles `DataStreamsTests.swift` and `TestPeer+DataStreams.swift`: two instances in one
+process, one listening on a TCP loopback port and the other dialling it, LAN off, NGN
+enabled through `DittoConfig.systemParameters`, and `sync.start()` run on a 64 MB-stack
+thread because NGN's UDP start-up overflows a cooperative thread's stack in debug builds.
+Version gates that used to test `hasPrefix("5.1.")` now use `isAtLeast("5.1.0")`, so features
+5.2.0 kept (5 MiB limit, `ADVISE`, multicast) stay asserted there.
 
 ## Proving the harness can fail
 
