@@ -111,7 +111,7 @@ dependencies {
     when (dittoLine) {
         "v4" -> {
             implementation("live.ditto:ditto:$dittoVersion")
-            implementation(enforcedPlatform("com.fasterxml.jackson:jackson-bom:2.18.12"))
+            implementation(enforcedPlatform("com.fasterxml.jackson:jackson-bom:2.22.4"))
         }
         // KMP root module; Gradle resolves the -android variant. No ditto-binaries needed.
         "v5" -> implementation("com.ditto:ditto-kotlin:$dittoVersion")
