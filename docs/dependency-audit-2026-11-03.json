@@ -95,13 +95,14 @@
       "published": "2026-10-20T17:19:09.950Z",
       "resolution_before": "2026-10-31T17:09:20Z",
       "resolved_packages": 81,
-      "advisories": 0
+      "advisories": 0,
+      "installation": "Committed tools/mcp-remote/package-lock.json; isolated npm ci --ignore-scripts per MCP process"
     },
     "all_resolved_package_versions_checked": 148,
     "young_versions": 0
   },
   "maven": {
-    "distinct_resolved_modules_checked": 286,
+    "distinct_resolved_modules_checked": 322,
     "advisories": 0,
     "jvm_sdk_versions": [
       "5.0.3",
@@ -113,7 +114,8 @@
       "5.0.3",
       "5.1.0",
       "5.2.0"
-    ]
+    ],
+    "configurations": "All resolvable project and buildscript configurations, including compile, processor, compiler plugin and Android lint tool graphs"
   },
   "gradle": {
     "version": "9.8.2",
@@ -176,10 +178,11 @@
       "failures": 0,
       "minimal_apps_pass": true
     },
-    "release_policy_tests": 9,
+    "release_policy_tests": 18,
     "packaging_tests": 14,
     "android_dependency_resolution": "passed for all four fixture versions",
-    "android_apk_compilation": "not verified: no Android SDK platforms installed"
+    "android_apk_compilation": "not verified: no Android SDK platforms installed",
+    "mcp_installation": "Isolated npm ci --ignore-scripts: 81 packages installed successfully; package code not executed"
   },
   "limits": [
     "Public advisory matches do not audit bundled native SDK internals.",
@@ -195,5 +198,53 @@
     "https://services.gradle.org/versions/all",
     "https://services.gradle.org/distributions/gradle-9.8.2-wrapper.jar.sha256",
     "https://services.gradle.org/distributions/gradle-9.8.2-bin.zip.sha256"
-  ]
+  ],
+  "adversarial_review": {
+    "independent_reviewers": 5,
+    "minimum_agreement_for_fixes": 3,
+    "findings": [
+      {
+        "id": "C1",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Unresolved Maven edges silently omitted"
+      },
+      {
+        "id": "C2",
+        "agree": 5,
+        "fixed": true,
+        "problem": "npm artifact identity not bound to age metadata"
+      },
+      {
+        "id": "C3",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Ambiguous duplicate MCP cutoff flags"
+      },
+      {
+        "id": "C4",
+        "agree": 5,
+        "fixed": true,
+        "problem": "Compile, processor and compiler plugin graphs omitted"
+      },
+      {
+        "id": "C5",
+        "agree": 5,
+        "fixed": true,
+        "problem": "npx reused unreviewed installations despite cutoff"
+      }
+    ],
+    "android_lint_security_extension": {
+      "agree": 3,
+      "fixed": true,
+      "modules": [
+        "guava",
+        "commons-lang3",
+        "httpclient",
+        "bcpkix-jdk18on",
+        "bcprov-jdk18on",
+        "bcutil-jdk18on"
+      ]
+    }
+  }
 }

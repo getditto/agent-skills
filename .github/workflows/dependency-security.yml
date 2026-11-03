@@ -30,7 +30,7 @@ jobs:
           while IFS= read -r -d '' lockfile; do
             npm audit --prefix "$(dirname "$lockfile")" --package-lock-only
           done < <(git ls-files -z -- '**/package-lock.json' 'package-lock.json')
-      - name: Audit the age-limited MCP bridge and its transitives
+      - name: Audit the committed MCP bridge snapshot and its transitives
         run: python3 scripts/audit-mcp-dependencies.py
 
   maven:
@@ -42,6 +42,12 @@ jobs:
           distribution: temurin
           java-version: '17.0.21+9'
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Test inventory failure and compiler/processor coverage offline
+        env:
+          RUN_GRADLE_INVENTORY_TESTS: '1'
+        run: |
+          tests/kotlin-sdk/minimal-app/gradlew --version
+          python3 -m unittest discover -s tests/dependencies -p 'test_maven_inventory.py' -v
       - name: Resolve every supported JVM and Android dependency graph
         shell: bash
         run: |

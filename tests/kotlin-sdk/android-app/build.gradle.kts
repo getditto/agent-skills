@@ -84,6 +84,26 @@ android {
     }
 }
 
+// Lint resolves its own tool graph, separately from AGP's buildscript classpath.
+// Keep the security fixes scoped to that graph, including all BC modules together.
+configurations.matching { it.name == "androidLintTool" }.configureEach {
+    resolutionStrategy.eachDependency {
+        val patched = when ("${requested.group}:${requested.name}") {
+            "com.google.guava:guava" -> "33.7.2-jre"
+            "org.apache.commons:commons-lang3" -> "3.21.0"
+            "org.apache.httpcomponents:httpclient" -> "4.5.14"
+            "org.bouncycastle:bcprov-jdk18on",
+            "org.bouncycastle:bcpkix-jdk18on",
+            "org.bouncycastle:bcutil-jdk18on" -> "1.86"
+            else -> null
+        }
+        if (patched != null) {
+            useVersion(patched)
+            because("Use mature versions with fixes for known security advisories")
+        }
+    }
+}
+
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))

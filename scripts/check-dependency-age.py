@@ -17,6 +17,8 @@ import urllib.parse
 import urllib.request
 import urllib.error
 
+from mcp_snapshot import validate_snapshot
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -53,7 +55,11 @@ def fetch_json(url):
 
 def npm_check(name, versions, cutoff):
     data = fetch_json("https://registry.npmjs.org/" + urllib.parse.quote(name, safe=""))
-    for version in versions:
+    for version, artifacts in versions.items():
+        dist = data["versions"][version]["dist"]
+        for resolved, integrity in artifacts:
+            if resolved != dist["tarball"] or integrity != dist.get("integrity"):
+                raise ValueError(f"npm {name}@{version}: tarball or integrity differs from registry release")
         require_mature(f"npm {name}@{version}", timestamp(data["time"][version]), cutoff)
 
 
@@ -117,7 +123,12 @@ def collect(root, cutoff):
                     name = location.rsplit("node_modules/", 1)[-1]
                     if not package.get("resolved", "").startswith("https://registry.npmjs.org/"):
                         raise ValueError(f"{filename}: unsupported package source for {name}")
-                    npm.setdefault(name, set()).add(package["version"])
+                    if package.get("name", name) != name:
+                        raise ValueError(f"{filename}: npm aliases are not supported: {name}")
+                    integrity = package.get("integrity")
+                    if not integrity:
+                        raise ValueError(f"{filename}: missing integrity for {name}")
+                    npm.setdefault(name, {}).setdefault(package["version"], set()).add((package["resolved"], integrity))
         elif filename.startswith(".github/workflows/") and path.suffix in (".yml", ".yaml"):
             for line in path.read_text().splitlines():
                 match = re.search(r"uses:\s+([^\s]+)", line)
@@ -135,18 +146,9 @@ def collect(root, cutoff):
                 maven.add(("org.jetbrains.kotlin", "kotlin-gradle-plugin", version))
             for version in re.findall(r'id\("com.android.application"\) version "([\d.]+)"', text):
                 maven.add(("com.android.tools.build", "gradle", version))
-    config = root / ".mcp.json"
-    if config.exists():
-        for server in json.loads(config.read_text())["mcpServers"].values():
-            args = server["args"]
-            version = next((arg.removeprefix("mcp-remote@") for arg in args if arg.startswith("mcp-remote@")), "")
-            if not re.fullmatch(r"\d+\.\d+\.\d+", version):
-                raise ValueError("MCP bridge must use an exact stable version")
-            before = next((arg.removeprefix("--before=") for arg in args if arg.startswith("--before=")), "")
-            if not before:
-                raise ValueError("MCP bridge requires --before to bound transitive release ages")
-            require_mature("MCP transitive resolution cutoff", timestamp(before), cutoff)
-            npm.setdefault("mcp-remote", set()).add(version)
+    if (root / ".mcp.json").exists():
+        _, before = validate_snapshot(root)
+        require_mature("MCP transitive resolution cutoff", timestamp(before), cutoff)
     return npm, actions, maven
 
 

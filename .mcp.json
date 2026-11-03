@@ -1,20 +1,16 @@
 {
   "mcpServers": {
     "ditto-docs": {
-      "command": "npx",
+      "command": "python3",
       "args": [
-        "-y",
-        "--before=2026-10-31T17:09:20Z",
-        "mcp-remote@0.15.2",
+        "scripts/run-mcp-remote.py",
         "https://docs.ditto.live/mcp"
       ]
     },
     "ditto-inkeep": {
-      "command": "npx",
+      "command": "python3",
       "args": [
-        "-y",
-        "--before=2026-10-31T17:09:20Z",
-        "mcp-remote@0.15.2",
+        "scripts/run-mcp-remote.py",
         "https://mcp.inkeep.com/dittolive/mcp"
       ]
     }
