@@ -1,5 +1,8 @@
 # Error handling — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-16 Error handling](#cap-16-error-handling)
@@ -140,12 +143,15 @@ display order — sort at query time.
 
 ### Non-string attachment metadata
 
-`store.newAttachment(path, metadata)` accepts `Map<String, Any?>`, but the DQL
-`INSERT INTO … ATTACHMENT` layer currently rejects non-String values at insert time
-with ``attachment property `metadata` is invalid``. Stick to `Map<String, String>`
-(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, which quotes the same error string; string
-shape **[source-verified]** in `crates/ditto-types/src/attachment_handle.rs` — path
-not re-verified in this review).
+On **5.2.0**, use the `store.newAttachment` overloads taking `Map<String, String>`.
+The older `Map<String, Any?>` overloads are deprecated and throw plain
+`IllegalArgumentException` **during attachment creation** for a non-string value;
+`catch (e: DittoException)` will not catch it. The JVM fixture verifies this failure
+before any DQL insertion. Source: [5.2 Kotlin release notes](https://docs.ditto.live/sdk/latest/release-notes-hub/kotlin).
+
+Earlier v5 releases could accept that metadata at creation and reject it later at
+`INSERT INTO … ATTACHMENT` with ``attachment property `metadata` is invalid``.
+That historical error is described in the [v4 migration guide](https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4).
 
 ## Failures that are not `DittoException`
 

@@ -1,5 +1,11 @@
 # Preview and platform-specific APIs — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
+For encryption on 5.2.0 use the stable `DittoConfig.encryptionKey` API described in
+[sdk-5.2.md](sdk-5.2.md); the passphrase material here is historical preview guidance.
+
 ## CAP-20 Preview and platform-specific APIs
 
 This is not SwiftUI `#Preview`. It is the part of the Swift SDK that is explicitly
@@ -64,25 +70,29 @@ Five constraints, all of which must be stated wherever this is used:
    stopped and successfully started again, when Ditto validates the platform
    configuration.
 
-Its `DittoConnectionType.multicast` case is also 5.1.0-only, so an exhaustive `switch`
-over connection types is version-gated
+Its `DittoConnectionType.multicast` case was introduced in 5.1.0 and remains available
+in 5.2.0, so an exhaustive `switch` supporting earlier releases is version-gated
 ([transports.md](transports.md#connection-types)).
 
-### Data Streams — 5.2.0 preview
+### Data Streams: introduced in 5.2.0, behind an SPI import
 
-Swift **5.2.0** exposes Data Streams behind
-`@_spi(PreviewDataStreams) import DittoSwift`. Enable NGN before opening Ditto;
-the API is preview and can change or be removed without notice. Coordinate use
-with Ditto. Setup, executable receive/send sample, threading and handle lifetimes:
-[data-streams.md](data-streams.md). Not exposed on 4.14.6, 5.0.3 or 5.1.0 Swift.
+Data Streams are **absent from 4.14.x, 5.0.x and 5.1.x** (no symbols in the 5.1.0 module
+interface) and appear in **5.2.0** as a preview system programming interface:
+`@_spi(PreviewDataStreams) import DittoSwift` exposes `ditto.dataStreams`, `bindTopic`,
+`connect`, `DittoStream` and friends. The Ditto docs do not describe the Swift API; the
+two-peer fixture on macOS does (executed, 5.2.0). NGN must be on at open
+(`DittoConfig(…, systemParameters: ["ngn_data_streams_enabled": .bool(true)])`). Implementation
+guide: [data-streams.md](data-streams.md); concepts: the `data-streams` skill. Below
+5.2.0 the nearest alternative for a large payload is an attachment
+([attachments.md](attachments.md)).
 
 ### Platform exclusions
 
 | Platform | Status |
 |---|---|
-| iOS, iPadOS, iOS Simulator | supported on all four lines |
-| macOS (AppKit) | supported on all four lines |
-| Mac Catalyst | supported on all four lines |
+| iOS, iPadOS, iOS Simulator | supported on all four covered SDK releases |
+| macOS (AppKit) | supported on all four covered SDK releases |
+| Mac Catalyst | supported on all four covered SDK releases |
 | tvOS | **not supported on any v5 line.** Binaries still ship at 5.0.3 and are gone at 5.1.0 — a tvOS app should stay on 4.14.x and contact Ditto support |
 | visionOS | listed as a v4 beta platform in the migration guide, but no SPM slice ships on any line |
 | watchOS | excluded on every line |

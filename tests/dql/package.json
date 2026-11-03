@@ -6,11 +6,13 @@
   "scripts": {
     "extract": "node scripts/extract-queries.mjs",
     "transform": "node scripts/transform-dataset.mjs",
-    "test": "npm run test:v5 && npm run test:v4 && npm run test:v51",
-    "test:v4": "DITTO_SDK_VERSION=4.14.6 node runner/run.mjs",
-    "test:v5": "DITTO_SDK_VERSION=5.0.3 node runner/run.mjs",
+    "test": "npm run test:v5 && npm run test:v4 && npm run test:v51 && npm run test:v52",
+    "test:v4": "DITTO_SDK_VERSION=4.14.6 node runner/run.mjs && DITTO_SDK_VERSION=4.14.6 node runner/functions.mjs",
+    "test:v5": "DITTO_SDK_VERSION=5.0.3 node runner/run.mjs && DITTO_SDK_VERSION=5.0.3 node runner/functions.mjs",
     "report": "node scripts/report.mjs",
-    "test:v51": "DITTO_SDK_VERSION=5.1.0 node runner/run.mjs"
+    "test:v51": "DITTO_SDK_VERSION=5.1.0 node runner/run.mjs && DITTO_SDK_VERSION=5.1.0 node runner/functions.mjs",
+    "test:v52": "DITTO_SDK_VERSION=5.2.0 node runner/run.mjs && DITTO_SDK_VERSION=5.2.0 node runner/functions.mjs && node runner/sdk52.mjs && node runner/sync-degradation52.mjs",
+    "check:function-coverage": "node runner/functions.mjs --check-coverage"
   },
   "engines": {
     "node": ">=24"

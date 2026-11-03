@@ -7,7 +7,7 @@
 - [5. USE INDEX](#5-use-index)
 
 Topic index: [indexing.md](indexing.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
 
@@ -141,9 +141,9 @@ SELECT * FROM movies USE IDS 'tt0111161';
 
 > **Do not use the parenthesised-tuple spelling** `USE IDS ('tt0111161', 'tt0468569')` — it is rejected on **every** supported SDK version with `('tt0111161', 'tt0468569') is not supported`, because the parser reads it as one tuple expression rather than a list. The comma form above is the portable spelling. `USE IDS LIST ['a', 'b']` also works, but only on SDK 5.0+.
 
-### 4.1 USE IDS is SELECT-only
+### 4.1 USE IDS on mutations
 
-On 4.14.x and 5.0.x, `USE IDS` is a parse error on `UPDATE`, `EVICT`, `TOMBSTONE` and `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only); `USE IDS` remains documented as a SELECT-only feature and should not be used on mutations. **For mutations, use `WHERE _id IN (…)` on every SDK version** — see [`statements.md`](statements.md).
+> **Version boundary:** `USE IDS` works on SELECT across the covered releases, on UPDATE (before `SET`) from 5.1.0, and on DELETE/EVICT from **5.2.0**. DELETE/EVICT parsed but removed nothing on 5.1.0. Use `WHERE _id IN (…)` for portable mutations. `TOMBSTONE` remains unavailable on Small Peers. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
 ### 4.2 Interaction with `#auto_use_ids`
 

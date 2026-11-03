@@ -81,6 +81,9 @@ jobs:
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
 
+      - name: Check latest stable SDK selection
+        run: python3 tests/swift-sdk/test_version_selection.py
+
       - name: Check Swift package integrity and failure controls
         run: python3 -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
 

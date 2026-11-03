@@ -24,7 +24,7 @@ for Swift**: say so when you recommend it.
 
 ## Availability and import
 
-- **5.2.0 only.** The 5.1.0 module interface has no Data Streams symbols at all; 5.2.0
+- **Introduced in 5.2.0.** The 5.1.0 module interface has no Data Streams symbols at all; 5.2.0
   exposes them as a system programming interface. Every file that uses them imports:
 
   ```swift
@@ -33,8 +33,9 @@ for Swift**: say so when you recommend it.
 
   A plain `import DittoSwift` compiles nothing in this file. `@_spi` is an underscored
   attribute: it is the SDK's way of shipping a preview, not a stable public API.
-- Pin `exact: "5.2.0"` in `Package.swift`; the full fixture and platform matrix are
-  verified against this published GA build.
+- Resolve the latest stable SwiftPM release for a new app and verify its preview
+  interface before using these symbols. 5.2.0 is the latest release known to this
+  skill; fixed fixture pins reproduce that evidence. See [setup.md](setup.md).
 - Swift names: lowercase enum cases (`.reliable`, `.sent`, `.closedByRemote`), accessors are
   **throwing properties** (`try stream.maxSendSize`, `try candidate.peerKey`,
   `try inbound.payload`), and the Kotlin `closeSync()` is **`closeAndWait()`**.
@@ -49,8 +50,8 @@ let config = DittoConfig(
     connect: .smallPeersOnly(),
     persistenceDirectory: directory,
     systemParameters: [
-        "network_enable_ngn": .bool(true),     // required: streams run over NGN
-        "replication_over_ngn": .bool(false),  // keep document sync on the stable transports
+        "ngn_data_streams_enabled": .bool(true),     // required: streams run over NGN
+        "ngn_sync_enabled": .bool(false),  // keep document sync on the stable transports
     ]
 )
 let ditto = try await Ditto.open(config: config)
@@ -59,7 +60,7 @@ ditto.updateTransportConfig { config in /* modify the live copy; never a fresh c
 try ditto.sync.start()                          // presence needs sync running
 ```
 
-`systemParameters` is a 5.2.0 initializer (**executed**). `replication_over_ngn` must be
+`systemParameters` is a 5.2.0 initializer (**executed**). `ngn_sync_enabled` must be
 the same on every peer that replicates documents. No TCP listener is required.
 
 **Stack caveat.** With NGN enabled, `sync.start()` synchronously spawns the UDP transport,

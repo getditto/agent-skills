@@ -9,7 +9,7 @@ import { loadEnv } from "../lib/load-env.mjs";
 loadEnv();
 const license = process.env.DITTO_OFFLINE_LICENSE || process.env.DITTO_PLAYGROUND_TOKEN;
 assert.ok(license, "Set DITTO_OFFLINE_LICENSE using the repository .env or environment");
-const sdk = await loadSdk("5.1.0");
+const sdk = await loadSdk(process.env.DITTO_SDK_VERSION || "5.2.0");
 await sdk.init();
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "ditto-scoped-joins-"));
 let ditto;
@@ -50,7 +50,7 @@ try {
   const comments = await rows(joinBlock.slice(joinBlock.indexOf("SELECT")));
   assert.equal(comments.length, 1, "Ticket JOIN must not include the same ticket number in another team");
   assert.equal(comments[0].body, "Parts ordered");
-  console.log("PASS: both documented scoped JOINs exclude cross-scope matches on SDK 5.1.0");
+  console.log(`PASS: both documented scoped JOINs exclude cross-scope matches on SDK ${process.env.DITTO_SDK_VERSION || "5.2.0"}`);
 } finally {
   if (ditto) await ditto.close();
   fs.rmSync(directory, { recursive: true, force: true });

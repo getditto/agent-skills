@@ -6,7 +6,7 @@
 - [8. Duration](#8-duration)
 
 Topic index: [functions.md](functions.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
 
@@ -27,7 +27,7 @@ Dates are either **epoch milliseconds (UTC, integer)** or **ISO-style strings**.
 | `date_format(date, format[, tz])`                         | `string`                                                         | Date → formatted string                                              |
 | `date_add(date, part, count[, format[, tz]])`             | `integer` or `string` (matches input, or `format` if given)      | Add `count` of `part`; negative subtracts                            |
 | `date_sub(date, part, count[, format[, tz]])`             | same as above                                                    | Sign-flipped `date_add`                                              |
-| `date_diff(d1, d2, part)`                                 | `integer`                                                        | Number of `part`s between. Result is `d2 - d1` (positive when `d2` is later than `d1`) |
+| `date_diff(d1, d2, part)`                                 | `integer`                                                        | Number of `part`s between, with sign `d1 - d2` (positive when `d1` is later than `d2`; executed on all four covered SDK versions) |
 | `date_range(start, end, part, count[, format[, tz]])`     | `array<date>`                                                    | Half-open `[start, end)` stepping by `count`-`part`s                 |
 | `date_part(date, part)`                                   | `integer` or `string`                                            | Extract one part                                                     |
 | `date_trunc(date, part)`                                  | `integer` (epoch input) or `string` (ISO output for string input)| Zero subsequent fields                                               |
@@ -59,7 +59,7 @@ FROM movies WHERE _id = 'tt0111161';
 ```sql
 -- Days since release
 SELECT title,
-    date_diff(date_cast(released), clock(), 'day') AS days_since_release
+    date_diff(clock(), date_cast(released), 'day') AS days_since_release
 FROM movies
 ORDER BY days_since_release ASC LIMIT 10;
 ```

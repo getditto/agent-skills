@@ -1,5 +1,8 @@
 # Logging, diagnostics and stats — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## CAP-15 Logging, diagnostics and stats
 
 ### `DittoLogger`

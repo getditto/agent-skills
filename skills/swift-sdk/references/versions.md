@@ -11,9 +11,9 @@
 - [Cross-version reference](#cross-version-reference)
 - [CAP-19 v4 to v5 migration, API and on-disk store](#cap-19-v4-to-v5-migration-api-and-on-disk-store)
 
-**Version differences across 4.14.x, 5.0.x, 5.1.x and 5.2.x.** Other references use
-5.1.x forms unless marked otherwise. Verified releases:
-**4.14.6**, **5.0.3**, **5.1.0**, **5.2.0**.
+**This file owns version differences through SDK 5.2.0.** Covered release baselines:
+**4.14.6**, **5.0.3**, **5.1.0**, **5.2.0**. Historical tables retain their original
+execution evidence; the 5.2.0 section describes the new API and behavior.
 
 ---
 
@@ -28,14 +28,16 @@ Read the pin before writing any Ditto code:
   requirement in `Package.swift`, and the resolved version in `Package.resolved`.
 - **At runtime:** `Ditto.version` returns the linked SDK version string.
 
-**When the version cannot be determined, emit 5.1.x code and say so.**
+For new apps/POCs, resolve the latest stable SwiftPM release; **5.2.0 is the latest
+known baseline**, not a permanent recommendation. Preserve existing pins. See
+[setup.md](setup.md) for version selection and [sdk-5.2.md](sdk-5.2.md) for new APIs.
 
 | Line | Status | What to check first |
 |---|---|---|
 | [4.14.x](#414x) | LTS. Pin **4.14.6**. | `disableSyncWithV3()` before mutating DQL; no `Sendable` conformances |
 | [5.0.x](#50x) | Supported. Pin **5.0.3**. | `deliverOn:` is ignored — hop explicitly in observer handlers |
-| [5.1.x](#51x) | Supported. Pin **5.1.0**. | `arm64` only; 5 MiB per-document limit |
-| [5.2.x](#52x) | Current stable. Pin **5.2.0**. | 5.1.x constraints; adds encryption, `deleteStore`, Data Streams preview |
+| [5.2.0](#52x) | Latest known baseline; resolve latest stable for new apps. | Encryption, deleteStore, startup parameters; Data Streams preview |
+| [5.1.x](#51x) | Historical baseline **5.1.0**. | `arm64` only; 5 MiB per-document limit |
 
 ---
 
@@ -104,7 +106,7 @@ Compiling v5-shaped code against 4.14.x in Swift 6 language mode fails with
 
 ### Best practice on 4.14.x
 
-- Pin exactly `4.14.6`.
+- For historical reproduction, pin `4.14.6`; new apps resolve the latest stable SwiftPM release.
 - Open with `Ditto.open(config:)`, call `disableSyncWithV3()`, then `sync.start()`.
 - `@preconcurrency import DittoSwift` in Swift 6 language mode.
 - Hop to the main actor inside observer handlers instead of relying on `deliverOn:`, so
@@ -160,7 +162,7 @@ same source is correct on all four lines — see [observers.md](observers.md).
 
 ### Best practice on 5.0.x
 
-- Pin exactly `5.0.3`; prefer 5.1.x for new work.
+- Use `5.0.3` only when reproducing this historical baseline. For new work, resolve the latest stable SwiftPM release.
 - Hop explicitly in every observer handler.
 - `import Foundation` alongside `import DittoSwift`.
 
@@ -215,43 +217,31 @@ the message, not the case. Documents should be far smaller than the limit anyway
 
 ### Best practice on 5.1.x
 
-- Pin exactly `5.1.0`. This is the default line for new code.
+- `5.1.0` is a historical test baseline. For new code, resolve the latest stable SwiftPM release.
 - `deliverOn:` works, but hopping explicitly keeps code portable to 5.0.x.
 
 ---
 
 ## 5.2.x
 
-**Status: stable.** Pin **5.2.0**, verified against the published `DittoSwiftPackage`
+**Latest known baseline: 5.2.0.** Resolve the latest stable release for a new app.
+This baseline was verified against the published `DittoSwiftPackage`
 tag (commit `18455b383cc6b09f20dbfd6faa4f137c83490fde`) and shipped XCFramework.
 
 ### API surface on 5.2.x
 
-The shipped public and SPI interfaces add to 5.1.x:
-
-- **Store encryption:** `DittoEncryptionKey` (`.raw(_ bytes:)`) and
-  `DittoConfig.encryptionKey`.
-- **`DittoConfig.systemParameters`:** a `[String: DittoSystemParameterValue]` map, plus a
-  `systemParameters:` parameter on `DittoConfig.init`. The value enum is `Codable` over
-  `bool`, `int64`, `uint64`, `double`, `string`, `array` and `object`.
-- **`Ditto.deleteStore(databaseID:persistenceDirectory:)`** — delete an on-disk store
-  without opening it.
-- **Data Streams preview:** `ditto.dataStreams`, `DittoStream`, candidates, acceptors,
-  inbound bytes and send operations, exposed only by
-  `@_spi(PreviewDataStreams) import DittoSwift`. Absent on the three earlier verified
-  Swift packages. Enable NGN before opening Ditto; see [data-streams.md](data-streams.md).
-- **`DittoError.EncryptionErrorReason` renames:** `passphraseNotGiven` → `keyRequired`,
-  `extraneousPassphraseGiven` → `keyUnexpected`, `passphraseInvalid` → `keyInvalid`
-  (old spellings deprecated), plus new `unsupportedScheme` and `metadataCorrupt`.
-
-`deleteStore` and the `systemParameters:` init require the interface’s
-`compiler(>=5.3)` guard; both compile with this skill’s Swift 6 toolchain.
+5.2.0 adds raw-key encryption, startup system parameters, store deletion, typed
+encryption errors and Data Streams preview. Read [sdk-5.2.md](sdk-5.2.md) for the
+API shapes, error mappings and compiler guards, and [data-streams.md](data-streams.md)
+for the Swift SPI and lifecycle. Earlier verified Swift packages lack Data Streams.
 
 ### Best practice on 5.2.x
 
-Pin exactly `5.2.0` for reproducible builds.
-5.1.x code compiles unchanged; its constraints still apply (`arm64` only, 5 MiB
-documents).
+5.2.0 is the latest documented baseline. Data Streams remain a preview, accessed with
+`@_spi(PreviewDataStreams) import DittoSwift`; see [data-streams.md](data-streams.md).
+For the stable additions, read [sdk-5.2.md](sdk-5.2.md): raw-key encryption, store
+deletion, startup system parameters, typed errors and JSON boolean binding.
+Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
 ---
 

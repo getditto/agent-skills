@@ -1,6 +1,6 @@
 ---
 title: Performance dimensions of Ditto data models
-description: How document size, structure, hardware, and transports interact — the numbers and rules of thumb that make a Ditto data model fast or slow in production. SDK 4.14.x, 5.0.x, 5.1.x.
+description: How document size, structure, hardware, and transports interact — the numbers and rules of thumb that make a Ditto data model fast or slow in production. SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 ---
 
 # Performance dimensions of data models
@@ -23,7 +23,7 @@ Performance in Ditto is not "fast vs slow queries" — it's the product of **doc
 | Threshold | Default | Parameter | Behavior |
 |---|---|---|---|
 | Soft limit | 256 KiB | `document_size_soft_limit_bytes` | warning log; the write succeeds |
-| Hard limit | 5 MiB | `document_size_hard_limit_bytes` | **5.1+: local writes exceeding it are rejected with an error.** 4.14.x/5.0.x: loud error log, write succeeds. On all versions, oversized documents arriving via replication are still stored — enforcement is writer-side only today |
+| Hard limit | 5 MiB | `document_size_hard_limit_bytes` | **5.1+: local writes exceeding it are rejected with an error.** 4.14.x/5.0.x: loud error log, write succeeds. Before 5.2.0, oversized replicated documents are still stored. In 5.2.0, a replication diff that would push the resulting document over its hard limit is dropped; that document stops receiving updates until evicted and re-synced |
 
 Two things people miss:
 

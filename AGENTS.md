@@ -248,6 +248,10 @@ at the same remote endpoints with their own MCP config.
 - Never commit directly to `main`; work on a branch tied to a Linear issue
   (e.g. `sdks-4838/...`).
 - Minimal diffs; don't reformat unrelated content.
-- The DQL skill documents Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x. 5.1.x
+- The DQL skill documents Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. 5.1+
   ships JOINs, composite (multi-column) indexes, `RETURNING` on INSERT/UPDATE,
-  and `ADVISE`; all are harness-verified against `@dittolive/ditto@5.1.0`.
+  and `ADVISE`; the harness also runs `@dittolive/ditto@5.2.0`, including its
+  mutation/index fixes and diagnostics.
+- For new Swift/Kotlin apps, resolve the latest stable release through SwiftPM/Maven
+  Central. 5.2.0 is the skills’ knowledge baseline, not a fixed recommendation; keep
+  exact pins in test fixtures for reproducibility.

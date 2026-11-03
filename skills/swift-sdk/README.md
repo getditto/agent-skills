@@ -35,12 +35,16 @@ Deliberately **out of scope** — these have their own skills:
 
 ## Supported versions
 
+New apps/POCs use the latest stable release checked through SwiftPM. **5.2.0 is
+the latest release known to this skill**, not a hard-coded recommendation. The
+generator resolves stable package tags and writes the selected exact version.
+
 | Ditto SDK | Verified patch | Status |
 |---|---|---|
-| 5.2.x | 5.2.0 | Stable. Adds store encryption, `systemParameters`, `deleteStore`, and Data Streams preview (SPI opt-in). |
-| 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
+| 5.1.x | 5.1.0 | Historical compatibility baseline. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line. |
 | 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
+| 5.2.x | 5.2.0 | Latest known baseline; stable additions and Data Streams preview. See [5.2 changes](references/sdk-5.2.md). |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
 skill's verified code targets 4.14.6, 5.0.3, 5.1.0 or 5.2.0.
@@ -128,7 +132,7 @@ Catalyst on all four versions, and the minimal app is run in CI. Contributors: s
 - Multi-peer behaviour — BLE, AWDL, mDNS discovery, remote presence and connection
   requests.
 - Intel (`x86_64`) hosts, and tvOS / visionOS.
-- Encryption at rest and the 5.1 multicast beta.
+- Physical multicast beta behavior (5.1+). Raw-key encryption is covered by the 5.2.0 tests.
 - UI-level behaviour of the SwiftUI, UIKit and AppKit samples; they are compiled, and
   their store and observer logic is exercised at runtime.
 

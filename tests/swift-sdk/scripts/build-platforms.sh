@@ -68,7 +68,7 @@ for arg in "$@"; do
     *) VERSIONS+=("$arg") ;;
   esac
 done
-[[ ${#VERSIONS[@]} -eq 0 ]] && VERSIONS=(5.1.0)
+[[ ${#VERSIONS[@]} -eq 0 ]] && VERSIONS=(5.2.0)
 
 for version in "${VERSIONS[@]}"; do
   run_one "$version"

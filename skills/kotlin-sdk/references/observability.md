@@ -1,5 +1,8 @@
 # Logging, diagnostics and stats — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-15 Logging, diagnostics and stats](#cap-15-logging-diagnostics-and-stats)

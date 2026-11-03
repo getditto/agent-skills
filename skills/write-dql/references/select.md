@@ -1,6 +1,6 @@
 ---
 title: DQL SELECT reference
-description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET) plus subscription constraints. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
+description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET) plus subscription constraints. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0; version-gated features are tagged inline.
 ---
 
 # DQL SELECT reference
@@ -26,7 +26,7 @@ description: SELECT clauses (projection, FROM, USE IDS/INDEX/DIRECTIVES, WHERE, 
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative reference for the `SELECT` statement on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. All other top-level statements (`INSERT`, `UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `PROFILE`) live in [`statements.md`](statements.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md).
+Authoritative reference for the `SELECT` statement on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. All other top-level statements (`INSERT`, `UPDATE`, `EVICT`, `TOMBSTONE`, `DELETE`, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `PROFILE`) live in [`statements.md`](statements.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md).
 
 Unless a section carries an "Available in:" note, the clause works identically on 4.14.x, 5.0.x, and 5.1.x.
 

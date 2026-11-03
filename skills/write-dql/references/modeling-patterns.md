@@ -18,7 +18,7 @@
 - [Schema Versioning Best Practices Summary](#schema-versioning-best-practices-summary)
 
 Topic index: [best-practices.md](../best-practices.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
 
@@ -29,7 +29,7 @@ For movies/reviews examples, see the [schema](schema.md) only when adapting thos
 
 ### Document Size Limits
 
-**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.6, 5.0.3 and 5.1.0 — the *behaviour* of the hard limit is not):
+**Engine thresholds** (both readable and settable via `ALTER SYSTEM`; the defaults are identical on 4.14.6, 5.0.3, 5.1.0 and 5.2.0 — the *behaviour* of the hard limit is not):
 
 | Parameter | Default | Behaviour when exceeded |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ SHOW document_size_soft_limit_bytes;   -- 262144
 SHOW document_size_hard_limit_bytes;   -- 5242880
 ```
 
-> **Enforcement is version-dependent, and writer-side only.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.3 and 4.14.6 accept the same write and log). On **every** version the check applies only to user-originated writes — an oversized document arriving over replication is still stored, so a 5.1 peer can hold a document it would refuse to write itself. Note that docs.ditto.live still describes the pre-5.1 "logs but succeeds" behaviour for the hard limit; the engine changed in 5.1 and the page has not caught up. Both values must be set to the **same** number on every peer in the mesh — mismatched limits disable replication sessions where enforcement is live.
+> **Enforcement is version-dependent.** On **5.1+** a local write over the hard limit fails outright (verified on 5.1.0: a 6 MiB `INSERT` and `UPDATE` both error; 5.0.3 and 4.14.6 accept the same write and log). Through 5.1, an oversized document arriving over replication can still be stored. **5.2.0 drops incoming replication diffs that would push the resulting document over its hard limit** and stops further updates to the affected document until eviction and re-sync. Inspect `system:sync_degradations`, correct the oversized source/model, and preserve unsynced local changes before any eviction. The release notes document this behavior; the 5.2.0 two-peer loopback fixture verifies merge-limit degradation and continued replication of another document. Eviction/re-sync recovery remains source-reviewed. Both limit values must match across peers in the mesh. Source: [5.2 release notes](https://docs.ditto.live/sdk/latest/release-notes-hub/swift).
 
 Large documents are also slow on constrained transports — Bluetooth LE in particular (~20 KB/second effective) — so the practical ceiling is usually well below the soft limit.
 

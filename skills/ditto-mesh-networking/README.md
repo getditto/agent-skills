@@ -53,7 +53,7 @@ to a minimum:
 
 ## Supported versions
 
-Written against **Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x**. **Last verified: 2026-09-02.**
+Written against **Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**. **Last verified: 2026-09-02.**
 Version- and SDK-specific behavior is tabulated in
 [`references/versions.md`](references/versions.md).
 

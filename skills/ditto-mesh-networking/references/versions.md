@@ -4,7 +4,7 @@ Version-gated claims in this skill, in one place. Anything not listed here is
 version-independent as far as this skill is concerned.
 
 **Confirm the user's SDK line before answering a version-sensitive question.** This skill
-targets the same lines as the rest of this repo: **Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x**.
+targets the same lines as the rest of this repo: **Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**.
 
 ## Feature and behavior gates
 
@@ -12,7 +12,7 @@ targets the same lines as the rest of this repo: **Ditto SDK 4.14.x (LTS), 5.0.x
 |---|---|---|
 | `TRANSPORTS_DISCOVERED_PEERS` system parameter, and the `discovery_hint` / `system:transports_info` pattern for replacing mDNS | **SDK 4.12.0+** | Publicly documented as "supported in SDK version 4.12.0 and later". |
 | `mesh_chooser_max_active_ble_clients` replaces `DittoBluetoothLeConfig.maxOutgoing` | Java/Kotlin | `maxOutgoing` has been **removed** from current Kotlin/Java SDKs. The field survives in core but is never read. |
-| **Document hard limit rejects the local write** | All supported lines | Public docs still describe the write as succeeding with only an `error` log; the code rejects it. Follow the code. The limit gates *local writes only* — oversized documents already in the mesh replicate in regardless. |
+| **Document hard limit** | Local rejection: 5.1+; replication-diff rejection: 5.2.0 | Earlier releases log oversized local writes. In 5.2.0 an incoming diff that would push the resulting document over its hard limit is dropped; that document needs eviction/re-sync before more updates. See the 5.2.0 release notes below. |
 | Wi-Fi Aware transport | **Android API 29+** (Android 10), hardware support required | Below API 29 the SDK logs an error and continues; `startSync()` still succeeds. |
 | `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` runtime permissions | **Android API 31+** | Below that, BLE scanning is gated on location permission instead. |
 | `NEARBY_WIFI_DEVICES` permission (with `neverForLocation`) | **Android API 33+** | On API 29–32 use `ACCESS_FINE_LOCATION`, and the system location toggle must be on. |
@@ -45,3 +45,27 @@ parameters are publicly documented and intended for tuning:
 `ALTER SYSTEM` cannot change it at runtime — configure it before the instance is built.
 
 Do not architect against an exact connection count; it is not a supported contract.
+
+## SDK 5.2.0
+
+- Native WebSockets enable TCP keepalive by default (idle 30s, interval 10s, 3 probes);
+  browser/WASM sockets are excluded. Use `transports_websocket_so_keepalive_*` to tune.
+- `mesh_chooser_max_wlan_connections` now counts inbound and outbound connections
+  together; expect fewer connections than an older release with the same setting.
+- Android Wi-Fi Aware fixes multi-peer isolation and reconnect/resource failures;
+  BLE falls back to GATT when L2CAP fails. Apple AWDL recovers from transient setup
+  failure. These are release-note guarantees; physical-radio verification needs devices.
+- `transports_wifi_aware_scan_yield_enabled` is opt-in. It briefly releases data paths
+  to permit access-point scans; do not turn it on for every deployment.
+- New NGN names: `ngn_data_streams_enabled` and `ngn_sync_enabled`. The older
+  `network_enable_ngn` / `replication_over_ngn` aliases are deprecated. Enabling sync
+  without streams now fails at sync start. Configure startup values through
+  `DittoConfig.systemParameters`, before opening the instance.
+- Multicast remains opt-in beta. `diffcaster_fixed_mesh_size` takes effect at startup
+  and must match across peers. Multicast sending pauses/resumes with interface loss;
+  attachment-request suppression reduces duplicate requests.
+- Diagnose with `system:sync_degradations`, `system:metrics`, and on-device support
+  bundles; the request function is unavailable in JS Web. Virtual-collection observers
+  are generally change-driven, so use explicit polling if a diagnostic needs a timer.
+
+Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).

@@ -1,5 +1,8 @@
 # Attachments — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-12 Attachments](#cap-12-attachments)
@@ -53,16 +56,16 @@ suspend fun attachFromUri(ditto: Ditto, resolver: ContentResolver, uri: Uri) {
 `store.newAttachment(inputStream: InputStream, metadata)` is **`suspend`** (both
 confirmed against `com.ditto:ditto-kotlin-android:5.1.0` and the published API
 reference; the docs page writes a single `attachmentPathOrInputStream` placeholder
-and does not show the difference). Both take metadata as `Map<String, Any?>` or
-`DittoCborSerializable.Dictionary` (<https://docs.ditto.live/sdk/latest/crud/working-with-attachments>). The
+and does not show the difference). Before 5.2.0 the metadata overloads take
+`Map<String, Any?>` or `DittoCborSerializable.Dictionary`; 5.2.0 adds the preferred
+`Map<String, String>` overloads described below. The
 returned `DittoAttachment` is a `DittoResource` (`AutoCloseable`) — wrap it in
 `.use { }` (the Java counterpart uses try-with-resources).
 
-**Metadata — stick to `Map<String, String>`.** The v5 signature accepts
-`Map<String, Any?>` or `DittoCborSerializable.Dictionary`, but the DQL
-`INSERT INTO … ATTACHMENT` layer currently only accepts **string-valued** metadata:
-non-String values fail at insert time with `attachment property 'metadata' is invalid`
-(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>). `Map<String, String>` satisfies both layers.
+**Metadata — use `Map<String, String>`.** 5.2.0 adds string-valued overloads and
+deprecates `Map<String, Any?>`; non-string values now throw `IllegalArgumentException`
+at attachment creation. Earlier v5 releases could defer rejection until DQL insert.
+Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/kotlin>.
 
 There is also a blocking counterpart, `store.newAttachmentBlocking(inputStream, metadata)`,
 which in v5 only has the `DittoCborSerializable.Dictionary` metadata overload
@@ -209,7 +212,8 @@ has the bytes (<https://docs.ditto.live/sdk/latest/crud/working-with-attachments
 | `DittoAttachmentFetchEvent` sealed class (`Progress`/`Completed`/`Deleted`) | `DittoAttachmentFetchResult` (`Completed`/`Deleted`); progress via the `onFetchProgress` callback |
 | `DittoAttachmentFetchEventType` enum | **Removed** |
 | `DittoCollection.newAttachment()` / `.fetchAttachment()` (deprecated) | **Removed** — use the `store.` forms |
-| `store.newAttachment(path, Map<String, String>)` | `store.newAttachment(path, Map<String, Any?>)` — but see the metadata caveat above |
-| Attachment/token metadata `Map<String, String>` | `Map<String, Any?>` or `DittoCborSerializable.Dictionary` on the object; string-only at the DQL layer |
+| `store.newAttachment(path, Map<String, String>)` | 5.2.0: prefer the `Map<String, String>` overload. Earlier v5: `Map<String, Any?>`; that overload is deprecated in 5.2.0 and rejects non-string values at creation |
+| Attachment/token metadata `Map<String, String>` | Object/token metadata uses `Map<String, Any?>` or `DittoCborSerializable.Dictionary`; 5.2.0 attachment creation requires string values despite this general representation |
 
-(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>)
+(<https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>;
+[5.2 Kotlin release notes](https://docs.ditto.live/sdk/latest/release-notes-hub/kotlin))

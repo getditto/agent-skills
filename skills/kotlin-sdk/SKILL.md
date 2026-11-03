@@ -54,8 +54,19 @@ and `live.ditto:ditto` (4.14.x, Android-only). Published API reference:
 
 **[`references/versions.md`](references/versions.md) owns every fact that differs
 across version lines**, including package coordinates per version and the minimum
-toolchain. **When the user's version is unknown, emit 5.2.x code (the latest GA) and say which version
-you assumed.** v4 and v5 are different APIs, not two versions of one.
+toolchain. v4 and v5 are different APIs, not two versions of one.
+
+For new apps and POCs, check the package manager for the latest stable release and use
+that resolved version. **5.2.0 is the latest version this skill knows about, not a
+permanent recommendation or claim about today’s latest release.** Preserve an existing
+project’s selected version unless an upgrade is requested. If a newer release is found,
+read its release notes/API changes and validate the generated code. If lookup is
+unavailable, state that limitation; do not silently call 5.2.0 “latest”.
+Resolve Maven Central metadata and share the selected version across Kotlin and native
+binaries; see [setup.md](references/setup.md).
+
+Read [sdk-5.2.md](references/sdk-5.2.md) when adopting 5.2.0 features or reviewing an
+upgrade: encryption, store deletion, startup configuration and behavior fixes.
 
 ## Capability exceptions
 

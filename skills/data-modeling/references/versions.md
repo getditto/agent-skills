@@ -1,6 +1,6 @@
 ---
 title: Data-modeling feature matrix across SDK versions
-description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x — strict-mode defaults, CRDT types, JOINs, indexes, and mixed-version mesh rules.
+description: Which data-modeling capabilities exist in Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0 — strict-mode defaults, CRDT types, JOINs, indexes, and mixed-version mesh rules.
 ---
 
 # Version matrix for data modeling
@@ -26,7 +26,7 @@ Tagging convention used across this skill: **4.14+** (exists in the LTS line and
 | Type declarations on reads | **Not needed — do not write them.** `SELECT` returns the most recent value of every field, whatever its CRDT type | **Required** — a MAP/COUNTER field the query doesn't re-declare is **omitted from the result entirely, as if it never existed** (no error; verified on 4.14.6: plain reads return `{}`) |
 | `COUNTER` / `ATTACHMENT` declarations | Still required — inference can't guess them from a JSON value | Required |
 
-Default per SDK line: **4.14.x → `true`**, **5.0.x / 5.1.x → `false`**.
+Default per SDK line: **4.14.x → `true`**, **5.0.x / 5.1.x / 5.2.0 → `false`**.
 
 ### Inspecting and changing the flag
 
@@ -64,7 +64,7 @@ Both endpoints are fully sync-compatible; the incompatibility is in how each *in
 
 ## CRDT type availability
 
-| Type | 4.14.x | 5.0.x | 5.1.x |
+| Type | 4.14.x | 5.0.x | 5.1.x / 5.2.0 |
 |---|:-:|:-:|:-:|
 | `REGISTER` | ✓ | ✓ | ✓ |
 | `MAP` | ✓ | ✓ | ✓ |
@@ -76,7 +76,7 @@ Both endpoints are fully sync-compatible; the incompatibility is in how each *in
 
 ## Modeling-relevant statement features
 
-| Feature | 4.14.x | 5.0.x | 5.1.x | Modeling relevance |
+| Feature | 4.14.x | 5.0.x | 5.1.x / 5.2.0 | Modeling relevance |
 |---|:-:|:-:|:-:|---|
 | `CREATE INDEX` (single/nested path) | ✓ (4.12+) | ✓ | ✓ | Which fields are queryable cheaply — informs embed-vs-split |
 | Composite (multi-column) indexes | ✗ | ✗ | ✓ | Combined-key queries without splitting |
@@ -84,12 +84,26 @@ Both endpoints are fully sync-compatible; the incompatibility is in how each *in
 | `RETURNING` on INSERT/UPDATE | ✗ | ✗ | ✓ | Write-then-read in one statement |
 | `JOIN` (inner/left) | ✗ | ✗ | ✓ | Normalize across collections and reassemble at read time; right-side key must be `_id` or indexed. **Small Peers only** — joins are unsupported on Big Peer and in `registerSubscription` (use `execute` / observers) |
 | `EXPLAIN` / `ADVISE` | ✓ / ✗ | ✓ / ✗ | ✓ / ✓ | Verify the access path your model assumes |
-| Document size limits (`document_size_soft_limit_bytes` 256 KiB / `document_size_hard_limit_bytes` 5 MiB) | ✓ | ✓ | ✓ | Same defaults everywhere; **5.1.x rejects oversized local writes**, earlier lines only log — see [`performance.md`](performance.md) |
+| Document size limits (`document_size_soft_limit_bytes` 256 KiB / `document_size_hard_limit_bytes` 5 MiB) | ✓ | ✓ | ✓ | Same defaults everywhere; **5.1+ rejects oversized local writes**, earlier lines only log — see [`performance.md`](performance.md) |
 | dot-notation nested paths + `UNSET` | ✓ (4.11+) | ✓ | ✓ | Legacy `->` arrows and `tombstone()` were removed in v5 |
 
 ## Practical rules by target version
 
 - **Targeting 4.14.x:** migrate every peer to `dql_strict_mode = false` first (and before any v5 upgrade); while strict peers remain, declare every non-REGISTER type on the statements they execute — writes and reads; no JOINs — denormalize or fetch related collections in app code; single-column indexes only.
-- **Targeting 5.1.x:** keep the strict-mode default `false` and rely on lenient inference — no `MAP`/`REGISTER` declarations on reads or writes; keywords only to override (e.g. `REGISTER` for atomic objects) or where inference can't help (`COUNTER` seeds on INSERT, `ATTACHMENT`). You may normalize more aggressively (JOIN + index the join key), but only where the split triggers in [`../best-practices.md`](../best-practices.md) actually fire — embedding is still the default.
+- **Targeting 5.1+:** keep the strict-mode default `false` and rely on lenient inference — no `MAP`/`REGISTER` declarations on reads or writes; keywords only to override (e.g. `REGISTER` for atomic objects) or where inference can't help (`COUNTER` seeds on INSERT, `ATTACHMENT`). You may normalize more aggressively (JOIN + index the join key), but only where the split triggers in [`../best-practices.md`](../best-practices.md) actually fire — embedding is still the default.
 - **Mixed 4.14/5.x mesh:** flip the 4.x peers to lenient as the first step of the upgrade; while any strict peers remain, declare MAP/COUNTER types on the statements those peers execute (including reads), and model to the 4.14 read surface (no JOIN-dependent screens).
 - **Any target, if a backend talks to the Big Peer over HTTP:** the SDK flip is only half the migration. **Cut every HTTP caller over from `/api/v4/store/execute` to `/api/v5/store/execute` in the same coordinated change** — a v4 caller is a strict peer no `ALTER SYSTEM` on a device can fix, and it will keep writing bare objects as whole-object REGISTERs into collections your SDK peers merge per-field. Inventory the callers (backend services, webhooks, scripts, CDC consumers, Postman collections) before flipping anything; any caller you can't move yet must declare MAP/COUNTER on every statement it sends until it does.
+
+## SDK 5.2.0 modeling implications
+
+The CRDT choices and lenient default from 5.1 remain applicable. 5.2.0 fixes mixed
+ASC/DESC composite-index ordering and multi-property `ANY … SATISFIES` predicates.
+It also prevents an over-limit document from blocking other documents: a replication
+diff that would push the resulting document over its hard limit is dropped and that document receives no more updates until it is evicted and synced
+again. Inspect `system:sync_degradations`, repair the model/source of excessive size,
+and plan eviction with the app’s retention rules; eviction alone cannot make an
+oversized source document smaller. Local writes retain the hard limit.
+
+Raw-key encryption at rest is opt-in in Swift/Kotlin and covers documents and
+attachments. It changes local storage protection, not CRDT merge behavior or access
+control. Delegate API setup to the language skill. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).
