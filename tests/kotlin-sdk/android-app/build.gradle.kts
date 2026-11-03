@@ -46,7 +46,7 @@ buildscript {
 }
 
 plugins {
-    id("com.android.application") version "9.4.1"
+    id("com.android.application") version "9.5.0"
 }
 
 // v5 AARs declare a minimum compileSdk of 36 (the install guide's value); the v4 leg
