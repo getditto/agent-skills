@@ -101,9 +101,10 @@ some far over):
   5.0.3 and 5.1.0); documented dependency block now includes required `kotlin("test")`
   and coroutines-test 1.10.2; observer test moved from `runTest` to `runBlocking`
   with the executed `TimeoutCancellationException … _virtual_ time` explanation.
-- **§12.1 structural checks** (prior ③ + ③): `scripts/validate-sdk-skills.py` (the checker this branch added was superseded by main's validator at merge)
-  added and wired into `.github/workflows/ci.yml` (the spec's "same PR as the first
-  SDK skill" requirement). Negative-tested against mutated skill copies.
+- **§12.1 structural checks** (prior ③ + ③): added a checker and wired it into
+  `.github/workflows/ci.yml` (the spec's "same PR as the first SDK skill"
+  requirement). At merge, main's `scripts/validate-sdk-skills.py` superseded this
+  branch's checker. Negative-tested against mutated skill copies.
 - **observers.md headline examples** (②⑤): shape 1 `registerObserver` now carries the
   mandatory try/catch; shape 2 `observe()` uses `repeatOnLifecycle(STARTED)`; shape 3
   `collect()` hops to `Dispatchers.IO` instead of doing heavy work on the handler's
