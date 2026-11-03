@@ -15,6 +15,7 @@ minimal-app/                       v5 on the JVM — 5.0.3, 5.1.0 and 5.2.0
   src/test/kotlin/DataStreamsTest.kt two peers in one JVM over a TCP loopback listener:
                                    the Data Streams claims (10 tests)
   src/test52/kotlin/…SystemParametersTest.kt  5.2.0+ only: NGN via DittoConfig.systemParameters
+  src/test52/kotlin/SDK52Test.kt    encryption, deletion, negative bindings, startup and metadata
 android-app/                       both lines on a device or emulator
   gradlew, gradle/wrapper/         Gradle 9.8.2 wrapper (committed)
   build.gradle.kts                 -PdittoLine=v4|v5 selects dependency, source set and
@@ -49,7 +50,7 @@ verify `distributionSha256Sum`. See `scripts/check-dependency-age.py` and
 ```bash
 cd tests/kotlin-sdk/minimal-app
 ./gradlew run  -PdittoVersion=5.2.0 --console=plain -q    # prints the transcript in examples/minimal-app.md
-./gradlew test -PdittoVersion=5.2.0                       # 15 tests (14 below 5.2.0)
+./gradlew test -PdittoVersion=5.2.0                       # 19 tests (14 below 5.2.0)
 ./gradlew run  -PdittoVersion=5.1.0 --console=plain -q
 ./gradlew test -PdittoVersion=5.1.0
 ./gradlew run  -PdittoVersion=5.0.3 --console=plain -q
@@ -77,6 +78,7 @@ byte-identical to the `## Program` block in `skills/kotlin-sdk/examples/minimal-
 | `flowOnDoesNotReachTheObserveTransform` | `.flowOn()` does not move the `observe()` transform (`references/concurrency.md`) |
 | `DataStreamsTest` (10) | Data Streams: round-trip both ways, `sendAndForget`, monitoring send, `closeSync`/`waitUntilClosed`, reliability mismatch, invalid topics, one acceptor per topic, candidate ownership with `take()`, acceptor close vs open streams, arguments, `maxSendSize` (`references/data-streams.md`, `skills/data-streams`) |
 | `DataStreamsSystemParametersTest` (5.2.0+) | NGN enabled through `DittoConfig.systemParameters` instead of the environment |
+| `SDK52Test` (4, 5.2.0+) | Negative integer bindings agree with DQL literals; encrypted reopen and deletion; invalid startup settings; string-only attachment metadata |
 
 The Data Streams tests run two Ditto instances in the test JVM: one listens on a TCP
 loopback port, the other dials it, LAN discovery is off, and the Gradle test task sets

@@ -9,11 +9,12 @@ place. Keep the user's UI framework and authentication choice.
 Gather only missing information: existing project or new folder; iOS/iPadOS, macOS
 or Mac Catalyst; SwiftUI/UIKit/AppKit; existing SDK pin; and small-peers-only or a
 Ditto Server connection. Inspect the workspace/toolchain first. A reasonable new-demo
-default is SwiftUI, SDK 5.1.0 and an iOS Simulator destination; state that assumption.
-The generator supports 4.14.6, 5.0.3, 5.1.0 and 5.2.0 and needs Python 3.9+ plus Swift 6/Xcode
-16+. Confirm compatibility using [versions.md](versions.md); do not downgrade or
+default is SwiftUI, the latest stable SwiftPM release and an iOS Simulator destination.
+The generator resolves stable package tags at generation time and records the exact
+selected release; an explicit `--sdk-version` preserves a requested pin. It needs
+Python 3.9+, Git and Swift 6/Xcode 16+. 5.2.0 is the latest baseline known to this skill. Confirm compatibility using [versions.md](versions.md); do not downgrade or
 upgrade a customer's dependencies merely to match the demo.
-SDK 5.1.0's published binary is arm64-only, so that starter pin requires Apple
+SDK 5.1.0/5.2.0’s published binary is arm64-only, so that starter pin requires Apple
 silicon for Mac/Simulator builds. State this before selecting it on an Intel host.
 
 ## New project: create the deliverable
@@ -23,7 +24,7 @@ command tool. Paths below are relative to the installed skill directory; first r
 the actual installed location, which can differ between hosts.
 
 ```text
-python3 <installed-skill>/scripts/create-swift-app.py <new-project-directory> --name DittoNotes --sdk-version 5.1.0 --bundle-id com.example.ditto.notes
+python3 <installed-skill>/scripts/create-swift-app.py <new-project-directory> --name DittoNotes --sdk-version latest --bundle-id com.example.ditto.notes
 ```
 
 The destination must not exist. The generator writes a complete Xcode project and

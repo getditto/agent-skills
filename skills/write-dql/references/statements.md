@@ -1,6 +1,6 @@
 ---
 title: DQL statements reference
-description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, EXPLAIN, ALTER SYSTEM, SHOW, SYNC CONTEXT, PROFILE, RETURNING, and ADVISE. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features tagged.
+description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, EXPLAIN, ALTER SYSTEM, SHOW, SYNC CONTEXT, PROFILE, RETURNING, and ADVISE. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0; version-gated features tagged.
 ---
 
 # DQL statements reference
@@ -21,7 +21,7 @@ description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, 
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
+Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
 
 All three SDK versions ship the same core `Statement` enum: `Explain`, `Query` (`SELECT`), `Insert`, `Update`, `Remove` (`EVICT` / `TOMBSTONE` / `DELETE`), `AlterSystem`, `Show`, `RemoteQuery` (`SYNC CONTEXT`), `CreateIndex`, `DropIndex`; 5.1.x adds `Advise`. A statement may be prefixed by `EXPLAIN` and (on **5.0+ only**) by the `PROFILE` keyword.
 
@@ -423,6 +423,6 @@ Three statement-level features are excluded from this reference because they are
 
 - **`ADVISE` / `ADVISE AND PROVISION`** — index recommendation wrapper. Lands in SDK 5.1+. Not supported on either 4.14.x or 5.0.x; do not use.
 - **Structured `PROFILE` output** — see §10. Lands in 5.1+.
-- **`USE IDS` on mutations** — a parse error on 4.14.x and 5.0.x for all of `UPDATE` / `EVICT` / `TOMBSTONE` / `DELETE`. On 5.1.x it parses on `UPDATE` (pre-`SET` only); `USE IDS` remains a SELECT-only feature and should not be used on mutations. `TOMBSTONE` is unavailable everywhere. Use `WHERE _id IN (...)` for mutations on every SDK version.
+> **Version boundary:** `USE IDS` works on SELECT across the covered releases, on UPDATE (before `SET`) from 5.1.0, and on DELETE/EVICT from **5.2.0**. DELETE/EVICT parsed but removed nothing on 5.1.0. Use `WHERE _id IN (…)` for portable mutations. `TOMBSTONE` remains unavailable on Small Peers. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
 `SELECT` lives in [`select.md`](select.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md). CRDT type definitions (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`) and their mutators are documented in [`types-mutators.md`](types-mutators.md).

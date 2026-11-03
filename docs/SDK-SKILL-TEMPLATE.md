@@ -202,7 +202,7 @@ description: >
   Use ONLY for the Ditto <Language> SDK (not <the other eight> — each has its own
   skill). Triggers on <file extensions>, <build file names>, <package coordinate>,
   <2-4 literal API names>, <2-3 literal error strings you actually observed>.
-  Ditto SDK 4.14.x, 5.0.x, 5.1.x.
+  Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 ---
 ```
 
@@ -553,7 +553,7 @@ distributed (Appendix B).
 
 ## 10. Version coverage
 
-Every SDK skill documents **4.14.x (LTS), 5.0.x and 5.1.x**, matching the `dql` skill.
+Every SDK skill documents **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**, matching the `dql` skill.
 
 Follow `CONTRIBUTING.md` §2 in full — exact patch versions, every version-gated claim
 tagged inline *and* in `references/versions.md`, the failure mode on older versions, and
@@ -566,9 +566,12 @@ Three rules specific to SDK skills:
   `SKILL.md` §3 is a pointer, not a claim. One fact, one home.
 - **v4 and v5 are different APIs, not two versions of one.** Show the v5 form in the
   body; keep the v4 form in `references/versions.md`. No inline "in v4 this was…" asides.
-- **The default is v5.** An agent that cannot determine the user's version emits 5.1.x
-  and says which version it assumed. State this in `SKILL.md` §3 so all nine behave
-  identically.
+- **Separate knowledge from dependency selection.** 5.2.0 is the latest known
+  baseline. New apps/POCs check their package manager for the latest stable release,
+  use the resolved version, and validate newer APIs against release notes. Swift uses
+  SwiftPM tags; Kotlin uses Maven Central metadata with matching native binaries.
+  Preserve existing project pins unless upgrading. A failed lookup is not evidence
+  that the knowledge baseline is still latest. Test fixtures keep exact reproducible pins.
 
 ---
 

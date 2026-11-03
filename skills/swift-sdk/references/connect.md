@@ -1,12 +1,15 @@
 # Connecting, authentication and lifecycle — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-03 Connecting: config, opening, persistence directory](#cap-03-connecting-config-opening-persistence-directory)
 - [CAP-04 Authentication and identity](#cap-04-authentication-and-identity)
 - [CAP-05 Lifecycle: start/stop sync, shutdown, ownership](#cap-05-lifecycle-startstop-sync-shutdown-ownership)
 
-Everything here is the **5.1.x** form. The 4.14.x differences are in
+Everything here is the **5.2.0** form. The 4.14.x differences are in
 [versions.md](versions.md#initialization-and-lifecycle).
 
 ## CAP-03 Connecting: config, opening, persistence directory
@@ -98,11 +101,12 @@ over it needs `@unknown default` or it will not compile.
 
 ### Encryption at rest
 
-`DittoConfigExperimental.passphrase` turns on encryption. It is preview — see
-[preview.md](preview.md). `ditto.isEncrypted` reports the current state. Opening an
-encrypted store without the passphrase throws
-`DittoError.encryptionError(.passphraseNotGiven)`; passing one to an unencrypted store
-throws `.extraneousPassphraseGiven`; a wrong one throws `.passphraseInvalid`.
+On **5.2.0**, set `config.encryptionKey = try DittoEncryptionKey.raw(keyBytes)` with
+32 high-entropy bytes before opening. Use the same securely stored key on every open.
+Typed failures are `.keyRequired`, `.keyUnexpected`, `.keyInvalid`,
+`.unsupportedScheme`, `.metadataCorrupt`. See [sdk-5.2.md](sdk-5.2.md) for key lifecycle
+and existing-store constraints. The experimental passphrase recipe below applies to
+older releases; use raw-key encryption for new integrations.
 
 ## CAP-04 Authentication and identity
 
@@ -242,7 +246,8 @@ writable after `sync.stop()`; only replication with other peers stops. Use it fo
 
 ### Shutdown
 
-There is no `close()`. A `Ditto` instance is released when its last strong reference goes
+The published 5.2.0 Swift `Ditto` still has no public `close()` (despite the release
+notes); see [sdk-5.2.md](sdk-5.2.md). A `Ditto` instance is released when its last strong reference goes
 away, and releasing it is what frees the persistence directory lock.
 
 **Hold one instance for the app's lifetime.** To switch users, call `auth.logout(cleanup:)`

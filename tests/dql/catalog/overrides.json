@@ -5,15 +5,18 @@
     "sk_legacy_types_0df912cb": [],
     "sk_modeling_patterns_9eb86b5c": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "sk_operators_ac3df46f": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "sk_operators_19246ec1": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "sk_operators_d36218e7": [],
     "sk_statements_e45a2c2b": [],

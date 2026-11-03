@@ -19,7 +19,18 @@
 
 ## CAP-01 Prerequisites and install
 
-**Toolchain (v5):**
+For new apps/POCs, read
+<https://repo.maven.apache.org/maven2/com/ditto/ditto-kotlin/maven-metadata.xml>
+and choose the highest stable `major.minor.patch` in `<versions>` (exclude rc,
+preview, experimental and dev builds; do not assume `<latest>` is stable). Check
+that the matching `ditto-binaries` release/classifier exists for JVM. Set
+`dittoVersion=<resolved version>` in `gradle.properties` or the version catalog;
+use the same value for both artifacts and record the resolution. Do not use a
+floating `+` dependency that can unexpectedly select a prerelease. **5.2.0 is the
+latest version known to this skill.** Check newer release notes/toolchain requirements
+before generating code for a newer release. Existing project pins take precedence.
+
+**Toolchain (5.2.0 baseline):**
 
 - JDK 17, Android `minSdk` 24 (Android 7.0), `compileSdk` 36
   (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>).
@@ -60,8 +71,9 @@ dependency graphs resolve, but APK builds require a local Android SDK.
 
 ```kotlin
 // build.gradle.kts (app module)
+val dittoVersion: String by project // gradle.properties: version resolved from Maven Central
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.2.0")
+    implementation("com.ditto:ditto-kotlin:$dittoVersion")
 }
 ```
 
@@ -86,10 +98,11 @@ context itself via AndroidX Startup (`DittoInitializer`) — do **not** add a ma
 
 ```kotlin
 // build.gradle.kts
+val dittoVersion: String by project // gradle.properties: version resolved from Maven Central
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.2.0")
+    implementation("com.ditto:ditto-kotlin:$dittoVersion")
     // The JVM variant ships without native binaries; add the one for the host:
-    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:macos-arm64")
     // classifiers: macos-arm64 | linux-x64 | linux-arm64 | windows-x64
 }
 ```

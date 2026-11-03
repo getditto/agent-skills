@@ -19,7 +19,8 @@ composition root.** `store`, `sync`, `presence`, `auth`, `smallPeerInfo` and
 `experimental` hold a **weak** reference to their parent, so retaining only
 `ditto.store` does not keep `ditto` alive.
 
-There is no `close()`. Releasing the last strong reference frees the persistence
+The published 5.2.0 Swift `Ditto` still has no public `close()` (despite the release
+notes); see [sdk-5.2.md](sdk-5.2.md). Releasing the last strong reference frees the persistence
 directory lock, and no second instance can open that directory until it does.
 
 ## What to retain, and the symptom if you don't

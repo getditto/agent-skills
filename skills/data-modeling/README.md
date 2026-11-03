@@ -12,7 +12,8 @@ document size budgets, and version-tagged guidance.
 |---|---|---|
 | 4.14.x | LTS | ✓ (strict-mode `true` factory default — guidance assumes migration to `false`; no JOINs) |
 | 5.0.x | Supported | ✓ |
-| 5.1.x | Current | ✓ (JOINs, composite indexes — headlining target) |
+| 5.2.0 | Latest known baseline | ✓ (including document-size enforcement during replication) |
+| 5.1.x | Historical baseline | ✓ (JOINs, composite indexes — headlining target) |
 
 Every version-gated claim inside the skill is tagged inline (`4.14+`, `5.0+`,
 `5.1+`) and ladders up to

@@ -49,7 +49,8 @@ gitignored file, in CI from a secret.
 
 ### Releasing the instance between tests
 
-There is no `close()`. Hold the instance in an optional and nil it out, as the
+The published 5.2.0 Swift `Ditto` still has no public `close()` (despite the release
+notes); see [sdk-5.2.md](sdk-5.2.md). Hold the instance in an optional and nil it out, as the
 [testing guide](https://docs.ditto.live/sdk/latest/deployment/testing) recommends:
 
 ```swift

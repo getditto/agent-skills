@@ -10,7 +10,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -34,7 +35,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -58,7 +60,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -80,7 +83,8 @@
     },
     "query": "UPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -98,7 +102,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -116,7 +121,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -140,7 +146,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -176,7 +183,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -193,7 +201,8 @@
     "query": "SELECT _id, title, year, ratings.imdb AS imdb\nFROM movies\nWHERE year BETWEEN 1990 AND 1999\n  AND ratings.imdb >= 7.0\nORDER BY imdb DESC, title ASC\nLIMIT 25 OFFSET 0",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -217,7 +226,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -234,7 +244,8 @@
     "query": "SELECT _id, title, year\nFROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END\nORDER BY year ASC",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -257,7 +268,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -274,7 +286,8 @@
     "query": "SELECT _id, title, genres\nFROM movies\nWHERE ANY g IN genres SATISFIES g IN ('Drama', 'Crime') END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -292,7 +305,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -309,7 +323,8 @@
     "query": "SELECT\n  _id,\n  title,\n  year,\n  ratings.imdb AS imdb,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict,\n  year < 1980 AS is_pre_1980\nFROM movies\nORDER BY year DESC",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -334,7 +349,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -352,7 +368,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -370,7 +387,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -388,7 +406,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -406,7 +425,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -430,7 +450,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -446,7 +467,8 @@
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.created_at DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -464,7 +486,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -480,7 +503,8 @@
     },
     "query": "SELECT m._id, m.title,\n       COUNT(r._id)      AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC, m.title ASC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -502,7 +526,8 @@
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -518,7 +543,8 @@
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -539,7 +565,8 @@
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_created\n  ON reviews (movie_id ASC, created_at DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -555,7 +582,8 @@
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nWHERE r.movie_id = 'tt0111161'\nORDER BY r.created_at DESC\nLIMIT 20",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -573,7 +601,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -591,7 +620,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -609,7 +639,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -633,7 +664,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -651,7 +683,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -669,7 +702,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -687,7 +721,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -705,7 +740,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -727,7 +763,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -745,7 +782,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -767,7 +805,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -785,7 +824,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -803,7 +843,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -826,7 +867,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -848,7 +890,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -864,7 +907,8 @@
     },
     "query": "SELECT o._id, o.total, s.store_name, s.location.city\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o._id = 'order_20221210_0001'",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -880,7 +924,8 @@
     },
     "query": "SELECT o._id, o.total, o.order_date, c.first_name, c.last_name\nFROM orders AS o\nINNER JOIN customers AS c ON o.customer_id = c._id\nWHERE o.deleted = false\nORDER BY o.order_date DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -905,7 +950,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -921,7 +967,8 @@
     },
     "query": "SELECT i._id, i.quantity, i.line_total, p.product_name, p.base_price\nFROM order_items AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.order_id = 'order_20221210_0001'\nORDER BY i._id",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -946,7 +993,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -962,7 +1010,8 @@
     },
     "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nORDER BY revenue DESC",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -983,7 +1032,8 @@
     },
     "query": "SELECT s._id, s.store_name, SUM(o.total) AS revenue\nFROM stores AS s\nINNER JOIN orders AS o ON o.store_id = s._id\nWHERE o.deleted = false\nGROUP BY s._id, s.store_name\nHAVING SUM(o.total) > 300000\nORDER BY revenue DESC",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1006,7 +1056,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1022,7 +1073,8 @@
     },
     "query": "SELECT c._id, c.first_name, c.last_name\nFROM customers AS c\nLEFT OUTER JOIN orders AS o ON o.customer_id = c._id\nWHERE o._id IS MISSING AND c.deleted = false\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1038,7 +1090,8 @@
     },
     "query": "SELECT o._id AS order_ref, o.total AS amount, s.store_name AS store\nFROM orders AS o\nINNER JOIN stores AS s ON o.store_id = s._id\nWHERE o.deleted = false\nORDER BY s.store_name\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1061,7 +1114,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1077,7 +1131,8 @@
     },
     "query": "CREATE INDEX IF NOT EXISTS orders_store_date ON orders (store_id ASC, order_date DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1093,7 +1148,8 @@
     },
     "query": "SELECT p._id, p.product_name, SUM(i.stock_level) AS units_on_hand, SUM(i.stock_level * p.cost) AS inventory_value\nFROM inventory AS i\nINNER JOIN products AS p ON i.product_id = p._id\nWHERE i.deleted = false\nGROUP BY p._id, p.product_name\nORDER BY inventory_value DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1117,7 +1173,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1135,7 +1192,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1153,7 +1211,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1161,17 +1220,18 @@
     }
   },
   {
-    "id": "sk_date_time_functions_f06d91d0",
+    "id": "sk_date_time_functions_a3a4b996",
     "source": {
       "file": "skills/write-dql/references/date-time-functions.md",
       "line": 59,
       "heading": "## 7. Date / time"
     },
-    "query": "\nSELECT title,\n    date_diff(date_cast(released), clock(), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
+    "query": "\nSELECT title,\n    date_diff(clock(), date_cast(released), 'day') AS days_since_release\nFROM movies\nORDER BY days_since_release ASC LIMIT 10",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1189,7 +1249,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1207,7 +1268,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1225,7 +1287,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1243,7 +1306,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1261,7 +1325,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1279,7 +1344,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1301,7 +1367,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1319,7 +1386,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1336,7 +1404,8 @@
     "query": "\nSELECT\n  title,\n  CASE genres[0]\n    WHEN 'Drama'  THEN 1\n    WHEN 'Comedy' THEN 2\n    WHEN 'Action' THEN 3\n    ELSE 0\n  END AS genre_score\nFROM movies\nORDER BY genre_score DESC, title",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1357,7 +1426,8 @@
     "query": "\nSELECT\n  title,\n  CASE\n    WHEN ratings.imdb >= 9 THEN 'masterpiece'\n    WHEN ratings.imdb >= 7 THEN 'good'\n    WHEN ratings.imdb IS MISSING THEN 'unrated'\n    ELSE 'meh'\n  END AS verdict\nFROM movies\nORDER BY title",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1378,7 +1448,8 @@
     "query": "\nSELECT title FROM movies\nWHERE ANY actor IN `cast` SATISFIES actor.name = 'Morgan Freeman' END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1395,7 +1466,8 @@
     "query": "\nSELECT title FROM movies\nWHERE EVERY actor IN `cast` SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {}
@@ -1410,7 +1482,8 @@
     "query": "\nSELECT title FROM movies\nWHERE ANY AND EVERY actor IN `cast`\n  SATISFIES actor.role IS NOT MISSING AND actor.role <> '' END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {}
@@ -1425,7 +1498,8 @@
     "query": "\nSELECT title FROM movies\nWHERE ANY v IN ratings SATISFIES v IS NULL END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1442,7 +1516,8 @@
     "query": "\nSELECT\n  _id,\n  title,\n  ARRAY actor.name FOR actor IN `cast` END AS cast_names\nFROM movies",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1459,7 +1534,8 @@
     "query": "\nSELECT\n  _id,\n  title,\n  OBJECT actor.name : actor.role FOR actor IN `cast` END AS cast_by_name\nFROM movies",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1477,7 +1553,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1495,7 +1572,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1513,7 +1591,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1531,7 +1610,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1549,7 +1629,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1567,7 +1648,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1585,7 +1667,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1603,7 +1686,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1621,7 +1705,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1643,7 +1728,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1661,7 +1747,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1679,7 +1766,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1697,7 +1785,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1715,7 +1804,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1733,7 +1823,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1751,7 +1842,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1762,14 +1854,15 @@
     "id": "sk_functions_a49341be",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 269,
+      "line": 272,
       "heading": "### 10.1 `count` — three useful forms"
     },
     "query": "\nSELECT count(*) AS total FROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1780,14 +1873,15 @@
     "id": "sk_functions_13c56043",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 282,
+      "line": 285,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1798,14 +1892,15 @@
     "id": "sk_functions_4cd0c7c4",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 295,
+      "line": 298,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1821,12 +1916,13 @@
     "id": "sk_indexing_101ce71f",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 69,
+      "line": 76,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1837,14 +1933,15 @@
     "id": "sk_indexing_40a1e3a4",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 77,
+      "line": 84,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1855,12 +1952,13 @@
     "id": "sk_indexing_18dcd919",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 100,
+      "line": 107,
       "heading": "### 1.3 Form B — `collection.name`"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1871,14 +1969,15 @@
     "id": "sk_indexing_2ef95496",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 112,
+      "line": 119,
       "heading": "### 1.4 Indexing nested paths"
     },
     "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1889,14 +1988,15 @@
     "id": "sk_indexing_aa88a56d",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 143,
+      "line": 150,
       "heading": "### 2.2 Examples"
     },
     "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1907,14 +2007,15 @@
     "id": "sk_indexing_0037dfc4",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 183,
+      "line": 190,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              \n  AND ratings.imdb > 8.0       \nORDER BY ratings.imdb DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1925,12 +2026,13 @@
     "id": "sk_indexing_0f14b2c7",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 195,
+      "line": 202,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1941,14 +2043,15 @@
     "id": "sk_indexing_b91c5f77",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 212,
+      "line": 219,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1959,12 +2062,13 @@
     "id": "sk_indexing_2de8adc5",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 223,
+      "line": 230,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX movies_year_director_box\n  ON movies (year DESC, director.name ASC, box_office_millions ASC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1975,14 +2079,15 @@
     "id": "sk_indexing_7fa6f196",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 234,
+      "line": 241,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -1993,14 +2098,15 @@
     "id": "sk_indexing_1a15c4de",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 246,
+      "line": 253,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "/*+ {\"#disable_covering\": true} */\nSELECT year, ratings.imdb FROM movies WHERE year = 2010",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2011,14 +2117,15 @@
     "id": "sk_indexing_2cb6678e",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 255,
+      "line": 262,
       "heading": "### 8.3 Index direction matters for `ORDER BY`"
     },
     "query": "CREATE INDEX movies_year_asc ON movies (year ASC)",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2034,7 +2141,8 @@
     },
     "query": "\nSELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.score DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2052,7 +2160,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2068,7 +2177,8 @@
     },
     "query": "\nSELECT m._id, m.title, r.score, r.user_id\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nORDER BY m.title ASC, r.score DESC\nLIMIT 20",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2084,7 +2194,8 @@
     },
     "query": "\nSELECT m._id, m.title,\n       COUNT(r._id) AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false
   },
@@ -2097,7 +2208,8 @@
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2113,7 +2225,8 @@
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2154,7 +2267,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2179,7 +2293,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2203,7 +2318,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2227,7 +2343,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -2248,7 +2365,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2266,7 +2384,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2290,7 +2409,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2315,7 +2435,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2339,7 +2460,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2363,7 +2485,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2381,7 +2504,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2399,7 +2523,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2425,7 +2550,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -2449,7 +2575,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -2470,7 +2597,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2488,7 +2616,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2505,7 +2634,8 @@
     "query": "\n\n\n\n\nSELECT\n  _id,\n  make,\n  model,\n  year,\n  coalesce(color, 'unknown') AS color,  \n  CASE\n    WHEN schema_version >= 2 THEN features\n    ELSE NULL\n  END AS features\nFROM cars\nWHERE schema_version IN (1, 2)",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -2526,7 +2656,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2544,7 +2675,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2561,7 +2693,8 @@
     "query": "SELECT title FROM movies WHERE year BETWEEN 1990 AND 1999",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {}
@@ -2576,7 +2709,8 @@
     "query": "SELECT title FROM movies WHERE year NOT BETWEEN 2000 AND 2009",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2594,7 +2728,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2612,7 +2747,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2630,7 +2766,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2648,7 +2785,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2666,7 +2804,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2684,7 +2823,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2702,7 +2842,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2720,7 +2861,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2738,7 +2880,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2756,7 +2899,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2774,7 +2918,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {}
@@ -2783,8 +2928,8 @@
     "id": "sk_operators_d36218e7",
     "source": {
       "file": "skills/write-dql/references/operators.md",
-      "line": 388,
-      "heading": "## 11. `XOR` — version-gated"
+      "line": 391,
+      "heading": "## 11. `XOR` — unsupported"
     },
     "query": "\nSELECT title FROM movies\nWHERE is_classic XOR ratings.imdb > 9.0",
     "availableIn": [],
@@ -2802,7 +2947,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2820,7 +2966,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2841,7 +2988,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2874,7 +3022,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2895,7 +3044,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2913,7 +3063,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2931,7 +3082,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2949,7 +3101,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2965,7 +3118,8 @@
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -2983,7 +3137,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3001,7 +3156,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3019,7 +3175,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3037,7 +3194,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3055,7 +3213,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3073,7 +3232,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3091,7 +3251,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3109,7 +3270,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3127,7 +3289,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3145,7 +3308,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3163,7 +3327,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3181,7 +3346,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3199,7 +3365,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3217,7 +3384,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3235,7 +3403,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3253,7 +3422,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3271,7 +3441,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3295,7 +3466,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3313,7 +3485,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3331,7 +3504,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3349,7 +3523,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3361,13 +3536,14 @@
     "source": {
       "file": "skills/write-dql/references/select-access.md",
       "line": 77,
-      "heading": "### 3.4 Why USE IDS is SELECT-only"
+      "heading": "### 3.4 USE IDS on mutations"
     },
     "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -3388,7 +3564,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3406,7 +3583,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3424,7 +3602,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3442,7 +3621,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3460,7 +3640,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {}
@@ -3476,7 +3657,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3494,7 +3676,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3511,7 +3694,8 @@
     "query": "\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3529,7 +3713,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3551,7 +3736,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3574,7 +3760,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3592,7 +3779,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3614,7 +3802,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3636,7 +3825,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3659,7 +3849,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3677,7 +3868,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3699,7 +3891,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3722,7 +3915,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3740,7 +3934,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3764,7 +3959,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3788,7 +3984,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3814,7 +4011,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3836,7 +4034,8 @@
     },
     "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-99', 'score': 5,\n     'comment': 'Perfect.', 'created_at': '2024-06-01T12:00:00Z' })\nRETURNING _id, movie_id, score",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -3855,7 +4054,8 @@
     },
     "query": "\nINSERT INTO movies_archive SELECT * FROM movies WHERE year < 1950",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -3873,7 +4073,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3897,7 +4098,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3921,7 +4123,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -3946,7 +4149,8 @@
     },
     "query": "\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -3967,7 +4171,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -4007,7 +4212,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -4028,7 +4234,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -4049,7 +4256,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -4070,7 +4278,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4088,7 +4297,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4113,7 +4323,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4138,7 +4349,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4156,7 +4368,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4174,7 +4387,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4199,7 +4413,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4224,7 +4439,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4242,7 +4458,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4260,7 +4477,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4278,7 +4496,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4296,7 +4515,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4314,7 +4534,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4332,7 +4553,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4350,7 +4572,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4368,7 +4591,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4386,7 +4610,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4404,7 +4629,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4422,7 +4648,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4440,7 +4667,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4458,7 +4686,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false
   },
@@ -4473,7 +4702,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4491,7 +4721,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [
@@ -4512,7 +4743,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4528,7 +4760,8 @@
     },
     "query": "\nSHOW ALL LIKE 'transport_%'",
     "availableIn": [
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4557,7 +4790,8 @@
     "query": "\nPROFILE SELECT * FROM movies\nWHERE year = 1994 AND ratings.imdb > 8",
     "availableIn": [
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4575,7 +4809,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4593,7 +4828,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4617,7 +4853,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4635,7 +4872,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4653,7 +4891,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4671,7 +4910,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4689,7 +4929,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4707,7 +4948,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4731,7 +4973,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4755,7 +4998,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4780,7 +5024,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4805,7 +5050,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4831,7 +5077,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4855,7 +5102,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4879,7 +5127,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "preQueries": [
@@ -4905,7 +5154,8 @@
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4916,14 +5166,15 @@
     "id": "sk_versions_3e752b65",
     "source": {
       "file": "skills/write-dql/references/versions.md",
-      "line": 123,
+      "line": 131,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nSHOW dql_strict_mode",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "expect": {
@@ -4934,14 +5185,15 @@
     "id": "sk_versions_a7a6d942",
     "source": {
       "file": "skills/write-dql/references/versions.md",
-      "line": 136,
+      "line": 144,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",
     "availableIn": [
       "4.14.x",
       "5.0.x",
-      "5.1.x"
+      "5.1.x",
+      "5.2.x"
     ],
     "expectError": false,
     "postQueries": [

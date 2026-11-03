@@ -13,7 +13,7 @@
 - [Task 18 — Bulk delete with an id list](#task-18--bulk-delete-with-an-id-list)
 
 Topic index: [movies-cookbook.md](movies-cookbook.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 ## Mutations
 

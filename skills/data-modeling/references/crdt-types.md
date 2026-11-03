@@ -1,6 +1,6 @@
 ---
 title: Ditto CRDT types for data modeling
-description: REGISTER, MAP, COUNTER, PN_COUNTER, and ATTACHMENT — exact merge semantics, declaration syntax, mutation surface, and the modeling decision for each. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x.
+description: REGISTER, MAP, COUNTER, PN_COUNTER, and ATTACHMENT — exact merge semantics, declaration syntax, mutation surface, and the modeling decision for each. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 ---
 
 # CRDT types for data modeling

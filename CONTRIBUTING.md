@@ -134,7 +134,9 @@ Other PR hygiene:
 
 ## 2. State which SDK releases it applies to
 
-This repo documents **Ditto SDK 4.14.x (LTS), 5.0.x, and 5.1.x**.
+This repo documents **Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**.
+The latest known release is a documentation baseline; new Swift/Kotlin apps resolve
+the latest stable package-manager release. Test fixtures retain exact pins.
 
 ### Name exact patch versions, not lines
 

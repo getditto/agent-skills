@@ -9,8 +9,17 @@ Automated tests that run every DQL example query in the `ditto-dql` skill agains
 | `@dittolive/ditto@4.14.6` | 205 | 53 | 0 | 0 | 0 |
 | `@dittolive/ditto@5.0.3`  | 222 | 36 | 0 | 0 | 0 |
 | `@dittolive/ditto@5.1.0`  | 252 | 6  | 0 | 0 | 0 |
+| `@dittolive/ditto@5.2.0`  | 252 | 6  | 0 | 0 | 0 |
 
-Catalog size: **258 entries** (plus 45 ignored) extracted from `skills/write-dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+Catalog size: **258 entries** (plus 18 ignored) extracted from `skills/write-dql/**/*.md`, covering two datasets: `movies-pedagogical` (194 docs) and `retail-1k` (4,859 docs across 8 collections — from the dql-metrics `retail-joins-1k` benchmark fixture).
+
+Each version also runs `runner/functions.mjs`: **73 representative function cases**,
+one for each name in the documented alphabetical index, including the seven aggregate
+names. These use a dedicated three-document collection and explicit result assertions;
+clock/request timestamps use bounded-time or format checks. Every query has a `FROM`
+clause. A coverage check fails if the index gains a name without a corresponding
+probe or a probe stops calling its named function. This supplements the query catalog;
+it does not exhaust every function overload, null combination or input edge case.
 
 **Strict-mode baseline:** the runner sets `ALTER SYSTEM SET dql_strict_mode = false` at startup and re-asserts it before every catalog entry, matching the skill's documented assumption (lenient mode on every peer — the 5.x default and the 4.x migration target). On 4.14.6 this flips the peer off its strict factory default; the catalog's own `ALTER SYSTEM` examples can therefore not leak flag state into neighboring entries.
 
@@ -43,7 +52,9 @@ Consequences worth knowing:
 
 - `@dittolive/ditto@4.14.6` (LTS)
 - `@dittolive/ditto@5.0.3`
-- `@dittolive/ditto@5.1.0` (current — JOINs, composite indexes, RETURNING, ADVISE)
+- `@dittolive/ditto@5.1.0` ( JOINs, composite indexes, RETURNING, ADVISE)
+
+- `@dittolive/ditto@5.2.0` (latest known baseline; mutation, planner and diagnostics fixes)
 
 The 4.14.6 directory is a **Node-only fixture**. Its `.npmrc` disables automatic peer
 installation, preventing unused React Native/Expo applications and their dependencies
@@ -96,6 +107,7 @@ cd tests/dql
 (cd sdks/v4.14.6 && npm ci)
 (cd sdks/v5.0.3 && npm ci)
 (cd sdks/v5.1.0 && npm ci)
+(cd sdks/v5.2.0 && npm ci)
 
 # Transform the real movies dataset to pedagogical schema (committed; only re-run if source changes)
 npm run transform
@@ -104,10 +116,11 @@ npm run transform
 ## Running the tests
 
 ```bash
-# All three versions (license picked up from repo-root .env)
+# All four versions (license picked up from repo-root .env)
 npm test
 
-# Single version
+# Single version (v52 also runs runner/sdk52.mjs regression assertions)
+npm run test:v52
 npm run test:v51
 npm run test:v5
 npm run test:v4
@@ -115,8 +128,14 @@ npm run test:v4
 # Pretty report after a run
 npm run report
 
+# Fast function-index coverage check (no SDK or license required)
+npm run check:function-coverage
+
+# Function semantics only, on a selected installed SDK
+DITTO_SDK_VERSION=5.2.0 node runner/functions.mjs
+
 # Capture expected outputs after content changes (rebuilds catalog goldens)
-for v in 4.14.6 5.0.3 5.1.0; do
+for v in 4.14.6 5.0.3 5.1.0 5.2.0; do
   DITTO_SDK_VERSION=$v node runner/run.mjs --capture-expected
 done
 node scripts/merge-captured.mjs
@@ -159,6 +178,7 @@ tests/dql/
 │   └── report.mjs                         pretty report across versions
 ├── runner/
 │   ├── run.mjs                            main runner (one version per invocation)
+│   ├── functions.mjs                      all indexed names: semantic probes + coverage check
 │   ├── version-shim.mjs                   loads @dittolive/ditto from versioned tree
 │   └── assertions.mjs                     rowCount + firstRow checks
 ├── fixtures/
@@ -167,11 +187,13 @@ tests/dql/
 ├── sdks/
 │   ├── v4.14.6/                           isolated node_modules
 │   ├── v5.0.3/                            isolated node_modules
-│   └── v5.1.0/                            isolated node_modules
+│   ├── v5.1.0/                            isolated node_modules
+│   └── v5.2.0/                            isolated node_modules
 └── results/                               generated, gitignored
     ├── 4.14.6.json
     ├── 5.0.3.json
     ├── 5.1.0.json
+    ├── 5.2.0.json
     └── report.json
 ```
 
@@ -184,8 +206,8 @@ tests/dql/
 - **Golden conservatism.** `merge-captured.mjs` only writes assertions that cannot be flaky: `rowCount` is recorded only when every supported SDK version that ran the query agrees on it; `firstRow` only when it is byte-identical across versions *and* the query has an `ORDER BY`. EXPLAIN/PROFILE output is never asserted.
 - **Dataset stability.** Some queries (especially those filtering on `imdb.votes`-derived `box_office_millions`) depend on the fixture's exact contents. If `fixtures/movies-pedagogical.ndjson` is regenerated, expected row counts may drift; re-run `--capture-expected` and review the diff.
 - **First-row assertions are sparse.** We removed `firstRow` from entries where it was unstable across runs (JSON deep-equality on rows with floats, MAP fields, attachment blobs). Most entries only assert `rowCount`.
-- **Genuinely unavailable features are expected-fail.** `catalog/overrides.json` tags documented-but-unshipped features with `availableIn: []` (e.g. `XOR`, multi-id `USE IDS`, `TOMBSTONE ... RETURNING`, directive+subquery combos), so those queries count as PASS-AS-EXPECTED-FAIL until the SDK ships them. `DO MERGE` is supported on every tested line as an alias for `DO UPDATE`. v5.1.0 features (JOINs, composite indexes, `RETURNING`, `ADVISE`) are documented, tested, and green.
-- **Some queries have no FROM clause.** Many `references/functions.md` examples illustrate function semantics standalone (e.g., `SELECT duration_cast('2h22m', 'seconds')`). DQL requires a FROM clause, so curation ignores them automatically.
+- **Genuinely unavailable features are expected-fail.** `catalog/overrides.json` tags documented-but-unshipped features with `availableIn: []` (e.g. `XOR`, multi-id SELECT `USE IDS`, `TOMBSTONE ... RETURNING`, directive+subquery combos), so those queries count as PASS-AS-EXPECTED-FAIL until the SDK ships them. `DO MERGE` is supported on every tested line as an alias for `DO UPDATE`. v5.1.0 features (JOINs, composite indexes, `RETURNING`, `ADVISE`) are documented, tested, and green.
+- **Some queries have no FROM clause.** Many function examples illustrate expressions standalone (e.g., `SELECT duration_cast('2h22m', 'seconds')`). DQL requires a FROM clause, so curation ignores these blocks. `runner/functions.mjs` independently invokes every indexed function against a seeded collection; standalone examples are not claimed as executed catalog entries.
 
 ## What gets tested (and what doesn't)
 

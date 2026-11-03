@@ -1,5 +1,7 @@
 # On-disk store — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
 How a Ditto store on disk behaves across the four supported version lines: where it
 lives, what an upgrade does to it, and what a rollback does. The API-surface differences
 are in [versions.md](versions.md); this is the part of CAP-19 that is about bytes on

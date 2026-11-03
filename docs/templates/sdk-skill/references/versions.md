@@ -21,6 +21,7 @@
 
 | Ditto SDK | Package version | Verified on | Status |
 |---|---|---|---|
+| 5.2.0 | TODO | TODO exact patch | Latest known baseline; resolve latest for new apps |
 | 5.1.x | TODO | TODO exact patch | TODO |
 | 5.0.x | TODO | TODO exact patch | TODO |
 | 4.14.x | TODO | TODO exact patch | LTS |
@@ -33,7 +34,7 @@
   see CONTRIBUTING.md §2.
 -->
 
-| Capability | 4.14.x | 5.0.x | 5.1.x | Failure mode on older versions |
+| Capability | 4.14.x | 5.0.x | 5.1.x / 5.2.0 | Failure mode on older versions |
 |---|---|---|---|---|
 | TODO | TODO | TODO | TODO | TODO exact error string |
 

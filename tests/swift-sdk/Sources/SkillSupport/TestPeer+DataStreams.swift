@@ -13,12 +13,12 @@ import DittoSwift
 
 extension TestPeer {
 
-    /// System parameters that enable NGN, which Data Streams run over. `replication_over_ngn`
+    /// System parameters that enable NGN, which Data Streams run over. `ngn_sync_enabled`
     /// stays false so document sync keeps using the existing transports (the docs'
     /// recommendation for the preview).
     public static let ngnSystemParameters: [String: DittoSystemParameterValue] = [
-        "network_enable_ngn": .bool(true),
-        "replication_over_ngn": .bool(false),
+        "ngn_data_streams_enabled": .bool(true),
+        "ngn_sync_enabled": .bool(false),
     ]
 
     /// Opens an offline-only peer with NGN enabled and sync started, after applying
@@ -85,6 +85,7 @@ extension TestPeer {
         seconds: Double,
         _ condition: @escaping @Sendable () -> Bool
     ) async throws {
+        // The fixture also compiles for iOS 15; ContinuousClock requires iOS 16.
         let deadline = ProcessInfo.processInfo.systemUptime + seconds
         while !condition() {
             if ProcessInfo.processInfo.systemUptime >= deadline { throw SkillTestError.timedOut(what) }

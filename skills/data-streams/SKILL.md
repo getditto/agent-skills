@@ -97,7 +97,7 @@ Topics match `^[a-zA-Z0-9_ ]{1,15}$` (`Err(InvalidTopic)` otherwise, executed).
 Data Streams run over **NGN** (next-generation networking), which must be on **before the
 instance is created**: the environment variable `DITTO_NETWORK_ENABLE_NGN=true` (Android
 `Os.setenv` in `Application.onCreate()`; the process environment on the JVM), or on 5.2.0
-`systemParameters = { network_enable_ngn: true }` in the config. Keep
+`systemParameters = { ngn_data_streams_enabled: true, ngn_sync_enabled: false }` in the config. Keep
 `replication_over_ngn` (`DITTO_REPLICATION_OVER_NGN`) **false** in the preview unless every
 peer that must replicate sets the same value. Start sync so presence can discover peers.
 **No TCP listener is required**; if you do change transports, modify the current config,
@@ -128,3 +128,13 @@ never a fresh one (every transport off). [setup-and-transports.md](references/se
 | Design rules before writing code | [best-practices.md](best-practices.md) |
 | Kotlin code | [kotlin-sdk/references/data-streams.md](../kotlin-sdk/references/data-streams.md) |
 | Swift code (5.2.0+) | [swift-sdk/references/data-streams.md](../swift-sdk/references/data-streams.md) |
+
+## SDK 5.2.0 parameter names
+
+For 5.2.0, prefer `ngn_data_streams_enabled = true` and `ngn_sync_enabled = false`
+in `DittoConfig.systemParameters` before open. The older `network_enable_ngn` and
+`replication_over_ngn` names used in pre-5.2 recipes remain deprecated aliases.
+Enabling `ngn_sync_enabled` without `ngn_data_streams_enabled` now makes sync start
+fail. Keep document sync on the legacy path unless the deployment deliberately enables
+NGN sync on all required peers. This does not make Data Streams generally available;
+the preview status and per-language gates still apply. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).

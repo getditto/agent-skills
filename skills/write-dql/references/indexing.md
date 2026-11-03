@@ -1,6 +1,6 @@
 ---
 title: DQL indexing and query optimization
-description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directives (full key catalog), EXPLAIN, and the #profile directive (5.0+). Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
+description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directives (full key catalog), EXPLAIN, and the #profile directive (5.0+). Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0; version-gated features are tagged inline.
 ---
 
 # DQL indexing and query optimization
@@ -20,7 +20,7 @@ description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directi
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Deep reference for index DDL, the planner-directive surface, and query-plan inspection on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Indexing in DQL is currently a **Small-Peer-only** feature; `CREATE INDEX` against a Big-Peer collection returns an error.
+Deep reference for index DDL, the planner-directive surface, and query-plan inspection on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Indexing in DQL is currently a **Small-Peer-only** feature; `CREATE INDEX` against a Big-Peer collection returns an error.
 
 Unless a section carries an "Available in:" note, everything below works identically on 4.14.x, 5.0.x, and 5.1.x.
 

@@ -24,7 +24,7 @@ meantime).
 
 ## Supported versions
 
-Ditto SDK **4.14.x (LTS)**, **5.0.x**, **5.1.x**. Version differences — the
+Ditto SDK **4.14.x (LTS)**, **5.0.x**, **5.1.x**, **5.2.0**. Version differences — the
 headline one being rejection of `LIMIT`/`ORDER BY` in subscription queries on
 5.0+ — are
 tagged inline wherever they appear.

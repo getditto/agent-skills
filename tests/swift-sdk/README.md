@@ -1,8 +1,11 @@
 # `tests/swift-sdk` — executable verification for `skills/swift-sdk`
 
 Every claim in the Swift SDK skill marked **executed** was produced here. The same
-sources build and run against Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0**,
-and compile for macOS, the iOS Simulator, an iOS device and Mac Catalyst.
+sources build and run against Ditto **4.14.6**, **5.0.3** and **5.1.0**, and compile for
+macOS, the iOS Simulator, an iOS device and Mac Catalyst. **5.2.0** additionally covers
+raw-key encryption/reopen/deletion, startup parameters, JSON boolean binding and
+Data Streams preview. Fixed fixture pins are reproducible evidence; generated customer
+apps resolve the latest stable SwiftPM release.
 
 ```
 Package.swift                          version pin read from $DITTO_SWIFT_VERSION
@@ -12,7 +15,8 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              107 @Test declarations (4 parameterized; 13 declarations are 5.2-only)
+Tests/SwiftSDKSkillTests/              API, lifecycle and version tests, plus
+                                       DataStreamsTests and SDK52Tests for 5.2.0
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -43,6 +47,7 @@ cd tests/swift-sdk
 
 ./scripts/run.sh 5.1.0                  # tests on one version
 ./scripts/run.sh --all                  # 4.14.6, 5.0.3, 5.1.0 and 5.2.0 in sequence
+./scripts/run.sh 5.2.0                  # includes Data Streams and SDK52 tests
 ./scripts/run.sh 5.1.0 --app            # tests, then the minimal app
 ./scripts/run.sh 5.1.0 --app --offline  # force the app's offline mode
 

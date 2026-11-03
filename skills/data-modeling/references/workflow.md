@@ -19,7 +19,7 @@ Ask whatever the user hasn't already provided, in one concise batch. Don't block
 
 | # | Question | Why it changes the model |
 |---|---|---|
-| 1 | Which Ditto SDK version(s)? (4.14.x / 5.0.x / 5.1.x / mixed mesh) — and on 4.x, has `dql_strict_mode` been migrated to `false` yet? | Lenient mode is the assumed baseline (objects infer MAP; no type declarations on reads or writes); un-flipped 4.x strict peers get the migration playbook plus transition declarations; JOINs and composite indexes are 5.1+; `COUNTER` needs 4.14+ |
+| 1 | Which Ditto SDK version(s)? (4.14.x / 5.0.x / 5.1.x / 5.2.0 / mixed mesh) — and on 4.x, has `dql_strict_mode` been migrated to `false` yet? | Lenient mode is the assumed baseline (objects infer MAP; no type declarations on reads or writes); un-flipped 4.x strict peers get the migration playbook plus transition declarations; JOINs and composite indexes are 5.1+; `COUNTER` needs 4.14+ |
 | 2 | Who edits which parts, and can edits be concurrent/offline? | Drives MAP granularity, COUNTER fields, audit-log patterns; single-writer data can stay simple |
 | 3 | Which transports matter? (BLE, AWDL, LAN/WiFi, Big Peer only) | BLE ≈ 20 KB/s effective — a 250 KiB doc is 10+ s. Sets the acceptable document size budget |
 | 4 | Target hardware/OS tier? (budget Android vs modern iOS/macOS) | Storage and CPU throughput vary by an order of magnitude; pacing, observer scope, batch sizes follow |
@@ -93,7 +93,7 @@ Three more things a composite object buys you, all verified on 4.14.6, 5.0.3, an
 | Finding ID | Trigger | Recommendation |
 |---|---|---|
 | `SIZE_SOFT` (warn) | Estimated serialized size > 256 KiB | Console warning territory — split, or move bulk to attachments. Remember the limit applies to the serialized doc *including CRDT metadata*, not the raw JSON |
-| `SIZE_HARD` (blocker) | > 5 MiB | Must split/attach — 5.1+ rejects oversized local writes outright (earlier lines log but accept; replicated oversized docs are still accepted) |
+| `SIZE_HARD` (blocker) | > 5 MiB | Must split/attach — 5.1+ rejects oversized local writes outright (earlier lines log but accept; 5.2.0 drops replication diffs that would push the document over its hard limit and stops updates to that document until eviction/re-sync) |
 | `SPLIT_UNBOUNDED` (blocker) | Embedded collection that grows without bound (messages, readings, events, comments, line history) | Child collection, one document per item, parent `_id` as back-reference + index |
 | `SPLIT_INDEPENDENT` (warn) | Sub-structure read/written heavily without the parent | Child collection; keeps docs small and writes cheap |
 | `SPLIT_PERMISSIONS` (warn) | Sub-structure needs different access rules | Collection boundary (Big Peer permissions are query-level) |

@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['4.14.6', '5.0.3', '5.1.0']
+        sdk: ['4.14.6', '5.0.3', '5.1.0', '5.2.0']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -67,14 +67,17 @@ jobs:
             npm run test:v4
           elif [ "$SDK_VERSION" = "5.1.0" ]; then
             npm run test:v51
+          elif [ "$SDK_VERSION" = "5.2.0" ]; then
+            npm run test:v52
           else
             npm run test:v5
           fi
 
       - name: Verify scoped JOIN examples
-        if: matrix.sdk == '5.1.0'
+        if: matrix.sdk == '5.1.0' || matrix.sdk == '5.2.0'
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+          DITTO_SDK_VERSION: ${{ matrix.sdk }}
         run: env -u NO_COLOR node tests/skill-context/check-scoped-joins.mjs
 
       - name: Upload result artifact

@@ -1,4 +1,15 @@
 # How Sync Subscriptions Work
+## Contents
+
+- [Lifecycle](#lifecycle)
+- [Subscriptions are receive-side filters](#subscriptions-are-receive-side-filters)
+- [Delta sync](#delta-sync)
+- [In-memory, deduplicated, refcounted](#in-memory-deduplicated-refcounted)
+- [When a document stops matching](#when-a-document-stops-matching)
+- [Attachments](#attachments)
+- [Observing vs subscribing](#observing-vs-subscribing)
+- [SDK 5.2.0 diagnostics and behavior](#sdk-520-diagnostics-and-behavior)
+
 
 The end-to-end lifecycle of a subscription, from registration to steady-state
 sync. Language-agnostic; for call syntax see the Ditto SDK docs
@@ -151,3 +162,16 @@ apps need both.
 
 Typical pattern: a broad, stable subscription brings the data in; observers
 with narrower, changing queries present slices of it to the user.
+
+## SDK 5.2.0 diagnostics and behavior
+
+Subscription query restrictions and receive-side filtering remain in force; a local
+JOIN still needs separate subscriptions. `system:sync_degradations` identifies documents
+with degraded sync. An incoming diff that would push the resulting document over its hard limit is dropped;
+that document needs eviction and re-sync before further updates. Other documents keep
+syncing. Repair oversized models and protect unsynced local work before eviction.
+
+Most virtual-collection observers now fire on data changes rather than periodically.
+A missing timer callback is not proof sync stopped; schedule diagnostic queries when
+periodic sampling is required. Local observers skip re-execution for unrelated
+collection writes, while result/callback semantics stay unchanged. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).

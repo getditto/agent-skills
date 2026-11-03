@@ -1,6 +1,6 @@
 # Setup — Ditto Swift SDK
 
-Everything here is the **5.1.x** form. Package shape, platform minimums and toolchain
+Everything here is the **5.2.0** form. Package shape, platform minimums and toolchain
 floors differ per line and are owned by [versions.md](versions.md).
 
 ## CAP-01 Prerequisites, toolchain, package install
@@ -26,7 +26,16 @@ In Xcode: **File → Add Package Dependencies…**, paste
 exact version or *Up to Next Major Version*), and add the `DittoSwift` product to your
 app target.
 
-For a package of your own:
+For a new app/POC, inspect the stable tags in this SwiftPM repository (Xcode’s
+package version picker or `git ls-remote --tags --refs`), choose the newest stable
+release compatible with the target, and resolve it. Exclude preview/rc/dev tags.
+Record the resolved version in `Package.resolved`; use Xcode’s Update to Latest
+Package Versions or `swift package update` to refresh an existing constraint when
+an upgrade is requested. A `from:` constraint alone does not update a stale lockfile
+or cross a major-version boundary. 5.2.0 is this skill’s knowledge baseline.
+
+For a package of your own, replace `LATEST_STABLE_VERSION` below with the release
+just checked (it is a placeholder, not a literal version):
 
 ```swift
 // Package.swift
@@ -37,7 +46,7 @@ let package = Package(
     name: "MyApp",
     platforms: [.iOS(.v15), .macOS(.v12), .macCatalyst(.v15)],
     dependencies: [
-        .package(url: "https://github.com/getditto/DittoSwiftPackage", from: "5.1.0")
+        .package(url: "https://github.com/getditto/DittoSwiftPackage", from: "LATEST_STABLE_VERSION")
     ],
     targets: [
         .target(

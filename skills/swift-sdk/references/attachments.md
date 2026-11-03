@@ -1,5 +1,8 @@
 # Attachments — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## CAP-12 Attachments
 
 An attachment is created on the store, then stored *in* a document as a field. What comes

@@ -27,8 +27,8 @@ updates its UI through a store observer and subscribes to the demo collection.
 Swift 6/Xcode 16 or later is required by this starter. The SDK may support older
 toolchains; the generated Swift 6 project deliberately uses this narrower baseline.
 The starter's deployment floors are iOS/iPadOS 15, macOS 12 and Mac Catalyst 15.
-The published 5.1.0 XCFramework has arm64-only slices for all four destinations,
-so the 5.1.0 project explicitly targets arm64 (including Simulator). That pin cannot
+The published 5.1.0/5.2.0 XCFrameworks has arm64-only slices for all four destinations,
+so the 5.1.0/5.2.0 project explicitly targets arm64 (including Simulator). That pin cannot
 build for an Intel Mac. Older pins retain their SDK's available architectures.
 It is a SwiftUI starting point; UIKit/AppKit integration remains a separate task.
 

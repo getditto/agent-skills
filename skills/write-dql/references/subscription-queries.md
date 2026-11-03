@@ -8,7 +8,7 @@
 - [12.3 Portable subscription patterns](#123-portable-subscription-patterns)
 
 Topic index: [select.md](select.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
 
@@ -25,7 +25,7 @@ DQL `SELECT` statements can be used as **subscriptions** — long-lived queries 
 | V1 surface only<br>(`DQL_RESTRICT_TO_ORIGINAL_SYNTAX`) | 4.14.x, 5.0.x, 5.1.x | `SELECT *` only (no expression projection), a single collection (no JOIN), no `USE IDS`, no `DISTINCT`, no `GROUP BY`/`HAVING`. |
 | `ORDER BY` / `LIMIT` rejected<br>(`DQL_RESTRICT_LIMIT_ORDER_BY`) | **SDK 5.0+** | `ORDER BY` and `LIMIT` are rejected in subscription queries. `OFFSET` on its own stays legal. Use a one-shot store query for paginated or sorted reads. |
 
-The V1-surface restriction is always on for `registerSubscription` on every SDK version — there is no unrestricted subscription path. The `ORDER BY`/`LIMIT` rejection is driven by the system parameter **`dql_restrict_subscriptions`** (default `true`), which exists on 5.0.x and 5.1.x and **not** on 4.14.x — that one *is* readable with `SHOW dql_restrict_subscriptions`. SDK 4.14.x accepts both clauses; queries using `LIMIT` maintain boundary state and should avoid mutable filter or sort fields. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
+The V1-surface restriction is always on for `registerSubscription` on every SDK version — there is no unrestricted subscription path. The `ORDER BY`/`LIMIT` rejection is driven by the system parameter **`dql_restrict_subscriptions`** (default `true`), which exists on 5.0.x, 5.1.x and 5.2.0 and **not** on 4.14.x — that one *is* readable with `SHOW dql_restrict_subscriptions`. SDK 4.14.x accepts both clauses; queries using `LIMIT` maintain boundary state and should avoid mutable filter or sort fields. See the `sync-subscriptions` skill for the full version matrix and exact error strings.
 
 ### 12.2 What is — and isn't — allowed in a subscription
 

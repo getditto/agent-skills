@@ -1,6 +1,6 @@
 # Testing — Ditto Kotlin SDK
 
-Everything here is the **v5** (5.0.x / 5.1.x) form with tagged v4 asides.
+Everything here is the **v5** (5.0.x / 5.1.x / 5.2.0) form with tagged v4 asides.
 [versions.md](versions.md) owns package coordinates per version line.
 
 Sources: <https://docs.ditto.live/sdk/latest/deployment/testing>, <https://docs.ditto.live/sdk/latest/install-guides/kotlin>
@@ -75,11 +75,12 @@ The JVM variant loads the native core from a separate classifier artifact. Witho
 
 ```kotlin
 // build.gradle.kts — JVM module
+val dittoVersion: String by project // selected stable release; 5.2.0 is the knowledge baseline
 dependencies {
-    implementation("com.ditto:ditto-kotlin:5.2.0")
+    implementation("com.ditto:ditto-kotlin:$dittoVersion")
     // Pick the classifier for the CI/dev host:
     //   macos-arm64 | linux-x64 | linux-arm64 | windows-x64
-    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:macos-arm64")
 
     testImplementation(kotlin("test"))  // REQUIRED for kotlin.test.assertEquals —
                                         // the kotlin("jvm") plugin does not add it

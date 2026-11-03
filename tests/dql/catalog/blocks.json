@@ -300,7 +300,7 @@
     "line": 52
   },
   {
-    "id": "sk_date_time_functions_f06d91d0",
+    "id": "sk_date_time_functions_a3a4b996",
     "file": "skills/write-dql/references/date-time-functions.md",
     "line": 59
   },
@@ -487,82 +487,82 @@
   {
     "id": "sk_functions_4859e26d",
     "file": "skills/write-dql/references/functions.md",
-    "line": 248
+    "line": 251
   },
   {
     "id": "sk_functions_a49341be",
     "file": "skills/write-dql/references/functions.md",
-    "line": 269
+    "line": 272
   },
   {
     "id": "sk_functions_13c56043",
     "file": "skills/write-dql/references/functions.md",
-    "line": 282
+    "line": 285
   },
   {
     "id": "sk_functions_4cd0c7c4",
     "file": "skills/write-dql/references/functions.md",
-    "line": 295
+    "line": 298
   },
   {
     "id": "sk_indexing_101ce71f",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 69
+    "line": 76
   },
   {
     "id": "sk_indexing_40a1e3a4",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 77
+    "line": 84
   },
   {
     "id": "sk_indexing_18dcd919",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 100
+    "line": 107
   },
   {
     "id": "sk_indexing_2ef95496",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 112
+    "line": 119
   },
   {
     "id": "sk_indexing_aa88a56d",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 143
+    "line": 150
   },
   {
     "id": "sk_indexing_0037dfc4",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 183
+    "line": 190
   },
   {
     "id": "sk_indexing_0f14b2c7",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 195
+    "line": 202
   },
   {
     "id": "sk_indexing_b91c5f77",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 212
+    "line": 219
   },
   {
     "id": "sk_indexing_2de8adc5",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 223
+    "line": 230
   },
   {
     "id": "sk_indexing_7fa6f196",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 234
+    "line": 241
   },
   {
     "id": "sk_indexing_1a15c4de",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 246
+    "line": 253
   },
   {
     "id": "sk_indexing_2cb6678e",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 255
+    "line": 262
   },
   {
     "id": "sk_joins_62a39f82",
@@ -797,7 +797,7 @@
   {
     "id": "sk_operators_d36218e7",
     "file": "skills/write-dql/references/operators.md",
-    "line": 388
+    "line": 391
   },
   {
     "id": "sk_planner_hints_7fb4c163",
@@ -1372,11 +1372,11 @@
   {
     "id": "sk_versions_3e752b65",
     "file": "skills/write-dql/references/versions.md",
-    "line": 123
+    "line": 131
   },
   {
     "id": "sk_versions_a7a6d942",
     "file": "skills/write-dql/references/versions.md",
-    "line": 136
+    "line": 144
   }
 ]

@@ -1,5 +1,8 @@
 # Store: executing DQL, transactions, indexing and eviction — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-08 Querying the store: executing DQL](#cap-08-querying-the-store-executing-dql)
@@ -268,7 +271,7 @@ ditto.store.execute("CREATE INDEX idx_cars_color ON cars (color)")
 // Index on a nested field path
 ditto.store.execute("CREATE INDEX idx_cars_location ON cars (_id.locationId)")
 
-// Composite (multi-column) index — 5.1.x only
+// Composite (multi-column) index — 5.1+
 ditto.store.execute("CREATE INDEX idx_cars_color_year ON cars (color, year)")
 
 // List and drop
@@ -278,7 +281,7 @@ val indexRows = ditto.store.execute("SELECT * FROM system:indexes") { result ->
 ditto.store.execute("DROP INDEX idx_cars_color ON cars")
 ```
 
-(Composite/multi-column `CREATE INDEX` requires 5.1.x; on 4.14.x and 5.0.x only
+(Composite/multi-column `CREATE INDEX` requires 5.1+; on 4.14.x and 5.0.x only
 single-field indexes are supported.)
 
 Create indexes on fields used in observer and query `WHERE` clauses. (Inference,

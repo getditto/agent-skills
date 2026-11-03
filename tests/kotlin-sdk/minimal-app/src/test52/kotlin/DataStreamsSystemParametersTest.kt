@@ -40,7 +40,7 @@ class DataStreamsSystemParametersTest {
                 experimental = DittoConfig.Experimental(),
                 encryptionKey = null,
                 // The 5.2.0 way to enable NGN at open, no environment variable needed.
-                systemParameters = mapOf("network_enable_ngn" to true, "replication_over_ngn" to false),
+                systemParameters = mapOf("ngn_data_streams_enabled" to true, "ngn_sync_enabled" to false),
             )
         )
         ditto.setOfflineOnlyLicenseToken(System.getenv("DITTO_OFFLINE_LICENSE") ?: error("DITTO_OFFLINE_LICENSE not set"))

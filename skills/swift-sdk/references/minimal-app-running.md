@@ -8,7 +8,7 @@
 - [Verified on](#verified-on)
 
 Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x, 5.1.x and 5.2.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 ## Dependency
 
@@ -18,8 +18,11 @@ Topic index: [minimal-app.md](../examples/minimal-app.md). Covers Ditto SDK 4.14
 import PackageDescription
 import Foundation
 
-// One SPM URL serves all four supported lines; only the pin changes.
-let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ?? "5.1.0"
+// Set this to the latest stable SwiftPM release checked in the package repository.
+// 5.2.0 is the skill's knowledge baseline, not a default dependency pin.
+guard let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] else {
+    fatalError("Set DITTO_SWIFT_VERSION to the stable release you resolved")
+}
 
 // 4.14.x needs `@preconcurrency import DittoSwift` and `disableSyncWithV3()`, both of
 // which the program below selects with `#if DITTO_V4`. Without this setting, pinning
@@ -46,8 +49,8 @@ let package = Package(
 )
 ```
 
-An app targeting only 5.1.x can drop the environment variable and the flag, and pin
-`from: "5.1.0"`. In Xcode, add the same package URL through **File → Add Package
+For a new app, check the latest stable SwiftPM release and use that version in a
+`from:` requirement, then record `Package.resolved`. In Xcode, add the same package URL through **File → Add Package
 Dependencies…** and add the `DittoSwift` product to the target — see
 [setup.md](setup.md).
 
@@ -60,7 +63,7 @@ export DITTO_OFFLINE_LICENSE="REPLACE_ME_WITH_YOUR_OFFLINE_LICENSE"
 # export DITTO_TOKEN="REPLACE_ME_WITH_YOUR_DEVELOPMENT_TOKEN"
 # export DITTO_DATABASE_ID="REPLACE_ME_WITH_YOUR_DATABASE_ID"
 
-export DITTO_SWIFT_VERSION=5.1.0
+export DITTO_SWIFT_VERSION="LATEST_STABLE_VERSION" # replace with the verified stable tag
 swift build --product MinimalApp
 BIN="$(swift build --product MinimalApp --show-bin-path)"
 

@@ -14,7 +14,8 @@
 
 1. **Determine the version line before writing any code.** Grep the existing build
    files: `com.ditto:ditto-kotlin` → v5; `live.ditto:ditto` → 4.14.x (Android-only).
-   If neither exists, generate for **5.1.x** and say you assumed it. Never mix
+   If neither exists, resolve the latest stable release from Maven Central as described
+   in [setup.md](setup.md); 5.2.0 is the latest version this skill knows about. Never mix
    namespaces: v5 is `com.ditto.kotlin.*`, v4 is `live.ditto.*`.
 2. **Use only coordinates from [`versions.md`](versions.md).** Do not invent
    artifacts. v5 JVM requires **two** dependencies — `com.ditto:ditto-kotlin` plus the

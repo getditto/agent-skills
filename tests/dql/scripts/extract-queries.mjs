@@ -123,13 +123,14 @@ function hashId(file, normalizedSql, occurrence) {
 }
 
 function inferAvailableIn(tag) {
-  if (!tag) return ["4.14.x", "5.0.x", "5.1.x"];
-  if (/^5\.1/.test(tag)) return ["5.1.x"];              // "5.1+"
-  if (/^5\.0/.test(tag)) return ["5.0.x", "5.1.x"];     // "5.0+" — 5.1 is a superset
-  if (/^5\./.test(tag))  return ["5.0.x", "5.1.x"];
-  if (/^4\./.test(tag))   return ["4.14.x", "5.0.x", "5.1.x"];  // 4.x features generally carry forward to 5.x unless explicitly removed
+  if (!tag) return ["4.14.x", "5.0.x", "5.1.x", "5.2.x"];
+  if (/^5\.2/.test(tag)) return ["5.2.x"];
+  if (/^5\.1/.test(tag)) return ["5.1.x", "5.2.x"];              // "5.1+"
+  if (/^5\.0/.test(tag)) return ["5.0.x", "5.1.x", "5.2.x"];     // "5.0+" — 5.1 is a superset
+  if (/^5\./.test(tag))  return ["5.0.x", "5.1.x", "5.2.x"];
+  if (/^4\./.test(tag))   return ["4.14.x", "5.0.x", "5.1.x", "5.2.x"];  // 4.x features generally carry forward to 5.x unless explicitly removed
   if (/^4\.x/i.test(tag)) return ["4.14.x"];            // "v4.x only" markers
-  return ["4.14.x", "5.0.x", "5.1.x"];
+  return ["4.14.x", "5.0.x", "5.1.x", "5.2.x"];
 }
 
 const ignore = fs.existsSync(IGNORE) ? new Set(JSON.parse(fs.readFileSync(IGNORE, "utf8"))) : new Set();

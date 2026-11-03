@@ -35,6 +35,11 @@ closes everything in reverse order.
 
 ## Dependency (v5, JVM)
 
+For a new app, resolve the latest stable Maven Central release using
+[setup.md](../references/setup.md) and set `dittoVersion` in `gradle.properties`.
+The transcripts/fixture pins below are historical validation baselines, not a
+recommendation to use a fixed release. This skill knows through 5.2.0.
+
 ```kotlin
 // tests/kotlin-sdk/minimal-app/build.gradle.kts (excerpt)
 plugins {
@@ -42,13 +47,14 @@ plugins {
     application
 }
 
+val dittoVersion: String by project // use the latest stable version checked below
 dependencies {
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("com.ditto:ditto-kotlin:5.2.0")
+    implementation("com.ditto:ditto-kotlin:$dittoVersion")
     // Mandatory on JVM — without it DittoFactory.create throws
     // "Unable to find binary 'libdittoall.dylib' …":
-    runtimeOnly("com.ditto:ditto-binaries:5.2.0:macos-arm64")
+    runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:macos-arm64")
     // other classifiers: linux-x64 | linux-arm64 | windows-x64
 }
 ```
@@ -132,6 +138,9 @@ Three things this program demonstrates that bite people:
    `Ditto` instance itself (all `AutoCloseable` via `DittoResource`).
 
 ## Running it
+
+These repository fixture commands reproduce the recorded 5.2.0 run. For a new app,
+use the stable version just resolved from Maven Central as described above.
 
 ```bash
 export DITTO_OFFLINE_LICENSE=…        # repo-root .env is NOT auto-loaded here

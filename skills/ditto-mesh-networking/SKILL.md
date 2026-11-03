@@ -10,6 +10,9 @@ opens physical connections; the multiplexer combines links to the same peer into
 virtual connection and selects a path for traffic (the rainbow connection). Presence
 and multihop routing let peers sync without a direct connection or a server.
 
+For 5.2.0 connection limits, keepalive defaults, wireless fixes and NGN settings, read
+[versions.md](references/versions.md#sdk-520). Latest known release: **5.2.0**.
+
 ## Start with the task
 
 Read only the matching reference section. Inspect the contents of a long file before
@@ -35,7 +38,7 @@ for schema design use `data-modeling`. These are separate skills, not prerequisi
 
 ## Version awareness
 
-Supports Ditto SDK **4.14.x (LTS), 5.0.x and 5.1.x**. Confirm the SDK when a claim
+Supports Ditto SDK **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**. Confirm the SDK when a claim
 turns on version or platform: hard document-limit behavior, transport availability and
 `TRANSPORTS_DISCOVERED_PEERS` (4.12.0+) are not universal. Consult the matching row in
 `references/versions.md`; defaults are not a permanent contract.
@@ -87,7 +90,8 @@ whole document. On LAN/cloud-only fleets, embedding related data can remain appr
 
 The default soft warning is **256 KiB**, hard limit **5 MiB**. Whether oversized local
 writes are rejected or only logged is version-dependent; check `references/versions.md`
-before advising. Replicated oversized documents can still arrive. Binary data belongs
+before advising. 5.2.0 drops replication diffs that would push the document over its hard limit and stops that document’s updates until
+eviction/re-sync; older versions can accept oversized replicated documents. Binary data belongs
 in attachments, fetched separately by default. Use `data-modeling` for split decisions
 and `best-practices.md` for transport budget calculations.
 
