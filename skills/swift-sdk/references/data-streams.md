@@ -41,9 +41,11 @@ for Swift**: say so when you recommend it.
 
 ## Enable NGN at open
 
+Supply your portal database UUID, persistence directory and offline license token.
+
 ```swift
 let config = DittoConfig(
-    databaseID: "my-app",
+    databaseID: "REPLACE_ME_WITH_YOUR_DATABASE_ID",
     connect: .smallPeersOnly(),
     persistenceDirectory: directory,
     systemParameters: [
