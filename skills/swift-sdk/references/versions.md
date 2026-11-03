@@ -11,9 +11,9 @@
 - [Cross-version reference](#cross-version-reference)
 - [CAP-19 v4 to v5 migration, API and on-disk store](#cap-19-v4-to-v5-migration-api-and-on-disk-store)
 
-**This file owns every fact that differs between 4.14.x, 5.0.x, 5.1.x and 5.2.x.** Every
-other file shows the 5.1.x form and links here. Covered releases:
-**4.14.6**, **5.0.3**, **5.1.0**, **5.2.0-rc.2**.
+**Version differences across 4.14.x, 5.0.x, 5.1.x and 5.2.x.** Other references use
+5.1.x forms unless marked otherwise. Verified releases:
+**4.14.6**, **5.0.3**, **5.1.0**, **5.2.0**.
 
 ---
 
@@ -34,8 +34,8 @@ Read the pin before writing any Ditto code:
 |---|---|---|
 | [4.14.x](#414x) | LTS. Pin **4.14.6**. | `disableSyncWithV3()` before mutating DQL; no `Sendable` conformances |
 | [5.0.x](#50x) | Supported. Pin **5.0.3**. | `deliverOn:` is ignored — hop explicitly in observer handlers |
-| [5.1.x](#51x) | Current stable. Pin **5.1.0**. | `arm64` only; 5 MiB per-document limit |
-| [5.2.x](#52x) | Release candidate. Pin **5.2.0-rc.2**. | 5.1.x constraints; adds store encryption and `deleteStore` |
+| [5.1.x](#51x) | Supported. Pin **5.1.0**. | `arm64` only; 5 MiB per-document limit |
+| [5.2.x](#52x) | Current stable. Pin **5.2.0**. | 5.1.x constraints; adds encryption, `deleteStore`, Data Streams preview |
 
 ---
 
@@ -222,14 +222,12 @@ the message, not the case. Documents should be far smaller than the limit anyway
 
 ## 5.2.x
 
-**Status: release candidate.** Pin **5.2.0-rc.2** — the verified 5.2 build. 5.2.0 GA
-was published to `DittoSwiftPackage` on 2026-10-27, after this line was verified; the
-skill has not verified GA, so do not resolve to it with `from: "5.2.0"`.
+**Status: stable.** Pin **5.2.0**, verified against the published `DittoSwiftPackage`
+tag (commit `18455b383cc6b09f20dbfd6faa4f137c83490fde`) and shipped XCFramework.
 
 ### API surface on 5.2.x
 
-Diffed against the shipped `.swiftinterface`: **nothing was removed**. 5.2.x is 5.1.x
-plus:
+The shipped public and SPI interfaces add to 5.1.x:
 
 - **Store encryption:** `DittoEncryptionKey` (`.raw(_ bytes:)`) and
   `DittoConfig.encryptionKey`.
@@ -238,17 +236,20 @@ plus:
   `bool`, `int64`, `uint64`, `double`, `string`, `array` and `object`.
 - **`Ditto.deleteStore(databaseID:persistenceDirectory:)`** — delete an on-disk store
   without opening it.
+- **Data Streams preview:** `ditto.dataStreams`, `DittoStream`, candidates, acceptors,
+  inbound bytes and send operations, exposed only by
+  `@_spi(PreviewDataStreams) import DittoSwift`. Absent on the three earlier verified
+  Swift packages. Enable NGN before opening Ditto; see [data-streams.md](data-streams.md).
 - **`DittoError.EncryptionErrorReason` renames:** `passphraseNotGiven` → `keyRequired`,
   `extraneousPassphraseGiven` → `keyUnexpected`, `passphraseInvalid` → `keyInvalid`
   (old spellings deprecated), plus new `unsupportedScheme` and `metadataCorrupt`.
 
-`deleteStore` and the `systemParameters:` init sit behind a `compiler(>=5.3)` guard in
-the interface — visible to the Swift 6 toolchains this skill requires (type-checked
-against the 5.2.0-rc.2 binary), invisible to older compilers.
+`deleteStore` and the `systemParameters:` init require the interface’s
+`compiler(>=5.3)` guard; both compile with this skill’s Swift 6 toolchain.
 
 ### Best practice on 5.2.x
 
-Pin exactly `5.2.0-rc.2`, not a range that would resolve to the unverified GA build.
+Pin exactly `5.2.0` for reproducible builds.
 5.1.x code compiles unchanged; its constraints still apply (`arm64` only, 5 MiB
 documents).
 
@@ -268,10 +269,10 @@ before any Ditto API returns. Unset it or set `NO_COLOR=true`; see [testing.md](
 
 ### Package and toolchain
 
-One SPM URL serves all four lines: `https://github.com/getditto/DittoSwiftPackage`. The
+SwiftPM: `https://github.com/getditto/DittoSwiftPackage`. The
 version pin changes the package's shape, not its identity.
 
-| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0-rc.2 |
+| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `swift-tools-version` in the package manifest | `5.8.1` | `6.0` | `6.0` |
 | Library products | `DittoSwift` **and** `DittoObjC` | `DittoSwift` | `DittoSwift` |
@@ -287,7 +288,7 @@ Sources: `Package.swift` at each DittoSwiftPackage tag, and
 From the `Info.plist` of each published XCFramework. A declared SPM platform is not a
 shipped binary slice, and the two disagree for tvOS.
 
-| Slice | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0-rc.2 |
+| Slice | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `macos` | `arm64`, `x86_64` | `arm64`, `x86_64` | **`arm64` only** |
 | `ios` (device) | `arm64` | `arm64` | `arm64` |
@@ -321,7 +322,7 @@ Host: `https://software.ditto.live`. The path is `/cocoa/` up to 5.0.x and `/swi
 
 | Version | Browsable reference | Per-symbol DocC JSON |
 |---|---|---|
-| 5.1.0 and later (incl. 5.2.0-rc.2) | `…/swift/DittoSwift/<version>/api-reference/documentation/dittoswift/` | `…/swift/DittoSwift/<version>/api-reference/data/documentation/dittoswift/<symbol>.json` |
+| 5.1.0 and later (incl. 5.2.0) | `…/swift/DittoSwift/<version>/api-reference/documentation/dittoswift/` | `…/swift/DittoSwift/<version>/api-reference/data/documentation/dittoswift/<symbol>.json` |
 | 5.0.3 | `…/cocoa/DittoSwift/5.0.3/api-reference/documentation/dittoswift/` | `…/cocoa/DittoSwift/5.0.3/api-reference/data/documentation/dittoswift/<symbol>.json` |
 | 4.14.6 | `…/cocoa/DittoSwift/4.14.6/api-reference/` | not published |
 
@@ -347,7 +348,7 @@ Resolve a member by fetching the **parent type's** JSON and reading the slug fro
 
 ### `@Sendable` closure aliases: two arrive in 5.0, the rest in 5.1.0
 
-| Alias | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0-rc.2 |
+| Alias | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `DittoAuthenticationExpirationHandler` | plain | `@Sendable` | `@Sendable` |
 | `DittoConnectionRequestHandler` | plain | `@Sendable` | `@Sendable` |
@@ -360,7 +361,7 @@ closures `@Sendable` yourself so the same source compiles on every line.
 
 ### Store, results and errors
 
-| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0-rc.2 |
+| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `store.observers` / `sync.subscriptions` | stored `Set` | **computed** | **computed** |
 | `newAttachment(data:metadata:)` | absent (file path only) | present | present |

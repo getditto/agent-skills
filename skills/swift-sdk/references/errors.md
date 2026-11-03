@@ -34,6 +34,9 @@ case"*: `@unknown default` covers future cases, not declared ones.
 `DittoError` is a non-frozen enum from another module, so an exhaustive `switch` needs
 `@unknown default` **as well as** every declared case.
 
+With the 5.2.0 SPI import, also handle `.dataStreamsError(message:)`; see
+[data-streams.md](data-streams.md) for closed-resource and cancellation errors.
+
 ## The cases you will actually hit
 
 ### `storeError(_:)`

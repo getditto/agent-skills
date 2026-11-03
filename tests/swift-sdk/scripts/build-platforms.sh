@@ -64,7 +64,7 @@ run_one() {
 VERSIONS=()
 for arg in "$@"; do
   case "$arg" in
-    --all) VERSIONS=(4.14.6 5.0.3 5.1.0 5.2.0-rc.2) ;;
+    --all) VERSIONS=(4.14.6 5.0.3 5.1.0 5.2.0) ;;
     *) VERSIONS+=("$arg") ;;
   esac
 done

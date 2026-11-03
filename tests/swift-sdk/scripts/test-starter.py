@@ -35,7 +35,7 @@ def environment():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("version", choices=("4.14.6", "5.0.3", "5.1.0"))
+    parser.add_argument("version", choices=("4.14.6", "5.0.3", "5.1.0", "5.2.0"))
     parser.add_argument("--frameworks", type=Path, required=True,
                         help="macOS build products directory containing the resolved .frameworks")
     args = parser.parse_args()

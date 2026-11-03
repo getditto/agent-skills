@@ -61,7 +61,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | CAP-03 | Connecting: config, opening, persistence directory | preview | 4.14.x config/open is preview, no opt-in; prefer it to the deprecated identity initializer. GA on v5. |
 | CAP-04 | Authentication and identity | preview | 4.14.x provider/expirationHandler is preview; GA on v5. |
 | CAP-13 | Presence graph and connection requests | partial | Graph, peer metadata and observe are available; connectionRequestHandler only takes effect with a second peer. |
-| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0-only, default off, restricted entitlement required. No Swift Data Streams. [preview.md](references/preview.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | passphrase is experimental; multicast beta is 5.1+, default off, restricted entitlement required. Data Streams is 5.2.0 preview with SPI opt-in and NGN setup. [preview.md](references/preview.md) |
 
 ## Minimum viable app
 
@@ -165,6 +165,7 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Subscribe, scope sync or track status | [sync.md](references/sync.md) |
 | Update radios/endpoints | [transports.md](references/transports.md) |
 | Create/fetch attachments | [attachments.md](references/attachments.md); retain fetcher; token shape differs by version |
+| Stream ephemeral bytes between peers | [data-streams.md](references/data-streams.md); 5.2.0 preview, SPI opt-in, retain streams and copy inbound bytes in callbacks |
 | Presence/peer metadata | [presence.md](references/presence.md) |
 | Logging and disk usage | [observability.md](references/observability.md) |
 | On-disk upgrade/rollback | [storage.md](references/storage.md) |

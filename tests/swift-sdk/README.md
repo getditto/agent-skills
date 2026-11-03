@@ -1,7 +1,7 @@
 # `tests/swift-sdk` — executable verification for `skills/swift-sdk`
 
 Every claim in the Swift SDK skill marked **executed** was produced here. The same
-sources build and run against Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0-rc.2**,
+sources build and run against Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0**,
 and compile for macOS, the iOS Simulator, an iOS device and Mac Catalyst.
 
 ```
@@ -11,7 +11,7 @@ Sources/
   MinimalApp/                          the normative program in examples/minimal-app.md
   UIPatterns/                          SwiftUI, UIKit and AppKit samples, compile-checked
   PersistenceProbe/                    writes/reads a store for the cross-version matrix
-Tests/SwiftSDKSkillTests/              94 @Test declarations (3 parameterized)
+Tests/SwiftSDKSkillTests/              97 @Test declarations (4 parameterized; 3 declarations are 5.2-only)
 scripts/
   run.sh                               build, verify the pin, sign, run the tests,
                                        and assert the minimal app's output
@@ -25,7 +25,7 @@ scripts/
 ## Prerequisites
 
 - macOS on Apple silicon, Xcode 16 or later (verified on Xcode 27 / Swift 6.4).
-  5.1.0 and 5.2.0-rc.2 ship no `x86_64` slice, so an Intel Mac cannot run those legs.
+  5.1.0 and 5.2.0 ship no `x86_64` slice, so an Intel Mac cannot run those legs.
 - `DITTO_OFFLINE_LICENSE` in the gitignored repo-root `.env` — copy `.env-sample`.
   Everything here runs offline-only and the SDK will not accept work without it.
 - Optional: `DITTO_DATABASE_ID`, and `DITTO_URL` + `DITTO_TOKEN` to additionally exercise
@@ -41,7 +41,7 @@ Environment variables already set take precedence over `.env`, matching
 cd tests/swift-sdk
 
 ./scripts/run.sh 5.1.0                  # tests on one version
-./scripts/run.sh --all                  # 4.14.6, 5.0.3, 5.1.0 and 5.2.0-rc.2 in sequence
+./scripts/run.sh --all                  # 4.14.6, 5.0.3, 5.1.0 and 5.2.0 in sequence
 ./scripts/run.sh 5.1.0 --app            # tests, then the minimal app
 ./scripts/run.sh 5.1.0 --app --offline  # force the app's offline mode
 
@@ -61,7 +61,7 @@ Two environment problems make the obvious command fail. Both are documented for 
 1. **`swift test` exports `NO_COLOR=1`.** Ditto's Rust core reads `NO_COLOR` as its
    `--disable-color` option, which accepts only `true` or `false`, so the process panics
    during initialization before any test runs. Reproduced on 4.14.6, 5.0.3 and 5.1.0; the
-   runner's workaround carries 5.2.0-rc.2 as well.
+   runner's workaround carries 5.2.0 as well.
    There is no flag that stops `swift test` setting it, so the runner drives SwiftPM's
    own `swiftpm-testing-helper` with the variable cleared.
 2. **The published XCFramework is unsigned**, and SwiftPM copies it out of its artifact
@@ -144,8 +144,10 @@ the single file you edited.
 
 ## What is not covered
 
-Radio behaviour. This is one offline process, so BLE, AWDL, mDNS discovery, multi-peer
-convergence, connection requests and `DittoConnectionType` values other than the local
-peer's are out of reach, and the skill documents them from SDK source instead.
+Physical-device radio behaviour, multi-hop routing, mesh document convergence and
+connection requests are not exercised. The 5.2.0 Data Streams tests run two instances
+in one process with loopback TCP peer discovery and NGN enabled, checking the exact
+inbox/sender sample, ordered and bidirectional payload delivery in both reliability
+modes, handshake arguments and shutdown. Earlier versions compile out these SPI APIs.
 
 Nothing here runs on `x86_64`, and no test downgrades below 5.0.2 / 4.14.6.

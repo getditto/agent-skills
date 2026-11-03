@@ -15,7 +15,7 @@ observe, write, and read the write back through the observer.
 Longer form of [`SKILL.md` § Minimum viable app](../SKILL.md#minimum-viable-app).
 
 **This is a copy of `Sources/MinimalApp/MinimalApp.swift` in the fixture**, which CI
-compiles and runs on 4.14.6, 5.0.3, 5.1.0 and 5.2.0-rc.2.
+compiles and runs on 4.14.6, 5.0.3, 5.1.0 and 5.2.0.
 
 ## What it does
 

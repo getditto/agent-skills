@@ -4,7 +4,7 @@
 //
 // The Ditto version under test is selected by the DITTO_SWIFT_VERSION environment
 // variable, which is read when SwiftPM evaluates this manifest. Supported values are
-// the three lines the skill documents: 4.14.6, 5.0.3 and 5.1.0. All three resolve from
+// the four lines the skill documents: 4.14.6, 5.0.3, 5.1.0 and 5.2.0. All resolve from
 // the same SPM URL, so only the pin changes between runs.
 //
 //   DITTO_SWIFT_VERSION=5.1.0 ./scripts/run.sh
@@ -21,7 +21,8 @@ let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ??
 // `disableSyncWithV3()`), so the sources compile against it behind an explicit flag
 // rather than by probing for symbols.
 let versionFlags: [SwiftSetting] =
-    dittoVersion.hasPrefix("4.") ? [.define("DITTO_V4")] : []
+    dittoVersion.hasPrefix("4.") ? [.define("DITTO_V4")] :
+    (dittoVersion == "5.2.0" ? [.define("DITTO_DATA_STREAMS")] : [])
 
 let package = Package(
     name: "DittoSwiftSkillTests",

@@ -68,11 +68,13 @@ Its `DittoConnectionType.multicast` case is also 5.1.0-only, so an exhaustive `s
 over connection types is version-gated
 ([transports.md](transports.md#connection-types)).
 
-### Data Streams: not available in Swift
+### Data Streams — 5.2.0 preview
 
-Data Streams is **not exposed by the Swift SDK**. The nearest
-alternative for large payloads is an attachment
-([attachments.md](attachments.md)).
+Swift **5.2.0** exposes Data Streams behind
+`@_spi(PreviewDataStreams) import DittoSwift`. Enable NGN before opening Ditto;
+the API is preview and can change or be removed without notice. Coordinate use
+with Ditto. Setup, executable receive/send sample, threading and handle lifetimes:
+[data-streams.md](data-streams.md). Not exposed on 4.14.6, 5.0.3 or 5.1.0 Swift.
 
 ### Platform exclusions
 

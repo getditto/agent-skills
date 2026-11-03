@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 
-VERSIONS = ("4.14.6", "5.0.3", "5.1.0", "5.2.0-rc.2")
+VERSIONS = ("4.14.6", "5.0.3", "5.1.0", "5.2.0")
 SKILL = Path(__file__).resolve().parents[1]
 
 

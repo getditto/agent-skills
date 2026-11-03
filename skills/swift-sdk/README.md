@@ -37,13 +37,13 @@ Deliberately **out of scope** — these have their own skills:
 
 | Ditto SDK | Verified patch | Status |
 |---|---|---|
-| 5.2.x | 5.2.0-rc.2 | Release candidate. Additive over 5.1.x — store encryption, `systemParameters`, `deleteStore`. Pin exactly; 5.2.0 GA is published but not yet verified. |
+| 5.2.x | 5.2.0 | Stable. Adds store encryption, `systemParameters`, `deleteStore`, and Data Streams preview (SPI opt-in). |
 | 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line. |
 | 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
-skill's verified code targets 4.14.6, 5.0.3, 5.1.0 or 5.2.0-rc.2.
+skill's verified code targets 4.14.6, 5.0.3, 5.1.0 or 5.2.0.
 
 ## Capability map
 
@@ -74,7 +74,7 @@ line — see [`references/preview.md`](references/preview.md#platform-exclusions
 | CAP-17 | Device storage management and eviction | yes | executed | all |
 | CAP-18 | Testing | yes | executed | all |
 | CAP-19 | v4 to v5 migration, API and on-disk store | yes | executed | all |
-| CAP-20 | Preview and platform-specific APIs | preview | api-dump | all |
+| CAP-20 | Preview and platform-specific APIs | preview | executed | all |
 
 Rows that are not `Support: yes`:
 
@@ -106,9 +106,10 @@ Rows that are not `Support: yes`:
   `com.apple.developer.networking.multicast` entitlement
   (`5-1-capabilities/swift-specific-changelog.mdx:4-5`); contact Ditto before deploying
   them in production (`5-1-capabilities/common-capabilities.mdx:201-203`). The opt-in is
-  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams is not exposed by the
-  Swift SDK** — `sdk/latest/sync/data-streams.mdx` carries Kotlin samples only; for large
-  payloads use an attachment.
+  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams ships in Swift
+  5.2.0 as preview**, with `@_spi(PreviewDataStreams) import DittoSwift` and NGN enabled
+  before opening Ditto. The receive/send sample is executed between two instances;
+  see [data-streams.md](references/data-streams.md) for versioned sources and lifetimes.
 
 `Evidence: docs-sample` on CAP-02 cites `sdk/latest/install-guides/swift.mdx`. Paths
 beginning `sdk/` or `snippets/` are pages of the published documentation at
@@ -117,7 +118,7 @@ beginning `sdk/` or `snippets/` are pages of the published documentation at
 
 ## Verification
 
-**Executed against:** Ditto **4.14.6**, **5.0.3** and **5.1.0** on Apple silicon. The code
+**Executed against:** Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0** on Apple silicon. The code
 samples and both examples are compiled for macOS, iOS Simulator, iOS device and Mac
 Catalyst on all four versions, and the minimal app is run in CI. Contributors: see
 [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md).

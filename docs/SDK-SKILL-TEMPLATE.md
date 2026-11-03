@@ -801,7 +801,7 @@ Page-level gaps:
 | CAP-08 | `crud/working-with-ejson.mdx` has ` ```sql ` fences only — no host language, no snippet imports. |
 | CAP-17 | `sync/device-storage-management.mdx` has samples for Java and JavaScript only. |
 | CAP-18 | `deployment/testing.mdx` covers C#, Go, Java, JS, Kotlin, Rust, Swift, C++ — **no Dart/Flutter**. |
-| CAP-20 | `sync/data-streams.mdx` is Kotlin-only, requires 5.1.0, and is opt-in behind a preview annotation. Other SDKs record Data Streams as `Support: no` unless their own release notes say otherwise. |
+| CAP-20 | The public `sync/data-streams.mdx` guide has Kotlin 5.1.0 preview samples. Swift 5.2.0 ships Data Streams behind `@_spi(PreviewDataStreams) import DittoSwift`, verified from its binary and release source. Establish each SDK's availability from its own shipped API/source; a Kotlin-only guide does not prove another SDK lacks the feature. |
 | CAP-06 | Transport conditions: documented for Kotlin (`kotlin-v4.mdx`), JS (5.0 release notes) and Flutter (`Ditto.observeTransportConditions()`, new in 5.1). C++, Java, Rust and Go need source verification. |
 
 Re-verify before citing. These were measured on the docs checkout at the time of
