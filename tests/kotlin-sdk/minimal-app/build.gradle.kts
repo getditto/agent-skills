@@ -66,7 +66,7 @@ dependencies {
     // is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin does not
     // add it automatically.
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
 
