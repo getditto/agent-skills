@@ -456,6 +456,28 @@ version → report.
 
 ## Running the tests
 
+### Security dependency updates
+
+Accept dependency releases only after **72 hours**. Apply this to security fixes too:
+Dependabot's cooldown applies to version updates, so CI independently enforces release
+age. GitHub Actions use immutable commit SHAs with exact release comments; npm fixture
+installs use committed lockfiles and `npm ci`. Keep the historical Ditto fixture pins
+unless the change deliberately revises SDK coverage.
+
+Run `python3 scripts/check-dependency-age.py` to verify tracked npm versions, Action
+releases and commits, direct Maven pins, MCP resolution cutoff, and Gradle checksums.
+For resolved Maven transitives, run each Gradle fixture's `dependencyInventory` task with
+`-I <repo>/scripts/dependency-inventory.gradle` and `DEPENDENCY_AUDIT_OUTPUT=<file.json>`,
+then pass each file using `--maven-inventory <file.json>`; this also queries OSV.
+The dependency-security workflow repeats these checks and npm audits weekly and on PRs.
+
+The MCP bridge pin and its `--before` timestamp form one reviewed snapshot. Advance
+both during a dependency update, leaving the cutoff at least 72 hours behind the audit
+time; do not remove the cutoff, which also bounds transitive releases. Verify native
+SDK and runtime releases against their publishers when changing those pins. Generated,
+ignored host-tool caches (for example `.opencode/package-lock.json`) are outside the
+repository's dependency graph and must be maintained by the installed host tool.
+
 One-time setup:
 
 ```bash

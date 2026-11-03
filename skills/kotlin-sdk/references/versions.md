@@ -46,7 +46,7 @@ releases, N−4) and JDK 17 (<https://docs.ditto.live/sdk/latest/compatibility/k
 
 The Kotlin compiler reads class metadata at most one minor version newer than itself
 (N+1), so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0** and 2.0 for 5.0.3. The
-executed-working pin is Kotlin Gradle plugin **2.3.21** with
+security-updated JVM pin is Kotlin Gradle plugin **2.4.21** with
 `kotlinx-coroutines-core:1.10.2` (JVM). The harness also failed to compile 5.0.3 under
 KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler should read
 2.1 metadata under the N+1 rule — so do not quote that failure as the floor.
@@ -265,7 +265,7 @@ Condensed from <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> (
 - [ ] `live.ditto.*` → `com.ditto.kotlin.*`; coordinate `live.ditto:ditto` →
       `com.ditto:ditto-kotlin`; raise `minSdk` to 24 if lower; Kotlin plugin to ≥ 2.2
       for 5.1.0 and 5.2.0 (their artifacts depend on `kotlin-stdlib` 2.3.21 — see *Kotlin
-      toolchain* above; 2.3.21 is the executed pin).
+      toolchain* above; 2.4.21 is the security-updated JVM pin).
 - [ ] `Ditto(deps, identity)` → `DittoFactory.create(DittoConfig(databaseId, connect))`;
       delete the dependencies/identity types.
 - [ ] Delete `disableSyncWithV3()`, `runGarbageCollection()`,

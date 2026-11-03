@@ -35,6 +35,15 @@ android-app/                       both lines on a device or emulator
 - Android leg: Android SDK (`ANDROID_HOME`) with platform 36 installed, `adb` on
   `PATH`, and a connected device or booted emulator.
 
+## Security dependency pins
+
+The fixtures select KGP 2.4.21 (including AGP's buildscript classpath), align v5 Java
+OpenTelemetry modules through BOM 1.67.0, and align v4 Android Jackson modules through
+BOM 2.18.12. AGP build-time transitives also receive explicit mature security fixes.
+Both wrapper JARs match Gradle's published 9.8.2 checksum, and distribution downloads
+verify `distributionSha256Sum`. See `scripts/check-dependency-age.py` and
+`scripts/dependency-inventory.gradle` for repeatable age and OSV checks.
+
 ## Running the JVM leg (v5)
 
 ```bash

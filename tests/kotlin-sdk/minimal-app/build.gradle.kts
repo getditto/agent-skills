@@ -34,7 +34,7 @@ val dittoBinariesClassifier: String = run {
 }
 
 plugins {
-    kotlin("jvm") version "2.3.21"
+    kotlin("jvm") version "2.4.21"
     application
 }
 
@@ -43,6 +43,8 @@ repositories {
 }
 
 dependencies {
+    // Align the SDK's transitive Java telemetry modules with the tracestate DoS fix.
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     when (dittoLine) {
         // v5: KMP root module; Gradle resolves the -jvm variant. The JVM

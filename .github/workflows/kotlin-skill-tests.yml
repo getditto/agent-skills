@@ -25,15 +25,15 @@ jobs:
       matrix:
         sdk: ['5.0.3', '5.1.0', '5.2.0']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '17.0.21+9'
 
       # Caches Gradle; the version comes from the committed wrapper.
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Run the minimal app and assert its transcript
         working-directory: tests/kotlin-sdk/minimal-app

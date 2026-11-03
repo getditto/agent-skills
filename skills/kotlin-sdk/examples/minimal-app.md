@@ -38,12 +38,12 @@ closes everything in reverse order.
 ```kotlin
 // tests/kotlin-sdk/minimal-app/build.gradle.kts (excerpt)
 plugins {
-    kotlin("jvm") version "2.3.21"   // 5.1.0/5.2.0 depend on kotlin-stdlib 2.3.21 → KGP ≥ 2.2;
-                                     // 5.0.3 depends on 2.1.0. See references/versions.md
+    kotlin("jvm") version "2.4.21"   // includes the Kotlin build-cache security fix
     application
 }
 
 dependencies {
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("com.ditto:ditto-kotlin:5.2.0")
     // Mandatory on JVM — without it DittoFactory.create throws

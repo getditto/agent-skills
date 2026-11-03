@@ -2,11 +2,21 @@
   "mcpServers": {
     "ditto-docs": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://docs.ditto.live/mcp"]
+      "args": [
+        "-y",
+        "--before=2026-10-31T17:09:20Z",
+        "mcp-remote@0.15.2",
+        "https://docs.ditto.live/mcp"
+      ]
     },
     "ditto-inkeep": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.inkeep.com/dittolive/mcp"]
+      "args": [
+        "-y",
+        "--before=2026-10-31T17:09:20Z",
+        "mcp-remote@0.15.2",
+        "https://mcp.inkeep.com/dittolive/mcp"
+      ]
     }
   }
 }

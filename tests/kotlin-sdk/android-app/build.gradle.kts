@@ -30,6 +30,21 @@ val dittoLicense: String = providers.gradleProperty("dittoLicense").orNull
 val dittoDatabaseId: String = providers.gradleProperty("dittoDatabaseId").orNull
     ?: System.getenv("DITTO_DATABASE_ID") ?: dotEnv["DITTO_DATABASE_ID"] ?: ""
 
+// AGP embeds an older KGP; select the build-cache security fix explicitly.
+buildscript {
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21")
+        // Security fixes for AGP's build-time dependency graph.
+        classpath("com.google.guava:guava:33.7.2-jre")
+        classpath("org.apache.commons:commons-lang3:3.21.0")
+        classpath("org.bitbucket.b_c:jose4j:0.9.7")
+        classpath("org.bouncycastle:bcprov-jdk18on:1.86")
+        classpath("org.bouncycastle:bcpkix-jdk18on:1.86")
+        classpath("org.bouncycastle:bcutil-jdk18on:1.86")
+        classpath("org.jdom:jdom2:2.0.6.1")
+    }
+}
+
 plugins {
     id("com.android.application") version "9.4.1"
 }
@@ -70,9 +85,14 @@ android {
 }
 
 dependencies {
+    // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     when (dittoLine) {
-        "v4" -> implementation("live.ditto:ditto:$dittoVersion")
+        "v4" -> {
+            implementation("live.ditto:ditto:$dittoVersion")
+            implementation(enforcedPlatform("com.fasterxml.jackson:jackson-bom:2.18.12"))
+        }
         // KMP root module; Gradle resolves the -android variant. No ditto-binaries needed.
         "v5" -> implementation("com.ditto:ditto-kotlin:$dittoVersion")
         else -> error("unknown dittoLine: $dittoLine (v4 | v5)")

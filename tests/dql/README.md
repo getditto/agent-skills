@@ -45,6 +45,13 @@ Consequences worth knowing:
 - `@dittolive/ditto@5.0.3`
 - `@dittolive/ditto@5.1.0` (current — JOINs, composite indexes, RETURNING, ADVISE)
 
+The 4.14.6 directory is a **Node-only fixture**. Its `.npmrc` disables automatic peer
+installation, preventing unused React Native/Expo applications and their dependencies
+from entering the test tree. The remaining `fast-uri`, `glob`, `minimatch` and `uuid`
+overrides select audited security fixes. These settings are specific to this fixture;
+they are not installation guidance for React Native apps. Use `npm ci` to reproduce the
+reviewed lockfile. `scripts/check-dependency-age.py` enforces the 72-hour release policy.
+
 Each SDK lives in its own `node_modules` tree under `sdks/v<version>/` because they cannot coexist in the same Node process (objc class conflict on macOS, and APIs differ enough that one shim wouldn't suffice anyway).
 
 ## Status semantics
@@ -86,9 +93,9 @@ Both test runners auto-load the repo-root `.env`; variables already set in the e
 cd tests/dql
 
 # Install all isolated SDK trees
-(cd sdks/v4.14.6 && npm install)
-(cd sdks/v5.0.3 && npm install)
-(cd sdks/v5.1.0 && npm install)
+(cd sdks/v4.14.6 && npm ci)
+(cd sdks/v5.0.3 && npm ci)
+(cd sdks/v5.1.0 && npm ci)
 
 # Transform the real movies dataset to pedagogical schema (committed; only re-run if source changes)
 npm run transform
