@@ -20,9 +20,13 @@ let dittoVersion = ProcessInfo.processInfo.environment["DITTO_SWIFT_VERSION"] ??
 // 4.14.x is a different API in a handful of places (`activated` vs `isActivated`,
 // `disableSyncWithV3()`), so the sources compile against it behind an explicit flag
 // rather than by probing for symbols.
-let versionFlags: [SwiftSetting] =
-    dittoVersion.hasPrefix("4.") ? [.define("DITTO_V4")] :
-    (dittoVersion == "5.2.0" ? [.define("DITTO_DATA_STREAMS")] : [])
+// Data Streams exist in DittoSwift from 5.2.0 only (as `@_spi(PreviewDataStreams)`), so
+// Tests/SwiftSDKSkillTests/DataStreamsTests.swift compiles behind DITTO_DATA_STREAMS.
+let versionFlags: [SwiftSetting] = {
+    if dittoVersion.hasPrefix("4.") { return [.define("DITTO_V4")] }
+    if dittoVersion.hasPrefix("5.0.") || dittoVersion.hasPrefix("5.1.") { return [] }
+    return [.define("DITTO_DATA_STREAMS")]
+}()
 
 let package = Package(
     name: "DittoSwiftSkillTests",

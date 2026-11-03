@@ -7,6 +7,7 @@
 #                                     # DITTO_URL/DITTO_TOKEN are set)
 #   ./scripts/run.sh 5.1.0 --app --offline   # force the minimal app's offline mode
 #   ./scripts/run.sh --all            # 4.14.6, 5.0.3, 5.1.0 and 5.2.0 in sequence
+#                                     # (5.2.0 also runs the Data Streams tests)
 #
 # Reads DITTO_OFFLINE_LICENSE (required) and DITTO_DATABASE_ID / DITTO_URL /
 # DITTO_TOKEN (optional) from the gitignored repo-root .env, unless already set in the
