@@ -12,46 +12,20 @@ import Testing
 @testable import SkillSupport
 
 /// A thread-safe inbox the stream callbacks post into and tests await from.
-final class Mailbox<T: Sendable>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var items: [T] = []
-    private var waiter: CheckedContinuation<T, Never>?
+final class Mailbox<T: Sendable>: Sendable {
+    private let stream: AsyncStream<T>
+    private let continuation: AsyncStream<T>.Continuation
 
-    func post(_ value: T) {
-        lock.lock()
-        if let waiter {
-            self.waiter = nil
-            lock.unlock()
-            waiter.resume(returning: value)
-        } else {
-            items.append(value)
-            lock.unlock()
-        }
+    init() {
+        (stream, continuation) = AsyncStream<T>.makeStream()
     }
 
+    func post(_ value: T) { continuation.yield(value) }
+
     func next(timeout: Duration = .seconds(15)) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask {
-                await withCheckedContinuation { continuation in
-                    self.lock.lock()
-                    if !self.items.isEmpty {
-                        let value = self.items.removeFirst()
-                        self.lock.unlock()
-                        continuation.resume(returning: value)
-                    } else {
-                        self.waiter = continuation
-                        self.lock.unlock()
-                    }
-                }
-            }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw StreamTimeout()
-            }
-            let value = try await group.next()!
-            group.cancelAll()
-            return value
-        }
+        // AsyncStream cooperates with task cancellation. A checked continuation
+        // alone would leave the task group waiting forever after its timeout won.
+        try await firstElement(of: stream, timeout: timeout)
     }
 }
 
@@ -101,6 +75,13 @@ func connectWithRetry<T>(attempts: Int = 5, _ body: () async throws -> T) async 
 
 @Suite("Data Streams", .serialized)
 struct DataStreamsTests {
+
+    @Test("an empty mailbox times out and releases its waiting task", .timeLimit(.minutes(1)))
+    func mailboxTimeout() async {
+        await #expect(throws: StreamTimeout.self) {
+            _ = try await Mailbox<Int>().next(timeout: .milliseconds(50))
+        }
+    }
 
     @Test("bytes round-trip both ways on one reliable stream", .timeLimit(.minutes(3)))
     func roundTrip() async throws {

@@ -68,25 +68,21 @@ Its `DittoConnectionType.multicast` case is also 5.1.0-only, so an exhaustive `s
 over connection types is version-gated
 ([transports.md](transports.md#connection-types)).
 
-### Data Streams: 5.2.0 only, behind an SPI import
+### Data Streams — 5.2.0 preview
 
-Data Streams are **absent from 4.14.x, 5.0.x and 5.1.x** (no symbols in the 5.1.0 module
-interface) and appear in **5.2.0** as a preview system programming interface:
-`@_spi(PreviewDataStreams) import DittoSwift` exposes `ditto.dataStreams`, `bindTopic`,
-`connect`, `DittoStream` and friends. The Ditto docs do not describe the Swift API; the
-two-peer fixture on macOS does (executed, 5.2.0). NGN must be on at open
-(`DittoConfig(…, systemParameters: ["network_enable_ngn": .bool(true)])`). Implementation
-guide: [data-streams.md](data-streams.md); concepts: the `data-streams` skill. Below
-5.2.0 the nearest alternative for a large payload is an attachment
-([attachments.md](attachments.md)).
+Swift **5.2.0** exposes Data Streams behind
+`@_spi(PreviewDataStreams) import DittoSwift`. Enable NGN before opening Ditto;
+the API is preview and can change or be removed without notice. Coordinate use
+with Ditto. Setup, executable receive/send sample, threading and handle lifetimes:
+[data-streams.md](data-streams.md). Not exposed on 4.14.6, 5.0.3 or 5.1.0 Swift.
 
 ### Platform exclusions
 
 | Platform | Status |
 |---|---|
-| iOS, iPadOS, iOS Simulator | supported on all three lines |
-| macOS (AppKit) | supported on all three lines |
-| Mac Catalyst | supported on all three lines |
+| iOS, iPadOS, iOS Simulator | supported on all four lines |
+| macOS (AppKit) | supported on all four lines |
+| Mac Catalyst | supported on all four lines |
 | tvOS | **not supported on any v5 line.** Binaries still ship at 5.0.3 and are gone at 5.1.0 — a tvOS app should stay on 4.14.x and contact Ditto support |
 | visionOS | listed as a v4 beta platform in the migration guide, but no SPM slice ships on any line |
 | watchOS | excluded on every line |
@@ -96,8 +92,8 @@ Detail: [versions.md](versions.md#shipped-xcframework-slices).
 `DittoPeerOS.tvOS` outlives tvOS support on purpose, so a presence `switch` still has to
 handle it ([presence.md](presence.md#dittopeeros-and-exhaustive-switches)).
 
-Intel (`x86_64`) is removed from **every** 5.1.0 slice — macOS, iOS Simulator and Mac
-Catalyst — not only from the Mac build.
+Intel (`x86_64`) is removed from **every** 5.1.x and 5.2.x slice — macOS, iOS Simulator
+and Mac Catalyst — not only from the Mac build.
 
 ### DittoSwiftTools
 

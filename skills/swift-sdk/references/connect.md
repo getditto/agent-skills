@@ -230,7 +230,7 @@ ditto.sync.stop()
 ditto.sync.isActive     // false
 ```
 
-`sync.start()` throws; `sync.stop()` does not. This is the same on all three lines.
+`sync.start()` throws; `sync.stop()` does not. This is the same on all four lines.
 
 **`isActive` reports that sync was started, not that anything connected.** It is `true`
 on an offline-only instance with every transport disabled. To find out whether a peer is

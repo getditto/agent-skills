@@ -12,7 +12,7 @@ DittoLogger.isEnabled = true
 DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .verbose
 ```
 
-`isEnabled` works on all three lines; the older `enabled` spelling is a deprecated alias on
+`isEnabled` works on all four lines; the older `enabled` spelling is a deprecated alias on
 4.14.x and is gone in v5.
 
 ### Routing logs into your own logger

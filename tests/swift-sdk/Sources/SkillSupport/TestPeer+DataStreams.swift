@@ -85,10 +85,10 @@ extension TestPeer {
         seconds: Double,
         _ condition: @escaping @Sendable () -> Bool
     ) async throws {
-        let deadline = ContinuousClock.now + .seconds(seconds)
+        let deadline = ProcessInfo.processInfo.systemUptime + seconds
         while !condition() {
-            if ContinuousClock.now >= deadline { throw SkillTestError.timedOut(what) }
-            try await Task.sleep(for: .milliseconds(100))
+            if ProcessInfo.processInfo.systemUptime >= deadline { throw SkillTestError.timedOut(what) }
+            try await Task.sleep(nanoseconds: 100_000_000)
         }
     }
 }

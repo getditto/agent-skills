@@ -79,7 +79,7 @@ public struct ProjectTask: Identifiable, Sendable, Equatable {
         self.title = (value["title"] ?? nil) as? String ?? "Untitled"
         // `as? Bool` is correct and sufficient. Unlike NUMBERS — which arrive as the
         // narrowest CBOR type that holds them, so `as? Int` silently drops rows — a
-        // boolean round-trips as a plain `Bool` on all three lines.
+        // boolean round-trips as a plain `Bool` on all four lines.
         self.isDone = (value["isDone"] ?? nil) as? Bool ?? false
     }
 }

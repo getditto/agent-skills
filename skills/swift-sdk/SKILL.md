@@ -4,7 +4,7 @@ description: >
   Use ONLY for tasks that use the Ditto Swift SDK (not generic SwiftUI/Xcode work
   without Ditto): .swift, Package.swift or Xcode files touching import DittoSwift,
   DittoConfig, Ditto.open, observers, authentication, lifetimes and concurrency errors.
-  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x.
+  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.x.
   Other languages use their own Ditto SDK skill.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
@@ -23,7 +23,7 @@ README; the latter holds the capability/evidence map for coverage reviews.
 
 Writes and reviews Ditto Swift code: initialization, authentication, store access,
 sync, lifetimes, threading and Xcode/SwiftPM configuration. Supports **4.14.x (LTS),
-5.0.x and 5.1.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
+5.0.x, 5.1.x and 5.2.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
 
 ### New apps and integration failures
 
@@ -61,7 +61,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | CAP-03 | Connecting: config, opening, persistence directory | preview | 4.14.x config/open is preview, no opt-in; prefer it to the deprecated identity initializer. GA on v5. |
 | CAP-04 | Authentication and identity | preview | 4.14.x provider/expirationHandler is preview; GA on v5. |
 | CAP-13 | Presence graph and connection requests | partial | Graph, peer metadata and observe are available; connectionRequestHandler only takes effect with a second peer. |
-| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0+, default off, restricted entitlement required. Data Streams: 5.2.0 only, `@_spi(PreviewDataStreams) import DittoSwift`, executed on macOS. [preview.md](references/preview.md), [data-streams.md](references/data-streams.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | passphrase is experimental; multicast beta is 5.1+, default off, restricted entitlement required. Data Streams is 5.2.0 preview with SPI opt-in and NGN setup. [preview.md](references/preview.md) |
 
 ## Minimum viable app
 
@@ -165,11 +165,11 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Subscribe, scope sync or track status | [sync.md](references/sync.md) |
 | Update radios/endpoints | [transports.md](references/transports.md) |
 | Create/fetch attachments | [attachments.md](references/attachments.md); retain fetcher; token shape differs by version |
+| Stream ephemeral bytes | [data-streams.md](references/data-streams.md); 5.2.0 SPI; concepts in `data-streams` |
 | Presence/peer metadata | [presence.md](references/presence.md) |
 | Logging and disk usage | [observability.md](references/observability.md) |
 | On-disk upgrade/rollback | [storage.md](references/storage.md) |
 | Preview/platform APIs | [preview.md](references/preview.md) |
-| Stream raw bytes to one peer (Data Streams, 5.2.0 SPI) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
 | Architectural tradeoffs | [best-practices.md](best-practices.md), matching section |
 | Run/configure the minimal example | [minimal-app-running.md](references/minimal-app-running.md) |
 | Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled/run) or [swiftui-app.md](examples/swiftui-app.md) (compile checked) |
