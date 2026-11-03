@@ -13,7 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # ubuntu-24.04 rather than ubuntu-latest: setup-python has no 3.9 build for the
+        # Ubuntu 26.04 image, and this job exists to prove the oldest supported Python.
+        os: [ubuntu-24.04, windows-latest]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -75,8 +77,8 @@ jobs:
 
       - name: Check Swift host metadata and build standalone packages
         run: |
-          python3 scripts/package-swift-plugin.py --check
-          python3 scripts/package-swift-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
+          python3 scripts/package-sdk-plugin.py --check
+          python3 scripts/package-sdk-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
 
       - name: Upload Swift installation packages
         uses: actions/upload-artifact@v7
@@ -85,6 +87,19 @@ jobs:
           path: |
             ${{ runner.temp }}/ditto-swift-packages/*.zip
             ${{ runner.temp }}/ditto-swift-packages/SHA256SUMS
+
+      - name: Check Kotlin host metadata and build standalone packages
+        run: |
+          python3 scripts/package-sdk-plugin.py --plugin ditto-kotlin --check
+          python3 scripts/package-sdk-plugin.py --plugin ditto-kotlin --output "$RUNNER_TEMP/ditto-kotlin-packages"
+
+      - name: Upload Kotlin installation packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: ditto-kotlin-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-kotlin-packages/*.zip
+            ${{ runner.temp }}/ditto-kotlin-packages/SHA256SUMS
 
       - name: Check plugin references in marketplace
         run: |

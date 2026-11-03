@@ -52,10 +52,10 @@ struct ErrorTests {
             )
         }
 
-        if Ditto.version.hasPrefix("5.1.") {
+        if isV51OrLater {
             do {
                 try await insert()
-                Issue.record("expected a \(megabytes) MiB document to be rejected on 5.1.x")
+                Issue.record("expected a \(megabytes) MiB document to be rejected from 5.1.0")
             } catch let error as DittoError {
                 // The per-document limit surfaces from the query engine as
                 // `unknownError` carrying the byte counts — not as

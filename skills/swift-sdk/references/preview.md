@@ -68,10 +68,16 @@ Its `DittoConnectionType.multicast` case is also 5.1.0-only, so an exhaustive `s
 over connection types is version-gated
 ([transports.md](transports.md#connection-types)).
 
-### Data Streams: not available in Swift
+### Data Streams: 5.2.0 only, behind an SPI import
 
-Data Streams is **not exposed by the Swift SDK**. The nearest
-alternative for large payloads is an attachment
+Data Streams are **absent from 4.14.x, 5.0.x and 5.1.x** (no symbols in the 5.1.0 module
+interface) and appear in **5.2.0** as a preview system programming interface:
+`@_spi(PreviewDataStreams) import DittoSwift` exposes `ditto.dataStreams`, `bindTopic`,
+`connect`, `DittoStream` and friends. The Ditto docs do not describe the Swift API; the
+two-peer fixture on macOS does (executed, 5.2.0). NGN must be on at open
+(`DittoConfig(…, systemParameters: ["network_enable_ngn": .bool(true)])`). Implementation
+guide: [data-streams.md](data-streams.md); concepts: the `data-streams` skill. Below
+5.2.0 the nearest alternative for a large payload is an attachment
 ([attachments.md](attachments.md)).
 
 ### Platform exclusions

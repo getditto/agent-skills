@@ -61,7 +61,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | CAP-03 | Connecting: config, opening, persistence directory | preview | 4.14.x config/open is preview, no opt-in; prefer it to the deprecated identity initializer. GA on v5. |
 | CAP-04 | Authentication and identity | preview | 4.14.x provider/expirationHandler is preview; GA on v5. |
 | CAP-13 | Presence graph and connection requests | partial | Graph, peer metadata and observe are available; connectionRequestHandler only takes effect with a second peer. |
-| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0-only, default off, restricted entitlement required. No Swift Data Streams. [preview.md](references/preview.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0+, default off, restricted entitlement required. Data Streams: 5.2.0 only, `@_spi(PreviewDataStreams) import DittoSwift`, executed on macOS. [preview.md](references/preview.md), [data-streams.md](references/data-streams.md) |
 
 ## Minimum viable app
 
@@ -169,6 +169,7 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Logging and disk usage | [observability.md](references/observability.md) |
 | On-disk upgrade/rollback | [storage.md](references/storage.md) |
 | Preview/platform APIs | [preview.md](references/preview.md) |
+| Stream raw bytes to one peer (Data Streams, 5.2.0 SPI) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
 | Architectural tradeoffs | [best-practices.md](best-practices.md), matching section |
 | Run/configure the minimal example | [minimal-app-running.md](references/minimal-app-running.md) |
 | Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled/run) or [swiftui-app.md](examples/swiftui-app.md) (compile checked) |

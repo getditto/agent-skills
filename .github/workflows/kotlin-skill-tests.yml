@@ -1,0 +1,52 @@
+name: Kotlin SDK Skill Tests
+
+on:
+  pull_request:
+    paths:
+      - 'skills/kotlin-sdk/**'
+      - 'tests/kotlin-sdk/**'
+      - '.github/workflows/kotlin-skill-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/kotlin-sdk/**'
+      - 'tests/kotlin-sdk/**'
+      - '.github/workflows/kotlin-skill-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  jvm:
+    name: JVM minimal app and tests against Ditto SDK ${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['5.0.3', '5.1.0', '5.2.0']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Caches Gradle; the version comes from the committed wrapper.
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Run the minimal app and assert its transcript
+        working-directory: tests/kotlin-sdk/minimal-app
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: |
+          ./gradlew run -PdittoVersion="${{ matrix.sdk }}" --console=plain -q | tee run.log
+          grep -qx 'observer: 1 car(s)' run.log
+          grep -qx 'read-back make: Toyota' run.log
+          grep -qx "SDK version: ${{ matrix.sdk }}" run.log
+
+      - name: Run the JUnit fixture
+        working-directory: tests/kotlin-sdk/minimal-app
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: ./gradlew test -PdittoVersion="${{ matrix.sdk }}" --console=plain

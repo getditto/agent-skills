@@ -53,6 +53,47 @@ concurrency task with no Ditto dependency, where `swift-sdk` must not fire.
 - OpenCode/Kimi K3 was not available for the rerun. Claude reported USD 0.78 for the
   seven runs; Codex does not report cost.
 
+## Kotlin SDK skill addition — 2026-10-27
+
+With `kotlin-sdk` added alongside `swift-sdk`, two new cases and the Swift observer case
+were run once per host against the tree that includes both SDK skills.
+
+| Task | Claude Code 2.1.311 (Opus 5.5) | Codex 0.163.0 (`gpt-6.1-sol`) |
+|---|---|---|
+| Kotlin observer: `flowOn` jank, retained items, silent observer close | Pass, all five criteria; read `concurrency.md` only | Pass, all five criteria |
+| Plain Room/Compose Flow, no Ditto (new, trigger scope) | Pass; `kotlin-sdk` not invoked | Pass; no skill file read, no Ditto mention |
+| Swift 5.0.3 observer (routing check with both SDK skills installed) | Pass; `swift-sdk` only | Pass; `swift-sdk` only |
+
+- The `kotlin_observer` case targets the corrected guidance that `.flowOn(Dispatchers.IO)`
+  does not move an `observe()` transform off the Android main thread; both answers made
+  that point and hopped with `withContext` inside the transform.
+- One run per host and case; OpenCode/Kimi K3 was not available. Claude reported USD 0.37
+  for the three runs; Codex does not report cost.
+
+### Rerun after the 5.2.0 GA pin flip — 2026-10-27
+
+The Kotlin skill moved from `5.2.0-rc.2` to the released `5.2.0` (pins, "latest GA"
+guidance, transcripts). The two Kotlin cases were rerun on the same hosts against that
+tree: `kotlin_observer` passed all five criteria on both (Claude read `anti-patterns.md`
+only; Codex read the skill), and `kotlin_no_ditto` again invoked no skill and read no
+Ditto file on either host. Claude reported USD 0.20 for the two runs.
+
+## Data Streams skill addition — 2026-10-28
+
+With the new `data-streams` concept skill and the `data-streams.md` references in both SDK
+skills, two new cases were run once per host against the tree holding all seven skills.
+
+| Task | Claude Code (Opus 5.5) | Codex (`gpt-6.1-sol`) |
+|---|---|---|
+| Kotlin 5.2.0 sensor streaming with six planted faults (NGN after create, dashed topic, reliability mismatch, stored candidate, connect in presence callback, connect per frame) | Pass, all five criteria; invoked `data-streams`, read `kotlin-sdk/references/data-streams.md` | Pass, all five criteria; read `data-streams` and `kotlin-sdk` |
+| Swift 5.1.0 app asking whether Data Streams exist and how to use them | Pass, all five criteria; invoked `data-streams` and `swift-sdk`, read `swift-sdk/references/data-streams.md` | Pass, all five criteria; read `data-streams` and `swift-sdk` |
+
+- Both hosts stated the version floors correctly (Kotlin 5.1.0; Swift 5.2.0 only, via
+  `@_spi(PreviewDataStreams)`, undocumented by Ditto) and the preview status, and neither
+  invented a 5.1.0 Swift API.
+- One run per host and case; OpenCode/Kimi K3 was not available. Claude reported USD 0.36
+  for the two runs; Codex does not report cost.
+
 ## Final bounded regressions
 
 The same natural relay and order-model prompts were rerun on fresh Claude and Kimi
@@ -104,7 +145,7 @@ preserving prose and code blocks is not a semantic correctness check.
 - Generated Swift and extra SQL were not compiled or executed by this smoke suite.
   Core-task passes do not certify all ancillary statements or snippet completeness.
 
-`results.json` preserves 30 primary/retry/regression/rerun records including the timeout
+`results.json` preserves 36 primary/retry/regression/rerun records including the timeout
 and blocked Codex record. Pilot setup failures and all raw traces remain private.
 `cases.json` contains prompts and separate review criteria. `README.md` describes the
 reproducible method and command templates without credentials, private endpoints,

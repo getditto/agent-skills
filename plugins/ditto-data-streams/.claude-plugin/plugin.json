@@ -1,0 +1,20 @@
+{
+  "name": "ditto-data-streams",
+  "version": "1.0.0",
+  "description": "Ditto Data Streams (preview): low-latency, bidirectional raw-byte channels between peers over named topics — lifecycle, candidate ownership, reliability, NGN setup, and troubleshooting. Language-agnostic; pairs with the Kotlin and Swift SDK skills",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "data-streams",
+    "ditto",
+    "mesh",
+    "ngn",
+    "offline-first",
+    "p2p",
+    "realtime",
+    "streaming"
+  ]
+}

@@ -17,7 +17,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("swift_packager", ROOT / "scripts/package-swift-plugin.py")
+SPEC = importlib.util.spec_from_file_location("swift_packager", ROOT / "scripts/package-sdk-plugin.py")
 PACKAGER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PACKAGER)
 

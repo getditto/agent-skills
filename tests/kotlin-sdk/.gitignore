@@ -1,0 +1,9 @@
+# Local SDK path (contains a user-specific absolute path) and Gradle build output
+local.properties
+.gradle/
+build/
+# Ditto persistence directory created by the harness at runtime
+ditto-data/
+*.hprof
+# IDE/Eclipse-style output some tools create next to build/
+bin/
