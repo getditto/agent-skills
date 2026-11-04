@@ -191,6 +191,10 @@ Each release tag (`v*`) gets two assets, built by the workflow:
 The workflow runs `scripts/validate-sdk-skills.py` first, so a release can
 never ship a skill whose published example has drifted from its test fixture.
 
+Optional release summaries live in `docs/releases/<tag>.md`; the workflow
+prepends them to the generated skill list. See `docs/release-validation.md`
+for the v0.5.0 CLI verification checklist.
+
 ### Preconditions (check all of these before releasing)
 
 1. `gh auth status` — authenticated, token has `repo` scope.
