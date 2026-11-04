@@ -51,6 +51,11 @@ Cut a release by pushing a tag (`git tag v1.0.0 && git push origin v1.0.0`)
 or from the Actions tab (Release workflow → Run workflow). The workflow runs
 `scripts/validate-sdk-skills.py` first and refuses to publish a broken skill.
 
+The [v0.5.0 release summary](docs/releases/v0.5.0.md) prepares the seven skills
+on `main` for direct installation through the Ditto CLI, without publishing
+them to each agent's marketplace. See the [release verification checklist](docs/release-validation.md)
+for publishing and testing with [ditto-cli PR #6](https://github.com/getditto/ditto-cli/pull/6).
+
 ## Swift getting started
 
 The Swift skill includes a runnable SwiftUI project generator, diagnostics screen,

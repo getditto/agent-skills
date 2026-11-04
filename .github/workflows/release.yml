@@ -70,9 +70,15 @@ jobs:
           [ "$count" = "$expected" ] || { echo "::error::archive has $count skills, repo has $expected"; exit 1; }
           echo "archive OK: $count skills, $(du -h dist/ditto-skills.tar.gz | cut -f1)"
 
-      - name: Build release notes from the manifest
+      - name: Build release notes from the release summary and manifest
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           {
+            if [ -f "docs/releases/${RELEASE_TAG}.md" ]; then
+              cat "docs/releases/${RELEASE_TAG}.md"
+              echo
+            fi
             echo "## Skills in this release"
             echo
             python3 - <<'PYEOF'
