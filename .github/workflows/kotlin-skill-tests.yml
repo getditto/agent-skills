@@ -27,6 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Dependabot-triggered runs read Dependabot secrets, not Actions secrets.
+      - name: Check the offline license is configured
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: |
+          if [[ -z "$DITTO_OFFLINE_LICENSE" ]]; then
+            echo '::error::Set DITTO_OFFLINE_LICENSE in Actions secrets and Dependabot secrets before running the Kotlin fixtures.'
+            exit 1
+          fi
+
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -50,3 +60,30 @@ jobs:
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
         run: ./gradlew test -PdittoVersion="${{ matrix.sdk }}" --console=plain
+
+  android:
+    name: Android build against Ditto SDK ${{ matrix.sdk }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - line: v4
+            sdk: '4.14.7'
+          - line: v5
+            sdk: '5.0.3'
+          - line: v5
+            sdk: '5.1.0'
+          - line: v5
+            sdk: '5.2.0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17.0.21+9'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      # The hosted image supplies the Android SDK. APK assembly needs no license.
+      - name: Assemble the Android fixture
+        working-directory: tests/kotlin-sdk/android-app
+        run: ./gradlew assembleDebug -PdittoLine="${{ matrix.line }}" -PdittoVersion="${{ matrix.sdk }}" -PdittoAbi=arm64-v8a --console=plain
