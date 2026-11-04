@@ -10,7 +10,7 @@ minimal-app/                       v5 on the JVM — 5.0.3, 5.1.0 and 5.2.0
   build.gradle.kts                 version from -PdittoVersion (default 5.2.0);
                                    host-detected ditto-binaries classifier; .env loading
   src/main/kotlin/MainV5.kt        the normative program in examples/minimal-app.md
-  src/test/kotlin/DittoStoreTest.kt  JUnit 5: execute round-trip, observer delivery
+  src/test/kotlin/DittoStoreTest.kt  JUnit 6: execute round-trip, observer delivery
                                    (runBlocking and runTest forms), flowOn probe
   src/test/kotlin/DataStreamsTest.kt two peers in one JVM over a TCP loopback listener:
                                    the Data Streams claims (10 tests)
@@ -19,14 +19,14 @@ minimal-app/                       v5 on the JVM — 5.0.3, 5.1.0 and 5.2.0
 android-app/                       both lines on a device or emulator
   gradlew, gradle/wrapper/         Gradle 9.8.2 wrapper (committed)
   build.gradle.kts                 -PdittoLine=v4|v5 selects dependency, source set and
-                                   compileSdk (35 / 36); AGP 9.4.1 built-in Kotlin
+                                   compileSdk (35 / 36); AGP 9.5.0 built-in Kotlin
   src/v4/kotlin/.../MainActivity.kt   4.14.7 flow, v4 API shape
   src/v5/kotlin/.../MainActivity.kt   5.x flow plus the on-device thread probes
 ```
 
 ## Prerequisites
 
-- JDK 17. The committed wrapper downloads Gradle 9.8.2 (AGP 9.4.1 needs ≥ 9.6).
+- JDK 17. The committed wrapper downloads Gradle 9.8.2 (AGP 9.5.0 needs ≥ 9.6).
 - `DITTO_OFFLINE_LICENSE` in the environment or in the gitignored repo-root `.env`
   (copy `.env-sample`). Environment variables take precedence over `.env`, matching
   `tests/lib/load-env.mjs`. Everything here runs offline-only. If the license is bound
@@ -40,10 +40,32 @@ android-app/                       both lines on a device or emulator
 
 The fixtures select KGP 2.4.21 (including AGP's buildscript classpath), align v5 Java
 OpenTelemetry modules through BOM 1.67.0, and align v4 Android Jackson modules through
-BOM 2.18.12. AGP build-time transitives also receive explicit mature security fixes.
+BOM 2.18.12. Jackson 2.22.4 fails Android dexing at this fixture's `minSdk` 24:
+its Kotlin module uses `MethodHandle.invokeExact`, which requires API 26. Keep
+the patched 2.18 line; Dependabot may update its patches, but minor/major upgrades
+require a separate compatibility review.
+
+Coroutines core, Android and test modules use 1.11.0; JUnit Jupiter and
+its explicit platform launcher resolve together to 6.1.3. AGP build-time transitives
+also receive explicit mature security fixes.
 Both wrapper JARs match Gradle's published 9.8.2 checksum, and distribution downloads
 verify `distributionSha256Sum`. See `scripts/check-dependency-age.py` and
 `scripts/dependency-inventory.gradle` for repeatable age and OSV checks.
+
+## CI credentials
+
+Configure `DITTO_OFFLINE_LICENSE` in both the repository's **Actions secrets** and
+**Dependabot secrets**. GitHub uses the latter for Dependabot-triggered workflows;
+an Actions secret alone leaves the license empty in dependency PRs. The workflow
+checks this before running Gradle and fails explicitly if the secret is missing.
+See [GitHub's Dependabot troubleshooting guidance](https://docs.github.com/en/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-on-actions).
+
+Gradle version updates are grouped across both fixture directories so related
+runtime and test dependencies can be reviewed and validated in one PR. The
+three-day cooldown and separate security-update group remain enabled.
+CI also assembles Android debug APKs against 4.14.7, 5.0.3, 5.1.0 and 5.2.0,
+without a license or emulator, to catch dexing failures that dependency resolution
+alone cannot detect. Device execution remains a separate manual check.
 
 ## Running the JVM leg (v5)
 

@@ -27,11 +27,19 @@ updates:
     directories:
       - "/tests/kotlin-sdk/minimal-app"
       - "/tests/kotlin-sdk/android-app"
+    # Newer Jackson lines need API 26; the historical Android fixture targets 24.
+    # Continue accepting security/patch fixes on the verified 2.18 line.
+    ignore:
+      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 3
     groups:
+      gradle-version-updates:
+        applies-to: version-updates
+        patterns: ["*"]
       gradle-security:
         applies-to: security-updates
         patterns: ["*"]

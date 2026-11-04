@@ -46,7 +46,7 @@ buildscript {
 }
 
 plugins {
-    id("com.android.application") version "9.4.1"
+    id("com.android.application") version "9.5.0"
 }
 
 // v5 AARs declare a minimum compileSdk of 36 (the install guide's value); the v4 leg
@@ -107,10 +107,12 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     when (dittoLine) {
         "v4" -> {
             implementation("live.ditto:ditto:$dittoVersion")
+            // Keep the patched 2.18 line: 2.22's Kotlin module needs Android API 26
+            // (MethodHandle.invokeExact), but this fixture must still build for API 24.
             implementation(enforcedPlatform("com.fasterxml.jackson:jackson-bom:2.18.12"))
         }
         // KMP root module; Gradle resolves the -android variant. No ditto-binaries needed.
