@@ -1,7 +1,7 @@
 ---
 name: js-sdk
 description: >
-  Use ONLY for Ditto JavaScript and TypeScript APIs: .js/.ts/.tsx, @dittolive/ditto, Ditto.open, DittoConfig, store.execute and registerObserver. Routes Node.js, web/React, React Native and Expo to their platform skills. Covers 5.2.0 with 5.1.0/5.0.3 and 4.14.6 migration boundaries; not Swift or Kotlin.
+  Use ONLY for Ditto JavaScript and TypeScript APIs: .js/.ts/.tsx, @dittolive/ditto, Ditto.open, DittoConfig, store.execute and registerObserver. Routes Node.js, web/React, React Native and Expo to their platform skills. Defaults new projects to the latest stable SDK unless a version is requested; existing projects keep theirs; covers 5.1.0/5.0.3 and 4.14.6 migration boundaries. Not Swift or Kotlin.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -32,7 +32,13 @@ Concept ownership: `write-dql` or <https://docs.ditto.live/dql/dql> for grammar;
 ## Supported versions and packages
 
 Package: `@dittolive/ditto`. [Versions](references/versions.md) owns version-specific
-claims. New examples assume 5.2.0; preserve the installed version for existing projects.
+claims. Pick the version before writing package.json:
+
+- **New project, no version requested:** the latest stable release, from
+  `npm view @dittolive/ditto dist-tags.latest` (5.2.0 when authored). Don't take a version
+  from memory or older docs, and skip `-dev-weekly`, `-preview`, `-rc` and `-experimental` builds.
+- **Version requested by the user** (including 4.x): use it.
+- **Existing project:** keep the lockfile's version; upgrade or migrate only on request.
 
 ## Capability exceptions
 

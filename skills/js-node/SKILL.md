@@ -12,8 +12,9 @@ Use [js-sdk](../js-sdk/SKILL.md) for API contracts. This recipe owns Node deploy
 ## Workflow
 
 1. Inspect package.json, lockfile, Node version, OS and architecture. Use an active or
-   maintenance Node LTS; the fixture uses Node 22+. Pin `@dittolive/ditto@5.2.0` for a
-   new project. Preserve CommonJS/ESM conventions (`.mjs` or type:module for ESM).
+   maintenance Node LTS; the fixture uses Node 22+. For a new project pin the version the
+   user asked for, or else the latest stable (npm `latest`, 5.2.0 when authored); keep an
+   existing project's version. Preserve CommonJS/ESM conventions (`.mjs` or type:module for ESM).
 2. Run the [minimal program](../js-sdk/assets/minimal-app.mjs) with a development offline
    license. For a service use the [runtime](../js-sdk/assets/runtime.ts) and a stable,
    writable absolute directory on a persistent volume. One owner per directory.

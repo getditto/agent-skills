@@ -40,7 +40,8 @@ The generator refuses an existing directory; use a diff to integrate an existing
 1. Inspect the project's Expo SDK/RN pair, lockfile and native-directory ownership.
    Use `npx expo install --check` and `npx expo-doctor` to diagnose compatibility;
    don't force the starter's framework versions into an existing app.
-2. Install `@dittolive/ditto@5.2.0`; use `npx expo install expo-dev-client
+2. Keep an already-installed `@dittolive/ditto` version. If it is absent, install
+   the version the user asked for, or else the latest stable (npm `latest`, 5.2.0 when authored); use `npx expo install expo-dev-client
    @expo/config-plugins expo-build-properties` for framework-compatible peers.
 3. Add `@dittolive/ditto` to app.json/app.config plugins once. The
    [app config](assets/app.json) supplies Bluetooth/local-network purpose strings.

@@ -3,8 +3,9 @@
 ## CAP-01 Prerequisites, toolchain, package install
 
 Install `@dittolive/ditto` at an exact tested version and commit the lockfile. Start
-new examples on 5.2.0; preserve an existing application's version until migration is
-requested. TypeScript types are bundled; do not install a separate `@types` package.
+new projects on the latest stable release (npm `latest`) unless the user names a
+version; preserve an existing application's version until migration is requested
+([choosing a version](versions.md#choosing-a-version)). TypeScript types are bundled; do not install a separate `@types` package.
 Call `await init()` before opening. The package resolves a native Node binding,
 browser WASM, or React Native JSI binding through its package entry points.
 Do not force the Node entry point into Metro or a browser bundle.

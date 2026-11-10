@@ -17,7 +17,8 @@ for OS declarations. For an Expo project use [js-expo](../js-expo/SKILL.md).
    RN 0.86.3 / React 19.2.3 (New Architecture, Hermes). For a different RN line inspect
    the installed SDK's codegen/Gradle/podspec and build it; broad minimum-version docs
    do not establish every React Native/New Architecture combination.
-2. Install `@dittolive/ditto@5.2.0`. For the provided string-UUID task UI also install
+2. Keep an already-installed `@dittolive/ditto` version; otherwise install the
+   version the user asked for, or else the latest stable (npm `latest`, 5.2.0 when authored). For the provided string-UUID task UI also install
    `uuid@11.1.0`, `react-native-get-random-values@1.11.0`, and the framework-compatible
    `react-native-safe-area-context`. Wrap the root in SafeAreaProvider; the core RN
    SafeAreaView can leave Android edge-to-edge controls under the status bar. Verify autolinking with

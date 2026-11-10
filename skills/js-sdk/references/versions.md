@@ -13,7 +13,20 @@
 | Config systemParameters | absent | absent | options constructor supports it |
 | Browser disk persistence | none | none | none |
 
-Default for new code is **5.2.0**, the npm stable tag inspected during authoring.
+## Choosing a version
+
+| Situation | Version |
+|---|---|
+| New project, no version requested | the latest stable release: `npm view @dittolive/ditto dist-tags.latest` (5.2.0 when authored) |
+| User requests a version (including 4.x) | that version; v4 uses its own types and migration guide |
+| New Expo / React Native starter | ships pinned to **5.2.0**, its build-verified version; if npm `latest` is newer, bump the pin and rebuild iOS and Android |
+| Existing project | the version in its lockfile; do not upgrade or downgrade unless asked |
+| Existing 4.x project, upgrade requested | follow the migration guides below and the store-path notes |
+
+Version numbers from training data, blog posts or older install guides (for example
+4.12 or 4.14) are not a default for new code; use 4.x only when the user asks for it.
+Write an exact version, not a range. Ignore prerelease tags (`-dev-weekly`, `-preview`,
+`-rc`, `-experimental`).
 Do not silently upgrade an existing project. The runnable provider/native starter targets
 5.x; v4 maintenance uses its own package types and migration guide. Read the exact
 published package, not the repository's unreleased main branch. The test report states
