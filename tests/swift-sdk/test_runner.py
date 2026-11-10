@@ -3,6 +3,7 @@
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +19,14 @@ SPEC.loader.exec_module(MODULE)
 
 
 class RunnerTests(unittest.TestCase):
+    def test_published_data_streams_sample_is_the_executed_source(self):
+        guide = (ROOT.parents[1] / "skills/swift-sdk/references/data-streams.md").read_text()
+        programs = re.findall(r"```swift\n(.*?)\n```", guide, re.S)
+        source = (ROOT / "Sources/UIPatterns/StreamInbox.swift").read_text().splitlines()
+        self.assertEqual(source[0], "#if DITTO_DATA_STREAMS")
+        self.assertEqual(source[-1], "#endif")
+        self.assertIn("\n".join(source[1:-1]), programs)
+
     def make_bundle(self, root, name):
         binary = root / f"{name}.xctest/Contents/MacOS/{name}"
         binary.parent.mkdir(parents=True)

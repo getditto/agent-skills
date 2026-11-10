@@ -28,9 +28,12 @@ Deliberately **out of scope** — these have their own skills:
 
 ## Supported versions
 
+For new apps/POCs check Maven Central for the latest stable release; **5.2.0 is
+this skill’s knowledge baseline**, not a permanent dependency recommendation.
+
 | Ditto SDK | Package version | Status |
 |---|---|---|
-| 5.2.x | 5.2.0 | Current GA — executed (JVM, Android) |
+| 5.2.x | 5.2.0 | Latest known baseline — executed (JVM, Android) |
 | 5.1.x | 5.1.0 | Supported — executed |
 | 5.0.x | 5.0.3 | Supported — executed |
 | 4.14.x | 4.14.7 | LTS — executed (Android; no JVM artifact exists for this line) |

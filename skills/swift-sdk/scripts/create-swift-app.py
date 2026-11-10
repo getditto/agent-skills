@@ -7,11 +7,31 @@ from pathlib import Path
 import plistlib
 import re
 import shutil
+import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-VERSIONS = ("4.14.6", "5.0.3", "5.1.0")
+KNOWN_VERSION = "5.2.0"  # Knowledge/test baseline, never a default dependency pin.
+PACKAGE_URL = "https://github.com/getditto/DittoSwiftPackage"
 SKILL = Path(__file__).resolve().parents[1]
+
+
+def release_version(value):
+    if not re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", value):
+        raise ValueError("SDK version must be a stable major.minor.patch release")
+    return tuple(map(int, value.split(".")))
+
+
+def latest_version():
+    """Resolve stable SwiftPM tags; fail rather than silently pinning stale knowledge."""
+    result = subprocess.run(
+        ["git", "ls-remote", "--tags", "--refs", PACKAGE_URL],
+        check=True, capture_output=True, text=True, timeout=60,
+    )
+    versions = re.findall(r"refs/tags/([0-9]+\.[0-9]+\.[0-9]+)$", result.stdout, re.MULTILINE)
+    if not versions:
+        raise ValueError("No stable SwiftPM release tags found; check the package repository")
+    return max(versions, key=release_version)
 
 
 def write(path, content):
@@ -81,7 +101,7 @@ def project(name, bundle_id, version):
         "PRODUCT_NAME": "$(TARGET_NAME)", "PRODUCT_BUNDLE_IDENTIFIER": bundle_id,
         "INFOPLIST_FILE": "App/Info.plist", "GENERATE_INFOPLIST_FILE": "NO",
         "SWIFT_VERSION": "6.0", "SDKROOT": "auto",
-        **({"ARCHS": "arm64"} if version == "5.1.0" else {}),
+        **({"ARCHS": "arm64"} if release_version(version) >= (5, 1, 0) else {}),
         "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator macosx",
         "SUPPORTS_MACCATALYST": "YES", "TARGETED_DEVICE_FAMILY": "1,2",
         "IPHONEOS_DEPLOYMENT_TARGET": "15.0", "MACOSX_DEPLOYMENT_TARGET": "12.0",
@@ -172,18 +192,23 @@ def main():
     parser.add_argument("destination", type=Path)
     parser.add_argument("--name", default="DittoNotes")
     parser.add_argument("--bundle-id", default="com.example.ditto.notes")
-    parser.add_argument("--sdk-version", choices=VERSIONS, default="5.1.0")
+    parser.add_argument("--sdk-version", default="latest",
+                        help="latest stable SwiftPM tag (default), or an explicit stable version")
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", args.name):
         parser.error("--name must start with a letter and contain only letters, digits or underscores (max 64)")
     if not re.fullmatch(r"[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", args.bundle_id):
         parser.error("--bundle-id must be a reverse-DNS identifier")
     try:
+        version = latest_version() if args.sdk_version == "latest" else args.sdk_version
+        release_version(version)
         destination = args.destination.expanduser().absolute()
-        generate(destination, args.name, args.bundle_id, args.sdk_version)
-    except (OSError, ValueError) as error:
+        generate(destination, args.name, args.bundle_id, version)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
         parser.exit(1, f"Cannot generate project: {error}\n")
-    print(f"Created {destination / (args.name + '.xcodeproj')} (Ditto {args.sdk_version})")
+    print(f"Created {destination / (args.name + '.xcodeproj')} (Ditto {version})")
+    if release_version(version) > release_version(KNOWN_VERSION):
+        print(f"Skill knowledge ends at {KNOWN_VERSION}; review {version}'s release notes and validate the generated app.")
     print(f"Configure {destination / 'App/LocalConfig.plist'}, then follow {destination / 'README.md'}")
 
 

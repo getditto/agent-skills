@@ -1,5 +1,8 @@
 # Preview and platform-specific APIs — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 > **Sources for this file.** <https://docs.ditto.live/sdk/latest/sync/data-streams>,
 > <https://docs.ditto.live/sdk/latest/release-notes/kotlin>, <https://docs.ditto.live/sdk/latest/install-guides/kotlin>,
 > <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4>, <https://docs.ditto.live/sdk/latest/v5-whats-new>.

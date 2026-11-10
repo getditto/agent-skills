@@ -263,3 +263,13 @@ dialling it (`config.connect.tcpServers.add("127.0.0.1:$p")`), with
 `presence.observe()` to show the other peer on both sides before binding and connecting,
 and retries `connect` a bounded number of times. Copy that shape for your own tests; a
 single instance cannot stream to itself.
+
+## SDK 5.2.0 parameter names
+
+For 5.2.0, prefer `ngn_data_streams_enabled = true` and `ngn_sync_enabled = false`
+in `DittoConfig.systemParameters` before open. The older `network_enable_ngn` and
+`replication_over_ngn` names used in pre-5.2 recipes remain deprecated aliases.
+Enabling `ngn_sync_enabled` without `ngn_data_streams_enabled` now makes sync start
+fail. Keep document sync on the legacy path unless the deployment deliberately enables
+NGN sync on all required peers. This does not make Data Streams generally available;
+the preview status and per-language gates still apply. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).

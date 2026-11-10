@@ -1,5 +1,8 @@
 # Logging, diagnostics and stats — Ditto Swift SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## CAP-15 Logging, diagnostics and stats
 
 ### `DittoLogger`
@@ -12,7 +15,7 @@ DittoLogger.isEnabled = true
 DittoLogger.minimumLogLevel = .warning      // .error .warning .info .debug .verbose
 ```
 
-`isEnabled` works on all three lines; the older `enabled` spelling is a deprecated alias on
+`isEnabled` works on all four lines; the older `enabled` spelling is a deprecated alias on
 4.14.x and is gone in v5.
 
 ### Routing logs into your own logger

@@ -91,7 +91,7 @@ let car = try JSONDecoder().decode(Car.self, from: item.jsonData())
 ```
 
 **Booleans are the exception, and are simpler than you would guess from the above.** A
-stored `true`/`false` comes back as a plain Swift `Bool` on all three lines, so
+stored `true`/`false` comes back as a plain Swift `Bool` on all four lines, so
 `(value["isDone"] ?? nil) as? Bool` is correct and sufficient — no `NSNumber` dance.
 Only numbers need the widening treatment.
 

@@ -6,14 +6,14 @@
 - [4.14.x](#414x)
 - [5.0.x](#50x)
 - [5.1.x](#51x)
+- [5.2.x](#52x)
 - [All lines](#all-lines)
-  - [5.2.0 and Data Streams](#520-and-data-streams)
 - [Cross-version reference](#cross-version-reference)
 - [CAP-19 v4 to v5 migration, API and on-disk store](#cap-19-v4-to-v5-migration-api-and-on-disk-store)
 
-**This file owns every fact that differs between 4.14.x, 5.0.x and 5.1.x.** Every other
-file in this skill shows the 5.1.x form and links here. Covered releases: **4.14.6**,
-**5.0.3**, **5.1.0**.
+**This file owns version differences through SDK 5.2.0.** Covered release baselines:
+**4.14.6**, **5.0.3**, **5.1.0**, **5.2.0**. Historical tables retain their original
+execution evidence; the 5.2.0 section describes the new API and behavior.
 
 ---
 
@@ -21,20 +21,23 @@ file in this skill shows the 5.1.x form and links here. Covered releases: **4.14
 
 Read the pin before writing any Ditto code:
 
-- **Xcode project:** the `DittoSwiftPackage` entry in
-  `*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`, or
-  *Package Dependencies* in the project navigator.
+- **Xcode project:** the `DittoSwiftPackage` entry in the project's
+  `project.xcworkspace/xcshareddata/swiftpm/Package.resolved`, or *Package Dependencies*
+  in the project navigator.
 - **SwiftPM package:** the `.package(url: "https://github.com/getditto/DittoSwiftPackage", …)`
   requirement in `Package.swift`, and the resolved version in `Package.resolved`.
 - **At runtime:** `Ditto.version` returns the linked SDK version string.
 
-**When the version cannot be determined, emit 5.1.x code and say so.**
+For new apps/POCs, resolve the latest stable SwiftPM release; **5.2.0 is the latest
+known baseline**, not a permanent recommendation. Preserve existing pins. See
+[setup.md](setup.md) for version selection and [sdk-5.2.md](sdk-5.2.md) for new APIs.
 
 | Line | Status | What to check first |
 |---|---|---|
 | [4.14.x](#414x) | LTS. Pin **4.14.6**. | `disableSyncWithV3()` before mutating DQL; no `Sendable` conformances |
 | [5.0.x](#50x) | Supported. Pin **5.0.3**. | `deliverOn:` is ignored — hop explicitly in observer handlers |
-| [5.1.x](#51x) | Current. Pin **5.1.0**. | `arm64` only; 5 MiB per-document limit |
+| [5.2.0](#52x) | Latest known baseline; resolve latest stable for new apps. | Encryption, deleteStore, startup parameters; Data Streams preview |
+| [5.1.x](#51x) | Historical baseline **5.1.0**. | `arm64` only; 5 MiB per-document limit |
 
 ---
 
@@ -90,9 +93,8 @@ required; it is the one deprecated API this skill emits.
 Compiling v5-shaped code against 4.14.x in Swift 6 language mode fails with
 `error: sending 'ditto' risks causing data races` (and the same for `ditto.store`). Use
 `@preconcurrency import DittoSwift` on this line. Do **not** add retroactive
-`extension Ditto: @unchecked Sendable {}` shims: on v5 they fail with
-`error: conformance of 'Ditto' to protocol 'Sendable' was already stated in the type's
-module 'DittoSwift'`.
+`extension Ditto: @unchecked Sendable {}` shims: on v5 they fail with "conformance of
+'Ditto' to protocol 'Sendable' was already stated in the type's module 'DittoSwift'".
 
 ### Known issues on 4.14.x
 
@@ -100,11 +102,11 @@ module 'DittoSwift'`.
 |---|---|---|
 | Regression in 4.14.5 (per the v4 release notes) | 4.14.5 | Pin 4.14.6. Never recommend 4.14.5. |
 | mDNS advertised and browsed with incorrect information, so LAN discovery fails | before 4.14.3 | Upgrade to 4.14.6. |
-| Use after the owning `Ditto` is released: `store.registerObserver` / `store.execute` throw `useAfterCloseError`; every other aggregate call is a `fatalError` | 4.14.6 | Keep the `Ditto` instance alive for as long as anything uses it — see [Use after release](#use-after-the-owning-ditto-is-released). |
+| Use after the owning `Ditto` is released: `store.registerObserver` / `store.execute` throw `useAfterCloseError`; every other aggregate call is a `fatalError` | 4.14.6 | Keep the `Ditto` alive — see [Use after release](#use-after-the-owning-ditto-is-released). |
 
 ### Best practice on 4.14.x
 
-- Pin exactly `4.14.6`.
+- For historical reproduction, pin `4.14.6`; new apps resolve the latest stable SwiftPM release.
 - Open with `Ditto.open(config:)`, call `disableSyncWithV3()`, then `sync.start()`.
 - `@preconcurrency import DittoSwift` in Swift 6 language mode.
 - Hop to the main actor inside observer handlers instead of relying on `deliverOn:`, so
@@ -142,13 +144,12 @@ Changes from 4.14.x:
 
 ### `deliverOn:` is ignored on 5.0.x
 
-`registerObserver(deliverOn:)` accepts a queue on 5.0.x but does not deliver on it.
-Handlers run on an SDK queue. Handler code that passes `deliverOn: .main` and then touches
-main-actor state is correct on 4.14.x and 5.1.x and fails on 5.0.x; the 5.1 changelog
-describes the fix as *"resolving a crash when used with Swift concurrency"*.
+`registerObserver(deliverOn:)` accepts a queue on 5.0.x but does not deliver on it;
+handlers run on an SDK queue. Handler code that passes `deliverOn: .main` and then
+touches main-actor state is correct on 4.14.x and 5.1.x and fails on 5.0.x.
 
 **Write code that does not depend on it:** hop explicitly inside the handler, and the
-same source is correct on all three lines — see [observers.md](observers.md).
+same source is correct on all four lines — see [observers.md](observers.md).
 
 ### Known issues on 5.0.x
 
@@ -157,11 +158,11 @@ same source is correct on all three lines — see [observers.md](observers.md).
 | `deliverOn:` is ignored (above) | 5.1.0 | Hop to the main actor inside the handler. |
 | An uncaught exception thrown inside an SDK callback is reported as a `SIGABRT` attributed to Ditto rather than with the original call stack | 4.14.6, 5.1.0 | Catch errors inside callbacks; upgrade to 5.1.x for readable reports. |
 | A custom `DITIdentityProvider` stalls the SDK on the first credential refresh | 5.1.0 | Upgrade to 5.1.x if the app uses a custom identity provider. |
-| Use after the owning `Ditto` is released is a `fatalError` on every aggregate, including `store.registerObserver` and `store.execute` | not changed | Keep the `Ditto` instance alive — see [Use after release](#use-after-the-owning-ditto-is-released). |
+| Use after the owning `Ditto` is released is a `fatalError` on every aggregate, including `store.registerObserver` and `store.execute` | not changed | Keep the `Ditto` alive — see [Use after release](#use-after-the-owning-ditto-is-released). |
 
 ### Best practice on 5.0.x
 
-- Pin exactly `5.0.3`; prefer 5.1.x for new work.
+- Use `5.0.3` only when reproducing this historical baseline. For new work, resolve the latest stable SwiftPM release.
 - Hop explicitly in every observer handler.
 - `import Foundation` alongside `import DittoSwift`.
 
@@ -192,8 +193,8 @@ Changes from 5.0.x:
 
 ### The 5 MiB per-document limit is new in 5.1.0
 
-5.1.x rejects a document larger than 5 242 880 bytes. 4.14.x and 5.0.x accept documents of
-that size, so an app that writes them works on 5.0.x and starts failing after upgrading:
+5.1.x rejects a document larger than 5 242 880 bytes; 4.14.x and 5.0.x accept one, so an
+app that writes oversized documents starts failing after upgrading:
 
 ```
 DittoError.unknownError(message: "<dql> Query failed: `DQL Internal execution error:
@@ -209,35 +210,48 @@ the message, not the case. Documents should be far smaller than the limit anyway
 
 | Issue | What to do |
 |---|---|
-| No `x86_64` slice: Intel Macs cannot build or run macOS, iOS Simulator or Mac Catalyst targets against 5.1.0 | Build on Apple silicon, or stay on 5.0.3 for Intel hosts. Generic Simulator builds must target `arm64` only, or they fail with `unsupported Swift architecture`. |
+| No `x86_64` slice: Intel Macs cannot build or run any 5.1.x target | Build on Apple silicon, or stay on 5.0.3 for Intel hosts. Generic Simulator builds need `ARCHS=arm64` or fail with `unsupported Swift architecture`. |
 | Oversized documents fail with `unknownError` (above) | Keep documents small; match the size error by message. |
 | Downgrading a store written by 5.1.x | Route through 5.0.2+ or 4.14.6+, which recognise the new index format — see [storage.md](storage.md). |
-| Use after the owning `Ditto` is released is a `fatalError` on every aggregate | Keep the `Ditto` instance alive — see [Use after release](#use-after-the-owning-ditto-is-released). |
+| Use after the owning `Ditto` is released is a `fatalError` on every aggregate | Keep the `Ditto` alive — see [Use after release](#use-after-the-owning-ditto-is-released). |
 
 ### Best practice on 5.1.x
 
-- Pin exactly `5.1.0`. This is the default line for new code.
+- `5.1.0` is a historical test baseline. For new code, resolve the latest stable SwiftPM release.
 - `deliverOn:` works, but hopping explicitly keeps code portable to 5.0.x.
+
+---
+
+## 5.2.x
+
+**Latest known baseline: 5.2.0.** Resolve the latest stable release for a new app.
+This baseline was verified against the published `DittoSwiftPackage`
+tag (commit `18455b383cc6b09f20dbfd6faa4f137c83490fde`) and shipped XCFramework.
+
+### API surface on 5.2.x
+
+5.2.0 adds raw-key encryption, startup system parameters, store deletion, typed
+encryption errors and Data Streams preview. Read [sdk-5.2.md](sdk-5.2.md) for the
+API shapes, error mappings and compiler guards, and [data-streams.md](data-streams.md)
+for the Swift SPI and lifecycle. Earlier verified Swift packages lack Data Streams.
+
+### Best practice on 5.2.x
+
+5.2.0 is the latest documented baseline. Data Streams remain a preview, accessed with
+`@_spi(PreviewDataStreams) import DittoSwift`; see [data-streams.md](data-streams.md).
+For the stable additions, read [sdk-5.2.md](sdk-5.2.md): raw-key encryption, store
+deletion, startup system parameters, typed errors and JSON boolean binding.
+Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
 ---
 
 ## All lines
 
-### 5.2.0 and Data Streams
-
-5.2.0 is **not** one of this skill's documented lines; it is referenced only because the
-Data Streams preview exists in Swift from 5.2.0, as `@_spi(PreviewDataStreams) import
-DittoSwift` ([data-streams.md](data-streams.md)). The fixture's existing test suite passes
-on 5.2.0 unchanged (executed), and 5.2.0 adds a `DittoConfig` initializer with
-`systemParameters:` and the `DittoError.dataStreamsError(message:)` case. Pin 5.1.0 for
-everything else until this skill covers 5.2.x.
-
 ### `NO_COLOR` must be `true` or `false`
 
 The SDK reads `NO_COLOR` during initialization and accepts only `true` or `false`. With
-`NO_COLOR=1` — the common convention, and what `swift test` sets in the test process — the
-process aborts before any Ditto API returns. Unset the variable or set `NO_COLOR=true` in
-any process that opens Ditto; see [testing.md](testing.md).
+`NO_COLOR=1` — the common convention, and what `swift test` sets — the process aborts
+before any Ditto API returns. Unset it or set `NO_COLOR=true`; see [testing.md](testing.md).
 
 ---
 
@@ -245,10 +259,10 @@ any process that opens Ditto; see [testing.md](testing.md).
 
 ### Package and toolchain
 
-One SPM URL serves all three lines: `https://github.com/getditto/DittoSwiftPackage`. The
+SwiftPM: `https://github.com/getditto/DittoSwiftPackage`. The
 version pin changes the package's shape, not its identity.
 
-| | 4.14.6 | 5.0.3 | 5.1.0 |
+| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `swift-tools-version` in the package manifest | `5.8.1` | `6.0` | `6.0` |
 | Library products | `DittoSwift` **and** `DittoObjC` | `DittoSwift` | `DittoSwift` |
@@ -256,8 +270,7 @@ version pin changes the package's shape, not its identity.
 | Declared platforms | iOS 14, macOS 11, Catalyst 14, tvOS 14 | iOS 15, macOS 12, Catalyst 15, tvOS 15 | iOS 15, macOS 12, Catalyst 15 |
 | Xcode / Swift floor | Swift tools 5.8.1 (from the manifest) | Xcode 16+, Swift 6.0+ | Xcode 16+, Swift 6.0+ |
 
-Sources: `Package.swift` at each tag of
-[getditto/DittoSwiftPackage](https://github.com/getditto/DittoSwiftPackage), and
+Sources: `Package.swift` at each DittoSwiftPackage tag, and
 <https://docs.ditto.live/sdk/latest/compatibility/swift>.
 
 ### Shipped XCFramework slices
@@ -265,7 +278,7 @@ Sources: `Package.swift` at each tag of
 From the `Info.plist` of each published XCFramework. A declared SPM platform is not a
 shipped binary slice, and the two disagree for tvOS.
 
-| Slice | 4.14.6 | 5.0.3 | 5.1.0 |
+| Slice | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `macos` | `arm64`, `x86_64` | `arm64`, `x86_64` | **`arm64` only** |
 | `ios` (device) | `arm64` | `arm64` | `arm64` |
@@ -276,15 +289,14 @@ shipped binary slice, and the two disagree for tvOS.
 
 - **5.1.0 drops `x86_64` everywhere**, not only on the Mac: the iOS Simulator and Mac
   Catalyst on Intel hardware are affected too.
-- **tvOS is not supported on any v5 line.** Support was withdrawn in 5.0 and the binary
-  removed in 5.1. A tvOS app should stay on 4.14.x and contact Ditto support, as the
+- **tvOS is not supported on any v5 line** — withdrawn in 5.0, binary removed in 5.1.
+  A tvOS app should stay on 4.14.x and contact Ditto support, as the
   [migration guide](https://docs.ditto.live/sdk/latest/migration-guides/swift-v4)
-  instructs.
-- **visionOS and watchOS** are not supported on any line.
+  instructs. visionOS and watchOS are not supported on any line.
 
 ### Platform minimums
 
-| | 4.14.x | 5.0.x / 5.1.x |
+| | 4.14.x | 5.0.x and later |
 |---|---|---|
 | iOS / iPadOS / Simulator | 14.0 | 15.0 |
 | macOS (AppKit) | 11.0 | 12.0 |
@@ -300,7 +312,7 @@ Host: `https://software.ditto.live`. The path is `/cocoa/` up to 5.0.x and `/swi
 
 | Version | Browsable reference | Per-symbol DocC JSON |
 |---|---|---|
-| 5.1.0 | `…/swift/DittoSwift/5.1.0/api-reference/documentation/dittoswift/` | `…/swift/DittoSwift/5.1.0/api-reference/data/documentation/dittoswift/<symbol>.json` |
+| 5.1.0 and later (incl. 5.2.0) | `…/swift/DittoSwift/<version>/api-reference/documentation/dittoswift/` | `…/swift/DittoSwift/<version>/api-reference/data/documentation/dittoswift/<symbol>.json` |
 | 5.0.3 | `…/cocoa/DittoSwift/5.0.3/api-reference/documentation/dittoswift/` | `…/cocoa/DittoSwift/5.0.3/api-reference/data/documentation/dittoswift/<symbol>.json` |
 | 4.14.6 | `…/cocoa/DittoSwift/4.14.6/api-reference/` | not published |
 
@@ -309,7 +321,7 @@ Resolve a member by fetching the **parent type's** JSON and reading the slug fro
 
 ### Initialization and lifecycle
 
-| | 4.14.6 | 5.0.3 / 5.1.0 |
+| | 4.14.6 | 5.0.3 and later |
 |---|---|---|
 | Recommended entry point | `DittoConfig` + `Ditto.open(config:)` / `openSync(config:)` | same |
 | `DittoConfig` / `Ditto.open` stability label | **preview** | GA |
@@ -326,7 +338,7 @@ Resolve a member by fetching the **parent type's** JSON and reading the slug fro
 
 ### `@Sendable` closure aliases: two arrive in 5.0, the rest in 5.1.0
 
-| Alias | 4.14.6 | 5.0.3 | 5.1.0 |
+| Alias | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `DittoAuthenticationExpirationHandler` | plain | `@Sendable` | `@Sendable` |
 | `DittoConnectionRequestHandler` | plain | `@Sendable` | `@Sendable` |
@@ -339,7 +351,7 @@ closures `@Sendable` yourself so the same source compiles on every line.
 
 ### Store, results and errors
 
-| | 4.14.6 | 5.0.3 | 5.1.0 |
+| | 4.14.6 | 5.0.3 | 5.1.0 / 5.2.0 |
 |---|---|---|---|
 | `store.observers` / `sync.subscriptions` | stored `Set` | **computed** | **computed** |
 | `newAttachment(data:metadata:)` | absent (file path only) | present | present |
@@ -358,26 +370,19 @@ closures `@Sendable` yourself so the same source compiles on every line.
 
 ### Use after the owning `Ditto` is released
 
-Aggregates (`store`, `sync`, `presence`, `smallPeerInfo`, `auth`, `experimental`) hold a
-weak reference to their `Ditto`. Calling one after the last strong reference to `Ditto`
-is gone is an unrecoverable `fatalError` on every line. The only exception is 4.14.6,
-where `store.registerObserver` and `store.execute` throw `useAfterCloseError` instead;
-that behaviour is not present in 5.0.x or 5.1.x.
-
-The rule is therefore the same on all three lines: own the `Ditto` instance for as long
-as anything uses its aggregates. See [lifetimes.md](lifetimes.md) and
-[`SKILL.md`](../SKILL.md#object-lifetimes-and-retention).
+Aggregates hold a weak reference to their `Ditto`; calling one after the last strong
+reference is gone is a `fatalError` on every line — except 4.14.6, where
+`store.registerObserver` and `store.execute` throw `useAfterCloseError`. Own the `Ditto`
+for as long as anything uses its aggregates. Full detail: [lifetimes.md](lifetimes.md)
+and [`SKILL.md`](../SKILL.md#object-lifetimes-and-retention).
 
 ---
 
 ## CAP-19 v4 to v5 migration, API and on-disk store
 
 This skill owns the *API form Swift uses on each line* (above) and the *on-disk
-behaviour* ([storage.md](storage.md)). It does not author a migration procedure — the
-published step-by-step guides are
+behaviour* ([storage.md](storage.md)). The published step-by-step migration guides are
 <https://docs.ditto.live/sdk/latest/migration-guides/swift-v4> (API) and
-<https://docs.ditto.live/sdk/latest/migration-guides/swift-dql> (queries), and this skill
-recommends the same initialization, sync and observation forms they do.
-
-Presence, peer and Combine renames between 4.14.x and v5 are in
-[api-compatibility.md](api-compatibility.md).
+<https://docs.ditto.live/sdk/latest/migration-guides/swift-dql> (queries); this skill
+recommends the same forms they do. Presence, peer and Combine renames between 4.14.x
+and v5 are in [api-compatibility.md](api-compatibility.md).

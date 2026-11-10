@@ -168,6 +168,79 @@ optional — enables the server-authentication leg), `DM_MODEL_CMD`
 `.env` with their own shell parser.
 Overview for contributors: `testing-readme.md`.
 
+## Releases
+
+A release publishes the skills as a **slim, versioned artifact** that the
+`dittosh` CLI (`dittosh skills add|update|versions`) downloads — instead of the
+full repo tarball, which includes `tests/`, `docs/` and other repo-only content
+that end users should never pay to download. The release machinery lives in
+`.github/workflows/release.yml`; this section is everything an agent needs to
+cut a release when asked.
+
+### What a release produces
+
+Each release tag (`v*`) gets two assets, built by the workflow:
+
+- `ditto-skills.tar.gz` — `skills/` + `LICENSE.md` + `skills-manifest.json`
+  at the archive root. Nothing else: the workflow **fails** if `tests/`,
+  `docs/`, `plugins/`, `scripts/` or `.github/` entries sneak into the archive,
+  and if any `skills/*/SKILL.md` is missing from it.
+- `skills-manifest.json` — name/path/description per skill, parsed from
+  `SKILL.md` frontmatter by `scripts/build-release-manifest.py`.
+
+The workflow runs `scripts/validate-sdk-skills.py` first, so a release can
+never ship a skill whose published example has drifted from its test fixture.
+
+Optional release summaries live in `docs/releases/<tag>.md`; the workflow
+prepends them to the generated skill list. See `docs/release-validation.md`
+for the v0.5.0 CLI verification checklist.
+
+### Preconditions (check all of these before releasing)
+
+1. `gh auth status` — authenticated, token has `repo` scope.
+2. `git checkout main && git pull` — clean tree, up to date.
+3. **CI green on main** — `gh run list --branch main --limit 5`; the commit
+   being tagged must have passing CI (validate + skill test workflows).
+4. **Content review** — this repo is intended to become PUBLIC. Skim the diff
+   since the last tag (`git log <last-tag>..main --stat`); confirm nothing
+   customer-inappropriate is being published.
+5. **Decide the version** — semver, bumping from the last tag
+   (`git tag -l 'v*' --sort=-v:refname | head -1`): patch for skill content
+   fixes, minor for a new skill, major for layout/convention changes.
+
+### How to cut the release
+
+Preferred — manual dispatch (the workflow creates the tag at the current
+`main` HEAD):
+
+```bash
+gh workflow run Release -f tag=vX.Y.Z
+```
+
+Equivalent — push a tag yourself (the workflow triggers on the push):
+
+```bash
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+### Verify afterwards (always do this)
+
+```bash
+gh run list --workflow=release.yml --limit 1     # run succeeds
+gh release view vX.Y.Z                            # both assets attached, notes list every skill
+```
+
+Then the end-to-end check from the consumer side, if `dittosh` is available:
+
+```bash
+GITHUB_TOKEN=$(gh auth token) dittosh skills versions            # vX.Y.Z shows as latest, slim_asset: yes
+GITHUB_TOKEN=$(gh auth token) dittosh skills add write-dql --ref vX.Y.Z --agent claude --project "$(mktemp -d)"
+```
+
+If the workflow fails, read the log (`gh run view --log`), fix, and re-run —
+do not delete and re-push a tag that has already published a release; cut a
+new patch version instead.
+
 ## MCP Servers
 
 The root `.mcp.json` (Claude-format) exposes `ditto-docs` (Ditto
@@ -179,9 +252,14 @@ at the same remote endpoints with their own MCP config.
 - Never commit directly to `main`; work on a branch tied to a Linear issue
   (e.g. `sdks-4838/...`).
 - Minimal diffs; don't reformat unrelated content.
-- The DQL skill documents Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x. 5.1.x
+- The DQL skill documents Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. 5.1+
   ships JOINs, composite (multi-column) indexes, `RETURNING` on INSERT/UPDATE,
-  and `ADVISE`; all are harness-verified against `@dittolive/ditto@5.1.0`.
+  and `ADVISE`; the harness also runs `@dittolive/ditto@5.2.0`, including its
+  mutation/index fixes and diagnostics.
+- For new Swift/Kotlin/JavaScript apps, resolve the latest stable release through
+  SwiftPM/Maven Central/npm unless the user names a version. 5.2.0 is the skills’
+  knowledge baseline, not a fixed recommendation; keep exact pins in test fixtures for
+  reproducibility.
 
 ## JavaScript platform family
 

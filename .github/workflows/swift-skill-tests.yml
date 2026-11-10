@@ -23,9 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['4.14.6', '5.0.3', '5.1.0']
+        sdk: ['4.14.6', '5.0.3', '5.1.0', '5.2.0']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Generate the Xcode app
         run: python3 skills/swift-sdk/scripts/create-swift-app.py "$RUNNER_TEMP/DittoNotes" --sdk-version "${{ matrix.sdk }}"
       - name: Build the generated app for Mac, Simulator and Catalyst
@@ -50,10 +50,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 5.2.0 is here for the Data Streams tests (Swift exposes the API from 5.2.0).
         sdk: ['4.14.6', '5.0.3', '5.1.0', '5.2.0']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Show toolchain
         run: |
@@ -76,9 +75,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['4.14.6', '5.0.3', '5.1.0']
+        sdk: ['4.14.6', '5.0.3', '5.1.0', '5.2.0']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build macOS, iOS Simulator, iOS device and Mac Catalyst
         working-directory: tests/swift-sdk
         run: ./scripts/build-platforms.sh "${{ matrix.sdk }}"
@@ -87,7 +86,7 @@ jobs:
     name: Cross-version on-disk store
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Upgrade, rollback and legacy-directory fallback
         working-directory: tests/swift-sdk
         env:

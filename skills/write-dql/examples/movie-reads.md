@@ -13,7 +13,7 @@
 - [Task 10 — Two-step "join" (top movies by review average)](#task-10--two-step-join-top-movies-by-review-average)
 
 Topic index: [movies-cookbook.md](movies-cookbook.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 ## Read patterns
 

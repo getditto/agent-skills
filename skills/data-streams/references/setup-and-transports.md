@@ -7,7 +7,7 @@ Swift 5.2.0 declarations; **executed** items come from the two-peer fixtures.
 
 Data Streams run over Ditto's **next-generation networking (NGN)**, which is off by default
 and must be enabled **before** the `Ditto` instance is constructed; changing it afterwards
-has no effect (<https://docs.ditto.live/sdk/latest/sync/data-streams>). Two switches:
+has no effect (<https://docs.ditto.live/sdk/latest/sync/data-streams>). Before 5.2.0, use these names (deprecated aliases in 5.2.0):
 
 | Switch | Meaning | Recommended in the preview |
 |---|---|---|
@@ -21,9 +21,9 @@ Two ways to set them:
    (the fixture sets them on the Gradle test task, executed). Apple: `setenv` before
    `Ditto.open`.
 2. **`systemParameters` in the config, 5.2.0 and later.** Kotlin `DittoConfig(…,
-   systemParameters = mapOf("network_enable_ngn" to true, "replication_over_ngn" to false))`;
-   Swift `DittoConfig(…, systemParameters: ["network_enable_ngn": .bool(true),
-   "replication_over_ngn": .bool(false)])` (executed in the Swift fixture).
+   systemParameters = mapOf("ngn_data_streams_enabled" to true, "ngn_sync_enabled" to false))`;
+   Swift `DittoConfig(…, systemParameters: ["ngn_data_streams_enabled": .bool(true),
+   "ngn_sync_enabled": .bool(false)])` (executed in the Swift fixture).
 
 `replication_over_ngn` must be **the same on every peer that replicates documents** with
 each other; the reference apps that set it `true` do so on every peer. Mixed settings
@@ -69,3 +69,13 @@ split the mesh for document sync even though streams still work.
   it on a dedicated 64 MB-stack thread (executed). Details: `swift-sdk/references/data-streams.md`.
 - **JVM:** the same `com.ditto:ditto-kotlin` API with the `ditto-binaries` classifier;
   environment variables are the way to enable NGN below 5.2.0.
+
+## SDK 5.2.0 parameter names
+
+For 5.2.0, prefer `ngn_data_streams_enabled = true` and `ngn_sync_enabled = false`
+in `DittoConfig.systemParameters` before open. The older `network_enable_ngn` and
+`replication_over_ngn` names used in pre-5.2 recipes remain deprecated aliases.
+Enabling `ngn_sync_enabled` without `ngn_data_streams_enabled` now makes sync start
+fail. Keep document sync on the legacy path unless the deployment deliberately enables
+NGN sync on all required peers. This does not make Data Streams generally available;
+the preview status and per-language gates still apply. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).

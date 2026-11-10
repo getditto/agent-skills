@@ -24,7 +24,7 @@ Mac Catalyst 15+, using a Swift 6 toolchain. Ad-hoc signing supports local Simul
 and Mac builds; physical iOS deployment requires the user's development team and
 provisioning. Background execution is a separate application requirement, not
 something the starter's foreground demonstration establishes.
-The 5.1.0 project is arm64-only, matching the published XCFramework. Do not promise
+The 5.1.0/5.2.0 project is arm64-only, matching the published XCFramework. Do not promise
 Intel Mac/Simulator compatibility for that pin or disable signing to force a build.
 
 ## Existing app

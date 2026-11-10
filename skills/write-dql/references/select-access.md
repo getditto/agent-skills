@@ -7,13 +7,13 @@
 - [5. USE DIRECTIVES](#5-use-directives)
 
 Topic index: [select.md](select.md). Covers Ditto SDK 4.14.x (LTS),
-5.0.x and 5.1.x; version-specific notes remain inline. Read only the topic needed.
+5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
 
 ## 3. USE IDS
 
-> **SELECT-only.** `USE IDS` is supported on `SELECT` in 4.14.x, 5.0.x, and 5.1.x. On mutations it is a parse error on 4.14.x and 5.0.x, and on 5.1.x it parses on `UPDATE` (before `SET` only) but remains documented as a SELECT-only feature. `TOMBSTONE` is unavailable on every SDK version. **For mutations targeting a known id set, use `WHERE _id IN (...)` on every version** — see [`statements.md`](statements.md).
+> **Version boundary:** `USE IDS` works on SELECT across the covered releases, on UPDATE (before `SET`) from 5.1.0, and on DELETE/EVICT from **5.2.0**. DELETE/EVICT parsed but removed nothing on 5.1.0. Use `WHERE _id IN (…)` for portable mutations. `TOMBSTONE` remains unavailable on Small Peers. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
 ```
 USE IDS ( <id_expr> [, <id_expr> ...] )
@@ -70,7 +70,7 @@ SELECT * FROM movies USE IDS (:id);
 
 Binding an *array* of ids (`USE IDS (:id_list)`) is the parser-rejected list form again — use `WHERE _id IN :id_list` instead, which the 5.1+ planner then rewrites to the direct id path.
 
-### 3.4 Why USE IDS is SELECT-only
+### 3.4 USE IDS on mutations
 
 On 4.14.x and 5.0.x the syntax is accepted only on `SELECT`; on 5.1.x it reaches the mutation paths but is only trustworthy on `UPDATE` (see §3 above). On mutations you have two portable options:
 

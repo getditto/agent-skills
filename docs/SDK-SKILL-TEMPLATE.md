@@ -204,7 +204,7 @@ description: >
   Use ONLY for the Ditto <Language> SDK (not <the other eight> — each has its own
   skill). Triggers on <file extensions>, <build file names>, <package coordinate>,
   <2-4 literal API names>, <2-3 literal error strings you actually observed>.
-  Ditto SDK 4.14.x, 5.0.x, 5.1.x.
+  Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 ---
 ```
 
@@ -555,7 +555,7 @@ distributed (Appendix B).
 
 ## 10. Version coverage
 
-Every SDK skill documents **4.14.x (LTS), 5.0.x and 5.1.x**, matching the `dql` skill.
+Every SDK skill documents **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**, matching the `dql` skill.
 
 Follow `CONTRIBUTING.md` §2 in full — exact patch versions, every version-gated claim
 tagged inline *and* in `references/versions.md`, the failure mode on older versions, and
@@ -568,9 +568,12 @@ Three rules specific to SDK skills:
   `SKILL.md` §3 is a pointer, not a claim. One fact, one home.
 - **v4 and v5 are different APIs, not two versions of one.** Show the v5 form in the
   body; keep the v4 form in `references/versions.md`. No inline "in v4 this was…" asides.
-- **The default is v5.** An agent that cannot determine the user's version emits 5.1.x
-  and says which version it assumed. State this in `SKILL.md` §3 so all nine behave
-  identically.
+- **Separate knowledge from dependency selection.** 5.2.0 is the latest known
+  baseline. New apps/POCs check their package manager for the latest stable release,
+  use the resolved version, and validate newer APIs against release notes. Swift uses
+  SwiftPM tags; Kotlin uses Maven Central metadata with matching native binaries.
+  Preserve existing project pins unless upgrading. A failed lookup is not evidence
+  that the knowledge baseline is still latest. Test fixtures keep exact reproducible pins.
 
 ---
 
@@ -803,7 +806,7 @@ Page-level gaps:
 | CAP-08 | `crud/working-with-ejson.mdx` has ` ```sql ` fences only — no host language, no snippet imports. |
 | CAP-17 | `sync/device-storage-management.mdx` has samples for Java and JavaScript only. |
 | CAP-18 | `deployment/testing.mdx` covers C#, Go, Java, JS, Kotlin, Rust, Swift, C++ — **no Dart/Flutter**. |
-| CAP-20 | `sync/data-streams.mdx` is Kotlin-only, requires 5.1.0, and is opt-in behind a preview annotation. Other SDKs record Data Streams as `Support: no` unless their own release notes say otherwise. |
+| CAP-20 | The public `sync/data-streams.mdx` guide has Kotlin 5.1.0 preview samples. Swift 5.2.0 ships Data Streams behind `@_spi(PreviewDataStreams) import DittoSwift`, verified from its binary and release source. Establish each SDK's availability from its own shipped API/source; a Kotlin-only guide does not prove another SDK lacks the feature. |
 | CAP-06 | Transport conditions: documented for Kotlin (`kotlin-v4.mdx`), JS (5.0 release notes) and Flutter (`Ditto.observeTransportConditions()`, new in 5.1). C++, Java, Rust and Go need source verification. |
 
 Re-verify before citing. These were measured on the docs checkout at the time of

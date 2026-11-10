@@ -35,15 +35,19 @@ Deliberately **out of scope** — these have their own skills:
 
 ## Supported versions
 
+New apps/POCs use the latest stable release checked through SwiftPM. **5.2.0 is
+the latest release known to this skill**, not a hard-coded recommendation. The
+generator resolves stable package tags and writes the selected exact version.
+
 | Ditto SDK | Verified patch | Status |
 |---|---|---|
-| 5.1.x | 5.1.0 | Default. Emitted when the project's version cannot be determined. |
+| 5.1.x | 5.1.0 | Historical compatibility baseline. |
 | 5.0.x | 5.0.3 | Supported. `deliverOn:` is ignored on this line. |
 | 4.14.x | 4.14.6 | **LTS** — v4 receives 18 months of long-term support, extending to Dec 2027 (`sdk/latest/v5-whats-new.mdx:266`). No 5.x line is designated LTS anywhere. Do not pin 4.14.5; the release notes identify it as regressed. |
-| 5.2.x | 5.2.0 | **Data Streams only.** The fixture's test suite also passes on 5.2.0, but the skill's other content is documented against 5.1.0; see [`references/data-streams.md`](references/data-streams.md). |
+| 5.2.x | 5.2.0 | Latest known baseline; stable additions and Data Streams preview. See [5.2 changes](references/sdk-5.2.md). |
 
 4.12.x and 4.13.x are **not** documented lines. A project on either is told that this
-skill's verified code targets 4.14.6, 5.0.3 or 5.1.0.
+skill's verified code targets 4.14.6, 5.0.3, 5.1.0 or 5.2.0.
 
 ## Capability map
 
@@ -74,15 +78,15 @@ line — see [`references/preview.md`](references/preview.md#platform-exclusions
 | CAP-17 | Device storage management and eviction | yes | executed | all |
 | CAP-18 | Testing | yes | executed | all |
 | CAP-19 | v4 to v5 migration, API and on-disk store | yes | executed | all |
-| CAP-20 | Preview and platform-specific APIs | preview | api-dump | all |
+| CAP-20 | Preview and platform-specific APIs | preview | executed | all |
 
 Rows that are not `Support: yes`:
 
 - **CAP-03 `preview`** — on **4.14.x only**, introduced in **4.12.0**: `DittoConfig`,
   `Ditto.open(config:)`, `Ditto.openSync(config:)` and `Ditto.config` are labelled
   *(Preview)* in the release notes (`sdk/v4/release-notes/swift.mdx:419,421,427`). There
-  is no opt-in flag — using the type is the opt-in. They are GA on 5.0.x and 5.1.x. The
-  skill recommends them on all three lines because the alternative,
+  is no opt-in flag — using the type is the opt-in. They are GA on 5.0.x and later. The
+  skill recommends them on all four lines because the alternative,
   `Ditto(identity:persistenceDirectory:)`, is deprecated on 4.14.x and removed in v5.
   **Stability:** the preview label means "this is the shape v5 standardizes on", which is
   what shipped; it does not mean the API is unstable.
@@ -92,7 +96,7 @@ Rows that are not `Support: yes`:
   (`sdk/v4/release-notes/swift.mdx:423,425,429`). `DittoAuthenticator` itself is not
   preview and predates 4.14. There is no opt-in flag — using the API is the opt-in.
   **Stability:** these are the v5 replacement for `DittoAuthenticationDelegate`, and are
-  GA on 5.0.x and 5.1.x.
+  GA on 5.0.x and later.
 - **CAP-13 `partial`** — the presence graph, peer metadata and observation are covered and
   executed. The connection-request path (`presence.connectionRequestHandler`) needs a
   second peer and is documented from the public guide at
@@ -106,12 +110,10 @@ Rows that are not `Support: yes`:
   `com.apple.developer.networking.multicast` entitlement
   (`5-1-capabilities/swift-specific-changelog.mdx:4-5`); contact Ditto before deploying
   them in production (`5-1-capabilities/common-capabilities.mdx:201-203`). The opt-in is
-  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams exist in Swift from
-  5.2.0 only**, as `@_spi(PreviewDataStreams) import DittoSwift`; the docs page
-  `sdk/latest/sync/data-streams.mdx` carries Kotlin samples only, so the Swift surface is
-  taken from the 5.2.0 module interface and executed by the two-peer fixture
-  (`DataStreamsTests`, 9 tests, macOS). Below 5.2.0 use an attachment for a large
-  payload. Guide: [`references/data-streams.md`](references/data-streams.md).
+  `config.peerToPeer.multicastBeta.isEnabled = true`. **Data Streams ships in Swift
+  5.2.0 as preview**, with `@_spi(PreviewDataStreams) import DittoSwift` and NGN enabled
+  before opening Ditto. The receive/send sample is executed between two instances;
+  see [data-streams.md](references/data-streams.md) for versioned sources and lifetimes.
 
 `Evidence: docs-sample` on CAP-02 cites `sdk/latest/install-guides/swift.mdx`. Paths
 beginning `sdk/` or `snippets/` are pages of the published documentation at
@@ -120,9 +122,9 @@ beginning `sdk/` or `snippets/` are pages of the published documentation at
 
 ## Verification
 
-**Executed against:** Ditto **4.14.6**, **5.0.3** and **5.1.0** on Apple silicon. The code
+**Executed against:** Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0** on Apple silicon. The code
 samples and both examples are compiled for macOS, iOS Simulator, iOS device and Mac
-Catalyst on all three versions, and the minimal app is run in CI. Contributors: see
+Catalyst on all four versions, and the minimal app is run in CI. Contributors: see
 [`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md).
 
 **Not covered by automated tests:**
@@ -130,7 +132,7 @@ Catalyst on all three versions, and the minimal app is run in CI. Contributors: 
 - Multi-peer behaviour — BLE, AWDL, mDNS discovery, remote presence and connection
   requests.
 - Intel (`x86_64`) hosts, and tvOS / visionOS.
-- Encryption at rest and the 5.1 multicast beta.
+- Physical multicast beta behavior (5.1+). Raw-key encryption is covered by the 5.2.0 tests.
 - UI-level behaviour of the SwiftUI, UIKit and AppKit samples; they are compiled, and
   their store and observer logic is exercised at runtime.
 

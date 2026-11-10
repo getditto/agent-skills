@@ -1,6 +1,6 @@
 ---
 title: DQL operators reference
-description: Complete operator catalog with precedence, NULL/MISSING semantics, and 4-valued logic. Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
+description: Complete operator catalog with precedence, NULL/MISSING semantics, and 4-valued logic. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0; version-gated features are tagged inline.
 ---
 
 # DQL operators reference
@@ -17,12 +17,12 @@ description: Complete operator catalog with precedence, NULL/MISSING semantics, 
 - [8. String operator `||`](#8-string-operator-)
 - [9. Array and object access](#9-array-and-object-access)
 - [10. Critical warnings](#10-critical-warnings)
-- [11. `XOR` — version-gated](#11-xor--version-gated)
+- [11. `XOR` — unsupported](#11-xor--unsupported)
 - [See also](#see-also)
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every operator usable on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
+Authoritative catalog of every operator usable on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
 
 Unless a section carries an "Available in:" note, the operator works identically on 4.14.x, 5.0.x, and 5.1.x. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).
 
@@ -373,24 +373,27 @@ WHERE ratings IS UNKNOWN                    -- absent or explicitly null
 
 ---
 
-## 11. `XOR` — version-gated
+## 11. `XOR` — unsupported
 
-> **Available in:** Ditto SDK 4.x only (removed in 5.0, planned for return in 5.1)
+> **Unsupported on every tested release:** Ditto SDK 4.14.6, 5.0.3, 5.1.0 and 5.2.0.
 
-On Ditto SDK 4.14.x, `XOR` is a binary logical operator with precedence 7 (between `AND` and `OR`). It returns `TRUE` when exactly one of its operands is `TRUE`. On Ditto SDK 5.0.x, the `XOR` keyword is tokenized and assigned a precedence but the parser does not produce an operator node for it — using it raises a parse error.
+The harness verifies that 4.14.6 rejects `XOR` with "XOR is not supported" and all
+three tested v5 releases reject it with a parser error. A recognized keyword does
+not establish executable operator support. There is no supported-version gate for
+emitting `XOR` in this skill.
 
-If you need exclusive-or semantics on v5.0.x, decompose:
+For exclusive-or semantics on any supported line, decompose:
 
 ```
 a XOR b   ≡   (a OR b) AND NOT (a AND b)
 ```
 
 ```sql
--- Ditto SDK 4.x only: classics XOR'd against high-rated picks
+-- Unsupported example: the harness expects rejection on every tested release
 SELECT title FROM movies
 WHERE is_classic XOR ratings.imdb > 9.0
 
--- Portable across 4.x and 5.0.x — same result, no XOR keyword
+-- Portable across all supported lines: exclusive-or without the XOR keyword
 SELECT title FROM movies
 WHERE (is_classic OR ratings.imdb > 9.0)
   AND NOT (is_classic AND ratings.imdb > 9.0)

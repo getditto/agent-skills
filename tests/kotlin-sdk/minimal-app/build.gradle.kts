@@ -34,7 +34,7 @@ val dittoBinariesClassifier: String = run {
 }
 
 plugins {
-    kotlin("jvm") version "2.3.21"
+    kotlin("jvm") version "2.4.21"
     application
 }
 
@@ -43,7 +43,9 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    // Align the SDK's transitive Java telemetry modules with the tracestate DoS fix.
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     when (dittoLine) {
         // v5: KMP root module; Gradle resolves the -jvm variant. The JVM
         // variant also needs the native binary for the host platform as an
@@ -64,8 +66,10 @@ dependencies {
     // is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin does not
     // add it automatically.
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    // Use Jupiter's BOM to align the launcher with the engine on Gradle 9.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
 
 // KEY=VALUE lines from the repo-root .env, used only for keys the environment lacks.

@@ -14,7 +14,8 @@
 
 1. **Determine the version line before writing any code.** Grep the existing build
    files: `com.ditto:ditto-kotlin` → v5; `live.ditto:ditto` → 4.14.x (Android-only).
-   If neither exists, generate for **5.1.x** and say you assumed it. Never mix
+   If neither exists, resolve the latest stable release from Maven Central as described
+   in [setup.md](setup.md); 5.2.0 is the latest version this skill knows about. Never mix
    namespaces: v5 is `com.ditto.kotlin.*`, v4 is `live.ditto.*`.
 2. **Use only coordinates from [`versions.md`](versions.md).** Do not invent
    artifacts. v5 JVM requires **two** dependencies — `com.ditto:ditto-kotlin` plus the
@@ -26,7 +27,7 @@
    the 5.x AARs enforce the 36 floor through AAR metadata — a 35 build fails
    `CheckAarMetadata`, executed; the v4 leg still builds at 35).
    Kotlin Gradle plugin **≥ 2.2 for 5.1.0 and 5.2.0** — their artifacts depend on `kotlin-stdlib`
-   2.3.21 and the compiler reads metadata at most one minor newer; executed pin 2.3.21
+   2.3.21 and the compiler reads metadata at most one minor newer; security-updated JVM pin 2.4.21
    on JVM (see [`versions.md`](versions.md) § Kotlin toolchain). Android projects on
    AGP 9: use built-in Kotlin — applying `org.jetbrains.kotlin.android` fails the build
    (executed on both the v4 and the v5 Android legs).

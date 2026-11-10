@@ -512,9 +512,6 @@
   "sk_date_time_functions_d3335ed0": {
     "rowCount": 0
   },
-  "sk_date_time_functions_f06d91d0": {
-    "rowCount": 10
-  },
   "sk_date_time_functions_ea8fd916": {
     "rowCount": 0
   },
@@ -891,5 +888,8 @@
   },
   "sk_versions_a7a6d942": {
     "rowCount": 1
+  },
+  "sk_date_time_functions_a3a4b996": {
+    "rowCount": 10
   }
 }

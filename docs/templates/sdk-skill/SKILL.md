@@ -4,7 +4,7 @@ description: >
   Use ONLY for the Ditto TODO_LANGUAGE SDK (not TODO_OTHER_EIGHT — each has its own
   skill). Triggers on TODO_FILE_EXTENSIONS, TODO_BUILD_FILE_NAMES,
   TODO_PACKAGE_COORDINATE, TODO_API_NAME_1, TODO_API_NAME_2, TODO_OBSERVED_ERROR_STRING.
-  Ditto SDK 4.14.x, 5.0.x, 5.1.x.
+  Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
@@ -89,8 +89,10 @@ Package: `TODO_PACKAGE_COORDINATE`. Published API reference: TODO_URL.
 version lines**, including package coordinates per version and the minimum toolchain.
 This section is a pointer, not a claim.
 
-**When the user's version is unknown, emit 5.1.x code and say which version you
-assumed.** v4 and v5 are different APIs, not two versions of one.
+For a new app/POC, resolve the latest stable release through the package manager.
+**5.2.0 is the latest known baseline**, not a permanent dependency recommendation.
+Preserve existing pins; check release notes and validate code for newer releases.
+v4 and v5 are different APIs, not two versions of one.
 
 ## Capability exceptions
 
@@ -182,7 +184,7 @@ Wrong and right forms, with the diagnosis for each:
 Full delta, including on-disk store migration:
 [`references/versions.md`](references/versions.md).
 
-| Concern | 4.14.x | 5.0.x / 5.1.x |
+| Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.0 |
 |---|---|---|
 | Initialization | TODO | TODO |
 | Query model | TODO | TODO |

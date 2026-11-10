@@ -1,6 +1,6 @@
 ---
 name: sync-subscriptions
-description: Use when designing or debugging Ditto sync subscriptions (registerSubscription): accepted SELECT queries, receive-side filtering, missing documents, multihop relay coverage, flooding, persistence and cancellation. Covers SDK 4.14.x, 5.0.x and 5.1.x. Language-agnostic; per-language API syntax belongs to the Ditto SDK skill.
+description: Use when designing or debugging Ditto sync subscriptions (registerSubscription): accepted SELECT queries, receive-side filtering, missing documents, multihop relay coverage, flooding, persistence and cancellation. Covers SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0. Language-agnostic; per-language API syntax belongs to the Ditto SDK skill.
 ---
 
 # Ditto Sync Subscriptions
@@ -10,8 +10,11 @@ matching documents into the local store; a store query/observer reads that store
 Production apps typically need both. This skill owns subscription semantics, not
 per-language `registerSubscription` spelling or local DQL query syntax.
 
-Supports **Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x**. Confirm the target version before
+Supports **Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**. Confirm the target version before
 using version-sensitive clauses.
+
+For 5.2.0 diagnostics and document-size enforcement during replication, read
+[how-subscriptions-work.md](references/how-subscriptions-work.md#sdk-520-diagnostics-and-behavior).
 
 ## Start with the task
 

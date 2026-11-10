@@ -1,6 +1,6 @@
 ---
 name: data-modeling
-description: Use when designing, reviewing, or migrating Ditto data models from JSON or SQL: CRDT merge semantics, arrays and counters, composite IDs, embedding vs splitting collections, attachments, document size and BLE sync budgets. Covers Ditto SDK 4.14.x, 5.0.x and 5.1.x, including strict-mode migration.
+description: Use when designing, reviewing, or migrating Ditto data models from JSON or SQL: CRDT merge semantics, arrays and counters, composite IDs, embedding vs splitting collections, attachments, document size and BLE sync budgets. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0, including strict-mode migration.
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
@@ -28,7 +28,7 @@ The README is for installation and verification, not a prerequisite.
 
 ## Establish the baseline
 
-Supports **4.14.x (LTS), 5.0.x and 5.1.x**. Establish the SDK version and who edits
+Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**. Establish the SDK version and who edits
 which fields offline before designing. Ask missing intake questions in one batch;
 infer other facts from the supplied JSON when possible and state assumptions.
 Intake covers transports, hardware, document growth, binaries, query patterns,
@@ -71,7 +71,9 @@ peers before upgrading to v5 so the upgrade changes no merge behavior.
    strict size budget; see `best-practices.md`.
 6. **Budget serialized size including CRDT metadata.** The soft warning is 256 KiB;
    the hard limit is 5 MiB. **5.1+ rejects oversized local writes; 4.14.x/5.0.x log.**
-   Replicated oversized documents are still accepted. BLE is roughly 20 KB/s effective,
+   **5.2.0 drops a replication diff that would push the document over its hard limit** and stops updates to that document until
+   eviction/re-sync; see [versions.md](references/versions.md#sdk-520-modeling-implications).
+   BLE is roughly 20 KB/s effective,
    so 250 KiB can consume 10+ seconds of airtime; size for the slowest required transport.
 7. **Deletes have a retention window.** Default tombstone TTL is 7 days on Small Peers,
    30 on Big Peer (tunable). Longer-offline peers can resurrect deleted documents;

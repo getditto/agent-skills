@@ -1,0 +1,104 @@
+name: Release
+
+# Publishes a slim, versioned skills artifact for the dittosh CLI
+# (`dittosh skills add|update`) and other agent tooling. The archive contains
+# ONLY what agents consume — skills/ plus LICENSE.md and a machine-readable
+# manifest — never the tests/, docs/, or plugin-packaging metadata that exist
+# to validate this repo itself.
+#
+# Cut a release either by pushing a tag:
+#   git tag v1.0.0 && git push origin v1.0.0
+# or from the Actions tab ("Release" workflow → Run workflow → enter the tag).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create and release (e.g. v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Match the packaging CI runner and its mature, supported Python runtime.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14.10"
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate skills before packaging
+        run: python3 scripts/validate-sdk-skills.py
+
+      - name: Build skills manifest
+        run: python3 scripts/build-release-manifest.py dist/skills-manifest.json
+
+      - name: Pack the skills-only archive
+        run: |
+          # skills/ and LICENSE.md from the repo root; the manifest is copied in
+          # at the archive root so consumers get it with a single download.
+          tar -czf dist/ditto-skills.tar.gz \
+            --exclude='.DS_Store' --exclude='._*' \
+            skills LICENSE.md \
+            -C dist skills-manifest.json
+
+      - name: Verify the archive contains only agent-consumed files
+        run: |
+          entries="$(tar -tzf dist/ditto-skills.tar.gz)"
+          echo "$entries" | head -20
+          if echo "$entries" | grep -qE '^(tests|docs|plugins|scripts|\.github)/'; then
+            echo "::error::archive contains repo-only directories" && exit 1
+          fi
+          count="$(echo "$entries" | grep -cE '^skills/[^/]+/SKILL\.md$')"
+          expected="$(find skills -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+          [ "$count" = "$expected" ] || { echo "::error::archive has $count skills, repo has $expected"; exit 1; }
+          echo "archive OK: $count skills, $(du -h dist/ditto-skills.tar.gz | cut -f1)"
+
+      - name: Build release notes from the release summary and manifest
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          {
+            if [ -f "docs/releases/${RELEASE_TAG}.md" ]; then
+              cat "docs/releases/${RELEASE_TAG}.md"
+              echo
+            fi
+            echo "## Skills in this release"
+            echo
+            python3 - <<'PYEOF'
+          import json
+          for s in json.load(open("dist/skills-manifest.json"))["skills"]:
+              desc = s["description"]
+              desc = desc[:157] + "…" if len(desc) > 160 else desc
+              print(f"- `{s['name']}` — {desc}")
+          PYEOF
+            echo
+            echo "Install or update with the Ditto CLI: \`dittosh skills add <skill>\` or \`dittosh skills update --all\`."
+          } > dist/release-notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            --target "${{ github.sha }}" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --notes-file dist/release-notes.md \
+            dist/ditto-skills.tar.gz \
+            dist/skills-manifest.json

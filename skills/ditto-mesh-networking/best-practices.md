@@ -52,7 +52,7 @@ reads 200 KB can still trip the 256 KiB threshold. Defaults:
 | Threshold | Size | Behavior | Set with |
 |---|---|---|---|
 | Soft | **256 KiB** | Write succeeds; logs a `warn` | `document_size_soft_limit_bytes` |
-| Hard | **5 MiB** | **Local write rejected with an error.** Gates local writes only — oversized documents already in the mesh still replicate in | `document_size_hard_limit_bytes` |
+| Hard | **5 MiB** | **5.1+ rejects local writes.** 5.2.0 also drops replication diffs that would push the resulting document over its hard limit; that document stops receiving updates until evicted/re-synced (earlier lines accept replicated oversized documents) | `document_size_hard_limit_bytes` |
 
 Put those together and the cost of a large document is paid on **every merge and every peer
 seeing it for the first time** — and on BLE it is paid at 20 KB/s.
@@ -198,3 +198,5 @@ Before shipping a schema, confirm:
 - [ ] `document_size_soft_limit_bytes` and `document_size_hard_limit_bytes` are identical
       on every small peer.
 - [ ] Soft-limit warnings are surfaced in monitoring, not swallowed.
+
+5.2.0 size behavior source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.

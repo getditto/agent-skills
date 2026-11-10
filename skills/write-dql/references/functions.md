@@ -1,6 +1,6 @@
 ---
 title: DQL functions reference
-description: Complete built-in function catalog for Ditto DQL (math, string, array, object, date, duration, aggregates). Covers Ditto SDK 4.14.x, 5.0.x, and 5.1.x; version-gated features are tagged inline.
+description: Complete built-in function catalog for Ditto DQL (math, string, array, object, date, duration, aggregates). Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0; version-gated features are tagged inline.
 ---
 
 # DQL functions reference
@@ -22,9 +22,9 @@ description: Complete built-in function catalog for Ditto DQL (math, string, arr
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x, 5.0.x, and 5.1.x**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
+Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
 
-Every function in this catalog exists on **all three** supported SDK versions — 4.14.x, 5.0.x and 5.1.x (harness-verified across all 74 names in §11). Functions that are **not** in this catalog because they are 5.1-only: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`versions.md`](versions.md) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
+Every function in this catalog exists on **all four** covered SDK versions — 4.14.x, 5.0.x, 5.1.x and 5.2.0. The function harness checks a representative semantic case for each of the **73 names** in §11 on 4.14.6, 5.0.3, 5.1.0 and 5.2.0, including aggregates; it does not exhaust every overload or input edge case. Functions that are **not** in this catalog because they require 5.1+: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`versions.md`](versions.md) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
 
 Notation:
 
@@ -243,7 +243,10 @@ See [date-time-functions.md](date-time-functions.md#8-duration) for this topic.
 
 | Signature           | Returns                                                            |
 | ------------------- | ------------------------------------------------------------------ |
-| `request_info()`    | `{ app_id: string, request_id: string, start_time: number }`       |
+| `request_info()`    | `{ app_id: string, request_id: string, start_time: string }`       |
+
+`start_time` is an ISO 8601 timestamp with a timezone offset, not epoch milliseconds
+(executed on 4.14.6, 5.0.3, 5.1.0 and 5.2.0).
 
 ```sql
 SELECT request_info() AS req;

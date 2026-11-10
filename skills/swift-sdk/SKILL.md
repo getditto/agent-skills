@@ -4,7 +4,7 @@ description: >
   Use ONLY for tasks that use the Ditto Swift SDK (not generic SwiftUI/Xcode work
   without Ditto): .swift, Package.swift or Xcode files touching import DittoSwift,
   DittoConfig, Ditto.open, observers, authentication, lifetimes and concurrency errors.
-  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x and 5.1.x.
+  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.0.
   Other languages use their own Ditto SDK skill.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
@@ -23,7 +23,7 @@ README; the latter holds the capability/evidence map for coverage reviews.
 
 Writes and reviews Ditto Swift code: initialization, authentication, store access,
 sync, lifetimes, threading and Xcode/SwiftPM configuration. Supports **4.14.x (LTS),
-5.0.x and 5.1.x**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
+5.0.x, 5.1.x and 5.2.0**, on iOS, iPadOS, macOS and Mac Catalyst with SwiftUI/UIKit/AppKit.
 
 ### New apps and integration failures
 
@@ -49,8 +49,20 @@ have separate skills; load one only when the task needs its semantics:
 
 SwiftPM: `https://github.com/getditto/DittoSwiftPackage`, product `DittoSwift`.
 Read the relevant section of [versions.md](references/versions.md) for package pins,
-platform minimums or version differences. If no project version can be established,
-**assume 5.1.x and say so**.
+platform minimums or version differences.
+
+For new apps and POCs, check the package manager for the latest stable release and use
+that resolved version. **5.2.0 is the latest version this skill knows about, not a
+permanent recommendation or claim about today’s latest release.** Preserve an existing
+project’s selected version unless an upgrade is requested. If a newer release is found,
+read its release notes/API changes and validate the generated code. If lookup is
+unavailable, state that limitation; do not silently call 5.2.0 “latest”.
+The generator resolves the latest stable SwiftPM tag by default; see [setup.md](references/setup.md).
+
+Read [sdk-5.2.md](references/sdk-5.2.md) when adopting 5.2.0 features or reviewing an
+upgrade: encryption, store deletion, startup configuration and behavior fixes.
+The 5.2.0 public Swift API lacks `Ditto.close()` despite the release notes; release
+all strong references before `Ditto.deleteStore`.
 
 ## Capability exceptions
 
@@ -61,7 +73,7 @@ Full twenty-row evidence map: [README.md](README.md), for capability reviews onl
 | CAP-03 | Connecting: config, opening, persistence directory | preview | 4.14.x config/open is preview, no opt-in; prefer it to the deprecated identity initializer. GA on v5. |
 | CAP-04 | Authentication and identity | preview | 4.14.x provider/expirationHandler is preview; GA on v5. |
 | CAP-13 | Presence graph and connection requests | partial | Graph, peer metadata and observe are available; connectionRequestHandler only takes effect with a second peer. |
-| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0+, default off, restricted entitlement required. Data Streams: 5.2.0 only, `@_spi(PreviewDataStreams) import DittoSwift`, executed on macOS. [preview.md](references/preview.md), [data-streams.md](references/data-streams.md) |
+| CAP-20 | Preview and platform-specific APIs | preview | passphrase is not for production; multicast beta is 5.1.0+, default off, restricted entitlement required. Data Streams: 5.2.0+, `@_spi(PreviewDataStreams) import DittoSwift`, executed on macOS. [preview.md](references/preview.md), [data-streams.md](references/data-streams.md) |
 
 ## Minimum viable app
 
@@ -142,7 +154,7 @@ Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 ## Version differences
 
 [versions.md](references/versions.md) owns deltas and upgrade/rollback results.
-On 4.14.x call `try ditto.disableSyncWithV3()` before mutating DQL. 5.1.x is arm64-only;
+On 4.14.x call `try ditto.disableSyncWithV3()` before mutating DQL. 5.1.0/5.2.0 are arm64-only;
 4.14.x/5.0.x also ship x86_64. 4.14.6 throws for some use-after-release calls where v5
 calls `fatalError`; preserve parent ownership on every line.
 
@@ -165,11 +177,11 @@ Choose the matching row and section; these are alternatives, not a reading check
 | Subscribe, scope sync or track status | [sync.md](references/sync.md) |
 | Update radios/endpoints | [transports.md](references/transports.md) |
 | Create/fetch attachments | [attachments.md](references/attachments.md); retain fetcher; token shape differs by version |
+| Stream ephemeral bytes | [data-streams.md](references/data-streams.md); 5.2.0 SPI; concepts in `data-streams` |
 | Presence/peer metadata | [presence.md](references/presence.md) |
 | Logging and disk usage | [observability.md](references/observability.md) |
 | On-disk upgrade/rollback | [storage.md](references/storage.md) |
 | Preview/platform APIs | [preview.md](references/preview.md) |
-| Stream raw bytes to one peer (Data Streams, 5.2.0 SPI) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
 | Architectural tradeoffs | [best-practices.md](best-practices.md), matching section |
 | Run/configure the minimal example | [minimal-app-running.md](references/minimal-app-running.md) |
 | Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled/run) or [swiftui-app.md](examples/swiftui-app.md) (compile checked) |

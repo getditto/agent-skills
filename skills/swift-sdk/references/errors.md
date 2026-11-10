@@ -1,6 +1,9 @@
 # Error handling — Ditto Swift SDK
 
-Everything here is the **5.1.x** form; [versions.md](versions.md) owns the per-line
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
+Everything here is the **5.2.0** form; [versions.md](versions.md) owns the per-line
 differences.
 
 ## CAP-16 Error handling
@@ -33,6 +36,9 @@ case"*: `@unknown default` covers future cases, not declared ones.
 
 `DittoError` is a non-frozen enum from another module, so an exhaustive `switch` needs
 `@unknown default` **as well as** every declared case.
+
+With the 5.2.0 SPI import, also handle `.dataStreamsError(message:)`; see
+[data-streams.md](data-streams.md) for closed-resource and cancellation errors.
 
 ## The cases you will actually hit
 
@@ -80,9 +86,9 @@ match on the message, not the case. On 4.14.6 and 5.0.3 it does not fail at all.
 
 ### `encryptionError(_:)`
 
-`.passphraseNotGiven`, `.passphraseInvalid`, `.extraneousPassphraseGiven` — all three from
-opening a store whose encryption state does not match the config
-([connect.md](connect.md#encryption-at-rest)).
+5.2.0: `.keyRequired`, `.keyUnexpected`, `.keyInvalid`, `.unsupportedScheme`,
+`.metadataCorrupt`. The old `.passphraseNotGiven`, `.passphraseInvalid` and
+`.extraneousPassphraseGiven` cases are deprecated. See [sdk-5.2.md](sdk-5.2.md).
 
 ### `ioError(_:)`
 

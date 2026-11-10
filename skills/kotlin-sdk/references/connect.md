@@ -1,5 +1,8 @@
 # Connecting, authentication and lifecycle — Ditto Kotlin SDK
 
+For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
+
+
 ## Contents
 
 - [CAP-03 Connecting: config, opening, persistence directory](#cap-03-connecting-config-opening-persistence-directory)
@@ -135,7 +138,7 @@ classifier runtime dependency or the SDK cannot load its native library:
 
 ```kotlin
 // build.gradle.kts — pick the classifier for your platform
-runtimeOnly("com.ditto:ditto-binaries:5.1.0:macos-arm64")
+runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:macos-arm64")
 ```
 
 Classifiers: `macos-arm64` | `linux-x64` | `linux-arm64` | `windows-x64`.

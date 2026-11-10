@@ -6,21 +6,30 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   package-portability:
-    name: Swift packaging on ${{ matrix.os }} (Python 3.9)
+    name: SDK packaging on ${{ matrix.os }} (Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # ubuntu-24.04 rather than ubuntu-latest: setup-python has no 3.9 build for the
-        # Ubuntu 26.04 image, and this job exists to prove the oldest supported Python.
-        os: [ubuntu-24.04, windows-latest]
+        # Keep the 3.9 floor check on Linux; Windows has no 3.9.25 runtime build.
+        # The supported interpreter also verifies current packaging on both platforms.
+        include:
+          - os: ubuntu-24.04
+            python: '3.9.25'
+          - os: ubuntu-24.04
+            python: '3.14.10'
+          - os: windows-latest
+            python: '3.14.10'
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python }}
       - name: Check portable installation archives
         run: python -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
 
@@ -28,7 +37,7 @@ jobs:
     name: Validate plugins
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Validate JSON files
         run: |
@@ -72,6 +81,9 @@ jobs:
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
 
+      - name: Check latest stable SDK selection
+        run: python3 tests/swift-sdk/test_version_selection.py
+
       - name: Check Swift package integrity and failure controls
         run: python3 -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
 
@@ -81,7 +93,7 @@ jobs:
           python3 scripts/package-sdk-plugin.py --output "$RUNNER_TEMP/ditto-swift-packages"
 
       - name: Upload Swift installation packages
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ditto-swift-installation-packages
           path: |
@@ -94,7 +106,7 @@ jobs:
           python3 scripts/package-sdk-plugin.py --plugin ditto-kotlin --output "$RUNNER_TEMP/ditto-kotlin-packages"
 
       - name: Upload Kotlin installation packages
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ditto-kotlin-installation-packages
           path: |

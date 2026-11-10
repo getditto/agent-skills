@@ -1,6 +1,6 @@
 ---
 title: Ditto SDK version compatibility
-description: Single-pane compatibility matrix for DQL features across Ditto SDK 4.14.x, 5.0.x, and 5.1.x. Every reference file's version tags ladder up to this matrix.
+description: Single-pane compatibility matrix for DQL features across Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0. Every reference file's version tags ladder up to this matrix.
 ---
 
 # Ditto SDK version compatibility
@@ -28,11 +28,19 @@ If you are debugging a parse error or a behavior change after upgrading, start h
 | -------- | --------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
 | 4.14.x   | LTS (long-term)       | `true` (strict)           | Bare object values store as `REGISTER` (last-write-wins on the whole object).          |
 | 5.0.x    | Supported             | `false` (lenient)         | Bare object values store as `MAP` (per-field merge). `DO MERGE` remains an alias for `DO UPDATE`; `XOR` is unavailable. |
-| 5.1.x    | Latest                | `false` (lenient)         | Adds `JOIN` (inner/left/right/multi/self), composite (multi-column) indexes, `RETURNING` on `INSERT`/`UPDATE`/`DELETE`/`EVICT`, `EXPLAIN` on DML, `INSERT … SELECT`, and `ADVISE` / `ADVISE AND PROVISION`. |
+| 5.1.x    | Supported                | `false` (lenient)         | Adds `JOIN` (inner/left/right/multi/self), composite (multi-column) indexes, `RETURNING` on `INSERT`/`UPDATE`/`DELETE`/`EVICT`, `EXPLAIN` on DML, `INSERT … SELECT`, and `ADVISE` / `ADVISE AND PROVISION`. |
 
 5.1.x adds `JOIN` on top of the shared `Statement` enum (`SELECT`, `INSERT`, `RETURNING`-mutations, `EXPLAIN`, `ALTER SYSTEM`, `SHOW`, `SYNC CONTEXT`, `CREATE INDEX`, `DROP INDEX`, `ADVISE`). The differences are catalogued below.
 
 ---
+
+## SDK 5.2.0
+
+Latest known baseline: **5.2.0**, with lenient strict-mode default (`false`).
+The 5.1 features below remain available. [sdk-5.2.md](sdk-5.2.md) covers corrected
+`DELETE`/`EVICT USE IDS`, index/quantifier fixes, system diagnostics and startup
+configuration. Compatibility tables include 5.2.0; historical execution claims keep
+their original versions. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift> (5.2.0 common changes).
 
 ## 2. What shipped in v5.1.0
 
@@ -47,7 +55,7 @@ Verified against `@dittolive/ditto@5.1.0` by the test harness (`tests/dql/`):
 - **`SHOW ALL LIKE / ILIKE … [ESCAPE]`** — the filter clause on `SHOW ALL`. See [`statements.md`](statements.md) §8.
 - **`RIGHT [OUTER] JOIN`** alongside `INNER` / `LEFT [OUTER]`. See [`select.md`](select.md) §14.
 - **`round()`, `array_sort()`, `serialize_json()`, `object_size()`** scalars. See [`functions.md`](functions.md).
-- **`USE IDS` on `UPDATE` / `DELETE` / `EVICT`** — parses on mutations in 5.1.x, but `USE IDS` remains documented as a SELECT-only feature; use `WHERE _id IN (…)` for mutations on every SDK version.
+- **`USE IDS` on `UPDATE` / `DELETE` / `EVICT`** — parses on mutations in 5.1.x, but `DELETE`/`EVICT USE IDS` do not remove documents on 5.1.0. Fixed in 5.2.0; use `WHERE _id IN (…)` when supporting older releases.
 
 Still **not** supported in 5.1.0 (verified): `XOR` (parse error on every SDK version — see §6), structured `PROFILE` output, the parenthesised-tuple `USE IDS ('a', 'b')` spelling (see §4.7), `EXCLUDE MISSING` index keys, `TOMBSTONE` in any form on a Small Peer, and `FULL OUTER` / `CROSS` joins.
 
@@ -55,15 +63,15 @@ Still **not** supported in 5.1.0 (verified): `XOR` (parse error on every SDK ver
 
 ## 3. How features land across versions
 
-Four categories of version annotation appear throughout the reference files:
+Version annotations appear throughout the reference files:
 
-1. **Always supported** — no tag. The feature works identically on 4.14.x, 5.0.x, and 5.1.x. Example: `LIKE`, `array_contains()`, almost every scalar in [`functions.md`](functions.md), every aggregate.
+1. **Always supported** — no tag. The feature works identically on 4.14.x, 5.0.x, 5.1.x and 5.2.0. Example: `LIKE`, `array_contains()`, almost every scalar in [`functions.md`](functions.md), every aggregate.
 2. **SDK 4.YZ+** — the feature landed in a specific 4.x dot release and requires that release or newer. The cookbook never assumes a 4.x release older than the floor noted on the feature. Example: `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `DO UPDATE_LOCAL_DIFF` (4.12+).
 3. **SDK 5.0+** — the feature landed in v5 and is **not** available in v4 at all. Example: quantifier expressions (`ANY/EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), recursive descent via `WITHIN`, `BETWEEN`, `IN UNNEST`, hex literals, the `PROFILE` leading keyword, the `#profile` directive.
 4. **SDK 5.1+** — the feature landed in 5.1.x. Example: `JOIN`, composite indexes, `RETURNING`, `ADVISE`, `EXPLAIN` on DML, `INSERT … SELECT`, `round()` / `array_sort()` / `serialize_json()` / `object_size()`.
 5. **Unavailable in the tested SDK versions** — the syntax may appear in older or forward-looking documentation but is rejected by 4.14.6, 5.0.3, and 5.1.0. `XOR`, `TOMBSTONE`, `EXCLUDE MISSING` and the `USE IDS ('a','b')` tuple spelling are all in this category.
 
-When you see a tag like "SDK 4.12+" it means: works on 4.12 through 4.14.x **and** on 5.0.x and 5.1.x. "SDK 5.0+" means 5.0.x and newer only — it will parse-error on any 4.x release. "SDK 5.1+" means 5.1.x only.
+When you see a tag like "SDK 4.12+" it means: works on 4.12 through 4.14.x **and** on 5.0.x and 5.1.x. "SDK 5.0+" means 5.0.x and newer only — it will parse-error on any 4.x release. "SDK 5.1+" includes 5.1.x and 5.2.0. “SDK 5.2+” requires 5.2.0 or newer.
 
 ---
 
@@ -108,7 +116,7 @@ See [compatibility-types-sync.md](compatibility-types-sync.md#48-subscription-qu
 The most reliable signal is the Ditto SDK dependency version in your host application. Where to look:
 
 - **Swift / iOS:** `Package.swift` (the `DittoSwift` / `DittoObjC` dependency) or your `Podfile`.
-- **Android / Kotlin:** `build.gradle.kts` or `build.gradle` — the `live.ditto:ditto` dependency line.
+- **Android / Kotlin:** `build.gradle.kts` or `build.gradle` — the `com.ditto:ditto-kotlin` dependency (v5) or `live.ditto:ditto` (v4), including version catalogs.
 - **JavaScript / TypeScript:** `package.json` — the `@dittolive/ditto` entry.
 - **Rust:** `Cargo.toml` — the `dittolive-ditto` crate version.
 - **C# / .NET:** the `Ditto` NuGet package version.
@@ -158,7 +166,7 @@ Three reasons portability is worth thinking about up front.
 ## 9. See also
 
 - [`operators.md`](operators.md) — operator precedence, comparison/logical semantics, the `XOR` cross-version note in §11.
-- [`functions.md`](functions.md) — every scalar function (all three SDK versions) and aggregate, plus the 5.1-only scalars.
+- [`functions.md`](functions.md) — every scalar function (all three SDK versions) and aggregate, plus the 5.1+ scalars.
 - [`expressions.md`](expressions.md) — literals, quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN`.
 - [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), `RETURNING` / `INSERT … SELECT` / DML `EXPLAIN` (5.1+), the `DO MERGE` cross-version note.
 - [`select.md`](select.md) — `JOIN` (5.1+) and the subscription restrictions.

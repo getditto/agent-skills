@@ -64,11 +64,11 @@ run_one() {
 VERSIONS=()
 for arg in "$@"; do
   case "$arg" in
-    --all) VERSIONS=(4.14.6 5.0.3 5.1.0) ;;
+    --all) VERSIONS=(4.14.6 5.0.3 5.1.0 5.2.0) ;;
     *) VERSIONS+=("$arg") ;;
   esac
 done
-[[ ${#VERSIONS[@]} -eq 0 ]] && VERSIONS=(5.1.0)
+[[ ${#VERSIONS[@]} -eq 0 ]] && VERSIONS=(5.2.0)
 
 for version in "${VERSIONS[@]}"; do
   run_one "$version"

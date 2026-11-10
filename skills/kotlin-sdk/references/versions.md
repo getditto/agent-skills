@@ -29,7 +29,7 @@
 
 | Ditto SDK | Package version | Verified on | Status |
 |---|---|---|---|
-| 5.2.x | 5.2.0 | 5.2.0 — executed (JVM; Android, Pixel 10a) | Current GA |
+| 5.2.x | 5.2.0 | 5.2.0 — executed (JVM; Android, Pixel 10a) | Latest known baseline; check Maven Central for current stable |
 | 5.1.x | 5.1.0 | 5.1.0 — executed (JVM; Android, Pixel 10a) | Supported |
 | 5.0.x | 5.0.3 | 5.0.3 — executed (JVM; Android, Pixel 10a) | Supported |
 | 4.14.x | 4.14.7 | 4.14.7 — executed (Android emulator API 35; Pixel 10a) | LTS |
@@ -46,7 +46,7 @@ releases, N−4) and JDK 17 (<https://docs.ditto.live/sdk/latest/compatibility/k
 
 The Kotlin compiler reads class metadata at most one minor version newer than itself
 (N+1), so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0** and 2.0 for 5.0.3. The
-executed-working pin is Kotlin Gradle plugin **2.3.21** with
+security-updated JVM pin is Kotlin Gradle plugin **2.4.21** with
 `kotlinx-coroutines-core:1.10.2` (JVM). The harness also failed to compile 5.0.3 under
 KGP 2.0.x (**executed**); the root cause was not isolated — a 2.0 compiler should read
 2.1 metadata under the N+1 rule — so do not quote that failure as the floor.
@@ -62,8 +62,8 @@ fails `CheckAarMetadata` (**executed**).
 
 | Line | Coordinate | Notes |
 |---|---|---|
-| 5.0.x / 5.1.x | `com.ditto:ditto-kotlin:<version>` | KMP root module; Gradle resolves the `-android` or `-jvm` variant from the consuming project |
-| 5.0.x / 5.1.x, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers published for 5.1.0 and 5.2.0 (**[api-dump]** Maven Central `com/ditto/ditto-binaries/<v>/`): `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64` — there is **no `macos-x64`**, so Intel Macs cannot run the JVM target. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
+| 5.0.x / 5.1.x / 5.2.0 | `com.ditto:ditto-kotlin:<version>` | KMP root module; Gradle resolves the `-android` or `-jvm` variant from the consuming project |
+| 5.0.x / 5.1.x / 5.2.0, JVM only | `+ runtimeOnly("com.ditto:ditto-binaries:<version>:<classifier>")` | **Mandatory on JVM.** Classifiers published for 5.1.0 and 5.2.0 (**[api-dump]** Maven Central `com/ditto/ditto-binaries/<v>/`): `macos-arm64`, `linux-x64`, `linux-arm64`, `windows-x64` — there is **no `macos-x64`**, so Intel Macs cannot run the JVM target. Without it: `IllegalStateException: Unable to find binary 'libdittoall.dylib' …` (executed) |
 | 4.14.x | `live.ditto:ditto:<version>` | AAR, **Android-only**. There is no 4.14.x JVM artifact (`live.ditto:ditto-jvm` stalled at `4.11.0-preview.1`); the `com.ditto:ditto-kotlin` coordinate does not exist for 4.14.x |
 
 Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
@@ -71,7 +71,7 @@ Android ABIs in both lines (verified from the published AARs): `arm64-v8a`,
 
 ## Capability availability matrix
 
-| Capability | 4.14.x | 5.0.x | 5.1.x | Failure mode on older versions |
+| Capability | 4.14.x | 5.0.x | 5.1.x / 5.2.0 | Failure mode on older versions |
 |---|---|---|---|---|
 | DQL reads (`SELECT`) | ✓ | ✓ | ✓ | — |
 | DQL mutations (`INSERT`/`UPDATE`/`DELETE`) | Only after `ditto.disableSyncWithV3()` (see below) | ✓ | ✓ | 4.14.x without the call: ``DittoError.StoreError: <dql> Unsupported feature: Encountered `INSERT` statement. … disable sync with V3 …`` (executed) |
@@ -231,19 +231,23 @@ the v5 upgrade.)
 
 ### New in 5.2.0
 
-Observed by diffing the public declarations in `ditto-kotlin-android-5.2.0-sources.jar`
-against 5.1.0 (**[api-dump]**); the Kotlin release notes page did not list 5.2.0 when
-checked (2026-10-27). Nothing the rest of this skill documents was removed. Toolchain
-unchanged: `kotlin-stdlib` 2.3.21, coroutines 1.9.0, AAR `minCompileSdk` 36, `minSdk`
-24. The GA sources are identical to `5.2.0-rc.2`'s; only the version string differs.
+5.2.0 adds the APIs below. The full behavioral migration notes, including the
+negative-integer binding fix and attachment metadata changes, are in
+[sdk-5.2.md](sdk-5.2.md). Source:
+<https://docs.ditto.live/sdk/latest/release-notes-hub/kotlin>.
 
 - **Local store encryption:** `DittoConfig(encryptionKey = DittoEncryptionKey.raw(bytes))`
   with exactly 32 key bytes; the SDK copies them once into zeroized native memory, and
   `destroy()` releases them (idempotent — afterwards no config built with that key can
   open a store). Opening a store with a missing, wrong or unexpected key throws
   `DittoException.EncryptionException` with `reason` `KeyRequired`, `KeyInvalid`,
-  `KeyUnexpected`, `UnsupportedScheme` or `MetadataCorrupt`. Keep the bytes in the
-  Android Keystore and pass them at open; the SDK never reads them back.
+  `KeyUnexpected`, `UnsupportedScheme` or `MetadataCorrupt`. The app must recover the
+  same raw Ditto key bytes at each open. Android Keystore keys are **non-exportable**;
+  they cannot be read out and passed to `DittoEncryptionKey.raw`. An app can instead
+  protect its Ditto key bytes with a wrapping key held in Android Keystore, persist
+  the encrypted bytes outside the Ditto directory, and decrypt them before opening.
+  This is platform guidance from the [Android Keystore documentation](https://developer.android.com/privacy-and-security/keystore),
+  not an Android integration verified by the JVM encryption fixture.
 - **`DittoFactory.deleteStore(databaseId, persistenceDirectory = null)`** deletes a store
   on disk; throws `DittoException` while any instance holds it, if the directory is not
   a Ditto store, or if deletion fails partway.
@@ -265,7 +269,7 @@ Condensed from <https://docs.ditto.live/sdk/latest/migration-guides/kotlin-v4> (
 - [ ] `live.ditto.*` → `com.ditto.kotlin.*`; coordinate `live.ditto:ditto` →
       `com.ditto:ditto-kotlin`; raise `minSdk` to 24 if lower; Kotlin plugin to ≥ 2.2
       for 5.1.0 and 5.2.0 (their artifacts depend on `kotlin-stdlib` 2.3.21 — see *Kotlin
-      toolchain* above; 2.3.21 is the executed pin).
+      toolchain* above; 2.4.21 is the security-updated JVM pin).
 - [ ] `Ditto(deps, identity)` → `DittoFactory.create(DittoConfig(databaseId, connect))`;
       delete the dependencies/identity types.
 - [ ] Delete `disableSyncWithV3()`, `runGarbageCollection()`,

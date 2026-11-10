@@ -22,9 +22,9 @@ this file carries the per-API table and the reasoning.
 | `store.registerObserver(…, deliverOn:)`, `store.fetchAttachment(…, deliverOn:)` | the given `DispatchQueue`, default `.main` — **`registerObserver` ignores it on 5.0.x** |
 | `sync.registerSubscription` | synchronous, `throws`; no callback |
 | `presence.observe(didChangeHandler:)`, `DittoLogger.setCustomLogCallback` | an SDK thread; not `@Sendable`, not main-queue-guaranteed |
-| `auth.login(…, completion:)` | an SDK thread; the completion **is** `@Sendable` on 5.0.x and 5.1.x, and is not on 4.14.x |
-| `auth.expirationHandler` | `async`, off the main actor; `@Sendable` on 5.0.x and 5.1.x, not on 4.14.x |
-| `presence.connectionRequestHandler` | an SDK thread; `@Sendable` on 5.0.x and 5.1.x, not on 4.14.x |
+| `auth.login(…, completion:)` | an SDK thread; the completion **is** `@Sendable` on 5.0.x and later, and is not on 4.14.x |
+| `auth.expirationHandler` | `async`, off the main actor; `@Sendable` on 5.0.x and later, not on 4.14.x |
+| `presence.connectionRequestHandler` | an SDK thread; `@Sendable` on 5.0.x and later, not on 4.14.x |
 
 ## The eight rules
 

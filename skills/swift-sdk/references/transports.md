@@ -71,7 +71,7 @@ The remaining struct defaults are `connect.retryInterval` `5.0`, `listen.tcp.por
 
 One version-gated default is genuinely this skill's: **the `DittoHTTPListenConfig`
 struct default for `listen.http.webSocketSync` flipped from `true` to `false` in v5**.
-Note the scope — a *live* instance reports `false` on all three lines, so an app that never built its own transport
+Note the scope — a *live* instance reports `false` on all four lines, so an app that never built its own transport
 config is unaffected. It matters only to code that constructs a `DittoTransportConfig` itself,
 which is the anti-pattern above. See
 [versions.md](versions.md#store-results-and-errors).

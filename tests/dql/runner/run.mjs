@@ -30,7 +30,7 @@ loadEnv(); // repo-root .env (gitignored); real env vars / CI secrets win
 
 const VERSION = process.env.DITTO_SDK_VERSION;
 if (!VERSION) {
-  console.error("Set DITTO_SDK_VERSION=4.14.6|5.0.3|5.1.0");
+  console.error("Set DITTO_SDK_VERSION=4.14.6|5.0.3|5.1.0|5.2.0");
   process.exit(1);
 }
 
