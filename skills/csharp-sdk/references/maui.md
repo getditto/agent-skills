@@ -74,3 +74,17 @@ When moving framework majors, compare native entry points and plist files with a
 `dotnet new maui --no-restore` project for that SDK, preserve Ditto permission entries,
 and compile. Updating only TargetFrameworks and package numbers can leave obsolete
 platform bootstrap code even when the shared C# service compiles.
+
+## Rider cannot find the Mac Catalyst bundle
+
+Compare the IDE's requested `.app` path with the actual build output. The evaluated
+.NET 11 Apple SDK uses ApplicationTitle for the desktop bundle filename, but Rider's
+launcher requested the assembly/project name. A successful build therefore did not
+guarantee a successful IDE launch. See the related [Rider naming report](https://youtrack.jetbrains.com/issue/RIDER-139849/Debugging-MAUI-MacCatalyst-error-with-App-Naming).
+
+For an affected project named MauiApp, setting ApplicationTitle to `MauiApp` only when
+TargetFramework contains `-maccatalyst` produced the expected `MauiApp.app`. An explicit
+CFBundleDisplayName in Platforms/MacCatalyst/Info.plist preserved the friendly display
+name. Rebuild, remove only the obsolete generated bundle, and verify the IDE Run action;
+renaming an output directory alone does not fix subsequent builds. This workaround was
+verified through Rider's Run action and the visible connected application window.
