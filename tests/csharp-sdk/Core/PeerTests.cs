@@ -64,7 +64,19 @@ public class PeerTests
             try
             {
                 if (evt is DittoAttachmentFetchEvent.Completed done)
-                    using (done.Attachment) completed.TrySetResult(done.Attachment.Data());
+                    using (done.Attachment)
+                    {
+                        var destination = Path.Combine(peer.DirectoryPath, "exported.txt");
+                        var staging = Path.Combine(peer.DirectoryPath, "attachment-staging.txt");
+                        File.WriteAllText(destination, "existing export");
+                        Assert.ThrowsAny<Exception>(() => done.Attachment.CopyToPath(destination));
+                        Assert.Equal("existing export", File.ReadAllText(destination));
+                        done.Attachment.CopyToPath(staging);
+                        File.Move(staging, destination, overwrite: true);
+                        var exported = File.ReadAllBytes(destination);
+                        Assert.Equal(done.Attachment.Data(), exported);
+                        completed.TrySetResult(exported);
+                    }
             }
             catch (Exception e) { completed.TrySetException(e); }
         });

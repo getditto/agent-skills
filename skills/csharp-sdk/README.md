@@ -76,10 +76,17 @@ field-preserving edits and persistence. The published generated Console app exec
 CRUD and process-restart persistence. See the [harness](../../tests/csharp-sdk/README.md)
 for counts, commands and remaining gates.
 
-**Compile evidence:** generated Console, Avalonia and Uno desktop apps; net48 WinForms;
-MAUI Android. A Mac Catalyst probe compiled only with Xcode version validation disabled
-because the local workload expects Xcode 26.2 and the installed Xcode is 27.2. This is
-not counted as supported Apple toolchain validation.
+**CI evidence:** [run 42951049915](https://github.com/getditto/agent-skills/actions/runs/42951049915)
+passed all 19 jobs: the Windows/Linux/macOS core matrix, desktop generation/runtime,
+Windows net48 native smoke and four MAUI build targets with matching toolchains.
+The core suite also passes on .NET 11 with Ditto 5.2.0 on macOS ARM64.
+
+**Independent app evaluation:** five agents built projects-and-tasks apps using the
+frozen skill and .NET 11 frameworks. Real native smoke tests passed for all five;
+Console terminal interaction and Avalonia/MAUI macOS UI flows were exercised separately.
+Observed gaps drove launcher, attachment and framework migration guidance corrections.
+See the [evaluation report](../../docs/csharp-skill-evaluation.md) for initial results,
+post-review repairs and remaining UI limits. Starter pins remain reproducible baselines.
 
 **Verified from source:** public NuGet 5.2.0 managed assemblies/native assets and the
 public C# [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sharp),
@@ -87,10 +94,10 @@ public C# [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sha
 pages linked from the references. Source inspection informed investigation; runtime
 claims rely on the published package fixtures, not an unpublished branch.
 
-**Not verified:** Windows execution, graphical UI interaction, supported Apple builds,
-physical-device radios/background behavior, cloud authentication/durability, cross-version
-store migration, traditional packages.config runtime, and live-agent behavioral evaluations.
-CI supplies repeatable platform gates; adding a workflow is not evidence that it ran.
+**Not verified:** destination Windows/Linux GUI interaction, physical-device radios/
+background behavior, server authentication renewal/durability, cross-version store
+migration, traditional packages.config runtime, and behavior across all agent hosts.
+Observed app-to-app replication does not establish server durability or a transport path.
 
 **Last verified:** 2026-11-10.
 

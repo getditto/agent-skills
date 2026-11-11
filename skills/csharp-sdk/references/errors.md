@@ -8,6 +8,7 @@ and the real-package fixtures.
 
 | Symptom | Diagnose and respond |
 |---|---|
+| Native abort: invalid boolean `--disable-color` | Agent/CI may set `NO_COLOR=1`; normalize to `true` in the launcher or remove it from the child environment; see [diagnostics](observability.md#native-startup-in-agent-and-ci-environments) |
 | DllNotFoundException for dittoffi | Verify selected RID, native DLL and transitive native package in the startup executable's output |
 | BadImageFormatException | Match process/native architecture; net48 must not prefer 32-bit |
 | Compile error for DittoSDK.Store on v4 | v4 keeps those types in the root namespace; establish package version first |

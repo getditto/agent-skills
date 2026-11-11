@@ -51,3 +51,26 @@ Check a real device for permission denial/retry, app suspension/resumption, BLE/
 Wi-Fi Aware and background behavior. Emulator success is insufficient for radio claims.
 Test trimming/AOT and serializer behavior in the actual release artifact; the baseline
 Apple starter uses MtouchLink=None instead of an invalid PublishTrimmed=false setting.
+
+## New SDK, older workload manifests
+
+A newly installed stable .NET SDK can still select older workload packs. In the
+.NET 11 evaluation, SDK 11.0.100 initially selected an Apple preview pack requiring
+Xcode 26.6. Updating the isolated workload set with `dotnet workload update` selected
+11.0.100.1 / Mac Catalyst SDK 27.2.11039; the app then built normally with Xcode 27.2.
+Check `dotnet workload --version`, `dotnet workload list` and the build's selected
+Apple pack before concluding that Xcode must be downgraded. Use the intended SDK
+and global.json context; validate the resulting pairing without disabling Xcode checks.
+
+The shipped template's .NET 10/MAUI 10 pins are reproducible starter baselines, not
+claims about the newest framework release. When a user requests a newer framework,
+update the target frameworks, workload set and Microsoft.Maui.Controls together, then
+build each intended native target. Changing only the .NET SDK installation is insufficient.
+
+.NET 11's Apple build also required iOS/Mac Catalyst minimum version 17.0 and the
+UIKit scene configuration from the current MAUI template. The frozen older template
+failed with MT7199 until its UIApplicationSceneManifest and SceneDelegate were updated.
+When moving framework majors, compare native entry points and plist files with a fresh
+`dotnet new maui --no-restore` project for that SDK, preserve Ditto permission entries,
+and compile. Updating only TargetFrameworks and package numbers can leave obsolete
+platform bootstrap code even when the shared C# service compiles.

@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("version", nargs="?", default="5.2.0")
     parser.add_argument("--all", action="store_true")
-    parser.add_argument("--framework", choices=["net8.0", "net10.0"], default="net10.0")
+    parser.add_argument("--framework", choices=["net8.0", "net10.0", "net11.0"], default="net10.0")
     args = parser.parse_args()
     for version in (["4.14.7", "5.0.4", "5.1.0", "5.2.0"] if args.all else [args.version]):
         result = subprocess.run(["dotnet", "test", str(ROOT / "tests/csharp-sdk/Core"),

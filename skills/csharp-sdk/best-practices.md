@@ -11,7 +11,11 @@ Use dependency injection where the host already uses it; do not register an asyn
 factory by blocking on OpenAsync in a synchronous DI registration. Initialize once
 through an awaited application startup path.
 
-Use field-level updates for edits. Choose stable document IDs independent of list
+Use field-level updates for edits, comparing the draft to its original editor snapshot
+so saving one changed field does not overwrite unrelated incoming edits. Keep creation
+separate from editing: reject a stale edit when its document was deleted rather than
+upserting it back into existence. Reconcile selection by ID when observed lists change.
+Choose stable document IDs independent of list
 position; deserialize _id explicitly. Handle malformed external documents as observable
 errors rather than crashing a native callback. For large lists, replace whole snapshots
 with an identity-based diff after measuring UI costs.

@@ -14,6 +14,8 @@ From the repository root:
 ```bash
 python3 tests/csharp-sdk/scripts/run.py --all
 python3 tests/csharp-sdk/scripts/run.py 5.2.0 --framework net8.0
+# With .NET 11 SDK on PATH:
+python3 tests/csharp-sdk/scripts/run.py 5.2.0 --framework net11.0
 python3 tests/csharp-sdk/scripts/verify-minimal.py
 python3 tests/csharp-sdk/scripts/verify-package.py
 python3 tests/csharp-sdk/scripts/verify-starters.py --runtime
@@ -76,20 +78,22 @@ starter checks. Build artifacts and local stores must never enter plugin archive
 |---|---|
 | Real core matrix, macOS ARM64, .NET 10 | 4.14.7: 10 passed; 5.0.4: 19 passed, 1 explicit transaction skip; 5.1.0 and 5.2.0: 20 passed each |
 | .NET 8 with Ditto 5.2.0 | Passed |
+| .NET 11 with Ditto 5.2.0 | 20 passed on macOS ARM64; independent application evaluations documented separately |
 | Generated Console, Avalonia, Uno desktop | Build passed |
 | Published Console | CRUD, observer updates and process-restart persistence passed |
-| net48 WinForms | Cross-compile passed; Windows execution pending |
+| net48 WinForms | Cross-compile and Windows CI native smoke passed |
 | MAUI Android | Build passed; device behavior pending |
-| MAUI Mac Catalyst | Exploratory compile passed only with Xcode-version validation overridden; not counted as supported-toolchain validation |
-| MAUI iOS / Windows | CI gates supplied; not yet executed locally |
+| MAUI Mac Catalyst | Matching-toolchain CI build passed; separate .NET 11 evaluation also builds with normal Xcode validation |
+| MAUI iOS / Windows | CI builds passed; destination GUI/device execution pending |
 | Cloud, radios/background execution, GUI interaction | Not verified |
 | Cross-version on-disk upgrade/downgrade | Not verified; same-version reopen only |
-| Live-agent use of installed skill | Cases supplied; not executed |
+| Independent skill-guided app generation | Five platform evaluations completed; see separate report for post-review repairs and UI limits |
 
-Local Apple workload 26.2 requires Xcode 26.2; installed Xcode 27.2 is incompatible
-with its normal validation. CI selects the matching toolchain and must fail if it is
-missing. Do not turn off validation as a customer build recommendation. Check current
-runner images/toolchain availability when updating the pinned fixture.
+The earlier starter matrix passed all 19 jobs in [CI run 42951049915](https://github.com/getditto/agent-skills/actions/runs/42951049915), including twelve core/version/OS jobs,
+three desktop jobs and four MAUI builds. This CI uses the starter's pinned .NET 10
+framework baseline. The independent .NET 11 app evaluation uses a separate updated
+workload set; neither is a reason to disable Xcode validation. Destination GUI/device
+verification remains separate from compilation and headless runtime tests.
 
 ## Manual acceptance before claiming broader platform support
 
@@ -104,3 +108,6 @@ Agent evaluation cases are in [the shared catalog](../skill-context/cases.json).
 through the existing context harness or a real supported agent host; report host/model,
 which references loaded, generated artifact and build/runtime result. Static packaging
 and context-budget checks do not certify every AI agent's behavior.
+
+See [independent application evaluation](../../docs/csharp-skill-evaluation.md) for the
+.NET 11 projects/tasks exercise and observed guidance corrections.
