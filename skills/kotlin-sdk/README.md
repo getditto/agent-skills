@@ -17,7 +17,7 @@ Covers `com.ditto:ditto-kotlin` (v5) and `live.ditto:ditto` (4.14.x, Android-onl
 Gradle setup, connecting, authentication, transports, subscriptions, DQL execution,
 observers with coroutines/Flow, attachments, presence, observability, error handling,
 testing, and v4 → v5 migration. Structured against the twenty capability IDs defined
-in [`docs/SDK-SKILL-TEMPLATE.md`](../../docs/SDK-SKILL-TEMPLATE.md).
+in `docs/SDK-SKILL-TEMPLATE.md` in the agent-skills repository.
 
 Deliberately **out of scope** — these have their own skills:
 
@@ -136,7 +136,7 @@ Evidence notes (spec §7 requires the tier's extra information inline for
   [`references/versions.md`](references/versions.md#new-in-520). The GA sources are
   identical to `5.2.0-rc.2`'s, which was executed the same way before GA.
 - JUnit pattern (5.0.3, 5.1.0 and 5.2.0, same JVM host):
-  [`tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`](../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt)
+  `tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt`
   — `insertThenReadBack`, `observerReportsTheWrite`, `observerReportsTheWriteUnderRunTest`
   and `flowOnDoesNotReachTheObserveTransform`, 4 tests green on macOS arm64 and in CI on
   Linux x64 (`gradle test -PdittoVersion=<v>`). The plain observer test runs under
@@ -200,7 +200,7 @@ store; cloud authentication round-trip.
 /plugin install ditto-kotlin@ditto-plugins
 ```
 
-For other agent tools, see the repository [README](../../README.md).
+For other agent tools, see the agent-skills repository README.
 
 ## Maintenance
 

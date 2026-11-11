@@ -1,3 +1,4 @@
+// snippet:start js-web-browser-fixture
 import React, { StrictMode, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { createRuntime, type DittoRuntime } from '../.generated/runtime';
@@ -39,4 +40,5 @@ export const fixture = {
   },
   async close() { root.unmount(); await runtime.close(); },
 };
+// snippet:end js-web-browser-fixture
 Object.assign(window, { fixture });

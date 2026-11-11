@@ -3,12 +3,12 @@
 > Rules for producing a **complete, compilable** Android or JVM project with Ditto —
 > the Kotlin analogue of a project generator. Every rule exists because the failure
 > was observed (see [`errors.md`](errors.md)) or because the build genuinely cannot
-> work otherwise. The reference implementations these rules describe are the
-> [JVM v5 harness project](../../../tests/kotlin-sdk/minimal-app) and the
-> [Android harness project](../../../tests/kotlin-sdk/android-app) — prefer copying
-> them to typing from memory. The Android project builds either line
-> (`-PdittoLine=v4|v5`); its v5 leg was built with AGP 9.4.1 at `compileSdk 36` and run
-> on a Pixel 10a (5.2.0, 5.1.0, 5.0.3).
+> work otherwise. The reference implementations these rules describe are the JVM v5
+> and Android harness projects, whose build files are in
+> [reference-projects.md](reference-projects.md) — prefer copying them to typing from
+> memory. The Android project builds either line
+> (`-PdittoLine=v4|v5`) and pins AGP 9.5.0; its v5 leg was last run on a Pixel 10a
+> (5.2.0, 5.1.0, 5.0.3) with AGP 9.4.1 at `compileSdk 36`.
 
 ## Mandatory rules, in order
 
@@ -22,7 +22,7 @@
    `ditto-binaries` classifier artifact for the host — or the first
    `DittoFactory.create` throws `IllegalStateException: Unable to find binary
    'libdittoall.dylib' …` (executed).
-3. **Pin the toolchain that is known to work:** JDK 17, `kotlinx-coroutines` 1.10.x,
+3. **Pin the toolchain that is known to work:** JDK 17, `kotlinx-coroutines` 1.11.x,
    Android `minSdk` 24 / `compileSdk` 36 (<https://docs.ditto.live/sdk/latest/install-guides/kotlin>;
    the 5.x AARs enforce the 36 floor through AAR metadata — a 35 build fails
    `CheckAarMetadata`, executed; the v4 leg still builds at 35).

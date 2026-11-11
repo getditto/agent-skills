@@ -14,9 +14,11 @@
 // else the gitignored repo-root .env. It is injected as a BuildConfig field and never
 // written into the repository.
 
+// snippet:start kotlin-android-build
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v4")
 val dittoVersion: String = providers.gradleProperty("dittoVersion")
     .getOrElse(if (dittoLine == "v4") "4.14.7" else "5.2.0")
+// snippet:end kotlin-android-build
 
 val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.isFile }   // repo root
     ?.readLines()
@@ -25,10 +27,20 @@ val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.i
         if (trimmed.isEmpty() || trimmed.startsWith("#") || '=' !in trimmed) null
         else trimmed.substringBefore('=').trim() to trimmed.substringAfter('=').trim().trim('"', '\'')
     }?.toMap() ?: emptyMap()
+// snippet:start kotlin-android-build
+// Never commit a license: take it from -PdittoLicense or the environment at build time.
 val dittoLicense: String = providers.gradleProperty("dittoLicense").orNull
-    ?: System.getenv("DITTO_OFFLINE_LICENSE") ?: dotEnv["DITTO_OFFLINE_LICENSE"] ?: ""
+    ?: System.getenv("DITTO_OFFLINE_LICENSE")
+// snippet:end kotlin-android-build
+    ?: dotEnv["DITTO_OFFLINE_LICENSE"]
+// snippet:start kotlin-android-build
+    ?: ""
 val dittoDatabaseId: String = providers.gradleProperty("dittoDatabaseId").orNull
-    ?: System.getenv("DITTO_DATABASE_ID") ?: dotEnv["DITTO_DATABASE_ID"] ?: ""
+    ?: System.getenv("DITTO_DATABASE_ID")
+// snippet:end kotlin-android-build
+    ?: dotEnv["DITTO_DATABASE_ID"]
+// snippet:start kotlin-android-build
+    ?: ""
 
 // AGP embeds an older KGP; select the build-cache security fix explicitly.
 buildscript {
@@ -63,20 +75,24 @@ android {
         targetSdk = sdkLevel
         versionCode = 1
         versionName = "1.0"
-        // Declared in defaultConfig so every variant compiles; `assembleRelease` used to
-        // fail with an unresolved BuildConfig.DITTO_LICENSE when this lived under `debug`.
+        // In defaultConfig, not a build type, so every variant (release too) compiles.
         buildConfigField("String", "DITTO_LICENSE", "\"$dittoLicense\"")
         buildConfigField("String", "DITTO_DATABASE_ID", "\"$dittoDatabaseId\"")
         buildConfigField("String", "DITTO_VERSION", "\"$dittoVersion\"")
-        // Optional: -PdittoAbi=arm64-v8a keeps only the emulator's ABI. The SDK bundles
-        // four ABIs, which makes the debug APK ~220 MB and can exhaust a small image.
-        providers.gradleProperty("dittoAbi").orNull?.let { abi -> ndk { abiFilters += abi } }
     }
 
     buildFeatures {
         buildConfig = true
     }
+}
+// snippet:end kotlin-android-build
 
+// Harness only: one source set per SDK line, and an optional single ABI. The SDK bundles
+// four ABIs, so -PdittoAbi=arm64-v8a keeps the debug APK small enough for a small emulator.
+android {
+    defaultConfig {
+        providers.gradleProperty("dittoAbi").orNull?.let { abi -> ndk { abiFilters += abi } }
+    }
     sourceSets {
         getByName("main") {
             kotlin.srcDirs("src/$dittoLine/kotlin")
@@ -84,6 +100,7 @@ android {
     }
 }
 
+// snippet:start kotlin-android-build
 // Lint resolves its own tool graph, separately from AGP's buildscript classpath.
 // Keep the security fixes scoped to that graph, including all BC modules together.
 configurations.matching { it.name == "androidLintTool" }.configureEach {
@@ -103,7 +120,9 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
         }
     }
 }
+// snippet:end kotlin-android-build
 
+// snippet:start kotlin-android-build
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
@@ -120,3 +139,4 @@ dependencies {
         else -> error("unknown dittoLine: $dittoLine (v4 | v5)")
     }
 }
+// snippet:end kotlin-android-build

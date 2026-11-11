@@ -3,8 +3,8 @@
 // observer, and a detail screen whose observer is created when a row is selected and
 // cancelled when the screen goes away.
 //
-// This is the published sample in `skills/swift-sdk/examples/swiftui-app.md`, byte for
-// byte below the marker. It compiles on every platform and version leg the matrix
+// This is the published sample in the swift-sdk skill's examples/swiftui-app.md,
+// copied there from between the snippet markers by scripts/sync-snippets.py. It compiles on every platform and version leg the matrix
 // covers. ProjectsStoreTests executes the inline project/task observer callbacks;
 // no test drives a real SwiftUI view. ObserverBridgeTests separately covers buffering,
 // termination and cancellation. README.md records the remaining UI acceptance scope.
@@ -13,7 +13,7 @@
 // is why this file is availability-gated rather than raising it.
 //
 
-// MARK: - begin documented program
+// snippet:start swift-swiftui-app
 #if canImport(SwiftUI)
 import SwiftUI
 import Foundation
@@ -243,3 +243,4 @@ public struct TasksScreen: View {
     }
 }
 #endif
+// snippet:end swift-swiftui-app

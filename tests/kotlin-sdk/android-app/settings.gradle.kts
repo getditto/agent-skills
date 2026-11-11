@@ -1,3 +1,4 @@
+// snippet:start kotlin-android-settings
 pluginManagement {
     repositories {
         google()
@@ -12,3 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "ditto-kotlin-minimal-android-app"
+// snippet:end kotlin-android-settings

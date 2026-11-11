@@ -1,6 +1,6 @@
 {
   "name": "ditto-mesh",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ditto mesh networking and transport configuration — transports, peer discovery, runtime config updates, and transport-aware data modeling",
   "author": {
     "name": "Ditto",

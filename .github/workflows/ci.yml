@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Lets the required "Validate plugins" check run if a merge queue is enabled.
+  merge_group:
 
 permissions:
   contents: read
@@ -77,6 +79,9 @@ jobs:
 
       - name: Check skill context guard negative controls
         run: python3 tests/skill-context/test_contract.py
+
+      - name: Check the snippet generator
+        run: python3 tests/skill-context/test_snippets.py
 
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
@@ -255,3 +260,6 @@ jobs:
 
       - name: Validate SDK skill structure
         run: python3 scripts/validate-sdk-skills.py
+
+      - name: Check skill snippets match the tested code
+        run: python3 scripts/sync-snippets.py --check

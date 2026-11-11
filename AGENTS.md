@@ -142,8 +142,8 @@ live AI models and deterministically scores the recommendations against the
 rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
 `tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
-against the supported SDK versions; `scripts/validate-sdk-skills.py` fails when the
-published program drifts from the fixture. The `data-streams` concept skill has no
+against the supported SDK versions; the published program is generated from the
+fixture by `scripts/sync-snippets.py`, and `--check` fails when it drifts. The `data-streams` concept skill has no
 harness of its own: its executed claims come from the two-peer Data Streams tests in
 both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows:
 
@@ -188,8 +188,12 @@ Each release tag (`v*`) gets two assets, built by the workflow:
 - `skills-manifest.json` — name/path/description per skill, parsed from
   `SKILL.md` frontmatter by `scripts/build-release-manifest.py`.
 
-The workflow runs `scripts/validate-sdk-skills.py` first, so a release can
-never ship a skill whose published example has drifted from its test fixture.
+The workflow runs `scripts/validate-sdk-skills.py` and
+`scripts/sync-snippets.py --check` first, so a release can never ship a skill whose
+published example has drifted from its test fixture, or a skill that links to files
+outside `skills/`. Code copied from `tests/` into skills is generated: edit the test,
+then run `python3 scripts/sync-snippets.py` (see CONTRIBUTING.md, "Keep skills
+self-contained").
 
 Optional release summaries live in `docs/releases/<tag>.md`; the workflow
 prepends them to the generated skill list. See `docs/release-validation.md`

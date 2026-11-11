@@ -86,7 +86,7 @@ separate runtimeVersion policies. Test the release artifact, not only a dev clie
 
 Run the generated project's typecheck, export both native bundles, inspect prebuild
 outputs, compile/install on each platform, and execute the RN acceptance checks.
-[Harness results](../../tests/js-sdk/README.md) distinguish these evidence levels.
+Keep these evidence levels separate when you report results.
 Check regenerated config twice: arrays/permissions should not duplicate or erase other
 plugins' settings. Native radio/background verification still requires real devices.
 

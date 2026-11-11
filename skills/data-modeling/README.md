@@ -35,7 +35,7 @@ Last verified against docs.ditto.live and Ditto source: 2026-08-25.
 
 ## Tests
 
-[`tests/data-modeling/`](../../tests/data-modeling) contains review cases:
+The agent-skills repository's `tests/data-modeling/` contains review cases:
 raw JSON inputs with expected findings (keyed to the rubric IDs), plus a runner
 that feeds them to live AI models and scores the recommendations
 deterministically.

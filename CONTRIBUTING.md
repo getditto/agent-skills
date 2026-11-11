@@ -371,6 +371,42 @@ than assuming the model will issue a partial read. Keep runnable programs intact
 move separate setup/run notes when necessary. A short file with dense tables can
 cost more context than a long file with short lines; measure both characters and lines.
 
+### Keep skills self-contained
+
+Installed skills contain only `skills/`: the release archive, `dittosh skills add`
+and agent skill directories never include `tests/` or `docs/`, and agents may have no
+web access. No file in a skill, `README.md` included, may link outside `skills/` (inline,
+reference-style or HTML) or refer to this repository on GitHub in any form.
+`scripts/validate-sdk-skills.py` enforces this. Name a repository file in plain text
+when a README needs to cite it.
+
+To show code that CI runs, copy it in with `scripts/sync-snippets.py` instead of
+pasting it. Mark the region in the test file with comment lines:
+
+```kotlin
+// snippet:start kotlin-store-test
+class DittoStoreTest { … }
+// snippet:end kotlin-store-test
+```
+
+and place a block in the skill where the code belongs:
+
+```markdown
+<!-- snippet: kotlin-store-test -->
+<!-- /snippet -->
+```
+
+To copy a whole file, put the start marker after its header comment and the end marker
+on its last line.
+
+Run `python3 scripts/sync-snippets.py` to fill the block, and commit both files. CI
+and the Release workflow run it with `--check` and fail when a copy differs from the
+tested code. A name may have several regions; mark only the parts an app needs, and
+keep harness-only code (license loading from `.env`, test logging) outside the markers
+— restructure the source if needed so the marked parts stand on their own. Example
+programs under `## Program` must be one region covering the whole file. Hand-written
+code blocks are not checked, so prefer a snippet whenever the code exists in a test.
+
 Run `python3 scripts/validate-sdk-skills.py --context-report` to audit every skill,
 reference, example and README. It checks links and structure, not model behavior.
 Do not add more skill names merely to make files smaller; that increases discovery

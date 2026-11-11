@@ -104,7 +104,7 @@ DOCUMENTS ({
 ON ID CONFLICT DO UPDATE
 ```
 
-For the test harness, the `movies` fixture is generated from a real movies dataset by [`tests/dql/scripts/transform-dataset.mjs`](../../../tests/dql/scripts/transform-dataset.mjs) and lives at [`tests/dql/fixtures/movies-pedagogical.ndjson`](../../../tests/dql/fixtures/movies-pedagogical.ndjson) (194 docs spanning 1893–2002). The cookbook walks through seeding interactively in [`examples/movies-cookbook.md`](../examples/movies-cookbook.md#task-1--load-movies-with-conflict-tolerant-upserts).
+The repository's test harness generates its `movies` fixture from a real movies dataset (194 docs spanning 1893–2002). The cookbook walks through seeding interactively in [`examples/movies-cookbook.md`](../examples/movies-cookbook.md#task-1--load-movies-with-conflict-tolerant-upserts).
 
 ## Gotchas you'll meet in examples
 

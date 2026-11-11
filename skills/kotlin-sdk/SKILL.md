@@ -201,5 +201,6 @@ Choose the matching row and section; alternatives, not a reading checklist.
 | What is preview or platform-specific here? | [preview.md](references/preview.md) |
 | Stream raw bytes to one peer (Data Streams, preview) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
 | How do I generate a whole runnable Gradle project? | [gradle-project-generation.md](references/gradle-project-generation.md) |
+| What do tested Gradle build files look like? | [reference-projects.md](references/reference-projects.md) |
 | Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
 | Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled and run) |
