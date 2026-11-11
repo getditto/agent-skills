@@ -256,6 +256,21 @@ at the same remote endpoints with their own MCP config.
   ships JOINs, composite (multi-column) indexes, `RETURNING` on INSERT/UPDATE,
   and `ADVISE`; the harness also runs `@dittolive/ditto@5.2.0`, including its
   mutation/index fixes and diagnostics.
-- For new Swift/Kotlin apps, resolve the latest stable release through SwiftPM/Maven
-  Central. 5.2.0 is the skills’ knowledge baseline, not a fixed recommendation; keep
-  exact pins in test fixtures for reproducibility.
+- For new Swift/Kotlin/JavaScript apps, resolve the latest stable release through
+  SwiftPM/Maven Central/npm unless the user names a version. 5.2.0 is the skills’
+  knowledge baseline, not a fixed recommendation; keep exact pins in test fixtures for
+  reproducibility.
+
+## JavaScript platform family
+
+`skills/js-sdk/` owns the twenty-capability JavaScript/TypeScript API contract.
+`js-node`, `js-web`, `js-react-native`, and `js-expo` are companion platform workflows;
+`native-app-config` owns reusable Apple/Android OS declarations. `ditto-js` ships all
+six scoped skill directories so sibling links and the Expo generator work after install.
+Swift links to the same native configuration; future SDK adapters should reuse it.
+
+`tests/js-sdk/` executes the shipped assets against Node and browser WASM, and generates
+the Expo native fixture. Run `python3 scripts/package-js-plugin.py --sync-manifests`
+after changing its Claude manifest; `--check` verifies generated host metadata.
+Native compilation, emulator runtime, and physical-radio checks are separate evidence
+levels and must be reported separately.

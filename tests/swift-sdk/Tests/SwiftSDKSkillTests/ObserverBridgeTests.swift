@@ -363,15 +363,17 @@ struct DeadlineTests {
     /// against a 10s deadline cancelled at 0.5s. That matters in `DittoLoader`, whose
     /// bootstrap runs from SwiftUI's `.task`: a disappearing view would hold the `Ditto`
     /// instance and its directory lock, and report "unreachable server" for a teardown.
-    @Test("cancelling the caller releases it promptly with CancellationError")
+    @Test("cancelling the caller releases it with CancellationError before the deadline")
     func cancellationReleasesTheCaller() async throws {
         let outcome = Outcome()
-        let started = Date()
+        let (starts, started) = AsyncStream<Void>.makeStream()
 
         let subject = Task {
             do {
                 try await Deadline.run(seconds: 30) { _ in
-                    // Never completes: only cancellation can end this.
+                    started.yield(())
+                    started.finish()
+                    // Never completes: only cancellation can end this before the deadline.
                 }
                 await outcome.record(.returned)
             } catch is CancellationError {
@@ -383,7 +385,10 @@ struct DeadlineTests {
             }
         }
 
-        try await Task.sleep(nanoseconds: 300_000_000)
+        defer { subject.cancel() }
+        // Cancel only after the body is registered. Sleeping first races startup with
+        // cancellation, and timing from task creation measures unrelated SDK-test load.
+        _ = try await firstElement(of: starts)
         subject.cancel()
 
         // Polled, NOT `await subject.value`: awaiting a non-throwing `Task.value` is not
@@ -396,11 +401,12 @@ struct DeadlineTests {
             waited += 1
         }
 
-        let elapsed = Date().timeIntervalSince(started)
         // Read the actor once: `#expect`'s autoclosure is nonisolated and cannot await.
         let observed = await outcome.value
         #expect(observed == .cancelled, "expected CancellationError, got \(String(describing: observed))")
-        #expect(elapsed < 5, "cancellation did not release the caller promptly (\(elapsed)s of a 30s deadline)")
+        // The bounded poll and exact error assertion detect a missing cancellation
+        // handler or a blocked caller; an extra wall-clock limit measures scheduling
+        // delays across the parallel suite rather than the cancellation contract.
     }
 
     @Test("an error from the completion is rethrown, not swallowed by the deadline")

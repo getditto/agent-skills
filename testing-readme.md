@@ -89,3 +89,10 @@ The data-modeling harness is run manually (it spends live-model tokens).
 The [C# workflow](.github/workflows/csharp-skill-tests.yml) adds Windows/Linux/macOS
 core runs, .NET 8 compatibility, desktop generation/publish checks, a Windows net48
 smoke executable and MAUI target builds. See its harness for explicit skips and device gates.
+
+## JavaScript / React Native / Expo
+
+[JavaScript harness](tests/js-sdk/README.md) tests the shipped assets against real Node
+and browser SDKs, verifies permission boundaries and generated native configuration,
+and supplies the Expo native build fixture. See its evidence table before treating a
+passing typecheck or simulator run as radio/background validation.

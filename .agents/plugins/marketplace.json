@@ -5,6 +5,18 @@
   },
   "plugins": [
     {
+      "name": "ditto-js",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ditto-js"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "ditto-swift",
       "source": {
         "source": "local",

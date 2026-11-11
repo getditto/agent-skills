@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Ditto Tasks",
+    "slug": "ditto-tasks",
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.example.dittotasks",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "bluetooth-central",
+          "bluetooth-peripheral"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.example.dittotasks"
+    },
+    "plugins": [
+      [
+        "@dittolive/ditto",
+        {
+          "bluetoothUsageDescription": "Sync tasks with nearby devices using Bluetooth.",
+          "localNetworkUsageDescription": "Sync tasks with nearby devices on your local network."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          },
+          "android": {
+            "kotlinVersion": "2.3.0"
+          }
+        }
+      ],
+      "./plugins/with-kotlin-compiler.cjs"
+    ]
+  }
+}

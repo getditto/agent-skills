@@ -86,6 +86,28 @@
       "category": "development"
     },
     {
+      "name": "ditto-js",
+      "version": "1.0.0",
+      "description": "Build and troubleshoot Ditto JavaScript/TypeScript apps on Node.js, web/React, React Native and Expo, with tested provider patterns and shared native configuration.",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-js",
+      "category": "development"
+    },
+    {
+      "name": "ditto-native-config",
+      "version": "1.0.0",
+      "description": "Reusable Ditto Apple and Android app permissions, plist, entitlements, manifest and runtime permission guidance.",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-native-config",
+      "category": "development"
+    },
+    {
       "name": "ditto-csharp",
       "description": "Ditto C#/.NET SDK guidance and runnable Console, Windows Forms, MAUI, Uno and Avalonia starters. Native targets, async programming, DQL, observers, deployment and testing; Ditto 4.14.x through 5.2.0.",
       "version": "1.0.0",

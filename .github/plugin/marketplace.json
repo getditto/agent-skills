@@ -6,6 +6,11 @@
   },
   "plugins": [
     {
+      "name": "ditto-js",
+      "source": "./plugins/ditto-js",
+      "description": "Build and troubleshoot Ditto JavaScript/TypeScript apps on Node.js, web/React, React Native and Expo, with tested provider patterns and shared native configuration."
+    },
+    {
       "name": "ditto-swift",
       "source": "./plugins/ditto-swift",
       "description": "Build runnable SwiftUI apps and integrate or troubleshoot the Ditto Swift SDK on iOS, iPadOS, macOS and Mac Catalyst. Includes Xcode project generation, diagnostics, lifecycle and concurrency guidance for SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0."
