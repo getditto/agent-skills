@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Lets the required "Validate plugins" check run if a merge queue is enabled.
+  merge_group:
 
 permissions:
   contents: read

@@ -16,9 +16,11 @@ syntax (`//`, `#`, `<!--`, `/*` or `--`):
 
 Marker lines are not copied. To copy a whole file, put the start marker after any
 header comment and the end marker on the last line. A name may have several regions
-in one file. They are joined in order with a blank line between them, or with no
-blank line when the next region continues the code (it starts with `)`, `]`, `}`,
-`?:` or `.`). The joined code's common leading indentation is removed.
+in one file. They are joined in order with a blank line between them. In code
+(Kotlin, Swift, JS/TS) there is no blank line when the next region continues an
+expression: it starts with `)`, `]`, `}`, `?:`, `?.`, `.`, `&&`, `||` or `+`. The
+joined code's common leading indentation is removed. Markdown files under tests/
+are documentation and are not scanned.
 
 In a Markdown file under skills/, place a block where the code belongs:
 
@@ -75,7 +77,8 @@ MARKER_BYTES_RE = re.compile(rb"(?m)^\s*(?://|#|<!--|/\*|--)\s*snippet:(start|en
 STRICT_ARG_RE = re.compile(rf"^\s+({NAME})\s*(?:-->|\*/)?\s*$")
 OPEN_RE = re.compile(r"<!-- */?snippet\b")
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
-CONTINUES = (")", "]", "}", "?:", ".")
+CONTINUES = (")", "]", "}", "?:", "?.", ".", "&&", "||", "+")
+CODE_LANGUAGES = {"kotlin", "swift", "ts", "tsx", "javascript", "jsx"}
 
 
 class SnippetError(Exception):
@@ -90,7 +93,8 @@ def candidate_files(root: Path):
         for directory, dirs, files in os.walk(base):
             dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.startswith("."))
             for name in sorted(files):
-                yield Path(directory) / name
+                if not name.endswith(".md"):  # documentation may show the marker syntax
+                    yield Path(directory) / name
 
 
 def collect_snippets(root: Path) -> dict[str, tuple[str, str, str]]:
@@ -145,18 +149,20 @@ def collect_snippets(root: Path) -> dict[str, tuple[str, str, str]]:
 
     snippets = {}
     for name, (regions, rel) in found.items():
+        language = SOURCE_SUFFIXES[rel.suffix]
         code = ""
         for region in regions:
             part = "\n".join(region).strip("\n")
             if not part.strip():
                 continue
             if code:
-                code += "\n" if part.lstrip().startswith(CONTINUES) else "\n\n"
+                continues = language in CODE_LANGUAGES and part.lstrip().startswith(CONTINUES)
+                code += "\n" if continues else "\n\n"
             code += part
         code = textwrap.dedent(code).strip("\n")
         if not code:
             raise SnippetError(f"{rel}: snippet '{name}' is empty")
-        snippets[name] = (code, rel.as_posix(), SOURCE_SUFFIXES[rel.suffix])
+        snippets[name] = (code, rel.as_posix(), language)
     return snippets
 
 
@@ -209,6 +215,10 @@ def find_blocks(text: str, where: str) -> list[tuple[int, int, str]]:
         offset += len(line)
     if block:
         raise SnippetError(f"{where}: snippet '{block[1]}' has no {CLOSE_LINE}")
+    if fence:
+        raise SnippetError(
+            f"{where}: a code fence ({fence}) is never closed, so blocks after it would be skipped"
+        )
     return blocks
 
 
@@ -226,8 +236,11 @@ def sync(root: Path, check: bool) -> tuple[list[str], set[str]]:
     for path in sorted((root / SKILLS_DIR).rglob("*.md")):
         if path.is_symlink():
             continue
-        text = path.read_text(encoding="utf-8")
+        raw = path.read_bytes().decode("utf-8")
+        crlf = "\r\n" in raw
+        text = raw.replace("\r\n", "\n")
         rel = path.relative_to(root).as_posix()
+        host = path.relative_to(root / SKILLS_DIR).parts[0]
 
         def replace(name: str) -> str:
             if name not in snippets:
@@ -236,7 +249,7 @@ def sync(root: Path, check: bool) -> tuple[list[str], set[str]]:
             # Installers such as dittosh treat `../<skill>/` in a skill's files as a link
             # to that skill and install it too.
             for other in re.findall(r"\.\./([a-z0-9][a-z0-9-]*)/", code):
-                if other in skills:
+                if other in skills and other != host:
                     raise SnippetError(
                         f"{source}: snippet '{name}' contains `../{other}/`, which installers "
                         "read as a link to that skill"
@@ -255,7 +268,8 @@ def sync(root: Path, check: bool) -> tuple[list[str], set[str]]:
         if updated != text:
             stale.append(rel)
             if not check:
-                path.write_text(updated, encoding="utf-8")
+                data = updated.replace("\n", "\r\n") if crlf else updated
+                path.write_bytes(data.encode("utf-8"))
     unused = sorted(set(snippets) - used)
     if unused:
         raise SnippetError(

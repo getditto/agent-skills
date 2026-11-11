@@ -84,6 +84,37 @@ class ContextContract(unittest.TestCase):
                 errors = self.check(resource=f"# Resource\n\n{line}\n")
                 self.assertTrue(any("refers to this repository" in e for e in errors))
 
+    def test_more_link_forms_are_rejected(self):
+        forms = {
+            "single-quoted title": "[x](../../tests/a.md 'T')",
+            "paren title": "[x](../../tests/a.md (T))",
+            "unquoted href": "<a href=../../tests/a.md>x</a>",
+            "file scheme": "[x](file:../../tests/a.md)",
+        }
+        for label, line in forms.items():
+            with self.subTest(label):
+                self.assertTrue(any("leaves" in e for e in self.check(resource=f"# Resource\n\n{line}\n")))
+        for line in ["git@github.com:getditto/agent-skills.git",
+                     "https://api.github.com/repos/getditto/agent-skills/contents"]:
+            with self.subTest(line):
+                errors = self.check(resource=f"# Resource\n\n{line}\n")
+                self.assertTrue(any("refers to this repository" in e for e in errors))
+
+    def test_no_false_positives(self):
+        resource = (
+            "# Resource\n\n```tsx\n<img src=\"./logo.png\" />\n[tests]: ../../tests/x\n```\n\n"
+            "[String: Any]: a Swift dictionary type, not a link definition.\n\n"
+            "See github.com/getditto/agent-skills-other for another project.\n\n"
+            "Docs: <https://docs.ditto.live/sdk/latest>.\n"
+        )
+        self.assertEqual(self.check(resource=resource), [])
+
+    def test_repository_url_in_an_asset_is_rejected(self):
+        assets = self.skill / "assets"
+        assets.mkdir()
+        (assets / "a.ts").write_text("// see https://github.com/getditto/agent-skills/blob/main/tests/x.ts\n")
+        self.assertTrue(any("a.ts:1: refers to this repository" in e for e in self.check()))
+
     def test_readme_follows_the_same_rule(self):
         (self.skill / "README.md").write_text(
             "# Probe\n\n[Tests](https://github.com/getditto/agent-skills/blob/main/tests/x.md)\n", encoding="utf-8"
@@ -138,6 +169,8 @@ class ExamplePrograms(unittest.TestCase):
         self.assertTrue(any("would not compile" in e for e in self.check(self.block(), above)))
         below = "// snippet:start app\nlet a = 1\n// snippet:end app\nlet b = 2\n"
         self.assertTrue(any("last line" in e for e in self.check(self.block(), below)))
+        directive = "#if canImport(Foundation)\n// snippet:start app\nlet a = 1\n// snippet:end app\n"
+        self.assertTrue(any("would not compile" in e for e in self.check(self.block(), directive)))
         split = "// snippet:start app\na\n// snippet:end app\n// snippet:start app\nb\n// snippet:end app\n"
         self.assertTrue(any("one region" in e for e in self.check(self.block(), split)))
 

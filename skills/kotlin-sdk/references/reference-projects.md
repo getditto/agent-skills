@@ -5,14 +5,19 @@ so they are available wherever the skill is installed. Use them with the rules i
 [gradle-project-generation.md](gradle-project-generation.md); the versions in them are
 validation baselines, so resolve current versions as [setup.md](setup.md) describes.
 
-Both build files take `-PdittoLine` and `-PdittoVersion` so CI can run several SDK
-versions from one project. A generated app needs only its own line and version.
+Both builds take `-PdittoVersion`, and the Android build also takes `-PdittoLine=v4|v5`,
+so CI can run several SDK versions from one project. A generated app needs only its own
+line and version.
 
-The `build.gradle.kts` files below are complete except for CI-only settings: a
-fallback that reads the license from a local file, test logging, the per-line source
-directories of the Android project, and an option that keeps one ABI for small
-emulators. The license comes from an environment variable or a Gradle property; never
-commit it.
+Each `build.gradle.kts` below is complete except for settings only CI needs:
+
+- **Both:** a fallback that reads the license from a local file.
+- **JVM:** a check that `-PdittoLine` is `v5`, the database-ID and Data Streams (NGN)
+  environment for the test JVM, an extra source set for 5.2-only tests, and test logging.
+- **Android:** one source directory per SDK line, and an option that keeps one ABI for
+  small emulators.
+
+The license comes from an environment variable or a Gradle property; never commit it.
 
 ## Contents
 
@@ -105,8 +110,9 @@ application {
 
 ## Android project
 
-An Android app that builds either line (`-PdittoLine=v4|v5`). Its v5 leg was built with
-AGP 9.4.1 at `compileSdk 36`.
+An Android app that builds either line (`-PdittoLine=v4|v5`) with AGP 9.5.0 at
+`compileSdk 36` (35 for the v4 line). The `buildscript` and lint blocks pin patched
+versions of AGP's build-time dependencies; see [setup.md](setup.md).
 
 `settings.gradle.kts`:
 
@@ -159,6 +165,21 @@ val dittoDatabaseId: String = providers.gradleProperty("dittoDatabaseId").orNull
     ?: System.getenv("DITTO_DATABASE_ID")
     ?: ""
 
+// AGP embeds an older KGP; select the build-cache security fix explicitly.
+buildscript {
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21")
+        // Security fixes for AGP's build-time dependency graph.
+        classpath("com.google.guava:guava:33.7.2-jre")
+        classpath("org.apache.commons:commons-lang3:3.21.0")
+        classpath("org.bitbucket.b_c:jose4j:0.9.7")
+        classpath("org.bouncycastle:bcprov-jdk18on:1.86")
+        classpath("org.bouncycastle:bcpkix-jdk18on:1.86")
+        classpath("org.bouncycastle:bcutil-jdk18on:1.86")
+        classpath("org.jdom:jdom2:2.0.6.1")
+    }
+}
+
 plugins {
     id("com.android.application") version "9.5.0"
 }
@@ -185,6 +206,26 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+}
+
+// Lint resolves its own tool graph, separately from AGP's buildscript classpath.
+// Keep the security fixes scoped to that graph, including all BC modules together.
+configurations.matching { it.name == "androidLintTool" }.configureEach {
+    resolutionStrategy.eachDependency {
+        val patched = when ("${requested.group}:${requested.name}") {
+            "com.google.guava:guava" -> "33.7.2-jre"
+            "org.apache.commons:commons-lang3" -> "3.21.0"
+            "org.apache.httpcomponents:httpclient" -> "4.5.14"
+            "org.bouncycastle:bcprov-jdk18on",
+            "org.bouncycastle:bcpkix-jdk18on",
+            "org.bouncycastle:bcutil-jdk18on" -> "1.86"
+            else -> null
+        }
+        if (patched != null) {
+            useVersion(patched)
+            because("Use mature versions with fixes for known security advisories")
+        }
     }
 }
 

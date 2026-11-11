@@ -38,7 +38,7 @@ before generating code for a newer release. Existing project pins take precedenc
   the 5.1.0 and 5.2.0 artifacts depend on `kotlin-stdlib` **2.3.21** (5.0.3: 2.1.0 —
   Maven Central POMs), and the compiler reads metadata at most one minor version newer,
   so the practical floor is **KGP ≥ 2.2 for 5.1.0 and 5.2.0**. Security-updated JVM pin: Kotlin **2.4.21**
-  with `kotlinx-coroutines` 1.10.x. On Android with AGP 9, use built-in Kotlin — do
+  with `kotlinx-coroutines` 1.11.x. On Android with AGP 9, use built-in Kotlin — do
   **not** apply `org.jetbrains.kotlin.android` (**executed**: v5 5.2.0, 5.1.0 and 5.0.3 built
   with AGP 9.4.1 and no KGP applied, run on a Pixel 10a / Android 17).
 - **`compileSdk` 36 is enforced, not advisory:** the 5.x AARs declare a minimum
@@ -49,7 +49,7 @@ before generating code for a newer release. Existing project pins take precedenc
 
 **Security pins:** use KGP **2.4.21**; versions before 2.4.20 are affected by the
 [Kotlin build-cache deserialization advisory](https://github.com/advisories/GHSA-r937-wjx7-w2jp).
-AGP 9.4.1 embeds KGP 2.2.10 (its Google Maven POM). Keep built-in Kotlin enabled and
+AGP 9 embeds an older KGP (9.4.1 embeds 2.2.10, per its Google Maven POM). Keep built-in Kotlin enabled and
 select the patched KGP through `buildscript.dependencies.classpath`, as supported by
 the [AGP guidance](https://developer.android.com/build/releases/agp-9-0-0-release-notes#upgrade-to-a-higher-kgp-version):
 

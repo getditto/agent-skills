@@ -153,6 +153,39 @@ class SyncSnippets(unittest.TestCase):
         with self.assertRaisesRegex(snippets.SnippetError, "link to that skill"):
             self.sync(check=True)
 
+    def test_unclosed_fence_is_an_error(self):
+        self.write("tests/probe/a.ts", marked("demo", "x"))
+        self.doc("````\nopened with four, never closed\n```\n\n" + BLOCK.format(name="demo"))
+        with self.assertRaisesRegex(snippets.SnippetError, "never closed"):
+            self.sync(check=True)
+
+    def test_markdown_under_tests_is_documentation(self):
+        self.write("tests/probe/README.md", "// snippet:start example\nshown as syntax\n// snippet:end example\n")
+        self.doc("No blocks.\n")
+        self.assertEqual(self.sync(check=True), ([], set()))
+
+    def test_continuation_rule_applies_only_to_code(self):
+        self.write("tests/probe/a.yml", "# snippet:start demo\na: 1\n# snippet:end demo\n"
+                   "b: 2\n# snippet:start demo\n.hidden: 3\n# snippet:end demo\n")
+        doc = self.doc(BLOCK.format(name="demo"))
+        self.sync()
+        self.assertIn("```yaml\na: 1\n\n.hidden: 3\n```", doc.read_text())
+
+    def test_a_skill_may_link_to_itself(self):
+        self.write("skills/probe/SKILL.md", "# Probe\n")
+        self.write("tests/probe/a.ts", marked("demo", "import x from '../probe/x';"))
+        self.doc(BLOCK.format(name="demo"), name="references/r.md")
+        self.assertEqual(self.sync()[1], {"demo"})
+
+    def test_crlf_files_stay_crlf(self):
+        self.write("tests/probe/a.ts", marked("demo", "x"))
+        doc = self.write("skills/probe/SKILL.md", "# Probe\r\n\r\n<!-- snippet: demo -->\r\n<!-- /snippet -->\r\n")
+        self.sync()
+        data = doc.read_bytes()
+        self.assertIn(b"```ts\r\nx\r\n```\r\n", data)
+        self.assertNotIn(b"\n\n", data.replace(b"\r\n", b"\r"))
+        self.assertEqual(self.sync(check=True)[0], [])
+
     def test_repository_is_in_sync(self):
         stale, _ = snippets.sync(ROOT, check=True)
         self.assertEqual(stale, [], "run: python3 scripts/sync-snippets.py")

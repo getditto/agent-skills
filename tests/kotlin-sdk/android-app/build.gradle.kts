@@ -41,7 +41,6 @@ val dittoDatabaseId: String = providers.gradleProperty("dittoDatabaseId").orNull
     ?: dotEnv["DITTO_DATABASE_ID"]
 // snippet:start kotlin-android-build
     ?: ""
-// snippet:end kotlin-android-build
 
 // AGP embeds an older KGP; select the build-cache security fix explicitly.
 buildscript {
@@ -58,13 +57,10 @@ buildscript {
     }
 }
 
-// snippet:start kotlin-android-build
 plugins {
     id("com.android.application") version "9.5.0"
 }
-// snippet:end kotlin-android-build
 
-// snippet:start kotlin-android-build
 // v5 AARs declare a minimum compileSdk of 36 (the install guide's value); the v4 leg
 // keeps the 35 it was recorded with.
 val sdkLevel: Int = if (dittoLine == "v4") 35 else 36
@@ -104,6 +100,7 @@ android {
     }
 }
 
+// snippet:start kotlin-android-build
 // Lint resolves its own tool graph, separately from AGP's buildscript classpath.
 // Keep the security fixes scoped to that graph, including all BC modules together.
 configurations.matching { it.name == "androidLintTool" }.configureEach {
@@ -123,6 +120,7 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
         }
     }
 }
+// snippet:end kotlin-android-build
 
 // snippet:start kotlin-android-build
 dependencies {

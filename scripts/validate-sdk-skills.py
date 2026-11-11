@@ -199,7 +199,7 @@ def collect_anchors(text: str) -> set[str]:
     return anchors
 
 
-LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+LINK_RE = re.compile(r"\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+(?:\"[^\"]*\"|'[^']*'|\([^)]*\)))?\)")
 
 # Installed skills contain only skills/ (the release archive, `dittosh skills add`,
 # agent skill directories), so no skill file may depend on anything else in this
@@ -210,16 +210,59 @@ SNIPPET_HINT = (
     "scripts/sync-snippets.py, or describe it in prose."
 )
 REPO_URL_RE = re.compile(
-    r"(?:https?://)?(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)/getditto/agent-skills\b",
+    r"(?:(?:https?://)?(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)[/:]"
+    r"|(?:https?://)?api\.github\.com/repos/|git@github\.com:)"
+    r"getditto/agent-skills(?![\w-])",
     re.I,
 )
 # Reference-style definitions (`[x]: target`) and HTML attributes, besides inline links.
-REF_DEF_RE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?", re.M)
-HTML_ATTR_RE = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
+# A definition needs a link-like target, so `[String: Any]: foo` in prose is not one.
+REF_DEF_RE = re.compile(r"^ {0,3}\[[^\]]+\]:[ \t]*<?((?:\.{1,2}/|/|#|[a-z][a-z0-9+.-]*:)[^\s>]*)>?", re.M | re.I)
+HTML_ATTR_RE = re.compile(r"""\b(?:href|src)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>"']+))""", re.I)
+# Schemes that point off-site. Anything else (file:, a bare path) is treated as a path.
+EXTERNAL_SCHEME_RE = re.compile(r"^(?:https?|mailto|tel):", re.I)
+FENCE_LINE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
+
+
+def strip_fences(text: str) -> str:
+    """The text with fenced code blocks blanked out (line count kept)."""
+    out, fence = [], None
+    for line in text.split("\n"):
+        match = FENCE_LINE_RE.match(line)
+        if fence is None and match:
+            fence = match.group(1)
+            out.append("")
+        elif fence is not None:
+            if match and match.group(1)[0] == fence[0] and len(match.group(1)) >= len(fence):
+                fence = None
+            out.append("")
+        else:
+            out.append(line)
+    return "\n".join(out)
 
 
 def link_targets(text: str) -> list[str]:
-    return LINK_RE.findall(text) + REF_DEF_RE.findall(text) + HTML_ATTR_RE.findall(text)
+    prose = strip_fences(text)
+    html = ["".join(groups) for groups in HTML_ATTR_RE.findall(prose)]
+    return LINK_RE.findall(text) + REF_DEF_RE.findall(prose) + html
+
+
+def check_no_repository_references(skill_dir: str) -> None:
+    """Non-Markdown files (scripts, assets) must not point at this repository either."""
+    for root, dirs, files in os.walk(skill_dir):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for filename in files:
+            if filename.endswith(".md"):
+                continue  # check_links reports these with line numbers
+            path = os.path.join(root, filename)
+            try:
+                text = read(path)
+            except (UnicodeDecodeError, OSError):
+                continue
+            for number, line in enumerate(text.split("\n"), 1):
+                match = REPO_URL_RE.search(line)
+                if match:
+                    fail(f"{path}:{number}: refers to this repository ({match.group(0)}). {SNIPPET_HINT}")
 
 
 def check_links(skill_dir: str, relative_path: str) -> None:
@@ -231,8 +274,9 @@ def check_links(skill_dir: str, relative_path: str) -> None:
         if match:
             fail(f"{path}:{number}: refers to this repository ({match.group(0)}). {SNIPPET_HINT}")
     for target in link_targets(text):
-        if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
-            continue  # http:, https:, mailto:, … — repository URLs are caught above
+        if EXTERNAL_SCHEME_RE.match(target):
+            continue  # repository URLs are caught above
+        target = re.sub(r"^file:(//)?", "", target, flags=re.I)
         if target.startswith("#"):
             anchor = target[1:]
             if anchor not in collect_anchors(text):
@@ -339,6 +383,7 @@ def validate_every_skill() -> None:
         elif body_chars > SKILL_BODY_CHAR_TARGET:
             warn(f"{skill_md}: body is {body_chars:,} characters; target ≤10,000")
 
+        check_no_repository_references(skill_dir)
         for path in all_markdown(skill_dir):
             check_links(skill_dir, os.path.relpath(path, skill_dir))
             if path == skill_md:
@@ -669,10 +714,6 @@ REQUIRED_MIRRORS = {
     "swift-sdk": [("Sources/MinimalApp/MinimalApp.swift", "Deadline.Gate")],
 }
 
-# Everything below this marker in the fixture is the documented program. Declared rather
-# than inferred, so the boundary does not depend on Swift syntax.
-
-
 def extract_declaration(text: str, type_name: str):
     """Returns the source of `type_name`'s declaration, including its leading keyword.
 
@@ -834,9 +875,11 @@ def check_whole_file_snippet(example: str, harness: str, snippet: str) -> None:
         return
     lines = text.rstrip("\n").split("\n")
     start = next(i for i, line in enumerate(lines) if SNIPPET_MARK_RE.match(line))
+    hash_comments = source.endswith((".py", ".sh", ".properties", ".toml", ".yml", ".yaml"))
+    comments = ("//", "/*", "*", "<!--", "<?xml") + (("#",) if hash_comments else ())
     for number, line in enumerate(lines[:start], 1):
         stripped = line.strip()
-        if stripped and not stripped.startswith(("//", "#", "/*", "*", "<!--", "<?xml")):
+        if stripped and not stripped.startswith(comments):
             fail(
                 f"{source}:{number}: code above the start of snippet '{snippet}' is left out of "
                 f"the published program, so the sample would not compile: {stripped!r}"
