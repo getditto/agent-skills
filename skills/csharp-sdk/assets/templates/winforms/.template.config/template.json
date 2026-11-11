@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Ditto",
+  "classifications": [
+    "Ditto",
+    "Database",
+    "winforms"
+  ],
+  "identity": "Ditto.CSharp.winforms",
+  "name": "Ditto winforms task app",
+  "shortName": "ditto-winforms",
+  "sourceName": "DittoTasks",
+  "preferNameDirectory": true,
+  "symbols": {
+    "ditto-version": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "5.2.0",
+      "replaces": "DITTO_PACKAGE_VERSION",
+      "description": "Exact stable Ditto version resolved from NuGet (5.x)."
+    },
+    "framework": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "net48",
+      "replaces": "WINFORMS_TARGET",
+      "choices": [
+        {
+          "choice": "net48"
+        },
+        {
+          "choice": "net481"
+        },
+        {
+          "choice": "net10.0-windows"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**"
+          ]
+        }
+      ],
+      "rename": {
+        "gitignore.in": ".gitignore"
+      }
+    }
+  ]
+}

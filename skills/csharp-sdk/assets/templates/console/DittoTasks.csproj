@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DittoTasks</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <PublishTrimmed>false</PublishTrimmed>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="DITTO_PACKAGE_VERSION" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" />
+  </ItemGroup>
+  <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">
+    <Error Condition="$(TargetFramework.Contains('browser')) Or $(RuntimeIdentifier.Contains('wasm'))" Text="Ditto .NET has no WebAssembly runtime. Select a supported native target." />
+    <Error Condition="'$(RuntimeIdentifier)' == 'win-arm64' Or '$(RuntimeIdentifier)' == 'win-x86' Or '$(RuntimeIdentifier)' == 'osx-x64'" Text="This Ditto package has no native asset for the selected runtime identifier." />
+  </Target>
+</Project>

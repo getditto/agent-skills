@@ -1,0 +1,17 @@
+<Page x:Class="DittoTasks.MainPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Padding="20" RowDefinitions="Auto,*,Auto" RowSpacing="12">
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBox x:Name="TitleInput" Width="200" PlaceholderText="Task title" />
+      <Button Content="Add" Click="Add" /><Button Content="Save edit" Click="Edit" />
+      <Button Content="Toggle done" Click="Toggle" /><Button Content="Delete" Click="Delete" />
+    </StackPanel>
+    <ListView Grid.Row="1" x:Name="TasksList" ItemsSource="{Binding Items}" SelectionChanged="SelectTask">
+      <ListView.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal" Spacing="12">
+        <CheckBox IsChecked="{Binding Done, Mode=OneWay}" IsHitTestVisible="False" IsTabStop="False" />
+        <TextBlock Text="{Binding Title}" />
+      </StackPanel></DataTemplate></ListView.ItemTemplate>
+    </ListView>
+    <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" />
+  </Grid>
+</Page>

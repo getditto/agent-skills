@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Ditto",
+  "classifications": [
+    "Ditto",
+    "Database",
+    "avalonia"
+  ],
+  "identity": "Ditto.CSharp.avalonia",
+  "name": "Ditto avalonia task app",
+  "shortName": "ditto-avalonia",
+  "sourceName": "DittoTasks",
+  "preferNameDirectory": true,
+  "symbols": {
+    "ditto-version": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "5.2.0",
+      "replaces": "DITTO_PACKAGE_VERSION",
+      "description": "Exact stable Ditto version resolved from NuGet (5.x)."
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**"
+          ]
+        }
+      ],
+      "rename": {
+        "gitignore.in": ".gitignore"
+      }
+    }
+  ]
+}
