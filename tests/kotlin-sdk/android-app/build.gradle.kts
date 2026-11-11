@@ -47,7 +47,7 @@ buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21")
         // Security fixes for AGP's build-time dependency graph.
-        classpath("com.google.guava:guava:33.7.2-jre")
+        classpath("com.google.guava:guava:33.8.0-jre")
         classpath("org.apache.commons:commons-lang3:3.21.0")
         classpath("org.bitbucket.b_c:jose4j:0.9.7")
         classpath("org.bouncycastle:bcprov-jdk18on:1.86")
@@ -58,7 +58,7 @@ buildscript {
 }
 
 plugins {
-    id("com.android.application") version "9.5.0"
+    id("com.android.application") version "9.5.1"
 }
 
 // v5 AARs declare a minimum compileSdk of 36 (the install guide's value); the v4 leg
@@ -106,7 +106,7 @@ android {
 configurations.matching { it.name == "androidLintTool" }.configureEach {
     resolutionStrategy.eachDependency {
         val patched = when ("${requested.group}:${requested.name}") {
-            "com.google.guava:guava" -> "33.7.2-jre"
+            "com.google.guava:guava" -> "33.8.0-jre"
             "org.apache.commons:commons-lang3" -> "3.21.0"
             "org.apache.httpcomponents:httpclient" -> "4.5.14"
             "org.bouncycastle:bcprov-jdk18on",
@@ -125,7 +125,7 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
 // snippet:start kotlin-android-build
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
-    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.68.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     when (dittoLine) {
         "v4" -> {
