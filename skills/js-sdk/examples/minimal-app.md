@@ -10,4 +10,4 @@ applications use a stable writable path instead.
 
 Expected successful output: `SDK: 5.2.0; observed: Learn Ditto`.
 A missing license or observer timeout exits nonzero. Actual execution results are in
-[the harness report](../../../tests/js-sdk/README.md).
+[the harness report](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md).

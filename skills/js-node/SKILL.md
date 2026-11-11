@@ -47,7 +47,7 @@ persistence/lifetime limitations before choosing this deployment.
 
 ## Verification
 
-[Fixture commands and evidence](../../tests/js-sdk/README.md). The minimal program
+[Fixture commands and evidence](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md). The minimal program
 uses a disposable directory; production examples must choose an application data path.
 No real customer backend or cloud resources are provisioned by this recipe.
 

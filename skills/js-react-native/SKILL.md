@@ -82,7 +82,7 @@ a guarantee across JS runtime resets. Native SDK updates require an app binary r
 - Check release signing, Android merged manifest and packaged iOS plist/entitlements.
 
 Simulators/emulators prove app integration only, not BLE or Wi-Fi Aware. Record each
-check's device, OS, SDK version and outcome. [Harness evidence](../../tests/js-sdk/README.md).
+check's device, OS, SDK version and outcome. [Harness evidence](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md).
 
 Sources: <https://docs.ditto.live/sdk/latest/install-guides/react-native>,
 <https://docs.ditto.live/sdk/latest/compatibility/react-native>, published package build files.

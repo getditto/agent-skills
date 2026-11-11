@@ -15,9 +15,9 @@ A complete, runnable program. Every line needed to build it is present: imports,
 dependency declaration, and the enclosing `main` context. The source of truth lives in
 this repository and is compiled and run:
 
-- **v5 (JVM):** [`tests/kotlin-sdk/minimal-app/`](../../../tests/kotlin-sdk/minimal-app) —
+- **v5 (JVM):** [`tests/kotlin-sdk/minimal-app/`](https://github.com/getditto/agent-skills/tree/main/tests/kotlin-sdk/minimal-app) —
   `build.gradle.kts` + `src/main/kotlin/MainV5.kt`, reproduced below.
-- **v4 (Android):** [`tests/kotlin-sdk/android-app/`](../../../tests/kotlin-sdk/android-app) —
+- **v4 (Android):** [`tests/kotlin-sdk/android-app/`](https://github.com/getditto/agent-skills/tree/main/tests/kotlin-sdk/android-app) —
   4.14.x has no JVM artifact, so the v4 leg runs as an Android app on an emulator;
   transcript below.
 

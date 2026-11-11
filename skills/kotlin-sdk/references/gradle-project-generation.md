@@ -4,8 +4,8 @@
 > the Kotlin analogue of a project generator. Every rule exists because the failure
 > was observed (see [`errors.md`](errors.md)) or because the build genuinely cannot
 > work otherwise. The reference implementations these rules describe are the
-> [JVM v5 harness project](../../../tests/kotlin-sdk/minimal-app) and the
-> [Android harness project](../../../tests/kotlin-sdk/android-app) — prefer copying
+> [JVM v5 harness project](https://github.com/getditto/agent-skills/tree/main/tests/kotlin-sdk/minimal-app) and the
+> [Android harness project](https://github.com/getditto/agent-skills/tree/main/tests/kotlin-sdk/android-app) — prefer copying
 > them to typing from memory. The Android project builds either line
 > (`-PdittoLine=v4|v5`); its v5 leg was built with AGP 9.4.1 at `compileSdk 36` and run
 > on a Pixel 10a (5.2.0, 5.1.0, 5.0.3).

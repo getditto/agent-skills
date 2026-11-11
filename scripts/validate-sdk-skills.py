@@ -201,12 +201,23 @@ def collect_anchors(text: str) -> set[str]:
 
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
+# Installed skills contain only skills/ (the release archive, `dittosh skills add`,
+# agent skill directories), so a relative link out of skills/ breaks in every
+# installed copy. Repo-only files are linked by URL instead, and those URLs are
+# checked against this checkout so they can't go stale.
+REPO_URL_RE = re.compile(r"^https://github\.com/getditto/agent-skills/(?:blob|tree)/main/([^#?]+)")
+
 
 def check_links(skill_dir: str, relative_path: str) -> None:
     path = os.path.join(skill_dir, relative_path)
     text = read(path)
     base = os.path.dirname(path)
     for target in LINK_RE.findall(text):
+        repo_link = REPO_URL_RE.match(target)
+        if repo_link:
+            if not os.path.exists(repo_link.group(1)):
+                fail(f"{path}: link to a path that does not exist on main: {target}")
+            continue
         if target.startswith(("http://", "https://", "mailto:")):
             continue
         if target.startswith("#"):
@@ -216,6 +227,15 @@ def check_links(skill_dir: str, relative_path: str) -> None:
             continue
         file_part, _, anchor = target.partition("#")
         resolved = os.path.normpath(os.path.join(base, file_part))
+        skills_root = os.path.normpath(SKILLS_DIR) + os.sep
+        if not resolved.startswith(skills_root):
+            repo_path = os.path.relpath(resolved).replace(os.sep, "/")
+            fail(
+                f"{path}: link leaves {SKILLS_DIR}/, so it breaks in installed copies: "
+                f"{target}. Link https://github.com/getditto/agent-skills/"
+                f"{'tree' if os.path.isdir(resolved) else 'blob'}/main/{repo_path} instead."
+            )
+            continue
         if not os.path.exists(resolved):
             fail(f"{path}: link target does not exist: {target}")
             continue

@@ -53,6 +53,22 @@ class ContextContract(unittest.TestCase):
         text = "# Resource\n\n[Missing](#missing)\n\n```md\n## Missing\n```\n"
         self.assertTrue(any("does not match" in error for error in self.check(resource=text)))
 
+    def test_relative_link_out_of_skills_is_rejected(self):
+        errors = self.check(resource="# Resource\n\n[Tests](../../tests/js-sdk/README.md)\n")
+        self.assertTrue(any("leaves" in error and "blob/main" in error for error in errors))
+
+    def test_sibling_skill_link_is_allowed(self):
+        sibling = self.root / "other"
+        sibling.mkdir()
+        (sibling / "SKILL.md").write_text("---\nname: other\ndescription: Other.\n---\n\nBody.")
+        self.assertEqual(self.check(resource="# Resource\n\n[Other](../other/SKILL.md)\n"), [])
+
+    def test_repo_url_must_exist_on_main(self):
+        url = "https://github.com/getditto/agent-skills/blob/main/"
+        self.assertEqual(self.check(resource=f"# Resource\n\n[Tests]({url}tests/js-sdk/README.md)\n"), [])
+        missing = self.check(resource=f"# Resource\n\n[Gone]({url}tests/no-such-file.md)\n")
+        self.assertTrue(any("does not exist on main" in error for error in missing))
+
     def test_entry_point_cannot_overflow_its_budget(self):
         self.assertTrue(any("12,000" in error for error in self.check(body="x" * 12_001)))
 

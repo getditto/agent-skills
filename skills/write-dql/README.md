@@ -57,7 +57,7 @@ Located in [`references/`](references):
 /plugin install ditto-dql
 ```
 
-**Other agent tools**: see the [repo root README](../../README.md) for per-tool install instructions.
+**Other agent tools**: see the [repo root README](https://github.com/getditto/agent-skills/blob/main/README.md) for per-tool install instructions.
 
 ## Quick start
 
@@ -87,7 +87,7 @@ npm run report
 
 Current status: **205 PASS / 53 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.6`; **222 PASS / 36 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.3`; **252 PASS / 6 PASS-AS-EXPECTED-FAIL** on both `@dittolive/ditto@5.1.0` and `5.2.0` (258 catalog entries per version, 0 FAIL). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0). The 5.2.0 run also asserts mutation, planner, startup-configuration and diagnostics regressions in `runner/sdk52.mjs`.
 
-See [`tests/dql/README.md`](../../tests/dql/README.md) for the harness internals.
+See [`tests/dql/README.md`](https://github.com/getditto/agent-skills/blob/main/tests/dql/README.md) for the harness internals.
 
 ## Links
 

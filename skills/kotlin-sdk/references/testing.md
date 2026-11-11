@@ -7,7 +7,7 @@ Sources: <https://docs.ditto.live/sdk/latest/deployment/testing>, <https://docs.
 (ProGuard + crash-reporter sections), <https://docs.ditto.live/sdk/latest/compatibility/kotlin>
 (transport support matrix). The JVM-unit-test pattern below is **executed** against
 5.0.3, 5.1.0 and 5.2.0; the runnable copy is
-[the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
+[the harness's JVM store test](https://github.com/getditto/agent-skills/blob/main/tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
 
 ## Contents
 
@@ -101,7 +101,7 @@ tasks.test {
 
 **Executed** pattern — offline-only instance, unique temp `persistenceDirectory` per
 test, `runTest` for the suspend store APIs. The file below is
-[the harness's JVM store test](../../../tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
+[the harness's JVM store test](https://github.com/getditto/agent-skills/blob/main/tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
 executed green against 5.0.3, 5.1.0 and 5.2.0 (`gradle test -PdittoLine=v5
 -PdittoVersion=<v>`; 2 tests, 0 failures):
 
