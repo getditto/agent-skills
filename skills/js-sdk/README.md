@@ -1,13 +1,13 @@
 # Ditto JavaScript / TypeScript skills
 
 Install the **ditto-js** plugin for the generic SDK skill, four platform recipes,
-and shared native configuration. [Installation](https://github.com/getditto/agent-skills/blob/main/docs/install-js.md).
+and shared native configuration. Installation: `docs/install-js.md` in the agent-skills repository.
 
 ## Capability map
 
 **Targets vocabulary for this SDK:** `all`, `native`, `node`, `web`.
 Targets describe SDK availability, not proof of execution on every target. Exact
-verification and remaining device checks are in [the harness report](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md).
+verification and remaining device checks are in the harness report, `tests/js-sdk/README.md` in the agent-skills repository.
 
 | ID | Capability | Support | Evidence | Targets |
 |---|---|---|---|---|

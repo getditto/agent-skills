@@ -374,9 +374,11 @@ cost more context than a long file with short lines; measure both characters and
 ### Keep skills self-contained
 
 Installed skills contain only `skills/`: the release archive, `dittosh skills add`
-and agent skill directories never include `tests/` or `docs/`. A skill must not
-link to files outside `skills/`, or to this repository on GitHub, except from a
-human-facing `README.md`. `scripts/validate-sdk-skills.py` enforces this.
+and agent skill directories never include `tests/` or `docs/`, and agents may have no
+web access. No file in a skill, `README.md` included, may link outside `skills/` (inline,
+reference-style or HTML) or refer to this repository on GitHub in any form.
+`scripts/validate-sdk-skills.py` enforces this. Name a repository file in plain text
+when a README needs to cite it.
 
 To show code that CI runs, copy it in with `scripts/sync-snippets.py` instead of
 pasting it. Mark the region in the test file with comment lines:
@@ -387,18 +389,23 @@ class DittoStoreTest { … }
 // snippet:end kotlin-store-test
 ```
 
-and place a block in the skill where the code belongs (or
-`<!-- snippet-file: tests/<path> -->` for a whole file):
+and place a block in the skill where the code belongs:
 
 ```markdown
 <!-- snippet: kotlin-store-test -->
 <!-- /snippet -->
 ```
 
+To copy a whole file, put the start marker after its header comment and the end marker
+on its last line.
+
 Run `python3 scripts/sync-snippets.py` to fill the block, and commit both files. CI
 and the Release workflow run it with `--check` and fail when a copy differs from the
-tested code. Leave out harness-only code (license loading from `.env`, test
-plumbing) by marking only the parts an app needs.
+tested code. A name may have several regions; mark only the parts an app needs, and
+keep harness-only code (license loading from `.env`, test logging) outside the markers
+— restructure the source if needed so the marked parts stand on their own. Example
+programs under `## Program` must be one region covering the whole file. Hand-written
+code blocks are not checked, so prefer a snippet whenever the code exists in a test.
 
 Run `python3 scripts/validate-sdk-skills.py --context-report` to audit every skill,
 reference, example and README. It checks links and structure, not model behavior.

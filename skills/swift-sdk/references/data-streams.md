@@ -3,8 +3,7 @@
 How to express Ditto Data Streams in Swift. Concepts, lifecycle rules and design patterns
 live in the `data-streams` skill (<https://docs.ditto.live/sdk/latest/sync/data-streams>, a
 Kotlin-only guide); this file is the Swift spelling, read from the DittoSwift **5.2.0**
-module interface and proved by the fixture
-`tests/swift-sdk/Tests/SwiftSDKSkillTests/DataStreamsTests.swift` (**executed** on macOS
+module interface and proved by the two-peer Data Streams test CI runs (**executed** on macOS
 with 5.2.0). **Public Preview**, may change without notice, and **not documented by Ditto
 for Swift**: say so when you recommend it.
 

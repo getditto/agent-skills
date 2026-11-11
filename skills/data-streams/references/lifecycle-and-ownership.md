@@ -3,7 +3,7 @@
 Every Data Streams handle is a native resource the app owns. This file says which handle
 lives how long, who closes it, and in what order. Sources: the Data Streams guide
 (<https://docs.ditto.live/sdk/latest/sync/data-streams>), the Kotlin 5.2.0 and Swift 5.2.0
-public declarations, and the two-peer fixtures in `tests/kotlin-sdk` and `tests/swift-sdk`
+public declarations, and the Kotlin and Swift two-peer fixtures CI runs
 (items marked **executed**).
 
 ## The handles

@@ -44,7 +44,7 @@ their original versions. Source: <https://docs.ditto.live/sdk/latest/release-not
 
 ## 2. What shipped in v5.1.0
 
-Verified against `@dittolive/ditto@5.1.0` by the test harness (`tests/dql/`):
+Verified against `@dittolive/ditto@5.1.0` by the repository's DQL test harness:
 
 - **`JOIN`** — `INNER JOIN` / `LEFT [OUTER] JOIN`, multi-join chains, self-joins, MAP-membership `ON` conditions, joins combined with `GROUP BY` / `HAVING` / aggregates. **Requires the right-side match key to be `_id` or indexed** — otherwise the engine rejects the statement and points you at `ADVISE`. See [`select.md`](select.md) §14.
 - **Composite (multi-column) `CREATE INDEX`** — e.g. `CREATE INDEX movies_year_imdb ON movies (year ASC, ratings.imdb DESC)`. See [`indexing.md`](indexing.md) §§1, 8.

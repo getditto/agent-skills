@@ -2,6 +2,7 @@
 """Negative controls for portable skill discovery and bounded resource reads."""
 
 import importlib.util
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -57,27 +58,88 @@ class ContextContract(unittest.TestCase):
         errors = self.check(resource="# Resource\n\n[Tests](../../tests/js-sdk/README.md)\n")
         self.assertTrue(any("leaves" in error and "sync-snippets" in error for error in errors))
 
-    def test_repo_url_outside_readme_is_rejected(self):
-        url = "https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md"
-        errors = self.check(resource=f"# Resource\n\n[Tests]({url})\n")
-        self.assertTrue(any("links to a file in this repository" in error for error in errors))
+    def test_every_link_form_out_of_skills_is_rejected(self):
+        forms = {
+            "reference definition": "[tests]: ../../tests/js-sdk/README.md",
+            "html href": '<a href="../../tests/js-sdk/README.md">tests</a>',
+            "html src": '<img src="../../docs/diagram.png">',
+        }
+        for label, line in forms.items():
+            with self.subTest(label):
+                self.assertTrue(any("leaves" in e for e in self.check(resource=f"# Resource\n\n{line}\n")))
 
-    def test_sibling_skill_link_is_allowed(self):
+    def test_every_repository_url_form_is_rejected(self):
+        forms = [
+            "[Tests](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md)",
+            "<https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md>",
+            "[Tag](https://github.com/getditto/agent-skills/blob/v0.6.0/docs/install-js.md)",
+            "[Raw](https://raw.githubusercontent.com/getditto/agent-skills/main/README.md)",
+            "[Http](http://github.com/getditto/agent-skills/tree/main/tests)",
+            "[Case](https://github.com/GetDitto/Agent-Skills/blob/main/README.md)",
+            "[ref]: https://github.com/getditto/agent-skills/blob/main/README.md",
+            "See github.com/getditto/agent-skills/tree/main/tests for the fixtures.",
+        ]
+        for line in forms:
+            with self.subTest(line):
+                errors = self.check(resource=f"# Resource\n\n{line}\n")
+                self.assertTrue(any("refers to this repository" in e for e in errors))
+
+    def test_readme_follows_the_same_rule(self):
+        (self.skill / "README.md").write_text(
+            "# Probe\n\n[Tests](https://github.com/getditto/agent-skills/blob/main/tests/x.md)\n", encoding="utf-8"
+        )
+        self.assertTrue(any("refers to this repository" in e for e in self.check()))
+
+    def test_sibling_skill_and_external_links_are_allowed(self):
         sibling = self.root / "other"
         sibling.mkdir()
         (sibling / "SKILL.md").write_text("---\nname: other\ndescription: Other.\n---\n\nBody.")
-        self.assertEqual(self.check(resource="# Resource\n\n[Other](../other/SKILL.md)\n"), [])
-
-    def test_readme_repo_url_must_exist_on_main(self):
-        url = "https://github.com/getditto/agent-skills/blob/main/"
-        readme = self.skill / "README.md"
-        readme.write_text(f"# Probe\n\n[Tests]({url}tests/js-sdk/README.md)\n", encoding="utf-8")
-        self.assertEqual(self.check(), [])
-        readme.write_text(f"# Probe\n\n[Gone]({url}tests/no-such-file.md)\n", encoding="utf-8")
-        self.assertTrue(any("does not exist on main" in error for error in self.check()))
+        resource = "# Resource\n\n[Other](../other/SKILL.md) [Docs](https://docs.ditto.live/) [Mail](mailto:a@b.c)\n"
+        self.assertEqual(self.check(resource=resource), [])
 
     def test_entry_point_cannot_overflow_its_budget(self):
         self.assertTrue(any("12,000" in error for error in self.check(body="x" * 12_001)))
+
+
+class ExamplePrograms(unittest.TestCase):
+    """SDK example programs must be whole-file snippets of a fixture CI runs."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="example-programs-")
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name)
+        (root / "skills/probe-sdk/examples").mkdir(parents=True)
+        (root / "tests/probe-sdk").mkdir(parents=True)
+        self.root = root
+        previous = os.getcwd()
+        os.chdir(root)
+        self.addCleanup(os.chdir, previous)
+
+    def check(self, program, source=None):
+        (self.root / "skills/probe-sdk/examples/app.md").write_text(f"# App\n\n## Program\n\n{program}\n")
+        if source is not None:
+            (self.root / "tests/probe-sdk/App.swift").write_text(source)
+        validator.errors.clear()
+        validator.check_examples_are_generated("probe-sdk")
+        return list(validator.errors)
+
+    def block(self):
+        return "<!-- snippet: app -->\n```swift\nlet a = 1\n```\n<!-- /snippet -->"
+
+    def test_pasted_program_is_rejected(self):
+        self.assertTrue(any("pasted code" in e for e in self.check("```swift\nlet a = 1\n```")))
+
+    def test_whole_file_program_is_accepted(self):
+        source = "// Header.\n// snippet:start app\nlet a = 1\n// snippet:end app\n"
+        self.assertEqual(self.check(self.block(), source), [])
+
+    def test_code_outside_the_region_is_rejected(self):
+        above = "import X\n// snippet:start app\nlet a = 1\n// snippet:end app\n"
+        self.assertTrue(any("would not compile" in e for e in self.check(self.block(), above)))
+        below = "// snippet:start app\nlet a = 1\n// snippet:end app\nlet b = 2\n"
+        self.assertTrue(any("last line" in e for e in self.check(self.block(), below)))
+        split = "// snippet:start app\na\n// snippet:end app\n// snippet:start app\nb\n// snippet:end app\n"
+        self.assertTrue(any("one region" in e for e in self.check(self.block(), split)))
 
 
 if __name__ == "__main__":

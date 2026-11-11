@@ -74,4 +74,4 @@ documentation-verified, not execution-verified, and see the tracking note in
 
 ## Installation
 
-See the [repo root README](https://github.com/getditto/agent-skills/blob/main/README.md) for per-tool install instructions.
+See the agent-skills repository README for per-tool install instructions.

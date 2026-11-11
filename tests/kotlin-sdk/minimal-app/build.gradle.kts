@@ -14,8 +14,12 @@
 // tests/lib/load-env.mjs.
 
 // Both properties default to the current line so `gradle run` works without -P flags.
-// snippet:start kotlin-jvm-build
+// dittoLine exists so CI can share flags with ../android-app; this JVM target runs only v5.
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v5")
+require(dittoLine == "v5") {
+    "unknown dittoLine: $dittoLine — only 'v5' runs on JVM; 4.14.x is Android-only, see ../android-app"
+}
+// snippet:start kotlin-jvm-build
 val dittoVersion: String = providers.gradleProperty("dittoVersion").getOrElse("5.2.0")
 
 // The JVM variant loads its native library from a classifier jar; pick the host's.
@@ -33,9 +37,7 @@ val dittoBinariesClassifier: String = run {
         else -> error("unsupported host for ditto-binaries: $os/$arch")
     }
 }
-// snippet:end kotlin-jvm-build
 
-// snippet:start kotlin-jvm-build
 plugins {
     kotlin("jvm") version "2.4.21"
     application
@@ -49,28 +51,17 @@ dependencies {
     // Align the SDK's transitive Java telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-    when (dittoLine) {
-        // v5: KMP root module; Gradle resolves the -jvm variant. The JVM
-        // variant also needs the native binary for the host platform as an
-        // explicit classifier (macos-arm64 | linux-x64 | linux-arm64 |
-        // windows-x64); without it the SDK throws
-        // "Unable to find binary 'libdittoall' ... on classpath".
-        "v5" -> {
-            implementation("com.ditto:ditto-kotlin:$dittoVersion")
-            runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:$dittoBinariesClassifier")
-        }
-        else -> error(
-            "unknown dittoLine: $dittoLine — only 'v5' runs on JVM; " +
-                "4.14.x is Android-only, see ../android-app"
-        )
-    }
+    // v5 is a KMP root module; Gradle resolves the -jvm variant. The JVM variant also
+    // needs the host's native binary as an explicit classifier, or the SDK throws
+    // "Unable to find binary 'libdittoall' ... on classpath".
+    implementation("com.ditto:ditto-kotlin:$dittoVersion")
+    runtimeOnly("com.ditto:ditto-binaries:$dittoVersion:$dittoBinariesClassifier")
 
-    // Test stack — mirrors the kotlin-sdk skill's testing reference. kotlin("test")
-    // is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin does not
-    // add it automatically.
+    // kotlin("test") is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin
+    // does not add it automatically.
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
-    // Use Jupiter's BOM to align the launcher with the engine on Gradle 9.
+    // Gradle 9 no longer adds the JUnit Platform launcher; Jupiter's BOM aligns it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
@@ -84,7 +75,15 @@ val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.i
         if (trimmed.isEmpty() || trimmed.startsWith("#") || '=' !in trimmed) null
         else trimmed.substringBefore('=').trim() to trimmed.substringAfter('=').trim().trim('"', '\'')
     }?.toMap() ?: emptyMap()
-val offlineLicense: String = System.getenv("DITTO_OFFLINE_LICENSE") ?: dotEnv["DITTO_OFFLINE_LICENSE"] ?: ""
+
+// snippet:start kotlin-jvm-build
+// Never commit a license: read it from the environment at build time.
+val offlineLicense: String = System.getenv("DITTO_OFFLINE_LICENSE")
+// snippet:end kotlin-jvm-build
+    ?: dotEnv["DITTO_OFFLINE_LICENSE"]
+// snippet:start kotlin-jvm-build
+    ?: ""
+// snippet:end kotlin-jvm-build
 // Offline licenses are bound to a database ID; pass the matching one through (optional).
 val databaseId: String? = System.getenv("DITTO_DATABASE_ID") ?: dotEnv["DITTO_DATABASE_ID"]
 
@@ -94,9 +93,23 @@ if (isAtLeast52) {
     sourceSets.test { kotlin.srcDir("src/test52/kotlin") }
 }
 
+// snippet:start kotlin-jvm-build
 tasks.test {
     useJUnitPlatform()
     environment("DITTO_OFFLINE_LICENSE", offlineLicense)
+}
+
+tasks.named<JavaExec>("run") {
+    environment("DITTO_OFFLINE_LICENSE", offlineLicense)
+}
+
+application {
+    mainClass.set("MainV5Kt")
+}
+// snippet:end kotlin-jvm-build
+
+// Harness only: database ID pass-through, Data Streams over NGN, and test logging.
+tasks.test {
     databaseId?.let { environment("DITTO_DATABASE_ID", it) }
     // Data Streams (DataStreamsTest) run over NGN, which the native core enables from the
     // process environment at start-up — the JVM equivalent of Android's Os.setenv() in
@@ -110,13 +123,5 @@ tasks.test {
 }
 
 tasks.named<JavaExec>("run") {
-    environment("DITTO_OFFLINE_LICENSE", offlineLicense)
     databaseId?.let { environment("DITTO_DATABASE_ID", it) }
 }
-
-// snippet:start kotlin-jvm-build
-application {
-    mainClass.set("MainV5Kt")
-}
-// snippet:end kotlin-jvm-build
-

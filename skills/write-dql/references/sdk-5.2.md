@@ -48,5 +48,5 @@ now fails at sync start. Do not change these flags just to run ordinary DQL quer
 Sources: [5.2 common release notes](https://docs.ditto.live/sdk/latest/release-notes-hub/swift),
 [virtual collections](https://docs.ditto.live/dql/virtual-collections),
 [support bundles](https://docs.ditto.live/sdk/latest/deployment/support-bundles).
-The DQL catalog and `tests/dql/runner/sdk52.mjs` validate local query behavior; radio,
+The repository's DQL test catalog validates local query behavior on 5.2; radio,
 Big Peer and production diagnostic workflows require their own integration checks.

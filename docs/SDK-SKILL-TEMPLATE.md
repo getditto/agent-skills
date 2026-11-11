@@ -653,22 +653,20 @@ with `versions.md`", "citations name real paths at named refs".
   run** against each supported version line. Its *Expected output* section must contain
   a **pasted real build-and-run transcript** naming the patch version — that is the one
   part of "it compiles" a reviewer can actually check without nine toolchains.
-- Keep the program as a **real source file** under `tests/<lang>-sdk/`. A plugin user
-  has no `tests/` tree to open, so `examples/minimal-app.md` has to restate it; make the
-  duplication checkable rather than leaving it to drift:
+- Keep the program as a **real source file** under `tests/<lang>-sdk/`. Installed
+  skills have no `tests/` tree, so `examples/minimal-app.md` carries a generated copy:
 
-  1. In the fixture source, put `// MARK: - begin documented program` (or the language's
-     comment form) above the part the markdown publishes. Everything below it is the
-     documented program; only comments and blank lines may appear above it, since
-     anything else is code the published sample would silently omit.
-  2. In `examples/minimal-app.md`, state the source in prose — *This is a copy of
-     `<path>` in the fixture* — with `<path>` relative to `tests/<skill>/`, and put the
-     program in the single fenced block under `## Program`.
+  1. In the fixture source, put `// snippet:start <name>` (or the language's comment
+     form) after the header comment, and `// snippet:end <name>` on the last line. Only
+     comments and blank lines may appear above the start marker, since anything else is
+     code the published sample would silently omit.
+  2. Under `## Program` in `examples/minimal-app.md`, put a
+     `<!-- snippet: <name> -->` / `<!-- /snippet -->` block and run
+     `python3 scripts/sync-snippets.py` to fill it.
 
-  `scripts/validate-sdk-skills.py` derives the fixture from that sentence and fails the
-  build when the two differ by a byte. It is declaration-driven on purpose: a hard-coded
-  table silently skips a skill nobody registered, and silently stops checking when a
-  fixture is renamed.
+  `scripts/sync-snippets.py --check` fails the build when the copy differs from the
+  source by a byte. `scripts/validate-sdk-skills.py` fails a pasted `## Program` block,
+  and a program snippet that isn't one region covering the whole file.
 
 - **A fixture file that restates a type defined elsewhere in the same harness** — the
   minimal app cannot `import` the harness's own modules, because a reader pastes it into

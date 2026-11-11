@@ -142,8 +142,8 @@ live AI models and deterministically scores the recommendations against the
 rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
 `tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
-against the supported SDK versions; `scripts/validate-sdk-skills.py` fails when the
-published program drifts from the fixture. The `data-streams` concept skill has no
+against the supported SDK versions; the published program is generated from the
+fixture by `scripts/sync-snippets.py`, and `--check` fails when it drifts. The `data-streams` concept skill has no
 harness of its own: its executed claims come from the two-peer Data Streams tests in
 both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows:
 

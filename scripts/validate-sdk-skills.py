@@ -202,30 +202,37 @@ def collect_anchors(text: str) -> set[str]:
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 # Installed skills contain only skills/ (the release archive, `dittosh skills add`,
-# agent skill directories), so they must not depend on files elsewhere in this repo.
-# Tested code is copied in with scripts/sync-snippets.py. Only human-facing README.md
-# files may link to the repo on GitHub, and those links must resolve on main.
+# agent skill directories), so no skill file may depend on anything else in this
+# repository: no relative link out of skills/, and no URL to the repository, in any
+# form. Tested code is copied in with scripts/sync-snippets.py.
 SNIPPET_HINT = (
     "Installed skills contain only skills/. Copy tested code in with "
     "scripts/sync-snippets.py, or describe it in prose."
 )
-REPO_URL_RE = re.compile(r"^https://github\.com/getditto/agent-skills/(?:blob|tree)/main/([^#?]+)")
+REPO_URL_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)/getditto/agent-skills\b",
+    re.I,
+)
+# Reference-style definitions (`[x]: target`) and HTML attributes, besides inline links.
+REF_DEF_RE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?", re.M)
+HTML_ATTR_RE = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
+
+
+def link_targets(text: str) -> list[str]:
+    return LINK_RE.findall(text) + REF_DEF_RE.findall(text) + HTML_ATTR_RE.findall(text)
 
 
 def check_links(skill_dir: str, relative_path: str) -> None:
     path = os.path.join(skill_dir, relative_path)
     text = read(path)
     base = os.path.dirname(path)
-    for target in LINK_RE.findall(text):
-        repo_link = REPO_URL_RE.match(target)
-        if repo_link:
-            if os.path.basename(path) != "README.md":
-                fail(f"{path}: links to a file in this repository: {target}. {SNIPPET_HINT}")
-            elif not os.path.exists(repo_link.group(1)):
-                fail(f"{path}: link to a path that does not exist on main: {target}")
-            continue
-        if target.startswith(("http://", "https://", "mailto:")):
-            continue
+    for number, line in enumerate(text.split("\n"), 1):
+        match = REPO_URL_RE.search(line)
+        if match:
+            fail(f"{path}:{number}: refers to this repository ({match.group(0)}). {SNIPPET_HINT}")
+    for target in link_targets(text):
+        if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
+            continue  # http:, https:, mailto:, … — repository URLs are caught above
         if target.startswith("#"):
             anchor = target[1:]
             if anchor not in collect_anchors(text):
@@ -626,7 +633,6 @@ def capability_detail(text: str, cap_id: str) -> str:
 # The fixture is DERIVED from the markdown's own declaration, not from a table here: a
 # hard-coded map silently skips any skill nobody remembered to register, and silently
 # stops checking when a fixture is renamed — both of which were demonstrated.
-FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
 # Any host-language fence counts: the guard used to look for ```swift only, so a Kotlin
 # skill with a harness and no declaration passed silently. Proven.
 CODE_FENCE_RE = re.compile(r"^```(swift|kotlin|java|cs|csharp|cpp|rust|dart|go|js|javascript|ts|typescript)\s*$", re.M)
@@ -665,7 +671,6 @@ REQUIRED_MIRRORS = {
 
 # Everything below this marker in the fixture is the documented program. Declared rather
 # than inferred, so the boundary does not depend on Swift syntax.
-PROGRAM_MARKER = "// MARK: - begin documented program"
 
 
 def extract_declaration(text: str, type_name: str):
@@ -775,84 +780,70 @@ def check_mirrored_declarations(name: str) -> None:
                     )
 
 
-def check_examples_match_fixture(name: str) -> None:
-    """Every published example that declares a fixture copy must match it byte for byte.
+SNIPPET_BLOCK_RE = re.compile(r"^<!-- snippet: ([a-z0-9][a-z0-9-]*) -->$", re.M)
+SNIPPET_MARK_RE = re.compile(r"^\s*(?://|#|<!--|/\*|--)\s*snippet:(start|end)\s+([a-z0-9][a-z0-9-]*)", re.M)
 
-    Iterates `examples/*.md` rather than naming one file: the skill grew a second example
-    and a hard-coded filename would have checked the old one and silently ignored the new.
+
+def check_examples_are_generated(name: str) -> None:
+    """Every published example program is a whole-file snippet of a fixture CI runs.
+
+    scripts/sync-snippets.py keeps the copy identical to the source. This adds what a
+    documented program needs beyond that: one region covering the whole file below its
+    header comment, so the sample is complete and compiles when pasted on its own.
     """
     directory = os.path.join(SKILLS_DIR, name, "examples")
-    if not os.path.isdir(directory):
+    harness = os.path.join("tests", name)
+    if not os.path.isdir(directory) or not os.path.isdir(harness):
         return
     for entry in sorted(os.listdir(directory)):
-        if entry.endswith(".md"):
-            check_one_example(name, os.path.join(directory, entry))
-
-
-def check_one_example(name: str, example: str) -> None:
-    text = read(example)
-
-    declaration = FIXTURE_DECL_RE.search(text)
-    harness = os.path.join("tests", name)
-    if not declaration:
-        # No declaration and no harness is fine — the skill has no fixture yet. A harness
-        # with no declaration is a gap, not a pass.
-        if os.path.isdir(harness) and CODE_FENCE_RE.search(text):
+        if not entry.endswith(".md"):
+            continue
+        example = os.path.join(directory, entry)
+        program = extract_section(read(example), "Program")
+        if not program or not CODE_FENCE_RE.search(program):
+            continue
+        block = SNIPPET_BLOCK_RE.search(program)
+        if not block:
             fail(
-                f"{example}: {harness}/ exists but the file does not declare which "
-                f"fixture it copies. Add: This is a copy of `<path>` in the fixture."
+                f"{example}: '## Program' is pasted code. Mark the fixture under {harness}/ "
+                "and generate it with scripts/sync-snippets.py."
             )
-        return
+            continue
+        check_whole_file_snippet(example, harness, block.group(1))
 
-    fixture = os.path.join(harness, declaration.group(1))
-    if not within(harness, fixture):
-        fail(
-            f"{example}: declares a copy of `{declaration.group(1)}`, which resolves "
-            f"outside {harness}/. A declaration must not be able to point this check at "
-            f"an arbitrary file."
-        )
-        return
-    if not os.path.isfile(fixture):
-        fail(
-            f"{example}: declares a copy of `{declaration.group(1)}`, which does not "
-            f"resolve to a file ({fixture}). A renamed fixture must not silently "
-            f"disable this check."
-        )
-        return
 
-    match = re.search(r"## Program\n\n```\w+\n(.*?)\n```\n", text, re.S)
-    if not match:
-        fail(f"{example}: no '## Program' fence found to compare against {fixture}")
+def check_whole_file_snippet(example: str, harness: str, snippet: str) -> None:
+    sources = []
+    for root, dirs, files in os.walk(harness):
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in {"build", "node_modules"}]
+        for filename in files:
+            source = os.path.join(root, filename)
+            try:
+                text = read(source)
+            except (UnicodeDecodeError, OSError):
+                continue
+            marks = [(kind, mark) for kind, mark in SNIPPET_MARK_RE.findall(text) if mark == snippet]
+            if marks:
+                sources.append((source, text, marks))
+    if len(sources) != 1:
+        fail(f"{example}: snippet '{snippet}' is not defined by exactly one file under {harness}/")
         return
-
-    source = read(fixture).rstrip("\n")
-    if PROGRAM_MARKER not in source:
-        fail(
-            f"{fixture}: missing the '{PROGRAM_MARKER}' marker that delimits the "
-            f"documented program."
-        )
+    source, text, marks = sources[0]
+    if len(marks) != 2:
+        fail(f"{source}: the program snippet '{snippet}' must be one region covering the whole file")
         return
-    # The marker declares "everything below is the documented program". If code sits
-    # above it, the published sample silently omits a part the fixture compiled — the
-    # reader gets a program that does not build. Only comments and blank lines may
-    # precede it.
-    preamble = source.split(PROGRAM_MARKER, 1)[0].splitlines()
-    for number, line in enumerate(preamble, start=1):
+    lines = text.rstrip("\n").split("\n")
+    start = next(i for i, line in enumerate(lines) if SNIPPET_MARK_RE.match(line))
+    for number, line in enumerate(lines[:start], 1):
         stripped = line.strip()
-        if stripped and not stripped.startswith("//"):
+        if stripped and not stripped.startswith(("//", "#", "/*", "*", "<!--", "<?xml")):
             fail(
-                f"{fixture}:{number}: code above '{PROGRAM_MARKER}' is excluded from "
-                f"the published sample, so the sample would not compile: {stripped!r}"
+                f"{source}:{number}: code above the start of snippet '{snippet}' is left out of "
+                f"the published program, so the sample would not compile: {stripped!r}"
             )
-            break
-
-    expected = source.split(PROGRAM_MARKER, 1)[1].lstrip("\n")
-
-    if match.group(1) != expected:
-        fail(
-            f"{example}: the '## Program' block has drifted from {fixture}. "
-            f"Regenerate it — the fixture is the copy that is compiled and run."
-        )
+            return
+    if not SNIPPET_MARK_RE.match(lines[-1]):
+        fail(f"{source}: snippet '{snippet}' must end on the file's last line, so no code is left out")
 
 
 def main() -> int:
@@ -872,7 +863,7 @@ def main() -> int:
     )
     for name in sdk_skills:
         validate_sdk_skill(name)
-        check_examples_match_fixture(name)
+        check_examples_are_generated(name)
         check_mirrored_declarations(name)
 
     if args.context_report:

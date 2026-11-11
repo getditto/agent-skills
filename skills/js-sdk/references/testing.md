@@ -12,8 +12,8 @@ with Metro, run Expo prebuild, and inspect generated native config.
 Keep evidence tiers separate: TypeScript is not native compilation; prebuild is not
 permission acceptance; a simulator is not Bluetooth/AWDL/Wi-Fi Aware proof. Run the
 physical-device acceptance checklist in the platform skill for radio/background claims.
-Credentials are loaded from the gitignored root .env by tests/lib/load-env.mjs; CI
-variables take precedence. Fail an expected integration job when its license is absent;
+The harness reads credentials from the environment (CI variables) or a gitignored
+local file. Fail an expected integration job when its license is absent;
 do not turn it into a green skipped test. Never commit credentials into generated apps.
 
 ## Sources

@@ -12,8 +12,8 @@
 
 > **Sources for this file.** <https://docs.ditto.live/sdk/latest/install-guides/kotlin>,
 > <https://docs.ditto.live/sdk/latest/compatibility/kotlin>, <https://docs.ditto.live/sdk/v4/install-guides/kotlin>, and executed
-> builds of `tests/kotlin-sdk/minimal-app` (JVM) and `tests/kotlin-sdk/android-app`
-> (emulator) at the versions named in [versions.md](versions.md). Facts that differ
+> builds of the JVM and Android [reference projects](reference-projects.md) (the
+> Android one on an emulator) at the versions named in [versions.md](versions.md). Facts that differ
 > across version lines — including the v4 coordinate — live in
 > [versions.md](versions.md); this file shows the v5 form only.
 
