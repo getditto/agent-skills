@@ -49,7 +49,7 @@ repositories {
 
 dependencies {
     // Align the SDK's transitive Java telemetry modules with the tracestate DoS fix.
-    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
+    implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.68.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     // v5 is a KMP root module; Gradle resolves the -jvm variant. The JVM variant also
     // needs the host's native binary as an explicit classifier, or the SDK throws
