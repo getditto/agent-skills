@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DittoTasks</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <PublishTrimmed>false</PublishTrimmed>
+    <TargetFramework>WINFORMS_TARGET</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="DITTO_PACKAGE_VERSION" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="$(TargetFramework.StartsWith('net4'))" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" />
+  </ItemGroup>
+  <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">
+    <Error Condition="$(TargetFramework.Contains('browser')) Or $(RuntimeIdentifier.Contains('wasm'))" Text="Ditto .NET has no WebAssembly runtime. Select a supported native target." />
+    <Error Condition="'$(RuntimeIdentifier)' == 'win-arm64' Or '$(RuntimeIdentifier)' == 'win-x86' Or '$(RuntimeIdentifier)' == 'osx-x64'" Text="This Ditto package has no native asset for the selected runtime identifier." />
+  </Target>
+</Project>

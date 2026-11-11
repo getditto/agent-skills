@@ -13,11 +13,13 @@ local environment (`.env`), and what each config key means.
 | [`swift-sdk`](skills/swift-sdk) | [`tests/swift-sdk/`](tests/swift-sdk/) | A SwiftPM fixture whose Ditto version pin is an environment variable: one source tree compiled and run against 4.14.6, 5.0.3, 5.1.0 and 5.2.0, built for macOS / iOS Simulator / iOS device / Mac Catalyst, plus an executed cross-version on-disk upgrade and rollback. Requires macOS and Xcode. | [tests/swift-sdk/README.md](tests/swift-sdk/README.md) |
 | [`kotlin-sdk`](skills/kotlin-sdk) | [`tests/kotlin-sdk/`](tests/kotlin-sdk/) | Gradle fixtures: the JVM minimal app and JUnit tests against 5.0.3, 5.1.0 and 5.2.0 (CI), and an Android app for both version lines run on a device. | [tests/kotlin-sdk/README.md](tests/kotlin-sdk/README.md) |
 | [`data-streams`](skills/data-streams) | both SDK fixtures | Two Ditto peers in one process over a TCP loopback listener with NGN on: `DataStreamsTest.kt` (JVM, 5.0.3/5.1.0/5.2.0) and `DataStreamsTests.swift` (macOS, 5.2.0) prove the lifecycle, reliability and ownership claims. | [skills/data-streams/README.md](skills/data-streams/README.md) |
+| [`csharp-sdk`](skills/csharp-sdk) | [`tests/csharp-sdk/`](tests/csharp-sdk/) | Real NuGet fixtures for 4.14.7/5.0.4/5.1.0/5.2.0; generated native apps, published Console runtime, .NET Framework smoke test, package and source-drift checks. | [tests/csharp-sdk/README.md](tests/csharp-sdk/README.md) |
 
 The Node runners share one config mechanism: the repo-root `.env`, loaded at
 startup via `tests/lib/load-env.mjs`. The Swift fixture is shell-driven and
 parses the same `.env` itself, with the same precedence rules. New harnesses
-should reuse one of the two.
+should preserve these precedence rules. The Python C# runner parses `.env` without
+executing shell code and uses the same environment-first precedence.
 
 ## Configuring your environment (`.env`)
 
@@ -37,6 +39,10 @@ should reuse one of the two.
    ```bash
    DM_MODEL_CMD="opencode run" npm run run   # one-off override of .env
    ```
+
+The C# fixtures require `DITTO_OFFLINE_LICENSE` and accept `DITTO_DATABASE_ID`;
+they intentionally run offline even when cloud credentials are present. Its generated
+apps accept `DITTO_PERSISTENCE_DIRECTORY` for isolated runtime verification.
 
 ## Config keys
 
@@ -79,3 +85,7 @@ precedence per the rule above:
   matrix.
 
 The data-modeling harness is run manually (it spends live-model tokens).
+
+The [C# workflow](.github/workflows/csharp-skill-tests.yml) adds Windows/Linux/macOS
+core runs, .NET 8 compatibility, desktop generation/publish checks, a Windows net48
+smoke executable and MAUI target builds. See its harness for explicit skips and device gates.

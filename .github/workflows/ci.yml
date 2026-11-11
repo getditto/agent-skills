@@ -113,6 +113,20 @@ jobs:
             ${{ runner.temp }}/ditto-kotlin-packages/*.zip
             ${{ runner.temp }}/ditto-kotlin-packages/SHA256SUMS
 
+      - name: Check CSharp generators, template synchronization and packages
+        run: |
+          python3 -m unittest discover -s tests/csharp-sdk -p 'test_*.py' -v
+          python3 scripts/package-sdk-plugin.py --plugin ditto-csharp --check
+          python3 scripts/package-sdk-plugin.py --plugin ditto-csharp --output "$RUNNER_TEMP/ditto-csharp-packages"
+
+      - name: Upload CSharp installation packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ditto-csharp-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-csharp-packages/*.zip
+            ${{ runner.temp }}/ditto-csharp-packages/SHA256SUMS
+
       - name: Check plugin references in marketplace
         run: |
           echo "Checking plugin sources exist..."

@@ -14,6 +14,11 @@
       "name": "ditto-kotlin",
       "source": "./plugins/ditto-kotlin",
       "description": "Ditto Kotlin SDK assistance — Android and JVM apps: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0"
+    },
+    {
+      "name": "ditto-csharp",
+      "source": "./plugins/ditto-csharp",
+      "description": "Ditto C#/.NET SDK guidance and runnable Console, Windows Forms, MAUI, Uno and Avalonia starters. Native targets, async programming, DQL, observers, deployment and testing; Ditto 4.14.x through 5.2.0."
     }
   ]
 }

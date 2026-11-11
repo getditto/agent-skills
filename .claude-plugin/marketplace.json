@@ -84,6 +84,17 @@
       },
       "source": "./plugins/ditto-swift",
       "category": "development"
+    },
+    {
+      "name": "ditto-csharp",
+      "description": "Ditto C#/.NET SDK guidance and runnable Console, Windows Forms, MAUI, Uno and Avalonia starters. Native targets, async programming, DQL, observers, deployment and testing; Ditto 4.14.x through 5.2.0.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ditto",
+        "email": "support@ditto.com"
+      },
+      "source": "./plugins/ditto-csharp",
+      "category": "development"
     }
   ]
 }

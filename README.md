@@ -20,6 +20,7 @@ customer use.**
 | [data-modeling](skills/data-modeling) (`data-modeling`) | `ditto-data-modeling` | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x/5.2.0. |
 | [kotlin-sdk](skills/kotlin-sdk) (`kotlin-sdk`) | `ditto-kotlin` | Ditto Kotlin SDK for Android and JVM: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
 | [swift-sdk](skills/swift-sdk) (`swift-sdk`) | `ditto-swift` | Ditto Swift SDK for iOS, iPadOS, macOS (AppKit) and Mac Catalyst: `DittoConfig`/`Ditto.open`, sync and subscriptions, DQL execution, store observers and `DittoDiffer`, attachments, presence, Swift 6 concurrency and object lifetimes. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
+| [csharp-sdk](skills/csharp-sdk) | `ditto-csharp` | Ditto C# / .NET: Console, net48/modern WinForms, MAUI, Uno and Avalonia native starters; async observers, typed mapping, UI dispatch, native deployment and real SDK tests. Excludes WebAssembly. |
 
 ## Repository layout
 
@@ -75,10 +76,21 @@ guide. Its JVM fixture runs in CI against 5.0.3, 5.1.0 and 5.2.0.
 **[Install Ditto Kotlin in your agent](docs/install-kotlin.md)** — the same hosts as
 Swift; standalone packages are generated with `--plugin ditto-kotlin`.
 
+## C# / .NET getting started
+
+The C# skill includes five self-contained `dotnet new` templates and a generator
+that resolves the current stable compatible Ditto package. It covers legacy C# 7.3
+and modern async/record/stream-adapter idioms, with explicit native target limits.
+
+**[Install Ditto C# / .NET in your agent](docs/install-csharp.md)** and follow the
+[framework quick starts](skills/csharp-sdk/references/project-generation.md).
+[Verification](tests/csharp-sdk/README.md) distinguishes real runtime results from
+platform build gates and device checks still to run.
+
 ## Installation by tool
 
 For the SDK skills, use the host-specific guides ([Swift](docs/install-swift.md),
-[Kotlin](docs/install-kotlin.md)) for local/PR packages, activation, updates and
+[Kotlin](docs/install-kotlin.md), [C# / .NET](docs/install-csharp.md)) for local/PR packages, activation, updates and
 removal. Existing concept skills retain the routes below.
 
 ### Claude Code
@@ -97,6 +109,7 @@ you want:
 /plugin install ditto-data-streams   # data-streams skill
 /plugin install ditto-kotlin         # kotlin-sdk skill
 /plugin install ditto-swift          # swift-sdk skill
+/plugin install ditto-csharp         # csharp-sdk skill
 ```
 
 `.claude-plugin/marketplace.json` → `plugins/<plugin>/.claude-plugin/plugin.json`

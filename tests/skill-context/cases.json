@@ -70,7 +70,7 @@
       "id": "kotlin_observer",
       "prompt": "Our Android app uses com.ditto:ditto-kotlin 5.1.0. A ViewModel exposes ditto.store.observe(\"SELECT * FROM cars\") { r -> r.items.map { json.decodeFromString<Car>(it.jsonString()) } }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()), yet the list still janks during sync bursts. A second screen uses registerObserver, keeps result.items in a field for a detail view, and after one malformed document it never updated again. Explain what is wrong and give the corrected Kotlin.",
       "review_criteria": [
-        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform — hop with withContext(Dispatchers.IO) inside the transform or handler",
+        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform \u2014 hop with withContext(Dispatchers.IO) inside the transform or handler",
         "Never retain result.items beyond the handler; extract plain data inside the lambda (closed-item IllegalStateException)",
         "An exception escaping a registerObserver handler closes the observer silently; catch inside, do not rethrow",
         "Flow collected in viewModelScope/stateIn needs no manual close; a registerObserver handle must be closed explicitly",
@@ -106,6 +106,30 @@
         "Setup includes enabling NGN at open (DittoConfig systemParameters network_enable_ngn = true, replication_over_ngn kept consistent) and starting sync so presence can discover the peer",
         "Open/send pattern: bindTopic on the receiver keeping the acceptor alive, connect(peerKey:topic:...) with a continuation that opens the candidate, reuse one stream, choose reliability deliberately for cursor positions (unreliable acceptable), check maxSendSize, close with closeAndWait",
         "Does not invent a 5.1.0 Swift Data Streams API or recommend document sync as if it were equivalent for low-latency ephemeral data"
+      ]
+    },
+    {
+      "id": "csharp_net48",
+      "prompt": "Our Windows Forms app targets .NET Framework 4.8 with packages.config and C# 7.3. We want Ditto 5.2.0 to show a live task list, save edits and close cleanly. Explain the package/native setup and show the async service/UI ownership pattern. We currently use AnyCPU with Prefer32Bit enabled.",
+      "review_criteria": [
+        "Use NuGet Ditto on startup executable; Windows x64, Prefer32Bit=false; verify native DLL and package imports",
+        "Preserve packages.config unless migration requested; mention 5.0.2 native-resolution fix",
+        "C# 7.3 compatible syntax, explicit entry point; no top-level statements or records",
+        "OpenAsync config, DQL dictionary bindings, retain observer and subscription",
+        "Copy result DTOs, dispose results and dispatch with BeginInvoke",
+        "Cancel handles and await teardown through deferred FormClosing; no sync-over-async"
+      ]
+    },
+    {
+      "id": "csharp_native_platforms",
+      "prompt": "Create a plan for a shared Ditto 5.2.0 tasks app using Uno on Windows and in the browser, plus MAUI Android. Can we reuse the Kotlin Data Streams sample, pass anonymous query arguments and expose the observer as await foreach? Explain supported choices and the permission sequence.",
+      "review_criteria": [
+        "Reject .NET WebAssembly; offer supported native Uno desktop and MAUI targets",
+        "Do not invent C# Data Streams APIs from Kotlin support",
+        "ExecuteAsync uses Dictionary<string,object>, not arbitrary anonymous objects",
+        "IAsyncEnumerable is an explicit app adapter with bounded buffering and cleanup, not a presumed SDK method",
+        "Initialize Ditto before Android permission helper, dispatch request to main thread, check bool before sync",
+        "Distinguish compile gates from physical-device and cloud verification"
       ]
     }
   ]
