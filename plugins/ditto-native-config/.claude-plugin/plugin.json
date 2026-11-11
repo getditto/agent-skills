@@ -1,0 +1,16 @@
+{
+  "name": "ditto-native-config",
+  "version": "1.0.0",
+  "description": "Reusable Ditto Apple and Android app permissions, plist, entitlements, manifest and runtime permission guidance.",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ditto",
+    "ios",
+    "android",
+    "permissions"
+  ]
+}

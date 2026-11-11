@@ -1,0 +1,28 @@
+{
+  "name": "ditto-expo-tasks",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dittolive/ditto": "5.2.0",
+    "expo": "57.0.31",
+    "expo-dev-client": "57.0.20",
+    "@expo/config-plugins": "57.0.11",
+    "expo-build-properties": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "uuid": "11.1.0",
+    "react-native-get-random-values": "1.11.0",
+    "react-native-safe-area-context": "5.7.0"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "@types/react": "~19.2.0"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "ditto-js",
+  "version": "1.0.0",
+  "description": "Build and troubleshoot Ditto JavaScript/TypeScript apps on Node.js, web/React, React Native and Expo, with tested provider patterns and shared native configuration.",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ditto",
+    "javascript",
+    "typescript",
+    "react-native",
+    "expo"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Ditto JavaScript",
+    "shortDescription": "Build Ditto apps for Node, web, React Native and Expo.",
+    "developerName": "Ditto",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Build an Expo task app with Ditto.",
+      "Integrate Ditto into this React Native app."
+    ]
+  }
+}

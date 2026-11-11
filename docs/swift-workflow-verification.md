@@ -49,7 +49,7 @@ Fresh CI results must be reviewed independently of these local results.
 
 ## Installation packages
 
-`scripts/package-swift-plugin.py --check` passes. The builder produced marketplace,
+`scripts/package-sdk-plugin.py --check` passes. The builder produced marketplace,
 standalone plugin, Antigravity, Gemini and per-skill-upload ZIPs. Archive inspection
 found one canonical `swift-sdk` entry in each, local scripts/assets, no symlinks and
 parseable JSON metadata. The packaged Swift starter matches the canonical asset.
