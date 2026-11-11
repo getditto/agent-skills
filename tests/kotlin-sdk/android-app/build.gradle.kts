@@ -14,9 +14,11 @@
 // else the gitignored repo-root .env. It is injected as a BuildConfig field and never
 // written into the repository.
 
+// snippet:start kotlin-android-build
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v4")
 val dittoVersion: String = providers.gradleProperty("dittoVersion")
     .getOrElse(if (dittoLine == "v4") "4.14.7" else "5.2.0")
+// snippet:end kotlin-android-build
 
 val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.isFile }   // repo root
     ?.readLines()
@@ -45,10 +47,13 @@ buildscript {
     }
 }
 
+// snippet:start kotlin-android-build
 plugins {
     id("com.android.application") version "9.5.0"
 }
+// snippet:end kotlin-android-build
 
+// snippet:start kotlin-android-build
 // v5 AARs declare a minimum compileSdk of 36 (the install guide's value); the v4 leg
 // keeps the 35 it was recorded with.
 val sdkLevel: Int = if (dittoLine == "v4") 35 else 36
@@ -83,6 +88,7 @@ android {
         }
     }
 }
+// snippet:end kotlin-android-build
 
 // Lint resolves its own tool graph, separately from AGP's buildscript classpath.
 // Keep the security fixes scoped to that graph, including all BC modules together.
@@ -104,6 +110,7 @@ configurations.matching { it.name == "androidLintTool" }.configureEach {
     }
 }
 
+// snippet:start kotlin-android-build
 dependencies {
     // Align the v5 SDK's transitive telemetry modules with the tracestate DoS fix.
     implementation(enforcedPlatform("io.opentelemetry:opentelemetry-bom:1.67.0"))
@@ -120,3 +127,4 @@ dependencies {
         else -> error("unknown dittoLine: $dittoLine (v4 | v5)")
     }
 }
+// snippet:end kotlin-android-build

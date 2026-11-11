@@ -14,6 +14,7 @@
 // tests/lib/load-env.mjs.
 
 // Both properties default to the current line so `gradle run` works without -P flags.
+// snippet:start kotlin-jvm-build
 val dittoLine: String = providers.gradleProperty("dittoLine").getOrElse("v5")
 val dittoVersion: String = providers.gradleProperty("dittoVersion").getOrElse("5.2.0")
 
@@ -32,7 +33,9 @@ val dittoBinariesClassifier: String = run {
         else -> error("unsupported host for ditto-binaries: $os/$arch")
     }
 }
+// snippet:end kotlin-jvm-build
 
+// snippet:start kotlin-jvm-build
 plugins {
     kotlin("jvm") version "2.4.21"
     application
@@ -62,7 +65,7 @@ dependencies {
         )
     }
 
-    // Test stack — mirrors skills/kotlin-sdk/references/testing.md. kotlin("test")
+    // Test stack — mirrors the kotlin-sdk skill's testing reference. kotlin("test")
     // is REQUIRED for kotlin.test.assertEquals; the kotlin("jvm") plugin does not
     // add it automatically.
     testImplementation(kotlin("test"))
@@ -71,6 +74,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
+// snippet:end kotlin-jvm-build
 
 // KEY=VALUE lines from the repo-root .env, used only for keys the environment lacks.
 val dotEnv: Map<String, String> = rootDir.resolve("../../../.env").takeIf { it.isFile }   // repo root
@@ -110,7 +114,9 @@ tasks.named<JavaExec>("run") {
     databaseId?.let { environment("DITTO_DATABASE_ID", it) }
 }
 
+// snippet:start kotlin-jvm-build
 application {
     mainClass.set("MainV5Kt")
 }
+// snippet:end kotlin-jvm-build
 

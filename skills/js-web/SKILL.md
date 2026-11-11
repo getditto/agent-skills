@@ -42,7 +42,7 @@ that accidentally shares a browser user's data across requests. Preserve loading
 through hydration. The SDK is a local store, not a React Server Component data cache.
 
 For Vite, copy version-matched WASM into public assets or resolve an imported asset URL.
-The [browser fixture](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/browser/app.tsx) demonstrates the shared runtime,
+The [browser fixture](references/browser-fixture.md) demonstrates the shared runtime,
 provider, query updates and teardown against real WASM. It is a test shell, not a
 complete production auth implementation. A tab refresh is a new memory store.
 

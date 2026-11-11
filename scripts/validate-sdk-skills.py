@@ -202,9 +202,13 @@ def collect_anchors(text: str) -> set[str]:
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 # Installed skills contain only skills/ (the release archive, `dittosh skills add`,
-# agent skill directories), so a relative link out of skills/ breaks in every
-# installed copy. Repo-only files are linked by URL instead, and those URLs are
-# checked against this checkout so they can't go stale.
+# agent skill directories), so they must not depend on files elsewhere in this repo.
+# Tested code is copied in with scripts/sync-snippets.py. Only human-facing README.md
+# files may link to the repo on GitHub, and those links must resolve on main.
+SNIPPET_HINT = (
+    "Installed skills contain only skills/. Copy tested code in with "
+    "scripts/sync-snippets.py, or describe it in prose."
+)
 REPO_URL_RE = re.compile(r"^https://github\.com/getditto/agent-skills/(?:blob|tree)/main/([^#?]+)")
 
 
@@ -215,7 +219,9 @@ def check_links(skill_dir: str, relative_path: str) -> None:
     for target in LINK_RE.findall(text):
         repo_link = REPO_URL_RE.match(target)
         if repo_link:
-            if not os.path.exists(repo_link.group(1)):
+            if os.path.basename(path) != "README.md":
+                fail(f"{path}: links to a file in this repository: {target}. {SNIPPET_HINT}")
+            elif not os.path.exists(repo_link.group(1)):
                 fail(f"{path}: link to a path that does not exist on main: {target}")
             continue
         if target.startswith(("http://", "https://", "mailto:")):
@@ -229,12 +235,7 @@ def check_links(skill_dir: str, relative_path: str) -> None:
         resolved = os.path.normpath(os.path.join(base, file_part))
         skills_root = os.path.normpath(SKILLS_DIR) + os.sep
         if not resolved.startswith(skills_root):
-            repo_path = os.path.relpath(resolved).replace(os.sep, "/")
-            fail(
-                f"{path}: link leaves {SKILLS_DIR}/, so it breaks in installed copies: "
-                f"{target}. Link https://github.com/getditto/agent-skills/"
-                f"{'tree' if os.path.isdir(resolved) else 'blob'}/main/{repo_path} instead."
-            )
+            fail(f"{path}: link leaves {SKILLS_DIR}/, so it breaks in installed copies: {target}. {SNIPPET_HINT}")
             continue
         if not os.path.exists(resolved):
             fail(f"{path}: link target does not exist: {target}")

@@ -188,8 +188,12 @@ Each release tag (`v*`) gets two assets, built by the workflow:
 - `skills-manifest.json` — name/path/description per skill, parsed from
   `SKILL.md` frontmatter by `scripts/build-release-manifest.py`.
 
-The workflow runs `scripts/validate-sdk-skills.py` first, so a release can
-never ship a skill whose published example has drifted from its test fixture.
+The workflow runs `scripts/validate-sdk-skills.py` and
+`scripts/sync-snippets.py --check` first, so a release can never ship a skill whose
+published example has drifted from its test fixture, or a skill that links to files
+outside `skills/`. Code copied from `tests/` into skills is generated: edit the test,
+then run `python3 scripts/sync-snippets.py` (see CONTRIBUTING.md, "Keep skills
+self-contained").
 
 Optional release summaries live in `docs/releases/<tag>.md`; the workflow
 prepends them to the generated skill list. See `docs/release-validation.md`

@@ -55,7 +55,12 @@ class ContextContract(unittest.TestCase):
 
     def test_relative_link_out_of_skills_is_rejected(self):
         errors = self.check(resource="# Resource\n\n[Tests](../../tests/js-sdk/README.md)\n")
-        self.assertTrue(any("leaves" in error and "blob/main" in error for error in errors))
+        self.assertTrue(any("leaves" in error and "sync-snippets" in error for error in errors))
+
+    def test_repo_url_outside_readme_is_rejected(self):
+        url = "https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md"
+        errors = self.check(resource=f"# Resource\n\n[Tests]({url})\n")
+        self.assertTrue(any("links to a file in this repository" in error for error in errors))
 
     def test_sibling_skill_link_is_allowed(self):
         sibling = self.root / "other"
@@ -63,11 +68,13 @@ class ContextContract(unittest.TestCase):
         (sibling / "SKILL.md").write_text("---\nname: other\ndescription: Other.\n---\n\nBody.")
         self.assertEqual(self.check(resource="# Resource\n\n[Other](../other/SKILL.md)\n"), [])
 
-    def test_repo_url_must_exist_on_main(self):
+    def test_readme_repo_url_must_exist_on_main(self):
         url = "https://github.com/getditto/agent-skills/blob/main/"
-        self.assertEqual(self.check(resource=f"# Resource\n\n[Tests]({url}tests/js-sdk/README.md)\n"), [])
-        missing = self.check(resource=f"# Resource\n\n[Gone]({url}tests/no-such-file.md)\n")
-        self.assertTrue(any("does not exist on main" in error for error in missing))
+        readme = self.skill / "README.md"
+        readme.write_text(f"# Probe\n\n[Tests]({url}tests/js-sdk/README.md)\n", encoding="utf-8")
+        self.assertEqual(self.check(), [])
+        readme.write_text(f"# Probe\n\n[Gone]({url}tests/no-such-file.md)\n", encoding="utf-8")
+        self.assertTrue(any("does not exist on main" in error for error in self.check()))
 
     def test_entry_point_cannot_overflow_its_budget(self):
         self.assertTrue(any("12,000" in error for error in self.check(body="x" * 12_001)))

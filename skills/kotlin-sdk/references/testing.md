@@ -6,8 +6,7 @@ Everything here is the **v5** (5.0.x / 5.1.x / 5.2.0) form with tagged v4 asides
 Sources: <https://docs.ditto.live/sdk/latest/deployment/testing>, <https://docs.ditto.live/sdk/latest/install-guides/kotlin>
 (ProGuard + crash-reporter sections), <https://docs.ditto.live/sdk/latest/compatibility/kotlin>
 (transport support matrix). The JVM-unit-test pattern below is **executed** against
-5.0.3, 5.1.0 and 5.2.0; the runnable copy is
-[the harness's JVM store test](https://github.com/getditto/agent-skills/blob/main/tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt).
+5.0.3, 5.1.0 and 5.2.0; see the [minimal test skeleton](#minimal-test-skeleton).
 
 ## Contents
 
@@ -100,11 +99,12 @@ tasks.test {
 ### Minimal test skeleton
 
 **Executed** pattern — offline-only instance, unique temp `persistenceDirectory` per
-test, `runTest` for the suspend store APIs. The file below is
-[the harness's JVM store test](https://github.com/getditto/agent-skills/blob/main/tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt),
-executed green against 5.0.3, 5.1.0 and 5.2.0 (`gradle test -PdittoLine=v5
--PdittoVersion=<v>`; 2 tests, 0 failures):
+test, `runTest` for the suspend store APIs. The code below is copied from the
+harness's JVM store test and is executed against 5.0.3, 5.1.0 and 5.2.0
+(`gradle test -PdittoLine=v5 -PdittoVersion=<v>`):
 
+<!-- snippet: kotlin-store-test -->
+<!-- Generated from tests/kotlin-sdk/minimal-app/src/test/kotlin/DittoStoreTest.kt by scripts/sync-snippets.py. Edit the source, not this block. -->
 ```kotlin
 import com.ditto.kotlin.Ditto
 import com.ditto.kotlin.DittoConfig
@@ -120,12 +120,11 @@ class DittoStoreTest {
     @TempDir
     lateinit var tempDir: File   // unique per test — two live instances on one
                                  // directory fail with a persistence-directory lock
-                                 // (exception type not captured by this harness)
 
     private fun makeDitto(): Ditto {
         val ditto = DittoFactory.create(
             DittoConfig(
-                databaseId = "test-database",
+                databaseId = System.getenv("DITTO_DATABASE_ID") ?: "test-database",  // license is per database ID
                 connect = DittoConfig.Connect.SmallPeersOnly(),
                 persistenceDirectory = tempDir.absolutePath,  // String? in v5, not File?
             )
@@ -156,6 +155,7 @@ class DittoStoreTest {
     }
 }
 ```
+<!-- /snippet -->
 
 Notes:
 

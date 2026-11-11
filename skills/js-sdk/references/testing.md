@@ -2,7 +2,7 @@
 
 ## CAP-18 Testing
 
-The [harness](https://github.com/getditto/agent-skills/blob/main/tests/js-sdk/README.md) copies the exact published assets into
+The repository's test harness copies the exact published assets into
 an ignored fixture directory before typechecking and executing them. It verifies
 local CRUD, observer delivery and cancellation, rollback, indexing, attachments,
 eviction, persistence, runtime races, and React lifecycle behavior. Browser tests run
