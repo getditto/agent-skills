@@ -176,7 +176,7 @@ resources under 20,000 characters; CI rejects larger resources. SDK references
 also target 600 lines with a hard limit of 800. Split when topics serve independent
 tasks; preserve complete runnable examples where splitting would make them unusable.
 
-**A supporting file over 8,000 characters or 200 lines must carry a linked
+**A supporting file over 8,000 characters or 100 lines must carry a linked
 `## Contents` list near the top**, including READMEs and examples. Agents should
 preview the contents and read the relevant section. Character counts catch dense
 API tables that a line-only limit misses. CI enforces the navigation requirement.
@@ -202,8 +202,9 @@ every session. Nine sibling skills will compete, so:
 name: <lang>-sdk
 description: >
   Use ONLY for the Ditto <Language> SDK (not <the other eight> — each has its own
-  skill). Triggers on <file extensions>, <build file names>, <package coordinate>,
-  <2-4 literal API names>, <2-3 literal error strings you actually observed>.
+  skill). Builds and troubleshoots Ditto <Language> apps on <platforms>. Triggers on
+  <file extensions>, <build file names>, <package coordinate>, <2-4 literal API
+  names>, <2-3 literal error strings you actually observed>.
   Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 ---
 ```
@@ -221,6 +222,10 @@ Rules:
   subscriptions, …") in all nine descriptions. Nine copies is pure context crowding.
 - Where the slug cannot express the language, the description must: `csharp-sdk` has to
   front-load `C#`, `.NET`, `MAUI`; `cpp-sdk` has to front-load `C++`.
+- **Say what the skill does** in one third-person sentence right after the gate
+  ("Builds and troubleshoots …").
+- **End with the supported SDK lines** (`Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.`), and
+  keep them in step with the body's "Supported versions and packages" section.
 - Third person. Under 1024 characters; aim for 400.
 
 ---
@@ -586,7 +591,7 @@ SDK skills share the repository budgets from [SKILLS-TEMPLATE.md](SKILLS-TEMPLAT
 |---|---|---|
 | Description | ≤500 characters (aim ~400) | 1,024 characters |
 | SKILL.md body | ≤10,000 characters | 12,000 characters |
-| Each supporting file | Focused task/complete program | 20,000 characters; contents above 8,000 characters or 200 lines |
+| Each supporting file | Focused task/complete program | 20,000 characters; contents above 8,000 characters or 100 lines |
 | Each SDK reference | ≤600 lines | 800 lines |
 
 **These are authoring budgets, not model context limits.** Characters are reproducible
@@ -729,7 +734,7 @@ Structural — a PR failing any of these goes back before the content is read:
 - [ ] **[CI]** All §3 files present; `references/` one level deep; all map links and
       anchors resolve.
 - [ ] **[CI]** `SKILL.md` body within the §11 character budget; every supporting file ≤20,000
-      characters, with linked contents above 8,000 characters or 200 lines.
+      characters, with linked contents above 8,000 characters or 100 lines.
 
 Content:
 

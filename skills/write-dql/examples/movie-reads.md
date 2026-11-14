@@ -46,7 +46,7 @@ LIMIT :page_size OFFSET :offset;
 SELECT * FROM movies USE IDS (:id);
 ```
 
-**Notes:** `USE IDS` is supported only on `SELECT` in both 4.14.x and 5.0.x. It bypasses any collection scan and hits the primary id index directly. With the default `#auto_use_ids` directive (`true`), the planner will rewrite `WHERE _id = :id` into the same plan — but writing `USE IDS` explicitly makes the intent visible and stable across SDK versions. See [`select.md`](../references/select.md) §3.
+**Notes:** `USE IDS` is supported only on `SELECT` in both 4.14.x and 5.0.x. It bypasses any collection scan and hits the primary id index directly. With the default `#auto_use_ids` directive (`true`), the planner will rewrite `WHERE _id = :id` into the same plan — but writing `USE IDS` explicitly makes the intent visible and stable across SDK versions. See [`select-access.md`](../references/select-access.md) §3.
 
 ### Task 5 — Films featuring a specific actor
 
@@ -126,7 +126,7 @@ FROM movies
 ORDER BY year DESC;
 ```
 
-**Notes:** Searched `CASE` (no operand between `CASE` and the first `WHEN`) works identically on 4.14.x and 5.0.x. `IS MISSING` is the right way to test "field absent" — `IS NULL` matches only an explicit null. See [`expressions.md`](../references/expressions.md) §6.
+**Notes:** Searched `CASE` (no operand between `CASE` and the first `WHEN`) works identically on 5.0.x, 5.1.x and 5.2.0; 4.14.x rejects every `CASE` form (see the note above). `IS MISSING` is the right way to test "field absent" — `IS NULL` matches only an explicit null. See [`expressions.md`](../references/expressions.md) §6.
 
 ### Task 8 — Director leaderboard
 
@@ -148,7 +148,7 @@ ORDER BY avg_imdb DESC
 LIMIT 25;
 ```
 
-**Notes:** `HAVING` filters groups after aggregation; `WHERE` filters rows before. The `WHERE director IS NOT MISSING` guard prevents unattributed films from collapsing into a single null-named group. See [`select.md`](../references/select.md) for `GROUP BY` / `HAVING` and [`functions.md`](../references/functions.md) for aggregate signatures.
+**Notes:** `HAVING` filters groups after aggregation; `WHERE` filters rows before. The `WHERE director IS NOT MISSING` guard prevents unattributed films from collapsing into a single null-named group. See [`select-basics.md`](../references/select-basics.md) for `GROUP BY` / `HAVING` and [`functions.md`](../references/functions.md) for aggregate signatures.
 
 ### Task 9 — Per-movie review statistics
 
@@ -202,6 +202,6 @@ const topIds = topReviews.items.map(r => r.value.movie_id);
 const movies = await store.execute(step2Query, { top_ids: topIds });
 ```
 
-**Notes:** Use `WHERE _id IN (...)` rather than `USE IDS LIST` — `USE IDS LIST` accepts a single list parameter on SELECT, but the `IN (...)` form is universal across SELECT/UPDATE/DELETE/EVICT/TOMBSTONE and works the same on all three SDK versions. For very long id lists, see the `#max_inlist` directive in [`indexing.md`](../references/indexing.md) §3.4.
+**Notes:** Use `WHERE _id IN (...)` rather than `USE IDS LIST` — `USE IDS LIST` accepts a single list parameter on SELECT, but the `IN (...)` form is universal across SELECT/UPDATE/DELETE/EVICT/TOMBSTONE and works the same on all three SDK versions. For very long id lists, see the `#max_inlist` directive in [`planner-hints.md`](../references/planner-hints.md) §3.4.
 
 ---

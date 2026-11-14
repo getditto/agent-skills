@@ -12,20 +12,17 @@ description: Grammar and examples for INSERT, UPDATE, EVICT, TOMBSTONE, DELETE, 
 - [3. EVICT](#3-evict)
 - [4. TOMBSTONE](#4-tombstone)
 - [5. DELETE — the mesh-wide delete](#5-delete--the-mesh-wide-delete)
-- [6. EXPLAIN](#6-explain)
-- [7. ALTER SYSTEM](#7-alter-system)
-- [8. SHOW](#8-show)
-- [9. SYNC CONTEXT (RemoteQuery)](#9-sync-context-remotequery)
-- [10. PROFILE](#10-profile)
 - [11. Features intentionally not documented](#11-features-intentionally-not-documented)
+
+Covered in other files: [6. EXPLAIN](system-statements.md#6-explain), [7. ALTER SYSTEM](system-statements.md#7-alter-system), [8. SHOW](system-statements.md#8-show), [9. SYNC CONTEXT (RemoteQuery)](system-statements.md#9-sync-context-remotequery), [10. PROFILE](system-statements.md#10-profile).
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**, except `SELECT` (see [`select.md`](select.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
+Authoritative catalog of every top-level DQL statement usable on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**, except `SELECT` (see [`select-basics.md`](select-basics.md)) and the indexing DDL `CREATE INDEX` / `DROP INDEX` (see [`indexing.md`](indexing.md)).
 
 All three SDK versions ship the same core `Statement` enum: `Explain`, `Query` (`SELECT`), `Insert`, `Update`, `Remove` (`EVICT` / `TOMBSTONE` / `DELETE`), `AlterSystem`, `Show`, `RemoteQuery` (`SYNC CONTEXT`), `CreateIndex`, `DropIndex`; 5.1.x adds `Advise`. A statement may be prefixed by `EXPLAIN` and (on **5.0+ only**) by the `PROFILE` keyword.
 
-Unless a section carries an "Available in:" note, the statement works identically on 4.14.x, 5.0.x, and 5.1.x.
+Unless a section carries an "Available in:" note, the statement works identically on 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 
 For expression grammar see [`expressions.md`](expressions.md); for operators see [`operators.md`](operators.md); for functions see [`functions.md`](functions.md); for CRDT types and mutators (`COUNTER`, `MAP`, `APPLY`) see [`types-mutators.md`](types-mutators.md).
 
@@ -51,7 +48,7 @@ INSERT INTO [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
 - `DOCUMENTS` and `VALUES` are synonyms.
 - `_id` is optional. Omit it and Ditto generates one.
 - `INTO COLLECTION coll (cols…)` is **required** whenever you touch a non-register CRDT (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`). See [`types-mutators.md`](types-mutators.md).
-- **`PN_COUNTER` cannot be declared on an inline `INSERT`** on any supported SDK version — see [`types-mutators.md`](types-mutators.md) §4.
+- **`PN_COUNTER` cannot be declared on an inline `INSERT`** on any supported SDK version — see [`legacy-types.md`](legacy-types.md#4-pn_counter) §4.
 - `INITIAL` is **Small Peer only** (all three SDK versions). Cannot be combined with a `SELECT` source or with `ON ID CONFLICT`.
 
 ### 1.2 Plain insert with auto-generated id
@@ -103,7 +100,7 @@ ON ID CONFLICT DO UPDATE;
 
 A counter initialised to `0` here will accept `APPLY watch_count INCREMENT BY n` afterwards (see [§2 UPDATE](#2-update)).
 
-> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`types-mutators.md`](types-mutators.md) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
+> **Available in:** `COUNTER` requires SDK 4.14+. `PN_COUNTER` requires SDK 4.11+ (but cannot be declared on an inline `INSERT` — see [`legacy-types.md`](legacy-types.md#4-pn_counter) §4). `MAP` and `ATTACHMENT` are available on all three SDK versions.
 
 ### 1.5 `ON ID CONFLICT` actions
 
@@ -218,7 +215,7 @@ UPDATE [COLLECTION] <collection> [ ( <col_def> [, <col_def> ...] ) ]
 Notes:
 
 - `APPLY`, `SET`, and `UNSET` can be combined in one statement, but **the clause order above is mandatory: `APPLY` → `SET` → `UNSET`.** The parser is positional, not free-form — `SET … APPLY …` and `UNSET … SET …` both fail with `Unexpected token`, not with a helpful message. Verified identical on 4.14.6, 5.0.3, and 5.1.0.
-- `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select.md`](select.md).
+- `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET` behave the same as on `SELECT` — see [`select-basics.md`](select-basics.md).
 - `UPDATE COLLECTION coll (col_defs…)` is required when any mutation touches a non-register CRDT field. The type def applies to that statement only; it does not redefine the schema globally.
 - **`USE IDS` on `UPDATE` is SDK 5.1+**, and only in the pre-`SET` position: `UPDATE movies USE IDS 'tt0111161' SET …`. The trailing form (`… SET x = 1 USE IDS …`) is a parse error on every SDK version. On 4.14.x / 5.0.x use `WHERE _id IN (...)`.
 
@@ -397,26 +394,6 @@ Mental shorthand: **EVICT = local sweep, DELETE = "tell the mesh to forget"**. I
 
 ---
 
-## 6. EXPLAIN
-
-See [system-statements.md](system-statements.md#6-explain) for this topic.
-
-## 7. ALTER SYSTEM
-
-See [system-statements.md](system-statements.md#7-alter-system) for this topic.
-
-## 8. SHOW
-
-See [system-statements.md](system-statements.md#8-show) for this topic.
-
-## 9. SYNC CONTEXT (RemoteQuery)
-
-See [system-statements.md](system-statements.md#9-sync-context-remotequery) for this topic.
-
-## 10. PROFILE
-
-See [system-statements.md](system-statements.md#10-profile) for this topic.
-
 ## 11. Features intentionally not documented
 
 Three statement-level features are excluded from this reference because they are **not available in either 4.14.x or 5.0.x**:
@@ -425,4 +402,4 @@ Three statement-level features are excluded from this reference because they are
 - **Structured `PROFILE` output** — see §10. Lands in 5.1+.
 > **Version boundary:** `USE IDS` works on SELECT across the covered releases, on UPDATE (before `SET`) from 5.1.0, and on DELETE/EVICT from **5.2.0**. DELETE/EVICT parsed but removed nothing on 5.1.0. Use `WHERE _id IN (…)` for portable mutations. `TOMBSTONE` remains unavailable on Small Peers. Source: <https://docs.ditto.live/sdk/latest/release-notes-hub/swift>.
 
-`SELECT` lives in [`select.md`](select.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md). CRDT type definitions (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`) and their mutators are documented in [`types-mutators.md`](types-mutators.md).
+`SELECT` lives in [`select-basics.md`](select-basics.md). `CREATE INDEX` / `DROP INDEX` live in [`indexing.md`](indexing.md). CRDT type definitions (`MAP`, `COUNTER`, `PN_COUNTER`, `ATTACHMENT`) and their mutators are documented in [`types-mutators.md`](types-mutators.md).

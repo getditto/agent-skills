@@ -1,5 +1,14 @@
 # Mesh Scenarios, Worked
 
+## Contents
+
+- [Scenario 1 — two peers, matching subscriptions](#scenario-1--two-peers-matching-subscriptions)
+- [Scenario 2 — three peers, narrow middle (the classic trap)](#scenario-2--three-peers-narrow-middle-the-classic-trap)
+- [Scenario 3 — late direct connection heals C](#scenario-3--late-direct-connection-heals-c)
+- [Scenario 4 — the relay serves data it isn't subscribed to](#scenario-4--the-relay-serves-data-it-isnt-subscribed-to)
+- [Scenario 5 — a document leaves the subscription scope](#scenario-5--a-document-leaves-the-subscription-scope)
+- [Scenario 6 — same role, same subscription (flood-fill at full efficiency)](#scenario-6--same-role-same-subscription-flood-fill-at-full-efficiency)
+
 Each scenario uses the same data: a `cars` collection with 100 documents, 10
 of which have `color = 'blue'`. Rules referenced below are defined in
 [../references/mesh-and-flooding.md](../references/mesh-and-flooding.md).

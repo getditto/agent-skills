@@ -9,28 +9,24 @@ description: CREATE INDEX, DROP INDEX, USE IDS/INDEX/DIRECTIVES, planner directi
 
 - [1. CREATE INDEX](#1-create-index)
 - [2. DROP INDEX](#2-drop-index)
-- [3. Planner directives](#3-planner-directives)
-- [4. USE IDS](#4-use-ids)
-- [5. USE INDEX](#5-use-index)
-- [6. EXPLAIN](#6-explain)
-- [7. Profiling a query](#7-profiling-a-query)
 - [8. Indexing strategy](#8-indexing-strategy)
-- [9. `ADVISE` / `ADVISE AND PROVISION` (SDK 5.1+)](#9-advise--advise-and-provision-sdk-51)
 - [10. Cross-reference index](#10-cross-reference-index)
+
+Covered in other files: [3. Planner directives](planner-hints.md#3-planner-directives), [4. USE IDS](planner-hints.md#4-use-ids), [5. USE INDEX](planner-hints.md#5-use-index), [6. EXPLAIN](query-diagnostics.md#6-explain), [7. Profiling a query](query-diagnostics.md#7-profiling-a-query), [9. `ADVISE` / `ADVISE AND PROVISION` (SDK 5.1+)](query-diagnostics.md#9-advise--advise-and-provision-sdk-51).
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
 Deep reference for index DDL, the planner-directive surface, and query-plan inspection on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Indexing in DQL is currently a **Small-Peer-only** feature; `CREATE INDEX` against a Big-Peer collection returns an error.
 
-Unless a section carries an "Available in:" note, everything below works identically on 4.14.x, 5.0.x, and 5.1.x.
+Unless a section carries an "Available in:" note, everything below works identically on 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 
 Cross-references:
 
-- `SELECT` grammar including the thin `USE IDS` / `USE INDEX` / `USE DIRECTIVES` summary → [`select.md`](select.md) §§3–5
-- Top-level statements including the `EXPLAIN` wrapper and the v5.0+ `PROFILE` keyword → [`statements.md`](statements.md) §§6, 10
+- `SELECT` grammar including the thin `USE IDS` / `USE INDEX` / `USE DIRECTIVES` summary → [`select-access.md`](select-access.md) §§3–5
+- Top-level statements including the `EXPLAIN` wrapper and the v5.0+ `PROFILE` keyword → [`system-statements.md`](system-statements.md) §§6, 10
 - Path expressions and parameter syntax used inside index keys → [`expressions.md`](expressions.md)
 - CRDT field types — distinguish scalar/path indexing from the verified whole-object reference case below → [`types-mutators.md`](types-mutators.md)
-- SDK compatibility matrix → `versions.md` (forthcoming reference)
+- SDK compatibility matrix → [`versions.md`](versions.md)
 
 ---
 
@@ -79,7 +75,7 @@ CREATE INDEX IF NOT EXISTS movies_year_imdb
   ON movies (year ASC, ratings.imdb DESC);
 ```
 
-> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x) — the single-column and nested-path index examples below.
+> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x and 5.2.0) — the single-column and nested-path index examples below.
 
 ```sql
 -- Single ascending key
@@ -157,26 +153,6 @@ Inspect existing indexes via `EXPLAIN` (§6) on a representative query — there
 
 ---
 
-## 3. Planner directives
-
-See [planner-hints.md](planner-hints.md#3-planner-directives) for this topic.
-
-## 4. USE IDS
-
-See [planner-hints.md](planner-hints.md#4-use-ids) for this topic.
-
-## 5. USE INDEX
-
-See [planner-hints.md](planner-hints.md#5-use-index) for this topic.
-
-## 6. EXPLAIN
-
-See [query-diagnostics.md](query-diagnostics.md#6-explain) for this topic.
-
-## 7. Profiling a query
-
-See [query-diagnostics.md](query-diagnostics.md#7-profiling-a-query) for this topic.
-
 ## 8. Indexing strategy
 
 Adding an index is not free. Every write to the indexed collection updates the index, every replicated mutation pays the same cost on every peer, and disk pressure grows with key cardinality. Use these rules of thumb before you reach for `CREATE INDEX`.
@@ -204,7 +180,7 @@ CREATE INDEX IF NOT EXISTS movies_year_imdb
   ON movies (year ASC, ratings.imdb DESC);
 ```
 
-> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x) — the remaining queries in this section.
+> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x and 5.2.0) — the remaining queries in this section.
 
 The planner can:
 
@@ -291,17 +267,13 @@ Skip the index when:
 
 ---
 
-## 9. `ADVISE` / `ADVISE AND PROVISION` (SDK 5.1+)
-
-See [query-diagnostics.md](query-diagnostics.md#9-advise--advise-and-provision-sdk-51) for this topic.
-
 ## 10. Cross-reference index
 
 | Topic                                                | Go to                                           |
 | ---------------------------------------------------- | ----------------------------------------------- |
-| `SELECT` grammar, `USE IDS` / `USE INDEX` / `USE DIRECTIVES` summary | [`select.md`](select.md) §§3–5  |
-| `EXPLAIN` as a leading-keyword wrapper               | [`statements.md`](statements.md) §6             |
-| `PROFILE` keyword form (5.0+)                        | [`statements.md`](statements.md) §10            |
+| `SELECT` grammar, `USE IDS` / `USE INDEX` / `USE DIRECTIVES` summary | [`select-access.md`](select-access.md) §§3–5  |
+| `EXPLAIN` as a leading-keyword wrapper               | [`system-statements.md`](system-statements.md#6-explain) §6             |
+| `PROFILE` keyword form (5.0+)                        | [`system-statements.md`](system-statements.md#10-profile) §10            |
 | Path syntax and parameter binding inside index keys  | [`expressions.md`](expressions.md)              |
 | CRDT field types (object-reference caveat in §1)        | [`types-mutators.md`](types-mutators.md)        |
 | Aggregate / scalar functions that may degrade plans  | [`functions.md`](functions.md)                  |

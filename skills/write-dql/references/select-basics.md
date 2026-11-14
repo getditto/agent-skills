@@ -2,6 +2,7 @@
 
 ## Contents
 
+- [Top-level grammar](#top-level-grammar)
 - [1. Projection](#1-projection)
 - [2. FROM clause](#2-from-clause)
 - [6. WHERE clause](#6-where-clause)
@@ -12,10 +13,28 @@
 - [11. Cross-type sort order](#11-cross-type-sort-order)
 - [13. Worked examples (movies dataset)](#13-worked-examples-movies-dataset)
 
-Topic index: [select.md](select.md). Covers Ditto SDK 4.14.x (LTS),
+Covers Ditto SDK 4.14.x (LTS),
 5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
+
+## Top-level grammar
+
+```
+SELECT [ DISTINCT ] <projection>
+FROM <collection_ref>
+  [ USE IDS <id_list> ]
+  [ USE INDEX <name> [ ASC | DESC ] ]
+  [ USE DIRECTIVES '<json_object>' ]
+[ WHERE     <expr> ]
+[ GROUP BY  <expr> [, <expr> ...] ]
+[ HAVING    <expr> ]
+[ ORDER BY  <expr> [ ASC | DESC ] [, <expr> [ ASC | DESC ] ...] ]
+[ LIMIT     <int_or_param> ]
+[ OFFSET    <int_or_param> ]
+```
+
+Clauses must appear in the order shown. The three `USE …` clauses are mutually orderable (any order, any subset), but each may appear at most once. Inline planner directives via comments (`/*+ … */` or `--+ …`) may precede the statement — see [`planner-hints.md`](planner-hints.md).
 
 ## 1. Projection
 

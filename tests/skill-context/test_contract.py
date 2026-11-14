@@ -27,9 +27,9 @@ class ContextContract(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.addCleanup(setattr, validator, "SKILLS_DIR", self.previous_root)
 
-    def check(self, name="probe", body="Guidance.", resource=None):
+    def check(self, name="probe", body="Guidance.", resource=None, description="Probe guidance."):
         (self.skill / "SKILL.md").write_text(
-            f"---\nname: {name}\ndescription: Probe guidance.\n---\n\n{body}", encoding="utf-8"
+            f"---\nname: {name}\ndescription: {description}\n---\n\n{body}", encoding="utf-8"
         )
         if resource is not None:
             (self.skill / "reference.md").write_text(resource, encoding="utf-8")
@@ -130,6 +130,49 @@ class ContextContract(unittest.TestCase):
 
     def test_entry_point_cannot_overflow_its_budget(self):
         self.assertTrue(any("12,000" in error for error in self.check(body="x" * 12_001)))
+
+    def test_entry_point_stays_under_500_lines(self):
+        self.assertEqual(self.check(body="x\n" * 500), [])
+        self.assertTrue(any("500" in error for error in self.check(body="x\n" * 501)))
+
+    def test_resource_over_100_lines_needs_contents(self):
+        self.assertEqual(self.check(resource="# Resource\n" + "x\n" * 99), [])
+        self.assertTrue(any("Contents" in e for e in self.check(resource="# Resource\n" + "x\n" * 101)))
+
+    def test_description_rules(self):
+        cases = {
+            "Use when probing things.": "before 'Use when",
+            "Probes things. You can use it for probes.": "third person",
+            "I help with probes.": "third person",
+            "Probes <b>things</b>.": "XML",
+        }
+        for description, message in cases.items():
+            with self.subTest(description):
+                self.assertTrue(any(message in e for e in self.check(description=description)))
+        self.assertEqual(self.check(description="Use ONLY for probes. Probes things. Use when probing."), [])
+        self.assertEqual(self.check(description="Probes things on Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0."), [])
+
+    def test_version_claims_match_the_declared_lines(self):
+        body = "Supports **4.14.x (LTS), 5.0.x and 5.1.x**."
+        good = "# R\n\nCovers Ditto SDK 4.14.x (LTS), 5.0.x and 5.1.x.\n\n> **Available in:** 5.1+.\n"
+        self.assertEqual(self.check(body=body, resource=good), [])
+        stale = {
+            "header": "# R\n\nCovers Ditto SDK 4.14.x and 5.0.x.\n",
+            "all supported": "# R\n\n> **Available in:** all supported versions (4.14.x, 5.0.x)\n",
+            "identically": "# R\n\nEverything works identically on 4.14.x and 5.0.x.\n",
+            "unknown line": "# R\n\nCovers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0.\n",
+            "newer feature": "# R\n\n> **Available in:** Ditto SDK 5.2.0+.\n",
+        }
+        for label, resource in stale.items():
+            with self.subTest(label):
+                self.assertTrue(any("SDK lines" in e or "newer than" in e
+                                    for e in self.check(body=body, resource=resource)))
+
+    def test_reserved_word_in_name_is_rejected(self):
+        bad = self.root / "claude-probe"
+        bad.mkdir()
+        (bad / "SKILL.md").write_text("---\nname: claude-probe\ndescription: Probes.\n---\n\nBody.")
+        self.assertTrue(any("reserved word" in e for e in self.check()))
 
 
 class ExamplePrograms(unittest.TestCase):

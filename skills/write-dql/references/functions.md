@@ -10,21 +10,20 @@ description: Complete built-in function catalog for Ditto DQL (math, string, arr
 - [1. Mathematical](#1-mathematical)
 - [2. Conditional / null-handling](#2-conditional--null-handling)
 - [3. Type / conversion](#3-type--conversion)
-- [4. String](#4-string)
 - [5. Array](#5-array)
 - [6. Object](#6-object)
-- [7. Date / time](#7-date--time)
-- [8. Duration](#8-duration)
 - [9. Miscellaneous](#9-miscellaneous)
 - [10. Aggregates](#10-aggregates)
 - [11. Alphabetical function index](#11-alphabetical-function-index)
 - [See also](#see-also)
 
+Covered in other files: [4. String](string-functions.md#4-string), [7. Date / time](date-time-functions.md#7-date--time), [8. Duration](date-time-functions.md#8-duration).
+
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
 Authoritative catalog of every predefined function in DQL on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Function names are **case-insensitive**. Examples use the `movies` and `reviews` collections from the [`movies-cookbook.md`](../examples/movies-cookbook.md).
 
-Every function in this catalog exists on **all four** covered SDK versions — 4.14.x, 5.0.x, 5.1.x and 5.2.0. The function harness checks a representative semantic case for each of the **73 names** in §11 on 4.14.6, 5.0.3, 5.1.0 and 5.2.0, including aggregates; it does not exhaust every overload or input edge case. Functions that are **not** in this catalog because they require 5.1+: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`versions.md`](versions.md) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
+Every function in this catalog exists on **all four** covered SDK versions — 4.14.x, 5.0.x, 5.1.x and 5.2.0. The function harness checks a representative semantic case for each of the **73 names** in §11 on 4.14.6, 5.0.3, 5.1.0 and 5.2.0, including aggregates; it does not exhaust every overload or input edge case. Functions that are **not** in this catalog because they require 5.1+: `round()`, `array_sort()`, `serialize_json()`, `object_size()`. See [`compatibility-expressions.md`](compatibility-expressions.md#46-scalar-and-aggregate-functions) §4.6. For operator syntax (`+`, `||`, `LIKE`, `IS NULL`, etc.) see [`operators.md`](operators.md).
 
 Notation:
 
@@ -134,10 +133,6 @@ SELECT deserialize_json('{"label":"hit","year":1994}') AS parsed;
 
 ---
 
-## 4. String
-
-See [string-functions.md](string-functions.md#4-string) for this topic.
-
 ## 5. Array
 
 | Signature                          | Returns    | Notes                                                              |
@@ -231,14 +226,6 @@ There is no `object_size` in v5.0.x.
 
 ---
 
-## 7. Date / time
-
-See [date-time-functions.md](date-time-functions.md#7-date--time) for this topic.
-
-## 8. Duration
-
-See [date-time-functions.md](date-time-functions.md#8-duration) for this topic.
-
 ## 9. Miscellaneous
 
 | Signature           | Returns                                                            |
@@ -296,7 +283,7 @@ FROM movies;
 ```
 
 ```sql
--- Aggregates with GROUP BY — see select.md for the full clause
+-- Aggregates with GROUP BY — see select-basics.md for the full clause
 SELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating
 FROM movies
 GROUP BY year
@@ -309,7 +296,7 @@ ORDER BY year DESC;
 - **Aggregates dam the pipeline** — results stream only after every input row is consumed.
 - Memory grows with the number of distinct groups and with each `DISTINCT` aggregate (every distinct value seen is retained).
 - To explicitly count `NULL` / `MISSING` rows, wrap the expression: `count(ifmissingornull(field, 'sentinel'))`.
-- For `GROUP BY` / `HAVING` syntax see [`select.md`](select.md) (Task 8 will create this).
+- For `GROUP BY` / `HAVING` syntax see [`select-basics.md`](select-basics.md).
 
 ---
 
@@ -323,5 +310,5 @@ ORDER BY year DESC;
 
 - [`operators.md`](operators.md) — operators, precedence, 4-valued logic, `IS NULL`/`IS MISSING` predicates.
 - [`expressions.md`](expressions.md) — `CASE`, subqueries, `EXISTS`, `ANY/EVERY ... SATISFIES` (v5.0+), comprehensions.
-- [`select.md`](select.md) — `SELECT`, `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`.
+- [`select-basics.md`](select-basics.md) — `SELECT`, `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`.
 - [`versions.md`](versions.md) — SDK version floors for every DQL feature.

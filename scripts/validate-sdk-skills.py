@@ -122,10 +122,22 @@ RESOURCE_CHAR_HARD_LIMIT = 20_000
 
 # §3 / §11 — references cost zero context until read, so they are budgeted far more
 # loosely than SKILL.md. Above TOC_REQUIRED_LINES a file needs a `## Contents` list:
-# partial reads (`head -100`) must still reveal the file's full scope.
+# partial reads (`head -100`) must still reveal the file's full scope. 100 lines is the
+# threshold in Anthropic's skill-authoring best practices.
 REFERENCE_LINE_TARGET = 600
 REFERENCE_LINE_HARD_LIMIT = 800
-TOC_REQUIRED_LINES = 200
+TOC_REQUIRED_LINES = 100
+
+# Anthropic skill-authoring best practices: name and description constraints, and a
+# SKILL.md body under 500 lines.
+SKILL_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SKILL_NAME_MAX = 64
+RESERVED_NAME_WORDS = ("anthropic", "claude")
+SKILL_BODY_LINE_LIMIT = 500
+# A description is injected into every session: write it in the third person and say
+# what the skill does before (or right after a `Use ONLY for` gate) when to use it.
+# Supported SDK versions belong in it too — Ditto customers span 4.14 LTS and 5.x.
+DESCRIPTION_PERSON_RE = re.compile(r"\b(?:I|I'm|I'll|me|my|we|our|you|your)\b", re.I)
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -332,6 +344,80 @@ def all_markdown(skill_dir: str) -> list[str]:
     return found
 
 
+# Version-coverage claims. Each skill declares its supported SDK lines once in the
+# SKILL.md body ("Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**"). Every blanket
+# claim elsewhere — a "Covers/Supports … SDK" header, "all supported versions (…)", or
+# "works identically on …" — must name exactly those lines (examples may name a subset),
+# and no "Available in" note may cite a line newer than the newest declared one. A
+# release that adds a line then fails here until every stale claim is revisited.
+_VERSION_TOKEN = re.compile(r"\b(\d+)\.(\d+)\.(?:x|\d+)\b")
+_VERSION_LIST = (r"((?:\**\d+\.\d+\.(?:x|\d+)(?:\s*\(LTS\))?\**"
+                 r"(?:\s*,\s*(?:and\s+)?|\s+and\s+|\s*/\s*)?)+)")
+_DECLARED_RE = re.compile(r"Support(?:s|ed:)\s*\**\s*(?:Ditto\s+)?(?:SDK\s+)?\**\s*" + _VERSION_LIST)
+_COVERAGE_RE = re.compile(
+    r"(?:Covers|Supports|Supported:|usable on|works identically on)\s+\**\s*(?:Ditto\s+)?(?:SDK\s+)?\**\s*"
+    + _VERSION_LIST
+)
+_ALL_SUPPORTED_RE = re.compile(r"(?i)(?:all|every) supported (?:SDK )?(?:versions?|lines?)\s*\(([^)]*)\)")
+
+
+def version_lines(text: str) -> set[tuple[int, int]]:
+    return {(int(major), int(minor)) for major, minor in _VERSION_TOKEN.findall(text)}
+
+
+def declared_version_lines(body: str) -> set[tuple[int, int]]:
+    match = _DECLARED_RE.search(body)
+    return version_lines(match.group(1)) if match else set()
+
+
+def check_version_claims(skill_dir: str, declared: set[tuple[int, int]]) -> None:
+    if not declared:
+        return
+    newest = max(declared)
+    shown = ", ".join(f"{a}.{b}" for a, b in sorted(declared))
+    for path in all_markdown(skill_dir):
+        text = strip_fences(read(path))
+        relative = os.path.relpath(path, skill_dir)
+        exact = not relative.startswith("examples/") and os.path.basename(path) != "README.md"
+        for regex in (_COVERAGE_RE, _ALL_SUPPORTED_RE):
+            for match in regex.finditer(text):
+                named = version_lines(match.group(1))
+                line = text.count("\n", 0, match.start()) + 1
+                too_many = not named <= declared
+                too_few = exact and len(named) >= 2 and named != declared
+                if too_many or too_few:
+                    fail(
+                        f"{path}:{line}: claims SDK lines "
+                        f"{', '.join(f'{a}.{b}' for a, b in sorted(named))}; the skill declares {shown}"
+                    )
+        for number, line_text in enumerate(text.splitlines(), 1):
+            if "Available in" in line_text:
+                newer = sorted(v for v in version_lines(line_text) if v > newest)
+                if newer:
+                    fail(
+                        f"{path}:{number}: 'Available in' cites "
+                        f"{', '.join(f'{a}.{b}' for a, b in newer)}, newer than the declared {shown}"
+                    )
+
+
+def check_name_and_description(skill_md: str, name: str, description: str) -> None:
+    """Best-practice constraints on the two fields loaded into every session."""
+    if len(name) > SKILL_NAME_MAX or not SKILL_NAME_RE.match(name):
+        fail(f"{skill_md}: name must be ≤{SKILL_NAME_MAX} lowercase letters, digits and single hyphens")
+    if any(word in name for word in RESERVED_NAME_WORDS):
+        fail(f"{skill_md}: name must not contain a reserved word ({', '.join(RESERVED_NAME_WORDS)})")
+    if re.search(r"</?[A-Za-z][^>]*>", description):
+        fail(f"{skill_md}: description must not contain XML/HTML tags")
+    person = DESCRIPTION_PERSON_RE.search(description)
+    if person:
+        fail(f"{skill_md}: description must be third person (found '{person.group(0)}')")
+    if description.startswith("Use when"):
+        fail(
+            f"{skill_md}: description must say what the skill does before 'Use when …' "
+            "(a 'Use ONLY for' exclusion gate may lead)"
+        )
+
+
 def validate_every_skill() -> None:
     """Frontmatter, context budgets and navigation for every skill."""
     for name in sorted(os.listdir(SKILLS_DIR)):
@@ -372,6 +458,11 @@ def validate_every_skill() -> None:
             fail(f"{skill_md}: description must contain 1–1024 characters")
         elif len(description) > DESCRIPTION_CHAR_TARGET:
             warn(f"{skill_md}: description is {len(description)} characters; target ≤500")
+        check_name_and_description(skill_md, declared or "", description)
+
+        body_lines = len(body.strip().splitlines())
+        if body_lines > SKILL_BODY_LINE_LIMIT:
+            fail(f"{skill_md}: body is {body_lines} lines; keep SKILL.md under {SKILL_BODY_LINE_LIMIT}")
 
         body_chars = len(body.strip())
         if body_chars > SKILL_BODY_CHAR_HARD_LIMIT:
@@ -384,6 +475,7 @@ def validate_every_skill() -> None:
             warn(f"{skill_md}: body is {body_chars:,} characters; target ≤10,000")
 
         check_no_repository_references(skill_dir)
+        check_version_claims(skill_dir, declared_version_lines(body))
         for path in all_markdown(skill_dir):
             check_links(skill_dir, os.path.relpath(path, skill_dir))
             if path == skill_md:
@@ -397,7 +489,7 @@ def validate_every_skill() -> None:
             has_contents_links = any(target.startswith("#") for target in LINK_RE.findall(contents))
             if needs_contents and not has_contents_links:
                 fail(
-                    f"{path}: needs a linked '## Contents' list (over 200 lines or "
+                    f"{path}: needs a linked '## Contents' list (over {TOC_REQUIRED_LINES} lines or "
                     "8,000 characters), so agents can select a section."
                 )
             if len(resource) > RESOURCE_CHAR_HARD_LIMIT:

@@ -33,7 +33,7 @@ Strict mode controls CRDT type inference when `INSERT`/`UPDATE` encounters an ob
 - SDK 5.0.x: `dql_strict_mode = false` → object → `MAP` (per-field merge)
 - Available: SDK 4.11+; runtime-only, re-apply at every app start
 
-For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag, and worked merge examples, see [`references/types-mutators.md`](types-mutators.md) §7.
+For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag, and worked merge examples, see [`references/legacy-types.md`](legacy-types.md#7-strict-mode-and-the-dql_strict_mode-system-parameter) §7.
 
 ### Behavioral Differences
 
@@ -48,7 +48,7 @@ For the full per-version behavior matrix, the internal `DQL_MUTATOR_OBJECTS_AS_M
 
 ### Configuration
 
-The canonical user-facing parameter is `dql_strict_mode`. Parameter names in `ALTER SYSTEM SET` / `RESET` / `SHOW` are **case-insensitive** — the resolver lowercases the identifier, so `SHOW DQL_STRICT_MODE` works — but prefer lowercase: it is the name `SHOW` echoes back and the only spelling that matches a case-sensitive `SHOW ALL LIKE` pattern (use `ILIKE` if you want to match uppercase). See [`references/types-mutators.md`](types-mutators.md) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
+The canonical user-facing parameter is `dql_strict_mode`. Parameter names in `ALTER SYSTEM SET` / `RESET` / `SHOW` are **case-insensitive** — the resolver lowercases the identifier, so `SHOW DQL_STRICT_MODE` works — but prefer lowercase: it is the name `SHOW` echoes back and the only spelling that matches a case-sensitive `SHOW ALL LIKE` pattern (use `ILIKE` if you want to match uppercase). See [`references/legacy-types.md`](legacy-types.md#7-strict-mode-and-the-dql_strict_mode-system-parameter) §7 for the full feature-flag model (including the internal `DQL_MUTATOR_OBJECTS_AS_MAPS` flag that strict mode derives).
 
 **Opting into lenient mode (the 5.0+ default; the migration target on 4.x):**
 ```sql

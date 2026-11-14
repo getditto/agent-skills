@@ -5,6 +5,13 @@ description: The pedagogical schema used by every DQL example in this skill. Eve
 
 # Movies/reviews dataset schema
 
+## Contents
+
+- [`movies` collection](#movies-collection)
+- [`reviews` collection](#reviews-collection)
+- [Seeding the dataset](#seeding-the-dataset)
+- [Gotchas you'll meet in examples](#gotchas-youll-meet-in-examples)
+
 Every example in the reference files and the movies cookbook queries one of two collections: **`movies`** and **`reviews`**. This file is the canonical definition of those collections — refer back here when an example uses a field you don't recognize.
 
 The schema is "pedagogical" in the sense that it's designed to teach DQL: it intentionally mixes scalar fields, arrays of scalars, arrays of nested objects, deeply-nested object paths, and every CRDT type (REGISTER, MAP, COUNTER, ATTACHMENT). A real production schema would usually be simpler.

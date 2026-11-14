@@ -1,5 +1,15 @@
 # Preview and platform-specific APIs — Ditto Swift SDK
 
+## Contents
+
+- [CAP-20 Preview and platform-specific APIs](#cap-20-preview-and-platform-specific-apis)
+  - [`DittoConfigExperimental` — encryption at rest](#dittoconfigexperimental--encryption-at-rest)
+  - [`DittoExperimental`](#dittoexperimental)
+  - [Reliable UDP multicast — 5.1.0, private beta](#reliable-udp-multicast--510-private-beta)
+  - [Data Streams: introduced in 5.2.0, behind an SPI import](#data-streams-introduced-in-520-behind-an-spi-import)
+  - [Platform exclusions](#platform-exclusions)
+  - [DittoSwiftTools](#dittoswifttools)
+
 For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
 
 

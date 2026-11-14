@@ -1,13 +1,15 @@
 ---
 name: data-streams
 description: >
-  Use when designing, writing or debugging Ditto Data Streams (preview): bindTopic,
-  connect, ditto.dataStreams, DittoStream, DittoAcceptor, candidates and take(),
-  reliable vs unreliable topics, send/sendAndForget/maxSendSize, NGN
-  (DITTO_NETWORK_ENABLE_NGN), PreviewDataStreams, and errors like "Failed to connect
-  stream: Rejected(HandshakeTimedOut)" or "Err(InvalidTopic)". Language-agnostic
-  concepts; Kotlin and Swift syntax live in those SDK skills. Not for document sync
-  or attachments.
+  Designs, writes and debugs Ditto Data Streams (preview), peer-to-peer topic streams
+  outside document sync: bindTopic, connect, DittoStream,
+  DittoAcceptor, candidates and take(), reliable vs unreliable topics,
+  sendAndForget/maxSendSize, NGN (DITTO_NETWORK_ENABLE_NGN). Use for low-latency live
+  data between peers or errors like "Failed to connect stream:
+  Rejected(HandshakeTimedOut)" or "Err(InvalidTopic)". Kotlin/Swift syntax lives in
+  those SDK skills. Not for document sync or attachments.
+
+allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
 # Ditto Data Streams
@@ -102,6 +104,20 @@ instance is created**: the environment variable `DITTO_NETWORK_ENABLE_NGN=true` 
 peer that must replicate sets the same value. Start sync so presence can discover peers.
 **No TCP listener is required**; if you do change transports, modify the current config,
 never a fresh one (every transport off). [setup-and-transports.md](references/setup-and-transports.md).
+
+## Bring-up checklist
+
+When nothing arrives, check in this order and stop at the first failure
+([troubleshooting.md](references/troubleshooting.md) maps each error string to a cause):
+
+```
+- [ ] 1. NGN enabled on both peers before Ditto is created
+- [ ] 2. Sync started on both peers; presence shows the remote peer
+- [ ] 3. Receiver bound a valid topic (^[a-zA-Z0-9_ ]{1,15}$) and keeps the acceptor alive
+- [ ] 4. Reliability matches between binding and connect
+- [ ] 5. Candidate opened inside the callback, or take()n for later use
+- [ ] 6. One stream reused per peer and topic; each payload under maxSendSize
+```
 
 ## Anti-patterns
 

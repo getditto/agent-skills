@@ -1,6 +1,13 @@
 ---
 name: sync-subscriptions
-description: Use when designing or debugging Ditto sync subscriptions (registerSubscription): accepted SELECT queries, receive-side filtering, missing documents, multihop relay coverage, flooding, persistence and cancellation. Covers SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0. Language-agnostic; per-language API syntax belongs to the Ditto SDK skill.
+description: >
+  Designs and debugs Ditto sync subscriptions (registerSubscription): which SELECT
+  queries a subscription accepts, why documents are missing on a peer, receive-side
+  filtering, multihop relay coverage, flooding, persistence and cancellation. Covers
+  SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0. Use when data written on one device never
+  arrives on another, a subscription query is rejected, or a relay forwards less than
+  expected. Language-agnostic; API syntax belongs to the Ditto SDK skill.
+allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
 # Ditto Sync Subscriptions
@@ -15,6 +22,14 @@ using version-sensitive clauses.
 
 For 5.2.0 diagnostics and document-size enforcement during replication, read
 [how-subscriptions-work.md](references/how-subscriptions-work.md#sdk-520-diagnostics-and-behavior).
+
+## When this skill applies
+
+- "Data written on one device never shows up on another."
+- "`registerSubscription` throws `Unsupported feature: …`."
+- "A relay device forwards only some of the documents."
+- "After a restart, new documents stop arriving."
+- Choosing between a subscription and a local query/observer, or narrowing what syncs.
 
 ## Start with the task
 
@@ -73,6 +88,16 @@ only through B, C receives only blue cars. B cannot relay the other cars it neve
 received. Sync is transitive with no hop limit, but relays are not transparent pipes.
 A new path to a holder can fill the gap. Audit subscriptions and holdings at every
 hop before changing the endpoints' queries.
+
+Copy this checklist when documents are missing on a peer:
+
+```
+- [ ] 1. Subscription registered at this app start, and registration did not throw
+- [ ] 2. Query fits the subscription subset for the target version (SELECT *, one collection)
+- [ ] 3. Every hop on the path subscribes to, and so holds, the missing documents
+- [ ] 4. A holder is reachable (presence shows a path) and permissions allow delivery
+- [ ] 5. The local query or observer actually selects the synced documents
+```
 
 Ditto Server follows the same receive-filter and permission rules. A cloud path fills
 the gap only if the server holds the missing documents and can serve them to C;

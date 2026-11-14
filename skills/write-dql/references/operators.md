@@ -24,7 +24,7 @@ description: Complete operator catalog with precedence, NULL/MISSING semantics, 
 
 Authoritative catalog of every operator usable on **Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0**. Sections are ordered so that the high-traffic answers (precedence, comparison, NULL/MISSING, logical) come first.
 
-Unless a section carries an "Available in:" note, the operator works identically on 4.14.x, 5.0.x, and 5.1.x. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).
+Unless a section carries an "Available in:" note, the operator works identically on 4.14.x, 5.0.x, 5.1.x and 5.2.0. Functions referenced from this file (`array_contains`, `regexp_like`, conditional helpers, type predicates, etc.) live in [`functions.md`](functions.md).
 
 ---
 

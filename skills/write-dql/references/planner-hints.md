@@ -41,7 +41,7 @@ The JSON inside the directive comment is parsed strictly:
 
 ### 3.2 `USE DIRECTIVES` clause
 
-`USE DIRECTIVES '<json>'` is the per-`SELECT` clause-form of the comment-style directive object. The two are interchangeable on `SELECT`. See [`select.md`](select.md) §5 for the clause-level summary.
+`USE DIRECTIVES '<json>'` is the per-`SELECT` clause-form of the comment-style directive object. The two are interchangeable on `SELECT`. See [`select-access.md`](select-access.md) §5 for the clause-level summary.
 
 ```sql
 SELECT title FROM movies
@@ -127,7 +127,7 @@ The directive key matches the alias `m` rather than `movies` because the alias i
 
 ## 4. USE IDS
 
-> **Cross-reference:** the canonical narrative for `USE IDS` lives in [`select.md`](select.md) §3. This section recaps the indexing-relevant facts and is the right place to look for how `USE IDS` interacts with `#auto_use_ids`, the planner, and `EXPLAIN`.
+> **Cross-reference:** the canonical narrative for `USE IDS` lives in [`select-access.md`](select-access.md) §3. This section recaps the indexing-relevant facts and is the right place to look for how `USE IDS` interacts with `#auto_use_ids`, the planner, and `EXPLAIN`.
 
 `USE IDS (id1, id2, …)` on a `SELECT` skips the collection scan and goes directly to the indexed-by-id retrieval path. It is the fastest possible query when you already know the `_id` values.
 
@@ -171,7 +171,7 @@ Under default settings the two should produce the same plan shape.
 
 ## 5. USE INDEX
 
-`USE INDEX '<name>' [ASC|DESC]` is sugar for the `#index` per-collection directive. It lives in the `SELECT` syntax — see [`select.md`](select.md) §4 for the clause-form summary.
+`USE INDEX '<name>' [ASC|DESC]` is sugar for the `#index` per-collection directive. It lives in the `SELECT` syntax — see [`select-access.md`](select-access.md) §4 for the clause-form summary.
 
 ```sql
 -- Pin an index

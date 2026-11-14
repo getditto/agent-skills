@@ -1,7 +1,12 @@
 ---
 name: js-sdk
 description: >
-  Use ONLY for Ditto JavaScript and TypeScript APIs: .js/.ts/.tsx, @dittolive/ditto, Ditto.open, DittoConfig, store.execute and registerObserver. Routes Node.js, web/React, React Native and Expo to their platform skills. Defaults new projects to the latest stable SDK unless a version is requested; existing projects keep theirs; covers 5.1.0/5.0.3 and 4.14.6 migration boundaries. Not Swift or Kotlin.
+  Use ONLY for Ditto JavaScript and TypeScript APIs (not Swift or Kotlin):
+  .js/.ts/.tsx, @dittolive/ditto, Ditto.open, DittoConfig, store.execute and
+  registerObserver. Explains the shared JavaScript API and routes Node.js, web/React,
+  React Native and Expo work to their platform skills. Defaults new projects to the
+  latest stable SDK unless a version is requested; existing projects keep theirs;
+  covers 5.1.0/5.0.3 and 4.14.6 migration boundaries.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

@@ -9,16 +9,16 @@ description: 18 end-to-end DQL tasks against a sample movies dataset. Every stat
 
 - [Dataset](#dataset)
 - [Seeding](#seeding)
-- [Read patterns](#read-patterns)
-- [Mutations](#mutations)
 - [Cross-collection queries (JOIN — SDK 5.1+)](#cross-collection-queries-join--sdk-51)
 - [Diagnosing performance](#diagnosing-performance)
+
+Covered in other files: [Read patterns](movie-reads.md#read-patterns), [Mutations](movie-mutations.md#mutations).
 
 A practical walkthrough of every major DQL capability the v5.0.x SDK line supports. Each task is self-contained — paste it into a Ditto query interface and it should run.
 
 > **Compatibility:** Examples are tagged with the minimum Ditto SDK version they require. Most tasks work on **SDK 4.14.x and 5.0.x**. Tasks that depend on COUNTER (4.14+), PN_COUNTER (4.11+), or `DO UPDATE_LOCAL_DIFF` (4.12+) carry an explicit "Available in:" tag. Features added in v5.1.0 (`ADVISE`) and features not present in the tested SDK versions (structured `PROFILE` output, `serialize_json`, `object_size`, `USE IDS` on mutations) are intentionally excluded. `INSERT ... ON ID CONFLICT DO MERGE` is available on every tested SDK version as an alias for `DO UPDATE`. **Note:** the `watch_count` field uses COUNTER (SDK 4.14+); on older SDKs substitute a REGISTER and use SET instead of `APPLY ... INCREMENT BY`.
 >
-> **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`types-mutators.md`](../references/types-mutators.md) §7.
+> **Strict mode:** every statement assumes `dql_strict_mode = false` on all peers (the 5.x default; the migration target for 4.14.x meshes) — so `MAP`/`REGISTER` keywords never appear: objects infer MAP on writes, and reads return the most recent value of any type without declarations. `COUNTER`/`ATTACHMENT` are still declared because inference can't guess them. See [`legacy-types.md`](../references/legacy-types.md#7-strict-mode-and-the-dql_strict_mode-system-parameter) §7.
 
 ## Dataset
 
@@ -110,14 +110,6 @@ INSERT INTO reviews DOCUMENTS
 
 ---
 
-## Read patterns
-
-See [movie-reads.md](movie-reads.md#read-patterns) for this topic.
-
-## Mutations
-
-See [movie-mutations.md](movie-mutations.md#mutations) for this topic.
-
 ## Cross-collection queries (JOIN — SDK 5.1+)
 
 > **Available in:** Ditto SDK **5.1+**. On 4.14.x / 5.0.x, reach the same result with the two-query patterns this cookbook used before JOINs (read parents, then `WHERE _id IN (...)` the children, merge in app code) — that's what the denormalized `movies` / `reviews` fields in this dataset were for.
@@ -167,7 +159,7 @@ ORDER BY review_count DESC, m.title ASC
 LIMIT 10;
 ```
 
-**Notes:** unmatched right-side fields are `MISSING` in an outer join — `COUNT(r._id)` skips them, and `coalesce` turns a `MISSING` average into `0`. See [`select.md`](../references/select.md) §14.3.
+**Notes:** unmatched right-side fields are `MISSING` in an outer join — `COUNT(r._id)` skips them, and `coalesce` turns a `MISSING` average into `0`. See [`joins.md`](../references/joins.md) §14.3.
 
 ### Task 21 — Only well-reviewed movies (JOIN + HAVING)
 
@@ -204,7 +196,7 @@ ORDER BY m.year DESC
 LIMIT 10;
 ```
 
-**Notes:** the `IS MISSING` filter on a right-side key is the DQL idiom for "exists on the left, absent on the right". See [`select.md`](../references/select.md) §14.5.
+**Notes:** the `IS MISSING` filter on a right-side key is the DQL idiom for "exists on the left, absent on the right". See [`joins.md`](../references/joins.md) §14.5.
 
 ### Task 23 — Composite index for the review feed
 
@@ -244,7 +236,7 @@ Slow query? Walk this loop:
    ORDER BY ratings.imdb DESC;
    ```
 
-   Look for `CollectionScan` (a full document scan — expensive) versus `IndexScan` (a hit on a named index). For the full operator catalog see [`indexing.md`](../references/indexing.md) §6.
+   Look for `CollectionScan` (a full document scan — expensive) versus `IndexScan` (a hit on a named index). For the full operator catalog see [`query-diagnostics.md`](../references/query-diagnostics.md#6-explain) §6.
 
 2. **Capture timings** (SDK 5.0+ only):
 
@@ -260,7 +252,7 @@ Slow query? Walk this loop:
    ORDER BY ratings.imdb DESC;
    ```
 
-   Both attach per-operator profiling data to the result on 5.0+. v4 has no profiling syntax — fall back to `EXPLAIN` plus wall-clock timing in your application. See [`indexing.md`](../references/indexing.md) §7.
+   Both attach per-operator profiling data to the result on 5.0+. v4 has no profiling syntax — fall back to `EXPLAIN` plus wall-clock timing in your application. See [`query-diagnostics.md`](../references/query-diagnostics.md#7-profiling-a-query) §7.
 
 3. **Add the missing index.** Apply the ESR rule (equality keys first, sort keys next, range last):
 
@@ -271,4 +263,4 @@ Slow query? Walk this loop:
 
    Then re-run `EXPLAIN` and confirm the plan now reports `IndexScan` against `movies_year_imdb`. See [`indexing.md`](../references/indexing.md) §8 for the ESR rule and worked examples.
 
-4. **If the plan didn't change**, the planner may have rejected the index because the query isn't covering or the cost model preferred a scan. Force the comparison with `USE INDEX ''` to disable indexes, then re-enable and check again. See [`indexing.md`](../references/indexing.md) §6.3.
+4. **If the plan didn't change**, the planner may have rejected the index because the query isn't covering or the cost model preferred a scan. Force the comparison with `USE INDEX ''` to disable indexes, then re-enable and check again. See [`query-diagnostics.md`](../references/query-diagnostics.md) §6.3.
