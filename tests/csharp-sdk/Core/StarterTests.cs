@@ -90,12 +90,18 @@ public class StarterTests
         // No dispatcher, so Changed runs on Ditto's callback thread; stopping there used to deadlock.
         var store = new TaskStore();
         var stop = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var calls = 0;
-        store.Changed += _ => { if (Interlocked.Increment(ref calls) == 2) stop.TrySetResult(store.StopAsync()); };
+        var stopping = 0;
+        // Stop from the first delivery that contains the new row. Do not count deliveries: the
+        // insert can coalesce into the initial result, so there may be only one.
+        store.Changed += rows =>
+        {
+            if (rows.Any(row => row.Id == "x") && Interlocked.Exchange(ref stopping, 1) == 0)
+                stop.TrySetResult(store.StopAsync());
+        };
         await store.StartAsync(OfflineSettings(), Path.Combine(Path.GetTempPath(), "ditto-stop-in-changed-" + Guid.NewGuid()));
         await store.CreateAsync(new TaskItem { Id = "x", Title = "x" });
-        var stopping = await stop.Task.WaitAsync(TimeSpan.FromSeconds(15));
-        await stopping.WaitAsync(TimeSpan.FromSeconds(15));
+        var stopTask = await stop.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        await stopTask.WaitAsync(TimeSpan.FromSeconds(15));
     }
 
     [Fact]

@@ -69,7 +69,7 @@ if __name__ == "__main__":
         failure_lines = 0
         for line in output.splitlines():
             stripped = line.lstrip()
-            if stripped.startswith(("Passed ", "Failed ", "Skipped ", "Passed:", "Skipped:", "Failed:", "Total tests:", "Test Run", "Total time:")) or line.startswith("[xUnit.net") or ("error " in line and ".csproj" in line):
+            if stripped.startswith(("Passed ", "Failed ", "Skipped ", "Passed:", "Skipped:", "Failed:", "Total tests:", "Test Run", "Total time:", "The active test run was aborted", "Data collector 'Blame'")) or line.startswith("[xUnit.net") or ("error " in line and ".csproj" in line):
                 print(line)
                 # A failed test's message and stack trace follow it; keep those (capped).
                 failure_lines = 60 if stripped.startswith("Failed ") else 0
