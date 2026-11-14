@@ -85,10 +85,11 @@ field-preserving edits and persistence. The published generated Console app exec
 CRUD and process-restart persistence. See the [harness](https://github.com/getditto/agent-skills/blob/main/tests/csharp-sdk/README.md)
 for counts, commands and remaining gates.
 
-**CI evidence:** [run 42951049915](https://github.com/getditto/agent-skills/actions/runs/42951049915)
+**CI evidence:** [run 43640358320](https://github.com/getditto/agent-skills/actions/runs/43640358320)
 passed all 19 jobs: the Windows/Linux/macOS core matrix, desktop generation/runtime,
 Windows net48 native smoke and four MAUI build targets with matching toolchains.
-The core suite also passes on .NET 11 with Ditto 5.2.0 on macOS ARM64.
+Both suites (modern and C# 7.3 starter copies) also pass on .NET 11 with Ditto 5.2.0
+on macOS ARM64.
 
 **App evaluation:** projects-and-tasks apps built from this skill with .NET 11
 frameworks passed native smoke tests; Console, Avalonia and MAUI macOS UI flows were
@@ -105,7 +106,7 @@ background behavior, server authentication renewal/durability, cross-version sto
 migration, traditional packages.config runtime, and behavior across all agent hosts.
 Observed app-to-app replication does not establish server durability or a transport path.
 
-**Last verified:** 2026-11-14 (macOS ARM64; CI rerun pending for the latest changes).
+**Last verified:** 2026-11-14.
 
 ## Installation and quick start
 

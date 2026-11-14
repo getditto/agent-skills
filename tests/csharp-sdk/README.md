@@ -108,7 +108,7 @@ SDK and starter checks. Build artifacts and local stores must never enter plugin
 |---|---|
 | Real core matrix, macOS ARM64, .NET 10 | 4.14.7: 10 passed; 5.0.4: 42 passed, 2 explicit 5.0.x transaction skips; 5.1.0 and 5.2.0: 44 passed each; C# 7.3 starter copy: 14 passed on each v5 version (2026-11-14, including executed reference snippets) |
 | .NET 8 with Ditto 5.2.0 | Passed |
-| .NET 11 with Ditto 5.2.0 | 20 passed on macOS ARM64; independent application evaluations documented separately |
+| .NET 11 with Ditto 5.2.0 | 44 + 14 passed on macOS ARM64 (2026-11-14) |
 | Generated Console, Avalonia, Uno desktop | Build passed |
 | Published Console | CRUD, observer updates and process-restart persistence passed |
 | net48 WinForms | Cross-compile and Windows CI native smoke passed |
