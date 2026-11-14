@@ -13,6 +13,30 @@ Listen.Tcp.InterfaceIp and Listen.Tcp.Port on one peer, and add `host:port` to
 Connect.TcpServers on the other. Port is ushort. Give peers distinct directories,
 the same database ID, valid offline licenses and matching subscriptions.
 
+<!-- snippet: transports-tcp -->
+```csharp
+// Listening peer: radios off, TCP on a known port (Port is a ushort).
+ditto.UpdateTransportConfig(config =>
+{
+    config.PeerToPeer.BluetoothLE.Enabled = false;
+    config.PeerToPeer.Awdl.Enabled = false;
+    config.PeerToPeer.WifiAware.Enabled = false;
+    config.PeerToPeer.Lan.Enabled = false;
+    config.Listen.Tcp.Enabled = true;
+    config.Listen.Tcp.InterfaceIp = "127.0.0.1";
+    config.Listen.Tcp.Port = port;
+});
+// Connecting peer: same database ID, its own directory, connects to host:port.
+otherDitto.UpdateTransportConfig(config =>
+{
+    config.PeerToPeer.BluetoothLE.Enabled = false;
+    config.PeerToPeer.Awdl.Enabled = false;
+    config.PeerToPeer.WifiAware.Enabled = false;
+    config.PeerToPeer.Lan.Enabled = false;
+    config.Connect.TcpServers.Add($"127.0.0.1:{port}");
+});
+```
+
 The desktop starters default to LAN/server connectivity with peer-to-peer radio
 flags disabled. Set EnablePeerToPeerRadios only after configuring the target's required
 permissions. The MAUI starter includes declarations and the runtime permission hook.

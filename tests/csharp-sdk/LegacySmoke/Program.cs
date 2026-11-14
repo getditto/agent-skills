@@ -19,10 +19,10 @@ internal static class Program
         {
             await store.StartAsync(new Settings {
                 DatabaseId = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DITTO_DATABASE_ID"))
-                    ? "e807f150-cb5d-4aa5-bcef-cc90e8521b91" : Environment.GetEnvironmentVariable("DITTO_DATABASE_ID"),
+                    ? DittoSDK.DittoConfig.DefaultDatabaseId : Environment.GetEnvironmentVariable("DITTO_DATABASE_ID"),
                 OfflineLicense = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
             }, Path.Combine(Path.GetTempPath(), "ditto-net48-" + Guid.NewGuid()));
-            await store.SaveAsync(new TaskItem { Id = "legacy", Title = "Framework native runtime" });
+            await store.CreateAsync(new TaskItem { Id = "legacy", Title = "Framework native runtime" });
             if (await Task.WhenAny(observed.Task, Task.Delay(TimeSpan.FromSeconds(15))) != observed.Task)
                 throw new TimeoutException("No observer delivery on .NET Framework.");
             await observed.Task;

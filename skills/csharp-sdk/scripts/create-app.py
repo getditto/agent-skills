@@ -10,6 +10,15 @@ import tempfile
 import urllib.request
 
 SKILL = Path(__file__).resolve().parents[1]
+# Release-note floors for the targets these starters build.
+MINIMUM_VERSIONS = {
+    # 5.2.0 fixed the .NET 10 Android startup abort with Xamarin.Kotlin 2.x
+    # ("Built-in class kotlin.Any is not found"), plus armeabi-v7a and permission crashes.
+    "maui": ((5, 2, 0), ".NET 10 MAUI on Android requires Ditto 5.2.0 or later."),
+    # 5.0.1 added the netstandard2.0 asset that .NET Framework needs.
+    "net48": ((5, 0, 1), ".NET Framework requires Ditto 5.0.1 or later."),
+    "net481": ((5, 0, 1), ".NET Framework requires Ditto 5.0.1 or later."),
+}
 
 
 def resolve_version():
@@ -33,6 +42,8 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", args.name):
         parser.error("Name must be a C# identifier starting with a letter.")
+    if args.name.lower() == "ditto":
+        parser.error("Name must not be 'Ditto': a project named after the Ditto package cannot restore it (NU1108).")
     if args.framework and args.kind != "winforms":
         parser.error("--framework is currently a WinForms option.")
     destination = args.output.resolve()
@@ -43,6 +54,11 @@ def main():
     version = args.sdk_version or resolve_version()
     if not re.fullmatch(r"5\.\d+\.\d+", version):
         parser.error("Select an exact stable v5 version; prereleases and v4 need separate adaptation.")
+    # The WinForms template defaults to net48 when --framework is omitted.
+    target = (args.framework or "net48") if args.kind == "winforms" else args.kind
+    minimum = MINIMUM_VERSIONS.get(target)
+    if minimum and tuple(map(int, version.split("."))) < minimum[0]:
+        parser.error(f"Ditto {version} is too old for this starter: {minimum[1]}")
     print(f"Creating {args.kind} with Ditto {version}. Knowledge baseline: 5.2.0.")
     if tuple(map(int, version.split("."))) > (5, 2, 0):
         print("Read the newer release notes and validate this generated app before relying on it.")

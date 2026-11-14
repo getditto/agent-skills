@@ -6,12 +6,18 @@ on:
     paths:
       - 'skills/csharp-sdk/**'
       - 'tests/csharp-sdk/**'
+      - 'plugins/ditto-csharp/**'
+      - 'scripts/package-sdk-plugin.py'
+      - 'scripts/validate-sdk-skills.py'
       - '.github/workflows/csharp-skill-tests.yml'
   push:
     branches: [main]
     paths:
       - 'skills/csharp-sdk/**'
       - 'tests/csharp-sdk/**'
+      - 'plugins/ditto-csharp/**'
+      - 'scripts/package-sdk-plugin.py'
+      - 'scripts/validate-sdk-skills.py'
       - '.github/workflows/csharp-skill-tests.yml'
 
 permissions:
@@ -47,6 +53,15 @@ jobs:
         run: |
           python tests/csharp-sdk/scripts/run.py 5.2.0 --framework net8.0
           python tests/csharp-sdk/scripts/verify-minimal.py
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          # TRX holds test names, messages and stack traces, not native trace logs.
+          name: csharp-test-results-${{ matrix.os }}-${{ matrix.sdk }}
+          path: tests/csharp-sdk/artifacts/results/*.trx
+          retention-days: 7
+          if-no-files-found: ignore
 
   desktop:
     name: Generated apps on ${{ matrix.os }}

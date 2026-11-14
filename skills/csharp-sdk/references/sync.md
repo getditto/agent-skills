@@ -10,6 +10,16 @@ v5 uses `ditto.Sync.RegisterSubscription(query, arguments)`, `Sync.Start()` and
 owner no longer needs the data. A Store observer reads the local store and does not
 create a sync subscription. Stopping sync pauses networking; it does not delete data.
 
+<!-- snippet: sync-subscription -->
+```csharp
+var subscription = ditto.Sync.RegisterSubscription(
+    "SELECT * FROM tasks WHERE done = :done", new Dictionary<string, object> { ["done"] = false });
+ditto.Sync.Start();
+// ... when the owner no longer needs this data:
+subscription.Cancel();
+subscription.Dispose();
+```
+
 Use dictionary arguments for parameter binding. Register application subscriptions once
 per owner, not on every refresh. Follow the concept skill for subscription-query
 restrictions and scope semantics; the SDK skill supplies the actual C# calls.
@@ -22,7 +32,18 @@ Sources: [tracking local commits](https://docs.ditto.live/sdk/latest/sync/tracki
 [monitoring sync status](https://docs.ditto.live/sdk/latest/sync/monitoring-sync-status).
 
 DittoQueryResult.CommitID is a nullable ulong in 5.2.0. Capture it before disposing a
-mutation result. A locally accepted write and an active network connection are not
+mutation result:
+
+<!-- snippet: sync-commit-id -->
+```csharp
+ulong? commitId;
+using (var inserted = await ditto.Store.ExecuteAsync("INSERT INTO tasks DOCUMENTS (:task)",
+    new() { ["task"] = new Dictionary<string, object> { ["_id"] = "t2" } }))
+{
+    commitId = inserted.CommitID; // read it before the result is disposed
+}
+```
+ A locally accepted write and an active network connection are not
 proof that the server has durably received it. Use the documented system collections
 and version-specific status queries through ExecuteAsync/RegisterObserver, retaining
 and cancelling those observers just like business-data observers.

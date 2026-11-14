@@ -43,6 +43,31 @@ Other versions execute it. The 45-second blame watchdog remains enabled; to repr
 the 5.0.x failure, remove the `DITTO_50` skip in `StoreTests.cs` and filter that test.
 Do not infer a root cause or general transaction-support guarantee from this observation.
 
+## What the harness covers
+
+The repository harness covers real store queries, serialized values, observers,
+back-pressure, async enumeration cancellation, transactions, persistence, attachments,
+TCP replication/presence, and the exact shared starter implementation. It verifies the
+loaded SDK version. Known failures are explicit skips with a reason; they are not passes.
+A test-host watchdog prevents a native deadlock from hanging CI indefinitely.
+
+Generated-app checks install templates in an isolated hive, generate outside the source
+tree, compile the output and exercise the published console app. Source synchronization
+checks prevent embedded template copies from drifting from the tested adapter. The
+normative minimal program is byte-compared with its compiled fixture.
+
+Every ```csharp block in the skill's references and SKILL.md is copied from a region
+of `Core/ReferenceSnippetTests.cs`, which runs against the real SDK (compile-only
+regions are marked). `scripts/verify-snippets.py` fails when a published block drifts
+from its region, has no source, or a region goes unused.
+
+## Evaluating agents with the skill
+
+When testing another agent, install only the packaged skill into a fresh workspace,
+request a realistic app/fix without supplying the intended answer, then build/run the
+result. Record host/model, selected package, skill reads and the artifacts. Portability
+means the files follow the convention, not that every model has been behavior-certified.
+
 ## Generated projects and native deployment
 
 The generator verifier uses an isolated `dotnet new` hive and temporary output outside
@@ -68,15 +93,20 @@ writes and awaits an observer, then deletes and shuts down. It complements Frame
 reference-assembly cross-compilation, which cannot verify native loading on Windows.
 Traditional packages.config and GUI interaction still require separate validation.
 
-To update shared code, edit the canonical files under the skill's `assets/common`,
-run `python3 tests/csharp-sdk/scripts/sync-starters.py`, then run the affected SDK and
-starter checks. Build artifacts and local stores must never enter plugin archives.
+Shared starter code has two copies with the same public API: `assets/common` (modern,
+nullable-annotated C# 12, used by Console, Avalonia, Uno and MAUI) and
+`assets/common-legacy` (C# 7.3, used by every WinForms target because it also builds for
+.NET Framework). `Core` compiles the modern copy; `LegacyStarterTests` runs the same
+`Core/StarterTests.cs` against the legacy copy, compiled as its own C# 7.3 assembly by
+`LegacyStarter`, and `scripts/run.py` runs both for every v5 version. Change both copies
+together, run `python3 tests/csharp-sdk/scripts/sync-starters.py`, then run the affected
+SDK and starter checks. Build artifacts and local stores must never enter plugin archives.
 
 ## Recorded evidence (2026-11-10)
 
 | Gate | Result on this checkout |
 |---|---|
-| Real core matrix, macOS ARM64, .NET 10 | 4.14.7: 10 passed; 5.0.4: 19 passed, 1 explicit transaction skip; 5.1.0 and 5.2.0: 20 passed each |
+| Real core matrix, macOS ARM64, .NET 10 | 4.14.7: 10 passed; 5.0.4: 42 passed, 2 explicit 5.0.x transaction skips; 5.1.0 and 5.2.0: 44 passed each; C# 7.3 starter copy: 14 passed on each v5 version (2026-11-14, including executed reference snippets) |
 | .NET 8 with Ditto 5.2.0 | Passed |
 | .NET 11 with Ditto 5.2.0 | 20 passed on macOS ARM64; independent application evaluations documented separately |
 | Generated Console, Avalonia, Uno desktop | Build passed |

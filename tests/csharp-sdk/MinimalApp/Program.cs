@@ -11,8 +11,9 @@ internal static class Program
     {
         var license = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
             ?? throw new InvalidOperationException("Set DITTO_OFFLINE_LICENSE.");
+        // Offline stores accept the SDK default; a real app supplies its own database ID.
         var id = Environment.GetEnvironmentVariable("DITTO_DATABASE_ID")
-            ?? "e807f150-cb5d-4aa5-bcef-cc90e8521b91";
+            ?? DittoConfig.DefaultDatabaseId;
         var path = Path.Combine(Path.GetTempPath(), "ditto-minimal-" + Guid.NewGuid());
         using var ditto = await Ditto.OpenAsync(new DittoConfig(id,
             new DittoConfigConnect.SmallPeersOnly(), path));
@@ -39,8 +40,7 @@ internal static class Program
             });
             ditto.Sync.Start();
             using (await ditto.Store.ExecuteAsync("INSERT INTO cars DOCUMENTS (:car)",
-                new Dictionary<string, object> { ["car"] = new Dictionary<string, object> {
-                    ["_id"] = "car1", ["make"] = "Toyota" } })) { }
+                new() { ["car"] = new Dictionary<string, object> { ["_id"] = "car1", ["make"] = "Toyota" } })) { }
             var make = await observed.Task.WaitAsync(TimeSpan.FromSeconds(15));
             if (make != "Toyota") throw new InvalidOperationException("Observer returned the wrong car.");
             Console.WriteLine("observer: " + make);

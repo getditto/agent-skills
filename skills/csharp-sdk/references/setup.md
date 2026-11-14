@@ -22,7 +22,8 @@ applications use Visual Studio's NuGet Package Manager/nuget restore and MSBuild
 
 The skill's native-target boundary follows [Ditto compatibility](https://docs.ditto.live/sdk/latest/compatibility/c-sharp).
 Windows desktop requires win-x64, not AnyCPU preferring 32-bit or win-arm64.
-macOS desktop requires osx-arm64. Linux has x64 and ARM64 native assets; validate
+macOS desktop requires osx-arm64 on 5.x (4.14.x also ships osx-x64). Linux has x64 and
+ARM64 native assets; validate
 the target distribution/libc against the support table, not just the CPU.
 Mobile assets are distinct from desktop assets; Mac Catalyst is not osx-arm64.
 

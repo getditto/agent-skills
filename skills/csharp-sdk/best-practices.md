@@ -31,5 +31,5 @@ permissions and background behavior for the actual deployment target.
 
 Sources: [Ditto testing](https://docs.ditto.live/sdk/latest/deployment/testing),
 [observing changes](https://docs.ditto.live/sdk/latest/crud/observing-data-changes).
-Architectural choices here are recommendations; executable API behavior is checked by
-the fixture and identified separately in the capability map.
+Architectural choices here are recommendations. API behavior that was run against a
+real SDK is marked "executed" in the capability map, per version.

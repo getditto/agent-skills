@@ -7,6 +7,10 @@ published 5.2.0 platform assemblies. The helper lives in DittoSDK.Sync.
 ## Targets and toolchains
 
 The starter targets .NET 10 Android/iOS/Mac Catalyst, plus Windows x64 on Windows.
+**Use Ditto 5.2.0 or later.** Before 5.2.0, .NET 10 Android apps (which resolve
+Xamarin.Kotlin 2.x) abort at startup with "Built-in class kotlin.Any is not found";
+5.2.0 also fixed an armeabi-v7a open crash and a RequestPermissionsAsync
+background-thread crash. `create-app.py` rejects older versions for MAUI.
 Its minimums follow the package assets conservatively: Android 24, iOS 15.4,
 Mac Catalyst 16.4, Windows 10.0.17763.0. macOS uses maccatalyst-arm64, not osx-arm64.
 Restore only the selected target when the host cannot build the other targets.
@@ -21,8 +25,8 @@ dotnet build -f net10.0-windows10.0.19041.0 -p:TargetFrameworks=net10.0-windows1
 Install matching .NET/MAUI workloads, Android SDK/JDK, and Xcode as appropriate.
 Xcode and Apple workload versions must match; a successful override probe is not a
 supported toolchain recommendation. Physical iOS deployment additionally needs signing.
-Use a real canonical filesystem path for builds on macOS; the /tmp to /private/tmp
-symlink caused generated icon resources to be deleted/missed in local MAUI builds.
+Use a real canonical filesystem path for builds on macOS; building through a symlinked
+path such as /tmp (which points to /private/tmp) can drop generated icon resources.
 
 ## Permissions and lifecycle
 
@@ -35,8 +39,11 @@ Declarations alone do not grant runtime permission.
 The required sequence is OpenAsync → main-thread permission request → check returned
 bool → start sync. Android's DittoSyncPermissions helper needs initialized native
 transports. The shared adapter opens first; MainThread.InvokeOnMainThreadAsync invokes
-the permission helper. A denied result throws an actionable startup failure and triggers
-rollback. Windows builds must not reference the mobile-only helper.
+the permission helper and returns its bool. The adapter asks only when
+EnablePeerToPeerRadios is set (the MAUI default). A denial is not fatal: the store stays
+open, Bluetooth and Wi-Fi peer-to-peer transports are turned off, LAN and server sync
+still start, and the status line reports the denial. Offer a way to request again
+rather than treating the first answer as final. Windows builds must not reference the mobile-only helper.
 
 UI updates use MainThread.BeginInvokeOnMainThread. The starter owns its view model per
 window and stops it on destruction. It does not promise continuous background sync.
@@ -54,37 +61,32 @@ Apple starter uses MtouchLink=None instead of an invalid PublishTrimmed=false se
 
 ## New SDK, older workload manifests
 
-A newly installed stable .NET SDK can still select older workload packs. In the
-.NET 11 evaluation, SDK 11.0.100 initially selected an Apple preview pack requiring
-Xcode 26.6. Updating the isolated workload set with `dotnet workload update` selected
-11.0.100.1 / Mac Catalyst SDK 27.2.11039; the app then built normally with Xcode 27.2.
-Check `dotnet workload --version`, `dotnet workload list` and the build's selected
-Apple pack before concluding that Xcode must be downgraded. Use the intended SDK
-and global.json context; validate the resulting pairing without disabling Xcode checks.
+A newly installed stable .NET SDK can still select older workload packs, including an
+Apple pack that requires a different Xcode. Run `dotnet workload update`, then check
+`dotnet workload --version`, `dotnet workload list` and the Apple pack the build
+selects before concluding that Xcode must be downgraded. Use the intended SDK and
+global.json context, and validate the pairing without disabling Xcode checks.
 
 The shipped template's .NET 10/MAUI 10 pins are reproducible starter baselines, not
 claims about the newest framework release. When a user requests a newer framework,
 update the target frameworks, workload set and Microsoft.Maui.Controls together, then
 build each intended native target. Changing only the .NET SDK installation is insufficient.
 
-.NET 11's Apple build also required iOS/Mac Catalyst minimum version 17.0 and the
-UIKit scene configuration from the current MAUI template. The frozen older template
-failed with MT7199 until its UIApplicationSceneManifest and SceneDelegate were updated.
-When moving framework majors, compare native entry points and plist files with a fresh
-`dotnet new maui --no-restore` project for that SDK, preserve Ditto permission entries,
-and compile. Updating only TargetFrameworks and package numbers can leave obsolete
-platform bootstrap code even when the shared C# service compiles.
+Framework majors can also change Apple minimum OS versions and the UIKit scene
+configuration (UIApplicationSceneManifest and SceneDelegate); an outdated entry point
+fails with errors such as MT7199. When moving framework majors, compare native entry
+points and plist files with a fresh `dotnet new maui --no-restore` project for that SDK,
+preserve Ditto permission entries, and compile. Updating only TargetFrameworks and
+package numbers can leave obsolete platform bootstrap code even when the shared C#
+service compiles.
 
-## Rider cannot find the Mac Catalyst bundle
+## IDE cannot find the Mac Catalyst bundle
 
-Compare the IDE's requested `.app` path with the actual build output. The evaluated
-.NET 11 Apple SDK uses ApplicationTitle for the desktop bundle filename, but Rider's
-launcher requested the assembly/project name. A successful build therefore did not
-guarantee a successful IDE launch. See the related [Rider naming report](https://youtrack.jetbrains.com/issue/RIDER-139849/Debugging-MAUI-MacCatalyst-error-with-App-Naming).
-
-For an affected project named MauiApp, setting ApplicationTitle to `MauiApp` only when
-TargetFramework contains `-maccatalyst` produced the expected `MauiApp.app`. An explicit
-CFBundleDisplayName in Platforms/MacCatalyst/Info.plist preserved the friendly display
-name. Rebuild, remove only the obsolete generated bundle, and verify the IDE Run action;
-renaming an output directory alone does not fix subsequent builds. This workaround was
-verified through Rider's Run action and the visible connected application window.
+Compare the IDE's requested `.app` path with the actual build output. Some Apple SDKs
+name the Mac Catalyst bundle after ApplicationTitle while an IDE launcher requests the
+assembly/project name, so a successful build does not guarantee a successful IDE launch
+(see the related [Rider report](https://youtrack.jetbrains.com/issue/RIDER-139849/Debugging-MAUI-MacCatalyst-error-with-App-Naming)).
+Set ApplicationTitle to the project name only when TargetFramework contains
+`-maccatalyst`, and keep the friendly name with an explicit CFBundleDisplayName in
+Platforms/MacCatalyst/Info.plist. Rebuild and remove only the obsolete generated bundle;
+renaming an output directory alone does not fix subsequent builds.

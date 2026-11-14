@@ -10,7 +10,10 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
-        model = new TasksViewModel(action => DispatcherQueue.TryEnqueue(() => action()));
+        model = new TasksViewModel(action => {
+            if (!DispatcherQueue.TryEnqueue(() => action()))
+                throw new InvalidOperationException("The UI dispatcher is shutting down.");
+        });
         DataContext = model;
         Loaded += async (_, _) => {
             if (started) return;

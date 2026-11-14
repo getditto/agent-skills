@@ -13,7 +13,7 @@ and the real-package fixtures.
 | BadImageFormatException | Match process/native architecture; net48 must not prefer 32-bit |
 | Compile error for DittoSDK.Store on v4 | v4 keeps those types in the root namespace; establish package version first |
 | IDisposable error for v4 observer | Cancel explicitly; v4 observer does not implement IDisposable |
-| Invalid DQL task failure | Await/catch the task; verify query and bound values without logging credentials |
+| Invalid DQL | v5 throws `DittoQueryInvalidException` at the `ExecuteAsync` call itself, not from a faulted task, so wrap the call in try/catch; verify query and bound values without logging credentials |
 | Observer stops updating | Check explicit cancellation, handle ownership, signalNext, callback exceptions and UI dispatch |
 | Permission denied | Show an actionable state; do not start sync assuming the prompt succeeded |
 | Store already open / locked | Check duplicate instances and directory selection |

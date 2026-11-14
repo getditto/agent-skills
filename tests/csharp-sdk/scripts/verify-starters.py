@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 SKILL = ROOT / "skills/csharp-sdk"
@@ -72,10 +73,12 @@ class ConsoleApp:
 
 def console_runtime(dll, env, store_path):
     env = env.copy()
-    env.pop("DITTO_URL", None)
-    env.pop("DITTO_TOKEN", None)
-    env.setdefault("DITTO_DATABASE_ID", "e807f150-cb5d-4aa5-bcef-cc90e8521b91")
-    env["DITTO_PERSISTENCE_DIRECTORY"] = str(store_path)
+    # The starter reads application-prefixed variables, never Ditto's own DITTO_* names.
+    env.pop("DITTOTASKS_URL", None)
+    env.pop("DITTOTASKS_TOKEN", None)
+    env["DITTOTASKS_OFFLINE_LICENSE"] = env["DITTO_OFFLINE_LICENSE"]
+    env["DITTOTASKS_DATABASE_ID"] = env.get("DITTO_DATABASE_ID") or str(uuid.uuid4())
+    env["DITTOTASKS_PERSISTENCE_DIRECTORY"] = str(store_path)
     app = ConsoleApp(dll, env)
     try:
         app.until(lambda line: line.startswith("Commands:"))

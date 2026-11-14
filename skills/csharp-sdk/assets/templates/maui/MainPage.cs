@@ -17,7 +17,7 @@ public sealed class MainPage : ContentPage
         list.SetBinding(ItemsView.ItemsSourceProperty, nameof(TasksViewModel.Items));
         list.ItemTemplate = new DataTemplate(() => {
             var label = new Label { Padding = new Thickness(8) };
-            label.SetBinding(Label.TextProperty, ".");
+            label.SetBinding(Label.TextProperty, nameof(TaskItem.Display));
             return label;
         });
         list.SelectionChanged += (_, _) => { if (list.SelectedItem is TaskItem item) title.Text = item.Title; };
@@ -47,15 +47,13 @@ public sealed class MainPage : ContentPage
         await model.StartAsync(Path.Combine(FileSystem.AppDataDirectory, "tasks"),
             RequestPermissionsAsync);
     }
-    private static Task RequestPermissionsAsync()
+    // Returns false on denial. The store stays open for local data and reports the denial.
+    private static Task<bool> RequestPermissionsAsync()
     {
 #if ANDROID || IOS || MACCATALYST
-        return MainThread.InvokeOnMainThreadAsync(async () => {
-            if (!await DittoSyncPermissions.RequestPermissionsAsync())
-                throw new InvalidOperationException("Ditto sync permissions were denied.");
-        });
+        return MainThread.InvokeOnMainThreadAsync(() => DittoSyncPermissions.RequestPermissionsAsync());
 #else
-        return Task.CompletedTask;
+        return Task.FromResult(true);
 #endif
     }
     public Task StopAsync() => model.StopAsync();

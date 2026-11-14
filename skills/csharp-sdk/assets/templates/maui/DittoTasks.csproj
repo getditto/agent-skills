@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>DittoTasks</RootNamespace>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
+    <!-- No LangVersion: the SDK uses the newest C# this target framework supports. -->
     <MtouchLink>None</MtouchLink>
     <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-android;net10.0-windows10.0.19041.0</TargetFrameworks>
@@ -28,7 +28,9 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" />
+    <!-- appsettings.json is gitignored; a fresh clone embeds the committed example instead. -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" Condition="Exists('appsettings.json')" />
+    <EmbeddedResource Include="appsettings.example.json" LogicalName="DittoTasks.appsettings.json" Condition="!Exists('appsettings.json')" />
   </ItemGroup>
   <ItemGroup><MauiIcon Include="Resources/appicon.svg" ForegroundFile="Resources/foreground.svg" Color="#175CD3" /><MauiSplashScreen Include="Resources/splash.svg" Color="#175CD3" BaseSize="128,128" /></ItemGroup>
   <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">

@@ -8,24 +8,93 @@ Ditto 5.2.0 public DittoStore overloads, and executed observer/back-pressure fix
 `RegisterObserver` accepts a SELECT query and optionally dictionary arguments. There
 are synchronous Action<DittoQueryResult>, asynchronous Func<DittoQueryResult,Task>,
 and manual Action<DittoQueryResult,Action> callback forms. Some observer overloads
-also accept an object argument container; this does not add that overload to ExecuteAsync.
+also accept an object argument container (v5 only; 4.14.x has dictionary overloads only); this does not add that overload to ExecuteAsync.
 Prefer the explicit dictionary form consistently across store/subscription operations.
 
 Normal callbacks signal readiness after returning; Task callbacks signal after their
-Task completes. Manual callbacks must call signalNext in finally, including decode
+Task completes. Neither form observes exceptions: if a Task callback faults, the
+exception is rethrown on a Ditto thread and ends the process, and the next result is
+never signalled. Catch inside every handler. Manual callbacks must call signalNext in finally, including decode
 errors and early returns. While paused, changes may coalesce; an observer is not a
 lossless audit log. Bound the work and catch exceptions inside callbacks. Do not use
 an async lambda forced into Action<DittoQueryResult> by a variable/delegate cast.
+
+### Manual back-pressure for fire-and-forget UI dispatch
+
+`BeginInvokeOnMainThread`, `Dispatcher.UIThread.Post`, `DispatcherQueue.TryEnqueue`
+and `Control.BeginInvoke` return before the UI applies the update. With the automatic
+overload, Ditto then delivers the next result immediately and full-list updates can
+queue up on the UI thread. Use the `Action<DittoQueryResult, Action>` overload and
+signal from the dispatched work, so the next delivery waits until the UI has applied
+the current one. The bundled [TaskStore](../assets/common/TaskStore.cs) uses this
+pattern in every starter:
+
+<!-- snippet: observers-backpressure -->
+```csharp
+// uiPost: the framework's fire-and-forget post, which must throw if it cannot accept work.
+var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", (result, signalNext) =>
+{
+    List<string> titles;
+    try
+    {
+        using (result) // copy to managed data, then dispose before leaving the callback
+            titles = [.. result.Items.Select(item => item.Value.TryGetValue("title", out var t) && t is string s ? s : "")];
+    }
+    catch (Exception error)
+    {
+        try { Report(error); } finally { signalNext(); } // a failure must not stall delivery
+        return;
+    }
+    try
+    {
+        uiPost(() =>
+        {
+            try { ShowTitles(titles); }
+            catch (Exception error) { Report(error); }
+            finally { signalNext(); } // the next, coalesced result waits until this ran
+        });
+    }
+    catch (Exception error)
+    {
+        // The dispatcher rejected the work, so the finally above never runs.
+        try { Report(error); } finally { signalNext(); }
+    }
+});
+```
+
+Call `signalNext` exactly once on every path, and always from a `finally` so an
+exception from your own error handler cannot skip it. Changes that arrive while the
+signal is held are coalesced into one delivery of the latest state.
+
+The dispatcher must report rejection by throwing. `DispatcherQueue.TryEnqueue` returns
+`false` instead, so the Uno starter wraps it:
+
+<!-- source: assets/templates/uno/MainPage.xaml.cs -->
+```csharp
+model = new TasksViewModel(action => {
+    if (!DispatcherQueue.TryEnqueue(() => action()))
+        throw new InvalidOperationException("The UI dispatcher is shutting down.");
+});
+```
+
+`Control.BeginInvoke` throws once the window handle is gone. A dispatcher that silently
+drops work leaves the observer paused until it is cancelled. The overload that also
+takes a query-arguments dictionary accepts the same manual callback. The snippet uses
+C# 12; the WinForms starter's C# 7.3 copy
+([common-legacy/TaskStore.cs](../assets/common-legacy/TaskStore.cs)) implements the same
+pattern for .NET Framework.
 
 Dispose each delivered result after mapping to plain managed DTOs. Send DTOs to the
 UI's dispatcher, not native result items. Hold the observer on the screen/service;
 Cancel stops observation, and v5 Dispose releases the handle. Already queued UI work
 must check whether the view model has stopped.
 
-The starter replaces an ObservableCollection snapshot for clarity. For larger lists,
-apply an identity-based diff on the UI thread; preserve selection and avoid positional
-identity. Check the exact DittoDiffer API before adopting SDK diff helpers. A full
-snapshot and a diff require different UI update logic.
+The starters apply each snapshot with `TaskList.Apply`
+([TasksViewModel.cs](../assets/common/TasksViewModel.cs)): an identity-based diff on the
+UI thread that updates existing rows in place by `_id` and raises only real inserts,
+moves and removals, so selection survives. Do not "simplify" it to `Clear()` and re-add,
+which resets selection on every delivery. Check the exact DittoDiffer API before
+adopting SDK diff helpers.
 
 For IAsyncEnumerable consumers, see the application-owned adapter in
 [csharp-idioms.md](csharp-idioms.md). It is not a built-in SDK stream API.

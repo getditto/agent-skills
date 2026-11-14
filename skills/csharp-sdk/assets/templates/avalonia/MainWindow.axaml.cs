@@ -23,9 +23,9 @@ public sealed partial class MainWindow : Window
             e.Cancel = true;
             if (closing) return;
             closing = true;
-            await model.StopAsync();
-            canClose = true;
-            Close();
+            try { await model.StopAsync(); }
+            catch (Exception error) { System.Diagnostics.Trace.TraceError("Ditto shutdown failed: " + error); }
+            finally { canClose = true; Close(); }
         };
     }
     private async void Add(object sender, RoutedEventArgs e) => await model.SaveAsync(TitleInput.Text ?? "");

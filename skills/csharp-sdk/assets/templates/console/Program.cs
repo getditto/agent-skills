@@ -1,42 +1,53 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using DittoTasks;
 
-namespace DittoTasks
+// Trace has no output by default; send the starter's full exception details to stderr.
+Trace.Listeners.Add(new ConsoleTraceListener(useErrorStream: true));
+
+await using var store = new TaskStore();
+store.Changed += rows =>
 {
-    internal static class Program
+    foreach (var row in rows) Console.WriteLine($"{row.Id} {row}");
+};
+store.Failed += Console.Error.WriteLine;
+// Ctrl+C ends the loop so the finally block still stops sync and disposes Ditto.
+var interrupted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+Console.CancelKeyPress += (_, args) => { args.Cancel = true; interrupted.TrySetResult(); };
+try
+{
+    var settings = Settings.Load();
+    await store.StartAsync(settings, settings.PersistenceDirectory ?? Settings.StorePath(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DittoTasks"), settings));
+    Console.WriteLine("Commands: add TITLE | edit ID TITLE | done ID | reopen ID | delete ID | quit");
+    while (true)
     {
-        public static async Task<int> Main()
+        var read = Task.Run(Console.ReadLine);
+        if (await Task.WhenAny(read, interrupted.Task) != read) return 130;
+        if (await read is not { } line || line == "quit") break;
+        try
         {
-            var store = new TaskStore();
-            store.Changed += rows => {
-                foreach (var row in rows) Console.WriteLine(row.Id + " " + row);
-            };
-            store.Failed += Console.Error.WriteLine;
-            try
+            switch (line.Split(' ', 3))
             {
-                await store.StartAsync(Settings.Load(), Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DittoTasks"));
-                Console.WriteLine("Commands: add TITLE | edit ID TITLE | done ID | reopen ID | delete ID | quit");
-                string line;
-                while ((line = Console.ReadLine()) != null && line != "quit")
-                {
-                    var parts = line.Split(new[] { ' ' }, 3);
-                    try
-                    {
-                        if (line.StartsWith("add ")) await store.SaveAsync(new TaskItem { Id = Guid.NewGuid().ToString(), Title = line.Substring(4) });
-                        else if (parts.Length == 3 && parts[0] == "edit") await store.RenameAsync(parts[1], parts[2]);
-                        else if (parts.Length >= 2 && parts[0] == "done") await store.SetDoneAsync(parts[1], true);
-                        else if (parts.Length >= 2 && parts[0] == "reopen") await store.SetDoneAsync(parts[1], false);
-                        else if (parts.Length >= 2 && parts[0] == "delete") await store.DeleteAsync(parts[1]);
-                        else Console.WriteLine("Unknown command.");
-                    }
-                    catch (Exception error) { Console.Error.WriteLine(error.Message); }
-                }
-                return 0;
+                case ["add", ..] when line.Length > 4:
+                    await store.CreateAsync(new TaskItem { Id = Guid.NewGuid().ToString(), Title = line[4..] });
+                    break;
+                case ["edit", var id, var title]: await store.RenameAsync(id, title); break;
+                case ["done", var id, ..]: await store.SetDoneAsync(id, true); break;
+                case ["reopen", var id, ..]: await store.SetDoneAsync(id, false); break;
+                case ["delete", var id, ..]: await store.DeleteAsync(id); break;
+                default: Console.WriteLine("Unknown command."); break;
             }
-            catch (Exception error) { Console.Error.WriteLine(error.Message); return 1; }
-            finally { await store.StopAsync(); }
         }
+        catch (Exception error) { Console.Error.WriteLine(error.Message); }
     }
+    return 0;
+}
+catch (Exception error)
+{
+    Console.Error.WriteLine(error.Message);
+    return 1;
+}
+finally
+{
+    await store.StopAsync();
 }

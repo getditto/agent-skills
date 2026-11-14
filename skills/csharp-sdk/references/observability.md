@@ -16,6 +16,15 @@ exceptions in custom callbacks. ExportToFileAsync(path) creates a support log ex
 review logs for application data before sharing. File logging may differ from console
 filtering, so disabling console output is not a data-retention policy.
 
+The starters report a short message through `Failed` and write the full exception with
+`System.Diagnostics.Trace`. **Trace produces no output unless a listener is added**: a
+GUI app built in Release shows only the short message and loses the stack trace. The
+console starter adds `ConsoleTraceListener` (stderr). In a GUI app, add a listener at
+startup, for example `Trace.Listeners.Add(new TextWriterTraceListener(logPath))` with
+`Trace.AutoFlush = true` and a path under the app data directory, or forward Trace and
+`DittoLogger.CustomLogCallback` into the app's own logger. Logs can contain application
+data; treat the file like the store.
+
 Use Ditto.DiskUsage and the documented system collections for storage/diagnostics.
 Read and dispose query results just as for business data; do not poll diagnostic
 queries on every UI frame. Avoid displaying connection state as a claim of remote
@@ -25,8 +34,8 @@ without including authentication tokens.
 ## Native startup in agent and CI environments
 
 Ditto 5.2.0's native tracing parser rejects `NO_COLOR=1` with an invalid boolean
-`--disable-color` error and can abort before managed error handling runs. Independent
-.NET 11 application evaluations reproduced this on macOS ARM64. Normalize the value
+`--disable-color` error and can abort the process (observed on macOS ARM64) before
+managed error handling runs. Normalize the value
 to `true` in the **launcher's child-process environment**, before starting the app,
 or remove it from that child environment. Do not change machine-global settings.
 
@@ -46,7 +55,6 @@ subprocess.run(["dotnet", "run", "--project", "YourApp.csproj"],
                env=child_environment, check=True)
 ```
 
-Setting Environment.SetEnvironmentVariable inside the managed app did **not** update
-what the native parser read in the macOS/.NET 11 evaluation. Do not present that alone
-as a verified remedy. The fixture runner removes NO_COLOR from its child environment.
+Setting Environment.SetEnvironmentVariable inside the managed app does **not** change
+what the native parser reads (observed on macOS ARM64), so do not rely on it alone.
 A managed try/catch around OpenAsync cannot recover from a native process abort.

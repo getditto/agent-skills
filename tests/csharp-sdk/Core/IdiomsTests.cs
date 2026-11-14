@@ -31,6 +31,18 @@ public class IdiomsTests
     }
 
     [Fact]
+    public async Task AsyncEnumerationBindsQueryArguments()
+    {
+        using var peer = await Peer.Open();
+        using (await peer.Db.Store.ExecuteAsync("INSERT INTO bound_items DOCUMENTS ({'_id': 'a', 'kind': 'keep'}), ({'_id': 'b', 'kind': 'drop'})")) { }
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await using var stream = QueryStreams.ObserveJsonAsync(peer.Db, "SELECT * FROM bound_items WHERE kind = :kind",
+            new Dictionary<string, object> { ["kind"] = "keep" }, cancellation.Token).GetAsyncEnumerator();
+        Assert.True(await stream.MoveNextAsync());
+        Assert.Contains("\"a\"", Assert.Single(stream.Current));
+    }
+
+    [Fact]
     public async Task AsyncEnumerationCancellationCancelsObserver()
     {
         using var peer = await Peer.Open();

@@ -17,7 +17,8 @@ of 4.14.x, 5.0.x and 5.1.x is covered in [versions](references/versions.md).
 
 ## Capability map
 
-**Targets vocabulary for this SDK:** native, mobile
+**Targets vocabulary for this SDK:** `desktop | mobile | all`. `desktop` is Console,
+WinForms, Avalonia and Uno Skia; `mobile` is MAUI Android/iOS/Mac Catalyst; `all` is both.
 
 Support describes the SDK surface, not the breadth of executed tests. Evidence below
 is bounded by the verification notes: desktop core execution does not certify radios,
@@ -25,36 +26,44 @@ server behavior, mobile deployment, or every framework's window lifecycle.
 
 | ID | Capability | Support | Evidence | Targets |
 |----|-----------|---------|----------|---------|
-| CAP-01 | Prerequisites, toolchain, package install | yes | executed | native |
-| CAP-02 | Platform permissions, entitlements, build config | yes | docs-sample | mobile |
-| CAP-03 | Connecting: config, opening, persistence directory | yes | executed | native |
-| CAP-04 | Authentication and identity | yes | docs-sample | native |
-| CAP-05 | Lifecycle: start/stop sync, shutdown, ownership | yes | executed | native |
-| CAP-06 | Customizing transports | yes | executed | native |
-| CAP-07 | Sync subscriptions and sync scopes | yes | executed | native |
-| CAP-08 | Querying the store: executing DQL | yes | executed | native |
-| CAP-09 | Transactions | yes | executed | native |
-| CAP-10 | Indexing | yes | executed | native |
-| CAP-11 | Observers, diffing and back-pressure | yes | executed | native |
-| CAP-12 | Attachments | yes | executed | native |
-| CAP-13 | Presence graph and connection requests | yes | executed | native |
-| CAP-14 | Sync status and local commit tracking | yes | docs-sample | native |
-| CAP-15 | Logging, diagnostics and stats | yes | docs-sample | native |
-| CAP-16 | Error handling | yes | executed | native |
-| CAP-17 | Device storage management and eviction | yes | executed | native |
-| CAP-18 | Testing | yes | executed | native |
-| CAP-19 | v4 to v5 migration, API and on-disk store | yes | docs-sample | native |
-| CAP-20 | Preview and platform-specific APIs | partial | api-dump | native |
+| CAP-01 | Prerequisites, toolchain, package install | yes | executed | all |
+| CAP-02 | Platform permissions, entitlements, build config | yes | docs-sample | all |
+| CAP-03 | Connecting: config, opening, persistence directory | yes | executed | all |
+| CAP-04 | Authentication and identity | yes | docs-sample | all |
+| CAP-05 | Lifecycle: start/stop sync, shutdown, ownership | yes | executed | all |
+| CAP-06 | Customizing transports | yes | executed | all |
+| CAP-07 | Sync subscriptions and sync scopes | yes | executed | all |
+| CAP-08 | Querying the store: executing DQL | yes | executed | all |
+| CAP-09 | Transactions | yes | executed | all |
+| CAP-10 | Indexing | yes | executed | all |
+| CAP-11 | Observers, diffing and back-pressure | yes | executed | all |
+| CAP-12 | Attachments | yes | executed | all |
+| CAP-13 | Presence graph and connection requests | yes | executed | all |
+| CAP-14 | Sync status and local commit tracking | yes | docs-sample | all |
+| CAP-15 | Logging, diagnostics and stats | yes | docs-sample | all |
+| CAP-16 | Error handling | yes | executed | all |
+| CAP-17 | Device storage management and eviction | yes | executed | all |
+| CAP-18 | Testing | yes | executed | all |
+| CAP-19 | v4 to v5 migration, API and on-disk store | yes | docs-sample | all |
+| CAP-20 | Preview and platform-specific APIs | partial | api-dump | all |
 
 - CAP-02: Native permissions are declared in the MAUI assets and the Android app
   compiles. Runtime denial/retry and radio operation need device testing. Desktop
   architecture/build settings are covered in each framework reference.
 - CAP-04: Offline license setup executes in every core run; the server login and
   expiration delegate compile in the starter. Credentialed cloud behavior is not verified.
-- CAP-09: Commit/rollback executes on 5.1.0 and 5.2.0. The 5.0.4 probe is explicitly
-  skipped after a watchdog-terminated hang on macOS ARM64; it is not a passing case.
-- CAP-13: TCP replication and presence execute; connection-request authorization is
-  documented but not exercised. See [presence](references/presence.md).
+- CAP-09: Commit/rollback executes on 5.1.0 and 5.2.0. On 5.0.4 it is explicitly
+  skipped: it hangs (DEVX-918, fixed in 5.1.0), so it is not a passing case.
+- CAP-11: Observers, Task and manual back-pressure execute. DittoDiffer is documented
+  from the API only.
+- CAP-12: Attachment create, fetch, copy and fetcher Stop execute.
+- CAP-13: TCP replication, Presence.Observe/Stop and SetPeerMetadata execute;
+  connection-request authorization is documented but not exercised.
+  See [presence](references/presence.md).
+- CAP-16: Invalid DQL and the starter's validation/permission failures execute; typed
+  Ditto exception hierarchies are documented from the API.
+- 4.14.7 runs the core store/observer/persistence tests only; peer, attachment,
+  transaction, starter and snippet tests are v5-only.
 - CAP-14: Local result ownership and subscription handles execute; Big Peer sync
   status/local-commit durability requires a separate server integration run.
 - CAP-15: SDK-version assertions execute. Log export and disk-usage observations are
@@ -73,7 +82,7 @@ server behavior, mobile deployment, or every framework's window lifecycle.
 CRUD, parameter binding/serialization, observers/back-pressure, cancellation, transactions
 where verified, indexing/eviction, attachments, TCP replication/presence, startup rollback,
 field-preserving edits and persistence. The published generated Console app executes
-CRUD and process-restart persistence. See the [harness](../../tests/csharp-sdk/README.md)
+CRUD and process-restart persistence. See the [harness](https://github.com/getditto/agent-skills/blob/main/tests/csharp-sdk/README.md)
 for counts, commands and remaining gates.
 
 **CI evidence:** [run 42951049915](https://github.com/getditto/agent-skills/actions/runs/42951049915)
@@ -81,12 +90,9 @@ passed all 19 jobs: the Windows/Linux/macOS core matrix, desktop generation/runt
 Windows net48 native smoke and four MAUI build targets with matching toolchains.
 The core suite also passes on .NET 11 with Ditto 5.2.0 on macOS ARM64.
 
-**Independent app evaluation:** five agents built projects-and-tasks apps using the
-frozen skill and .NET 11 frameworks. Real native smoke tests passed for all five;
-Console terminal interaction and Avalonia/MAUI macOS UI flows were exercised separately.
-Observed gaps drove launcher, attachment and framework migration guidance corrections.
-See the [evaluation report](../../docs/csharp-skill-evaluation.md) for initial results,
-post-review repairs and remaining UI limits. Starter pins remain reproducible baselines.
+**App evaluation:** projects-and-tasks apps built from this skill with .NET 11
+frameworks passed native smoke tests; Console, Avalonia and MAUI macOS UI flows were
+exercised. Starter pins remain reproducible baselines.
 
 **Verified from source:** public NuGet 5.2.0 managed assemblies/native assets and the
 public C# [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sharp),
@@ -99,11 +105,11 @@ background behavior, server authentication renewal/durability, cross-version sto
 migration, traditional packages.config runtime, and behavior across all agent hosts.
 Observed app-to-app replication does not establish server durability or a transport path.
 
-**Last verified:** 2026-11-10.
+**Last verified:** 2026-11-14 (macOS ARM64; CI rerun pending for the latest changes).
 
 ## Installation and quick start
 
-See [installation](../../docs/install-csharp.md) for scoped host packages. The skill
+See [installation](https://github.com/getditto/agent-skills/blob/main/docs/install-csharp.md) for scoped host packages. The skill
 contains its templates/scripts and works without this repository's tests or other skills.
 
 ```bash

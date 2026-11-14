@@ -8,22 +8,62 @@ and the published Ditto 5.2.0 assembly's DittoConfig/Ditto members.
 Construct `new DittoConfig(databaseId, new DittoConfigConnect.SmallPeersOnly(), path)`
 for offline operation, then await `Ditto.OpenAsync(config)` and call
 `SetOfflineOnlyLicenseToken(license)`. Use an explicit persistent directory under the
-application data directory. Read `AbsolutePersistenceDirectory` to diagnose path
-resolution. Do not open multiple instances on the same directory.
+application data directory, and include the database ID in it: data in a store that
+is reopened under a different database ID is treated as new and syncs to that database.
+Read `AbsolutePersistenceDirectory` to diagnose path resolution. Do not open multiple instances on the same directory.
+
+<!-- snippet: connect-offline -->
+```csharp
+var config = new DittoConfig(databaseId, new DittoConfigConnect.SmallPeersOnly(),
+    persistenceDirectory); // a stable per-app directory, one instance per directory
+var ditto = await Ditto.OpenAsync(config);
+ditto.SetOfflineOnlyLicenseToken(offlineLicense);
+Console.WriteLine($"store: {ditto.AbsolutePersistenceDirectory}");
+ditto.Sync.Start();
+```
 
 `new DittoConfigConnect.Server(new Uri(url))` selects server connectivity. The URL is
 the SDK URL copied from the Portal. Keep database ID, credentials and URL configurable.
-The starter's Settings reads its embedded appsettings.json with environment overrides;
-this is a development convenience, not production credential provisioning.
+The starter's Settings reads its embedded appsettings.json with DITTOTASKS_* environment
+overrides; this is a development convenience, not production credential provisioning.
 
 ## CAP-04 Authentication
 
-v5 authentication types live in `DittoSDK.Auth`. Configure `Auth.ExpirationHandler`
-before relying on a long-lived authenticated session. The delegate receives `Ditto`
-and a **TimeSpan**, not a number of seconds. `LoginAsync(token,
-DittoAuthenticationProvider.Development)` returns a Task<string>. The development
-provider is for a playground; production uses the provider configured for the app.
-Do not put a shared administrative secret in a client application.
+v5 authentication types live in `DittoSDK.Auth`. With `DittoConfigConnect.Server`,
+setting `Auth.ExpirationHandler` is **required**: `Sync.Start()` throws
+`ExpirationHandlerMissingException` without it. Ditto calls the handler for the initial
+login too (with a zero TimeSpan), then again before the token expires. The delegate
+receives `Ditto` and a **TimeSpan**, not a number of seconds. `LoginAsync(token,
+provider)` returns a Task<string>. `DittoAuthenticationProvider.Development` is for a
+playground; production uses `DittoAuthenticationProvider.Custom(name)` for the
+provider configured in the Portal (the starter's AuthProvider setting). Fetch a
+per-user token at runtime; do not put a shared administrative secret in a client app.
+
+<!-- snippet: connect-server -->
+```csharp
+var ditto = await Ditto.OpenAsync(new DittoConfig(databaseId,
+    new DittoConfigConnect.Server(new Uri(portalSdkUrl)), persistenceDirectory));
+// Required for server connections: Sync.Start throws ExpirationHandlerMissingException
+// without it. Ditto also calls it for the initial login, with a zero TimeSpan.
+ditto.Auth.ExpirationHandler = async (instance, timeUntilExpiry) =>
+{
+    try { await instance.Auth.LoginAsync(await FetchUserTokenAsync(), provider); }
+    catch (Exception error) { Report(error); } // never let it escape into native code
+};
+var status = ditto.Auth.ObserveStatus(s => Console.WriteLine($"authenticated: {s.IsAuthenticated}"));
+ditto.Sync.Start();
+// ... on shutdown:
+status.Dispose();
+```
+
+The starter's `TaskStore.StartAsync` takes the same idea as an optional `fetchToken`
+callback: it is called for the initial login and every renewal. Without it, the starter
+reuses the configured `Token`, which ships inside the app and cannot be refreshed, so
+use that for development only.
+
+This flow is compile-checked against each supported package. The starter's `fetchToken`
+path was run against a real Portal server; server login is not part of the offline test
+run.
 
 Use `Auth.ObserveStatus(callback)` and retain/dispose the returned IDisposable.
 `Auth.Logout` and its cleanup callback do not replace an application-specific decision

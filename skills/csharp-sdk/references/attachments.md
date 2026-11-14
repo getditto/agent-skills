@@ -13,6 +13,35 @@ The handle returned by NewAttachmentAsync is also disposable: retain it through 
 awaited INSERT, then dispose it with using. Completed fetch attachments have a separate
 ownership scope; disposing one handle does not replace disposing the other.
 
+<!-- snippet: attachments -->
+```csharp
+using (var attachment = await ditto.Store.NewAttachmentAsync(filePath,
+    new Dictionary<string, string> { ["name"] = "photo.jpg" })) // metadata values are strings
+using (await ditto.Store.ExecuteAsync("INSERT INTO photos DOCUMENTS (:photo)",
+    new() { ["photo"] = new Dictionary<string, object> {
+        ["_id"] = "p1", ["image"] = attachment } })) { }
+
+Dictionary<string, object> token;
+using (var result = await ditto.Store.ExecuteAsync("SELECT * FROM photos WHERE _id = :id",
+    new() { ["id"] = "p1" }))
+    token = (Dictionary<string, object>)result.Items[0].Value["image"];
+
+var fetcher = ditto.Store.FetchAttachment(token, fetchEvent =>
+{
+    try
+    {
+        if (fetchEvent is DittoAttachmentFetchEvent.Completed completed)
+            using (completed.Attachment)
+            {
+                completed.Attachment.CopyToPath(uniqueStagingPath); // must not exist yet
+                done.TrySetResult();
+            }
+    }
+    catch (Exception error) { Report(error); } // never throw into native code
+});
+// Keep the fetcher until completion. Stop() abandons a pending fetch.
+```
+
 The callback receives Completed, Progress or Deleted subclasses. Completed.Attachment
 provides Data(), Stream and CopyToPath; copy/read while it is alive and dispose it.
 Keep the fetcher until completion; call Stop to abandon a pending fetch and dispose

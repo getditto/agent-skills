@@ -40,8 +40,11 @@ tests/                         # Per-skill test harnesses
 ├── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
 │   ├── Sources/  Tests/  scripts/
 │   └── README.md
-└── kotlin-sdk/                # kotlin-sdk: Gradle fixtures — JVM (5.x) and Android (4.14.x)
-    ├── minimal-app/  android-app/
+├── kotlin-sdk/                # kotlin-sdk: Gradle fixtures — JVM (5.x) and Android (4.14.x)
+│   ├── minimal-app/  android-app/
+│   └── README.md
+└── csharp-sdk/                # csharp-sdk: xUnit suite against 4.14.7–5.2.0 + generated starters
+    ├── Core/  LegacyStarter/  LegacyStarterTests/  MinimalApp/  LegacySmoke/  scripts/
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
@@ -64,9 +67,12 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-swift/
 │   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
 │   └── skills/swift-sdk -> ../../../skills/swift-sdk
-└── ditto-kotlin/
+├── ditto-kotlin/
+│   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
+│   └── skills/kotlin-sdk -> ../../../skills/kotlin-sdk
+└── ditto-csharp/
     ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
-    └── skills/kotlin-sdk -> ../../../skills/kotlin-sdk
+    └── skills/csharp-sdk -> ../../../skills/csharp-sdk
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -113,12 +119,12 @@ under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
 — if it ships agents — an `agents` symlink pointing at that plugin's namespaced
 subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
 
-The SDK plugins (`ditto-swift`, `ditto-kotlin`) also have generated portable/Codex/Cursor
+The SDK plugins (`ditto-swift`, `ditto-kotlin`, `ditto-csharp`) also have generated portable/Codex/Cursor
 metadata and a Gemini extension manifest. Run
 `python3 scripts/package-sdk-plugin.py --plugin <name> --sync-manifests` after changing
 a plugin's canonical Claude manifest; `--check` is enforced in CI. Release packages materialize scoped symlinks into real
-files in ignored build outputs or CI artifacts. See `docs/install-swift.md` and `docs/install-kotlin.md`
-for all installation surfaces.
+files in ignored build outputs or CI artifacts. See `docs/install-swift.md`, `docs/install-kotlin.md` and
+`docs/install-csharp.md` for all installation surfaces.
 
 **Agents must be linked as a directory, not as individual files.** Claude Code
 follows a symlinked *directory* but not a symlinked *file*: an
@@ -143,7 +149,10 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
 `tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
 against the supported SDK versions; `scripts/validate-sdk-skills.py` fails when the
-published program drifts from the fixture. The `data-streams` concept skill has no
+published program drifts from the fixture. `tests/csharp-sdk` runs an xUnit suite
+against Ditto 4.14.7, 5.0.4, 5.1.0 and 5.2.0, including the shared starter code and
+every ```csharp block in the skill's references (`scripts/verify-snippets.py` fails
+on drift), and builds the generated starters. The `data-streams` concept skill has no
 harness of its own: its executed claims come from the two-peer Data Streams tests in
 both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows:
 
@@ -157,11 +166,15 @@ both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows
 - `.github/workflows/kotlin-skill-tests.yml` — Ubuntu run of the Kotlin JVM fixture
   against 5.0.3, 5.1.0 and 5.2.0, including the two-peer Data Streams tests; the
   Android (4.14.x) leg is manual.
+- `.github/workflows/csharp-skill-tests.yml` — Windows/Linux/macOS matrix of the C#
+  suite against 4.14.7–5.2.0, generated desktop starters, the net48 native smoke and
+  MAUI builds.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
 environment variables (and CI secrets) always take precedence. Keys:
-`DITTO_OFFLINE_LICENSE` (tests/dql, tests/swift-sdk and tests/kotlin-sdk, required),
+`DITTO_OFFLINE_LICENSE` (tests/dql, tests/swift-sdk, tests/kotlin-sdk and
+tests/csharp-sdk, required),
 `DITTO_DATABASE_ID` (optional), `DITTO_URL` + `DITTO_TOKEN` (tests/swift-sdk,
 optional — enables the server-authentication leg), `DM_MODEL_CMD`
 (tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` read the same

@@ -17,7 +17,7 @@ internal sealed class Peer : IDisposable
             throw new InvalidOperationException("DITTO_OFFLINE_LICENSE is required; use scripts/run.py.");
         path ??= Path.Combine(Path.GetTempPath(), "ditto-csharp-" + Guid.NewGuid());
         var id = Environment.GetEnvironmentVariable("DITTO_DATABASE_ID")
-            ?? "e807f150-cb5d-4aa5-bcef-cc90e8521b91";
+            ?? DittoConfig.DefaultDatabaseId;
         var db = await Ditto.OpenAsync(new DittoConfig(id,
             new DittoConfigConnect.SmallPeersOnly(), path));
         try

@@ -49,6 +49,23 @@ class CSharpToolingTests(unittest.TestCase):
     def test_common_sources_are_synchronized(self):
         subprocess.run([sys.executable, str(ROOT / 'tests/csharp-sdk/scripts/sync-starters.py'), '--check'], check=True)
 
+    def test_published_csharp_blocks_match_executed_snippets(self):
+        subprocess.run([sys.executable, str(ROOT / 'tests/csharp-sdk/scripts/verify-snippets.py')], check=True)
+
+    def test_generator_enforces_release_note_version_floors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for arguments in (['maui', '--sdk-version', '5.1.0'],
+                              ['winforms', '--sdk-version', '5.0.0'],
+                              ['winforms', '--sdk-version', '5.0.0', '--framework', 'net481']):
+                target = str(Path(directory) / 'app')
+                argv = ['create-app.py', arguments[0], target] + arguments[1:]
+                with patch.object(sys, 'argv', argv), patch.object(GENERATOR.shutil, 'which', return_value='dotnet'), \
+                        contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    with self.assertRaises(SystemExit) as error: GENERATOR.main()
+                self.assertEqual(error.exception.code, 2)
+                self.assertIn('too old for this starter', stderr.getvalue())
+                self.assertFalse(Path(target).exists())
+
     def test_packages_are_scoped_and_include_hidden_template_metadata(self):
         with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
             output = Path(directory) / 'packages'

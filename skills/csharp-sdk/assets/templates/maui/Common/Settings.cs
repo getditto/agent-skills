@@ -1,50 +1,64 @@
-using System;
-using System.IO;
 using System.Reflection;
 using System.Text.Json;
 
-namespace DittoTasks
+namespace DittoTasks;
+
+public sealed class Settings
 {
-    public sealed class Settings
+    // Application-prefixed so these never collide with variables Ditto's native core reads.
+    private const string Prefix = "DITTOTASKS_";
+
+    public string? DatabaseId { get; set; }
+    public string? OfflineLicense { get; set; }
+    public string? Url { get; set; }
+    public string? Token { get; set; }
+    // Empty selects Ditto's Development (playground) provider; set a provider name for production.
+    public string? AuthProvider { get; set; }
+    public bool EnablePeerToPeerRadios { get; set; }
+    // Optional store location override (for example, test isolation). Null uses the host's path.
+    public string? PersistenceDirectory { get; set; }
+
+    public static Settings Load()
     {
-        public string DatabaseId { get; set; }
-        public string OfflineLicense { get; set; }
-        public string Url { get; set; }
-        public string Token { get; set; }
-        public bool EnablePeerToPeerRadios { get; set; }
+        // appsettings.json is embedded when present, otherwise appsettings.example.json, so a
+        // fresh clone builds; environment variables can then supply the values.
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DittoTasks.appsettings.json");
+        var settings = (stream is null ? null : JsonSerializer.Deserialize<Settings>(stream)) ?? new Settings();
+        settings.DatabaseId = Override("DATABASE_ID", settings.DatabaseId);
+        settings.OfflineLicense = Override("OFFLINE_LICENSE", settings.OfflineLicense);
+        settings.Url = Override("URL", settings.Url);
+        settings.Token = Override("TOKEN", settings.Token);
+        settings.AuthProvider = Override("AUTH_PROVIDER", settings.AuthProvider);
+        settings.PersistenceDirectory = Override("PERSISTENCE_DIRECTORY", settings.PersistenceDirectory);
+        // The token is checked in TaskStore.StartAsync, which knows whether one is fetched at runtime.
+        settings.Validate(requireToken: false);
+        return settings;
+    }
 
-        public static Settings Load()
-        {
-            Settings settings;
-            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DittoTasks.appsettings.json"))
-            using (var reader = new StreamReader(stream ?? throw new InvalidOperationException("Missing appsettings.json resource.")))
-                settings = JsonSerializer.Deserialize<Settings>(reader.ReadToEnd());
-            settings.DatabaseId = Environment.GetEnvironmentVariable("DITTO_DATABASE_ID") ?? settings.DatabaseId;
-            settings.OfflineLicense = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE") ?? settings.OfflineLicense;
-            settings.Url = Environment.GetEnvironmentVariable("DITTO_URL") ?? settings.Url;
-            settings.Token = Environment.GetEnvironmentVariable("DITTO_TOKEN") ?? settings.Token;
-            settings.Validate();
-            return settings;
-        }
+    // One store per database ID: Ditto treats a reused store's data as new and syncs it,
+    // so switching DatabaseId (for example, development to production) must not reuse it.
+    public static string StorePath(string baseDirectory, Settings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return Path.Combine(baseDirectory, settings.DatabaseId ?? throw new InvalidOperationException("DatabaseId is not set."));
+    }
 
-        public void Validate()
+    private static string? Override(string name, string? value) =>
+        Environment.GetEnvironmentVariable(Prefix + name) is { Length: > 0 } configured ? configured : value;
+
+    public void Validate(bool requireToken = true)
+    {
+        if (!Guid.TryParse(DatabaseId, out _))
+            throw new InvalidOperationException($"Set DatabaseId in appsettings.json or {Prefix}DATABASE_ID.");
+        if (string.IsNullOrWhiteSpace(Url))
         {
-            Guid databaseId;
-            if (!Guid.TryParse(DatabaseId, out databaseId))
-                throw new InvalidOperationException("Set DatabaseId in appsettings.json or DITTO_DATABASE_ID.");
-            if (string.IsNullOrWhiteSpace(Url))
-            {
-                if (string.IsNullOrWhiteSpace(OfflineLicense))
-                    throw new InvalidOperationException("Set OfflineLicense or DITTO_OFFLINE_LICENSE for offline operation.");
-            }
-            else
-            {
-                Uri uri;
-                if (!Uri.TryCreate(Url, UriKind.Absolute, out uri) || uri.Scheme != "https")
-                    throw new InvalidOperationException("Url must be the HTTPS SDK URL from the Ditto Portal.");
-                if (string.IsNullOrWhiteSpace(Token))
-                    throw new InvalidOperationException("Set Token or DITTO_TOKEN for server authentication.");
-            }
+            if (string.IsNullOrWhiteSpace(OfflineLicense))
+                throw new InvalidOperationException($"Set OfflineLicense or {Prefix}OFFLINE_LICENSE for offline operation.");
+            return;
         }
+        if (!Uri.TryCreate(Url, UriKind.Absolute, out var uri) || uri.Scheme != "https")
+            throw new InvalidOperationException("Url must be the HTTPS SDK URL from the Ditto Portal.");
+        if (requireToken && string.IsNullOrWhiteSpace(Token))
+            throw new InvalidOperationException($"Set Token or {Prefix}TOKEN, or pass fetchToken, for server authentication.");
     }
 }

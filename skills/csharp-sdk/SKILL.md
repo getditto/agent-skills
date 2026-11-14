@@ -1,11 +1,13 @@
 ---
 name: csharp-sdk
 description: >
-  Use ONLY for Ditto C#/.NET code: .cs, .csproj, packages.config, NuGet Ditto,
-  DittoSDK, Ditto.OpenAsync and Store.RegisterObserver. Builds Console, Windows
-  Forms (.NET Framework 4.8 and modern .NET), MAUI, Uno and Avalonia apps;
-  diagnoses native loading, async callbacks and disposal. Excludes other Ditto
-  language SDKs and .NET WebAssembly. Covers 4.14.x, 5.0.x, 5.1.x and 5.2.0.
+  Use ONLY for Ditto C#/.NET code (not other Ditto language SDKs or .NET
+  WebAssembly): .cs, .csproj, packages.config, NuGet Ditto, DittoSDK,
+  Ditto.OpenAsync, Store.RegisterObserver. Builds Console, WinForms (.NET Framework
+  4.8 and modern .NET), MAUI, Uno and Avalonia apps; diagnoses native loading,
+  callbacks, disposal and errors such as DittoPersistenceDirectoryLockedException,
+  ExpirationHandlerMissingException and "Document references in mutation values".
+  Covers 4.14.x through 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -31,6 +33,10 @@ For a new app, read [project generation](references/project-generation.md) and t
 chosen framework reference. Inspect an existing project's framework, language version,
 package management style and architecture before editing it.
 
+**C# version:** use the newest C# the target framework supports: leave `LangVersion`
+unset. Only the WinForms starter is C# 7.3 (it also builds for .NET Framework); the
+examples here use C# 12. See [C# idioms](references/csharp-idioms.md).
+
 | Topic | Skill if installed | Public fallback |
 |---|---|---|
 | DQL grammar and indexing strategy | `write-dql` | https://docs.ditto.live/dql/dql |
@@ -40,7 +46,8 @@ package management style and architecture before editing it.
 
 Do not infer native support from a UI framework's supported-platform list or NuGet's
 computed target compatibility. **No .NET WebAssembly**: omit browser/WASM targets from
-Uno/Avalonia projects. Windows native assets are x64; desktop macOS assets are ARM64.
+Uno/Avalonia projects. Windows native assets are x64; on 5.x, desktop macOS assets are
+ARM64 only (4.14.x also ships osx-x64).
 
 ## Supported versions and packages
 
@@ -63,30 +70,46 @@ The full twenty-row map and verification limits are in [README.md](README.md).
 
 ## Minimum viable app
 
-Use [the complete minimal program](examples/minimal-app.md). It opens an isolated
-store, registers subscription and observer, writes a parameterized document, **awaits
-observer delivery**, then cancels both handles and stops sync in `finally`.
+The shape of it, inside an async method (`using DittoSDK;`):
 
-The core call shape (inside an async method, with an open `Ditto ditto`) is:
-
+<!-- snippet: skill-minimal -->
 ```csharp
-using (var result = await ditto.Store.ExecuteAsync(
-    "INSERT INTO cars DOCUMENTS (:car)",
-    new System.Collections.Generic.Dictionary<string, object> {
-        ["car"] = new System.Collections.Generic.Dictionary<string, object> {
-            ["_id"] = "car1", ["make"] = "Toyota" }
-    })) { }
+var ditto = await Ditto.OpenAsync(new DittoConfig(databaseId,
+    new DittoConfigConnect.SmallPeersOnly(), persistenceDirectory));
+ditto.SetOfflineOnlyLicenseToken(offlineLicense);
+var subscription = ditto.Sync.RegisterSubscription("SELECT * FROM cars");
+var observer = ditto.Store.RegisterObserver("SELECT * FROM cars", result =>
+{
+    using (result) // copy what you need: items are invalid after disposal
+        Console.WriteLine($"cars: {result.Items.Count}");
+});
+ditto.Sync.Start();
+using (await ditto.Store.ExecuteAsync("INSERT INTO cars DOCUMENTS (:car)",
+    new() {
+        ["car"] = new Dictionary<string, object> { ["_id"] = "car1", ["make"] = "Toyota" } })) { }
+
+// Shutdown: cancel handles, stop sync, then dispose. Never touch a handle after Dispose.
+observer.Cancel();
+observer.Dispose();
+subscription.Cancel();
+subscription.Dispose();
+ditto.Sync.Stop();
+ditto.Dispose();
 ```
 
-This excerpt is not a standalone application. The complete example includes imports,
-configuration, deadlines and teardown. Generated UI apps include those responsibilities.
+[The complete minimal program](examples/minimal-app.md) adds configuration and a
+deadline, and **awaits observer delivery** before shutting down.
 
 ## Concurrency and threading model
 
-- Await SDK tasks; do not block UI threads with `.Result` or `.Wait()`.
+- Never block on `.Result`/`.Wait()`. v5 `OpenAsync`/`ExecuteAsync` complete
+  synchronously, so from UI code run them via `Task.Run`.
 - Store observers have `Action` and `Func<..., Task>` overloads. Choose the Task
-  overload for asynchronous work; an `async void` delegate loses completion tracking.
-- Treat callbacks as background callbacks; explicitly dispatch DTOs to the UI.
+  overload for asynchronous work, and catch inside it: an escaping exception ends the
+  process in either form.
+- Store observer and attachment callbacks run on Ditto native threads without a
+  SynchronizationContext; the first `Presence.Observe` callback runs on the calling
+  thread. Dispatch DTOs to the UI explicitly.
 - With manual back-pressure, call `signalNext()` in `finally`; missing a signal stops
   subsequent delivery. Catch callback exceptions before they cross native boundaries.
 - Execute transaction statements on `tx`, not the outer store; nested transactions
@@ -98,6 +121,8 @@ Own one instance per persistence directory. Retain observers/subscriptions until
 owning screen or service stops. **Call `Cancel()` explicitly** on store observers and
 subscriptions before disposing v5 handles; `using` alone does not stop observation.
 Dispose query results; copy their data before disposing or handing work to another thread.
+**Never touch a v5 observer or subscription after `Dispose()`:** even `IsCancelled`
+crashes the process natively, with no managed exception. Read state first.
 Attachment fetchers use `Stop()` for cancellation. See [lifetimes.md](references/lifetimes.md).
 
 ## Anti-patterns
@@ -112,14 +137,14 @@ Attachment fetchers use `Stop()` for cancellation. See [lifetimes.md](references
   inside the callback and dispose its result there.
 - **UI collection updated directly in an observer:** cross-thread UI failure. Dispatch
   the copied snapshot through the host framework.
-- **Modern syntax pasted into net48/C# 7.3:** language-version errors. Use the legacy
-  starter's explicit entry point, ordinary classes and `using (...)` blocks.
+- **Modern syntax pasted into the C# 7.3 WinForms starter:** language-version errors.
+  Follow its `Common/` code: ordinary classes, `using (...)` blocks, no nullable syntax.
 
 ## Version differences
 
-See [versions.md](references/versions.md) before porting code. v4 and v5 have different
-namespace/ownership shapes even where names match. A package's .NET version is separate
-from the C# compiler version and from Ditto's version.
+For v4→v5, follow Ditto's tested [AI Agent Prompt](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-v4#ai-agent-prompt) (note the
+`DQL_STRICT_MODE` default flip); [versions.md](references/versions.md) outlines its
+checklist and adds verified cautions.
 
 ## References
 
@@ -128,7 +153,7 @@ lifecycle and deployment constraints.
 
 - [project-generation.md](references/project-generation.md): install self-contained local templates; select the native target and resolve the dependency first.
 - [setup.md](references/setup.md): the startup executable must carry native assets; TFM compatibility alone is insufficient.
-- [winforms.md](references/winforms.md): net48/C# 7.3, packages.config, binding and deferred form shutdown.
+- [winforms.md](references/winforms.md): the C# 7.3 starter, net48, packages.config, binding and form shutdown.
 - [maui.md](references/maui.md): initialize native transports before requesting permissions; do not ignore the returned permission result.
 - [uno.md](references/uno.md): desktop starter omits WebAssembly; mobile integration needs its own permission and lifecycle verification.
 - [avalonia.md](references/avalonia.md): dispatch collection changes and await cleanup before closing the desktop window.

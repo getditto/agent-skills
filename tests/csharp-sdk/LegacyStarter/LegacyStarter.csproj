@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the WinForms starter's C# 7.3 shared code as its own assembly, exactly as
+       .NET Framework would, so LegacyStarterTests can run the same starter tests on it. -->
+  <PropertyGroup>
+    <TestTargetFramework Condition="'$(TestTargetFramework)' == ''">net10.0</TestTargetFramework>
+    <TargetFramework>$(TestTargetFramework)</TargetFramework>
+    <DittoVersion Condition="'$(DittoVersion)' == ''">5.2.0</DittoVersion>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="$(DittoVersion)" />
+    <Compile Include="../../../skills/csharp-sdk/assets/common-legacy/*.cs" Link="Starter/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

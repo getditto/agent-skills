@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>DittoTasks</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
@@ -11,6 +11,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- One C# 7.3 source set builds every WinForms target, including .NET Framework. -->
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -18,10 +19,17 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" />
+    <!-- appsettings.json is gitignored; a fresh clone embeds the committed example instead. -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" Condition="Exists('appsettings.json')" />
+    <EmbeddedResource Include="appsettings.example.json" LogicalName="DittoTasks.appsettings.json" Condition="!Exists('appsettings.json')" />
   </ItemGroup>
   <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">
     <Error Condition="$(TargetFramework.Contains('browser')) Or $(RuntimeIdentifier.Contains('wasm'))" Text="Ditto .NET has no WebAssembly runtime. Select a supported native target." />
-    <Error Condition="'$(RuntimeIdentifier)' == 'win-arm64' Or '$(RuntimeIdentifier)' == 'win-x86' Or '$(RuntimeIdentifier)' == 'osx-x64'" Text="This Ditto package has no native asset for the selected runtime identifier." />
+    <!-- Without an explicit RID the app runs on the build host, so check that too. -->
+    <PropertyGroup>
+      <DittoTargetRid>$(RuntimeIdentifier)</DittoTargetRid>
+      <DittoTargetRid Condition="'$(DittoTargetRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</DittoTargetRid>
+    </PropertyGroup>
+    <Error Condition="'$(DittoTargetRid)' != 'win-x64' And '$(DittoTargetRid)' != 'osx-arm64' And '$(DittoTargetRid)' != 'linux-x64' And '$(DittoTargetRid)' != 'linux-arm64'" Text="Ditto has no native desktop asset for $(DittoTargetRid). Supported: win-x64, osx-arm64, linux-x64, linux-arm64. Pass -r with one of them." />
   </Target>
 </Project>

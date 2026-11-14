@@ -6,10 +6,13 @@ Source: [C# .NET Framework setup](https://docs.ditto.live/sdk/latest/install-gui
 ## Generate
 
 Use ditto-winforms with `--framework net48`, net481 or net10.0-windows.
-The legacy starter uses C# 7.3, an explicit STAThread entry point, ordinary classes,
-classic using blocks, x64 and Prefer32Bit=false. It does not emit records, top-level
-statements, await using, nullable-reference syntax or ApplicationConfiguration.Initialize
-into a legacy project. All variants call the actual async v5 SDK.
+The starter is C# 7.3 for **every** WinForms target, including net10.0-windows, so one
+source set builds on .NET Framework too; its shared code is the
+[common-legacy](../assets/common-legacy/TaskStore.cs) copy. It uses an explicit
+STAThread entry point, ordinary classes, classic using blocks, x64 and Prefer32Bit=false,
+and no records, top-level statements, await using or nullable-reference syntax. All
+variants call the actual async v5 SDK. A WinForms app that targets only modern .NET and
+does not share this code can use the SDK's default (newest) C# like any other app.
 
 On Windows, after setting appsettings.json:
 
@@ -45,5 +48,5 @@ once teardown completes. Reject queued dispatches while closing or after disposa
 Use async void only for framework event handlers, with failures handled by an awaited
 Task-returning method. Do not block the WinForms synchronization context with Result.
 
-A startup .exe/native-loading regression belongs in the Windows CI leg. A macOS build
+Verify startup .exe/native loading by running the app on Windows. A macOS build
 of net48 alone cannot establish that packages.config, UI or DLL resolution runs correctly.

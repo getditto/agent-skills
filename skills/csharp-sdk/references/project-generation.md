@@ -22,12 +22,18 @@ Review release notes and validate any package newer than the known baseline.
 
 ## Native dotnet new alternative
 
-Python is optional. Install the bundled templates with the .NET CLI:
+Python is optional. The .NET CLI can use the bundled templates directly. Unlike the
+generator, `dotnet new install` registers them in your user template hive until you
+uninstall them. Run these from the skill directory:
 
 ```bash
 dotnet new install ./assets/templates
 dotnet new ditto-console -n Tasks --ditto-version 5.2.0
+dotnet new uninstall ./assets/templates
 ```
+
+To leave no global registration, add `--debug:custom-hive <temporary directory>` to
+both the install and the `dotnet new` commands instead of uninstalling.
 
 Other short names: ditto-winforms, ditto-maui, ditto-uno, ditto-avalonia.
 For WinForms, `--framework` accepts net48, net481 or net10.0-windows.
@@ -39,16 +45,23 @@ with the latest available release.
 ## Configure and run
 
 Edit the generated appsettings.json. For offline operation set DatabaseId and
-OfflineLicense. For server operation set DatabaseId, Url and Token; the development
-provider is a playground example, not production token provisioning. Desktop environment
-variables DITTO_DATABASE_ID, DITTO_OFFLINE_LICENSE, DITTO_URL and DITTO_TOKEN override
-the corresponding fields. DITTO_PERSISTENCE_DIRECTORY optionally overrides the store
-path (especially useful for test isolation). Do not set an external path on mobile
-unless the application has access to it.
+OfflineLicense. For server operation set DatabaseId, Url and Token. An empty
+AuthProvider selects the Development (playground) provider; set your production
+provider's name instead, and obtain per-user tokens at runtime rather than embedding a
+token: pass a `fetchToken` callback to `TasksViewModel.StartAsync` / `TaskStore.StartAsync`
+and leave Token empty. Anything in appsettings.json is compiled into the app. Desktop environment variables DITTOTASKS_DATABASE_ID, DITTOTASKS_OFFLINE_LICENSE,
+DITTOTASKS_URL, DITTOTASKS_TOKEN and DITTOTASKS_AUTH_PROVIDER override the corresponding
+fields. DITTOTASKS_PERSISTENCE_DIRECTORY optionally overrides the store path (useful
+for test isolation). The prefix keeps them apart from variables Ditto's native core
+reads. Without that override, each app stores data in a subdirectory named after the
+DatabaseId: Ditto treats data in a reused store as new and syncs it, so switching from a
+development to a production database ID must not reopen the old store. Do not set an external path on mobile unless the application has access to it.
 
 The file is embedded at build time so mobile apps do not depend on a shell environment.
-Rebuild after changing it. It is gitignored by generated projects. The skill itself
-ships only placeholders, never usable credentials.
+Rebuild after changing it. It is gitignored by generated projects. The committed
+appsettings.example.json is embedded instead when appsettings.json is absent, so a
+fresh clone builds and fails at startup with a message naming the missing setting.
+The skill itself ships only placeholders, never usable credentials.
 
 Each app exposes add, edit, toggle completion and delete operations, an observed list,
 persistent storage and orderly cleanup. Desktop defaults disable BLE/AWDL/Wi-Fi Aware;
