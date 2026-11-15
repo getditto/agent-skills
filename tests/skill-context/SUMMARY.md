@@ -253,3 +253,31 @@ five negative controls invoked no skill, no tool errors. Codex's `dql_destructiv
 answer this time named the local/mesh-wide difference but did not ask for confirmation
 (it did in the previous run); one run per host, so treat that as variance to watch.
 Claude reported USD 3.12.
+
+## C# SDK skill — best-practices alignment, 2026-11-15
+
+`csharp-sdk` was brought in line with the conventions above: a description that says what
+the skill does after the `Use ONLY for` gate and names 4.14.x, 5.0.x, 5.1.x and 5.2.0; the
+Swift/Kotlin `SKILL.md` layout (reading instructions, related-skill table, condensed
+latest-version note, one-line anti-patterns, `Task | Read` reference table); generated
+C# blocks via `scripts/sync-snippets.py`; tables of contents on long files; and no links
+into this repository. Three cases were added: a negative control (`csharp_no_ditto`, a
+plain ASP.NET Core background-service task) and two cases for guidance added from the
+drive-through sample builds (`csharp_maui_xcode27`, `csharp_late_subscriber`). The two
+existing C# cases had not been run before; this is their first recorded result.
+
+All five C# cases ran once per host (Claude Code 2.1.325 `claude-opus-5-5`, Codex 0.167.1
+`gpt-6.1-sol`, fresh `HOME`/`CODEX_HOME`) against digest `3400979b…`. Routing was correct on
+every run: each positive case used `csharp-sdk`, and `csharp_no_ditto` invoked no skill and
+read no Ditto file on either host. No tool errors.
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| `csharp_net48` | Core pass: x64/Prefer32Bit, Ditto on the startup exe, packages.config kept, 5.0.2 fix, C# 7.3 syntax, `Task.Run` around store calls, BeginInvoke dispatch, deferred FormClosing; no explicit `Main` shown | Core pass on the same points; omits the 5.0.2 note; no explicit `Main` shown |
+| `csharp_native_platforms` | Pass | Pass (also read `js-web` and `native-app-config` for the browser and Android-permission parts) |
+| `csharp_no_ditto` (new) | Pass; no skill, says the Ditto skills do not apply | Pass; no skill file read |
+| `csharp_maui_xcode27` (new) | Pass: `net11.0` for Xcode 27, workload update does not help, generator, Mac Catalyst 17.0, scene manifest and `SceneDelegate`, 5.2.0 floor, permission sequence | Pass on the same points |
+| `csharp_late_subscriber` (new) | Pass: observer delivers once then on change; cached snapshot (`TaskStore.Current`) or per-consumer observer; UI-thread dispatch and DTOs | Pass on the same points |
+
+- One run per host and case. Claude reported USD 0.97 for its five runs; Codex does not
+  report cost. Generated snippets were not compiled.

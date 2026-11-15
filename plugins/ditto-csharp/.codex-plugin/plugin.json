@@ -1,0 +1,40 @@
+{
+  "name": "ditto-csharp",
+  "version": "1.0.0",
+  "description": "Ditto C#/.NET SDK guidance and runnable Console, Windows Forms, MAUI, Uno and Avalonia starters. Native targets, async programming, DQL, observers, deployment and testing; Ditto 4.14.x through 5.2.0.",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ditto",
+    "csharp",
+    "dotnet",
+    "winforms",
+    "maui",
+    "uno",
+    "avalonia",
+    "offline-first",
+    "sync"
+  ],
+  "repository": "https://github.com/getditto/agent-skills",
+  "homepage": "https://docs.ditto.live/sdk/latest/install-guides/c-sharp",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Ditto C# / .NET",
+    "shortDescription": "Build native Ditto Console, WinForms, MAUI, Uno and Avalonia apps.",
+    "developerName": "Ditto",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://ditto.com",
+    "defaultPrompt": [
+      "Create a runnable Ditto Windows Forms app targeting .NET Framework 4.8.",
+      "Build a Ditto MAUI task app with correct permission and observer lifetimes.",
+      "Diagnose native loading or async observer failures in this C# app."
+    ]
+  }
+}

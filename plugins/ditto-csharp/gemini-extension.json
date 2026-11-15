@@ -1,0 +1,5 @@
+{
+  "name": "ditto-csharp",
+  "version": "1.0.0",
+  "description": "Ditto C#/.NET SDK guidance and runnable Console, Windows Forms, MAUI, Uno and Avalonia starters. Native targets, async programming, DQL, observers, deployment and testing; Ditto 4.14.x through 5.2.0."
+}

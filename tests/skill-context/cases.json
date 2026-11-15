@@ -109,6 +109,60 @@
       ]
     },
     {
+      "id": "csharp_net48",
+      "prompt": "Our Windows Forms app targets .NET Framework 4.8 with packages.config and C# 7.3. We want Ditto 5.2.0 to show a live task list, save edits and close cleanly. Explain the package/native setup and show the async service/UI ownership pattern. We currently use AnyCPU with Prefer32Bit enabled.",
+      "review_criteria": [
+        "Use NuGet Ditto on startup executable; Windows x64, Prefer32Bit=false; verify native DLL and package imports",
+        "Preserve packages.config unless migration requested; mention 5.0.2 native-resolution fix",
+        "C# 7.3 compatible syntax, explicit entry point; no top-level statements or records",
+        "OpenAsync config, DQL dictionary bindings, retain observer and subscription",
+        "Copy result DTOs, dispose results and dispatch with BeginInvoke",
+        "Cancel handles and await teardown through deferred FormClosing; no sync-over-async"
+      ]
+    },
+    {
+      "id": "csharp_native_platforms",
+      "prompt": "Create a plan for a shared Ditto 5.2.0 tasks app using Uno on Windows and in the browser, plus MAUI Android. Can we reuse the Kotlin Data Streams sample, pass anonymous query arguments and expose the observer as await foreach? Explain supported choices and the permission sequence.",
+      "review_criteria": [
+        "Reject .NET WebAssembly; offer supported native Uno desktop and MAUI targets",
+        "Do not invent C# Data Streams APIs from Kotlin support",
+        "ExecuteAsync uses Dictionary<string,object>, not arbitrary anonymous objects",
+        "IAsyncEnumerable is an explicit app adapter with bounded buffering and cleanup, not a presumed SDK method",
+        "Initialize Ditto before Android permission helper, dispatch request to main thread, check bool before sync",
+        "Distinguish compile gates from physical-device and cloud verification"
+      ]
+    },
+    {
+      "id": "csharp_no_ditto",
+      "prompt": "Our .NET 10 ASP.NET Core minimal API has a BackgroundService that polls a SQL Server queue table with EF Core. When the database is unreachable at startup the whole host stops, and on shutdown in-flight work is cut off. No sync library is involved. How should we structure ExecuteAsync, error handling and graceful shutdown?",
+      "review_criteria": [
+        "Trigger scope: the csharp-sdk skill is not invoked and no Ditto guidance file is read for a task with no Ditto dependency",
+        "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
+        "Handles exceptions inside ExecuteAsync with a retry/backoff loop (or BackgroundServiceExceptionBehavior.Ignore deliberately), honours stoppingToken throughout, and uses HostOptions.ShutdownTimeout or equivalent for in-flight work; creates a DbContext per iteration via IServiceScopeFactory/IDbContextFactory"
+      ]
+    },
+    {
+      "id": "csharp_maui_xcode27",
+      "prompt": "We're starting a .NET MAUI app with Ditto for a field crew on iOS, Mac Catalyst and Android. Our build Mac has Xcode 27 and the .NET 11 SDK. Which target framework and starter setup should we use, and what do we need for Apple minimums and the app lifecycle so the Apple builds work?",
+      "review_criteria": [
+        "Routing: the csharp-sdk skill is used",
+        "Chooses net11.0 because Xcode 27 cannot build net10.0 Apple targets, and says workload updates do not fix that; uses the skill's generator (create-app.py maui, framework net11.0 or chosen from the active SDK)",
+        "Mac Catalyst minimum 17.0 (iOS 15.4) and the UIKit scene setup (UIApplicationSceneManifest and SceneDelegate), which the net11.0 starter includes",
+        "Ditto 5.2.0 or later for MAUI (earlier versions abort on .NET 10+ Android); does not disable Xcode version validation",
+        "Requests permissions after opening Ditto and on the main thread, and treats denial as non-fatal"
+      ]
+    },
+    {
+      "id": "csharp_late_subscriber",
+      "prompt": "Our MAUI drive-through app (Ditto 5.2.0) has one app-wide service that registers a store observer for open orders at startup. The Kitchen tab is created lazily by Shell; when you first open it, it shows no orders until someone places a new one. Its view model subscribes to the service's OrdersChanged event in its constructor. Why, and how should we fix it?",
+      "review_criteria": [
+        "Routing: the csharp-sdk skill is used",
+        "Explains that an observer delivers the current result once and then only on change, so a consumer that subscribes after the first delivery sees nothing until the data changes",
+        "Fix: keep the latest snapshot in the service (as the starter's TaskStore.Current does) and seed the view model from it before subscribing, or register a separate observer per consumer",
+        "Applies the snapshot on the UI thread via the dispatcher, copies DTOs and disposes results inside the callback; does not touch native result items from the view model"
+      ]
+    },
+    {
       "id": "dql_missing_field",
       "prompt": "Ditto SDK 5.1. Our orders documents look like {\"_id\": \"o-1\", \"customer_name\": \"Ana\", \"status\": \"open\", \"total\": 120}. This returns zero rows even though matching orders exist: SELECT customerName, total FROM orders WHERE customerName = 'Ana' AND status = 'open'. Why, and what is the corrected query?",
       "review_criteria": [

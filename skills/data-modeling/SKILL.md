@@ -51,7 +51,9 @@ permission scopes and retention; the full checklist is in `references/workflow.m
 
 **All examples assume `dql_strict_mode = false` on every peer.** This is the 5.x
 factory default and the migration target for 4.14.x. The flag is per-peer and runtime
-only: apply `ALTER SYSTEM SET dql_strict_mode = false` at every app start. Migrate 4.x
+only: set it explicitly at every app start, before sync, with your SDK skill's
+mechanism (the config's system parameters on 5.2+, otherwise
+`ALTER SYSTEM SET dql_strict_mode = false`). The name is case-insensitive. Migrate 4.x
 peers before upgrading to v5 so the upgrade changes no merge behavior.
 
 - Lenient writes infer objects as `MAP`; scalars and arrays remain `REGISTER`.

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>DittoTasks</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- No LangVersion: the SDK uses the newest C# this target framework supports. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="DITTO_PACKAGE_VERSION" />
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- appsettings.json is gitignored; a fresh clone embeds the committed example instead. -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" Condition="Exists('appsettings.json')" />
+    <EmbeddedResource Include="appsettings.example.json" LogicalName="DittoTasks.appsettings.json" Condition="!Exists('appsettings.json')" />
+  </ItemGroup>
+  <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">
+    <Error Condition="$(TargetFramework.Contains('browser')) Or $(RuntimeIdentifier.Contains('wasm'))" Text="Ditto .NET has no WebAssembly runtime. Select a supported native target." />
+    <!-- Without an explicit RID the app runs on the build host, so check that too. -->
+    <PropertyGroup>
+      <DittoTargetRid>$(RuntimeIdentifier)</DittoTargetRid>
+      <DittoTargetRid Condition="'$(DittoTargetRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</DittoTargetRid>
+    </PropertyGroup>
+    <Error Condition="'$(DittoTargetRid)' != 'win-x64' And '$(DittoTargetRid)' != 'osx-arm64' And '$(DittoTargetRid)' != 'linux-x64' And '$(DittoTargetRid)' != 'linux-arm64'" Text="Ditto has no native desktop asset for $(DittoTargetRid). Supported: win-x64, osx-arm64, linux-x64, linux-arm64. Pass -r with one of them." />
+  </Target>
+</Project>

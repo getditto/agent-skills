@@ -47,11 +47,13 @@ from pathlib import Path
 
 SKILLS_DIR = "skills"
 SOURCE_DIRS = ("tests",)
-SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv"}
+SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv",
+             "bin", "obj", "artifacts", "TestResults"}
 SOURCE_SUFFIXES = {
     ".kt": "kotlin",
     ".kts": "kotlin",
     ".swift": "swift",
+    ".cs": "csharp",
     ".ts": "ts",
     ".tsx": "tsx",
     ".js": "javascript",

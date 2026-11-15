@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runs Core/StarterTests.cs against the C# 7.3 starter copy (LegacyStarter). -->
+  <PropertyGroup>
+    <TestTargetFramework Condition="'$(TestTargetFramework)' == ''">net10.0</TestTargetFramework>
+    <TargetFramework>$(TestTargetFramework)</TargetFramework>
+    <DittoVersion Condition="'$(DittoVersion)' == ''">5.2.0</DittoVersion>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants Condition="$(DittoVersion.StartsWith('5.0.'))">$(DefineConstants);DITTO_50</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="$(DittoVersion)" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+    <ProjectReference Include="../LegacyStarter/LegacyStarter.csproj" />
+    <Compile Include="../Core/StarterTests.cs" Link="StarterTests.cs" />
+    <Compile Include="../Core/Peer.cs" Link="Peer.cs" />
+  </ItemGroup>
+</Project>

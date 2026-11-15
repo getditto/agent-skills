@@ -21,6 +21,18 @@ SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 # row when a new SDK plugin lands; everything else (version, description, author,
 # keywords) is read from plugins/<name>/.claude-plugin/plugin.json.
 PLUGINS = {
+    "ditto-csharp": {
+        "skill": "csharp-sdk",
+        "display_name": "Ditto C# / .NET",
+        "short_description": "Build native Ditto Console, WinForms, MAUI, Uno and Avalonia apps.",
+        "homepage": "https://docs.ditto.live/sdk/latest/install-guides/c-sharp",
+        "default_prompt": [
+            "Create a runnable Ditto Windows Forms app targeting .NET Framework 4.8.",
+            "Build a Ditto MAUI task app with correct permission and observer lifetimes.",
+            "Diagnose native loading or async observer failures in this C# app."],
+        "install_doc": "docs/install-csharp.md",
+        "extra_docs": [],
+    },
     "ditto-swift": {
         "skill": "swift-sdk",
         "display_name": "Ditto Swift",

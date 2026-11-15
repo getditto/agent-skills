@@ -1,0 +1,34 @@
+<Project Sdk="Uno.Sdk/7.0.5">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DittoTasks</RootNamespace>
+    <Nullable>enable</Nullable>
+    <!-- No LangVersion: the SDK uses the newest C# this target framework supports. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <TargetFramework>net10.0-desktop</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UnoSingleProject>true</UnoSingleProject>
+    <UnoFeatures>Skia</UnoFeatures>
+    <ApplicationTitle>DittoTasks</ApplicationTitle>
+    <ApplicationId>com.example.dittotasks</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ditto" Version="DITTO_PACKAGE_VERSION" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- appsettings.json is gitignored; a fresh clone embeds the committed example instead. -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="DittoTasks.appsettings.json" Condition="Exists('appsettings.json')" />
+    <EmbeddedResource Include="appsettings.example.json" LogicalName="DittoTasks.appsettings.json" Condition="!Exists('appsettings.json')" />
+  </ItemGroup>
+  <Target Name="CheckDittoTarget" BeforeTargets="PrepareForBuild">
+    <Error Condition="$(TargetFramework.Contains('browser')) Or $(RuntimeIdentifier.Contains('wasm'))" Text="Ditto .NET has no WebAssembly runtime. Select a supported native target." />
+    <!-- Without an explicit RID the app runs on the build host, so check that too. -->
+    <PropertyGroup>
+      <DittoTargetRid>$(RuntimeIdentifier)</DittoTargetRid>
+      <DittoTargetRid Condition="'$(DittoTargetRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</DittoTargetRid>
+    </PropertyGroup>
+    <Error Condition="'$(DittoTargetRid)' != 'win-x64' And '$(DittoTargetRid)' != 'osx-arm64' And '$(DittoTargetRid)' != 'linux-x64' And '$(DittoTargetRid)' != 'linux-arm64'" Text="Ditto has no native desktop asset for $(DittoTargetRid). Supported: win-x64, osx-arm64, linux-x64, linux-arm64. Pass -r with one of them." />
+  </Target>
+</Project>
