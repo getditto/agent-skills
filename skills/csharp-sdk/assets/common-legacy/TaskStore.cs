@@ -1,7 +1,9 @@
 // C# 7.3 copy of assets/common for the WinForms starter, which also builds on .NET
 // Framework. Keep its public API identical to the modern copy: the same starter tests
 // run against both. Everything else uses the modern, nullable-annotated sources.
-// The one difference C# 7.3 forces: TaskItem.Id is settable here, `required init` there.
+// Two differences C# 7.3 and .NET Framework force: TaskItem.Id is settable here
+// (`required init` there), and there is no IAsyncDisposable/DisposeAsync (no `await using`
+// in C# 7.3; net48 would need an extra package). Await StopAsync(), then Dispose().
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

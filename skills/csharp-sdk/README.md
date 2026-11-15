@@ -79,7 +79,7 @@ server behavior, mobile deployment, or every framework's window lifecycle.
 - CAP-19: Each exact package compiles/runs and same-version persistence executes.
   Cross-version on-disk upgrades/downgrades have not been verified.
 - CAP-20: Published NuGet Ditto 5.2.0 public types/members have no Data Streams
-  entry point. Platform permission helpers and configuration exist; no preview opt-in
+  entry point and no encryption-at-rest option (none in 4.14.x either). Platform permission helpers and configuration exist; no preview opt-in
   is invented. The reproducible assembly check is ApiSurfaceTests.cs in the harness,
   with the package pinned to 5.2.0. See [preview](references/preview.md).
 

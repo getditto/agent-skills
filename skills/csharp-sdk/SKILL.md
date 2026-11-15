@@ -69,7 +69,7 @@ The full twenty-row map and verification limits are in [README.md](README.md).
 
 | ID | Capability | Support | What changes for you |
 |---|---|---|---|
-| CAP-20 | Preview and platform-specific APIs | partial | Native permissions/configuration exist; Data Streams are absent from the 5.2.0 public C# assembly. Do not translate another SDK's preview APIs. |
+| CAP-20 | Preview and platform-specific APIs | partial | Native permissions/configuration exist; Data Streams and encryption at rest are not available in the C# releases covered. Do not translate another SDK's APIs for them. |
 
 ## Minimum viable app
 
