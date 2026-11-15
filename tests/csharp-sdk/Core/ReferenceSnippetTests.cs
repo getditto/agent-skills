@@ -21,6 +21,16 @@ public sealed record TaskDto(
     [property: JsonPropertyName("done")] bool Done);
 // </snippet>
 
+// <snippet name="store-composite-id-dto">
+public sealed record OrderKey(
+    [property: JsonPropertyName("store_id")] string StoreId,
+    [property: JsonPropertyName("order_id")] string OrderId);
+
+public sealed record OrderDto(
+    [property: JsonPropertyName("_id")] OrderKey Id,
+    [property: JsonPropertyName("status")] string Status);
+// </snippet>
+
 public class ReferenceSnippetTests
 {
     private static string License() => Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
@@ -135,6 +145,70 @@ public class ReferenceSnippetTests
         using var missing = await ditto.Store.ExecuteAsync("UPDATE tasks SET done = :done WHERE _id = :id",
             new Dictionary<string, object> { ["id"] = "absent", ["done"] = true });
         Assert.Empty(missing.MutatedDocumentIds);
+    }
+
+    [Fact]
+    public async Task CompositeIdInsertLookupFilterAndDecode()
+    {
+        using var peer = await Peer.Open();
+        var ditto = peer.Db;
+        // <snippet name="store-composite-id">
+        // An object _id groups documents by scope; bind it as a nested dictionary.
+        var id = new Dictionary<string, object> { ["store_id"] = "store-7", ["order_id"] = "A1" };
+        using (await ditto.Store.ExecuteAsync("INSERT INTO orders DOCUMENTS (:order)",
+            new() { ["order"] = new Dictionary<string, object> { ["_id"] = id, ["status"] = "placed" } })) { }
+
+        // Look up one document by its whole _id, or filter on one of its fields.
+        using (var one = await ditto.Store.ExecuteAsync("SELECT * FROM orders WHERE _id = :id", new() { ["id"] = id }))
+        using (var forStore = await ditto.Store.ExecuteAsync(
+            "SELECT * FROM orders WHERE _id.store_id = :store", new() { ["store"] = "store-7" }))
+        {
+            // Map the object _id to a nested record, not a string.
+            var order = JsonSerializer.Deserialize<OrderDto>(one.Items[0].JsonString())!;
+            Console.WriteLine($"{order.Id.StoreId}/{order.Id.OrderId}: {order.Status}, {forStore.Items.Count} for store");
+        }
+        // </snippet>
+        using var check = await ditto.Store.ExecuteAsync("SELECT * FROM orders WHERE _id.store_id = :store", new() { ["store"] = "store-7" });
+        var decoded = JsonSerializer.Deserialize<OrderDto>(Assert.Single(check.Items).JsonString())!;
+        Assert.Equal(("store-7", "A1", "placed"), (decoded.Id.StoreId, decoded.Id.OrderId, decoded.Status));
+    }
+
+    [Fact]
+    public async Task GuardedStatusTransition()
+    {
+        using var peer = await Peer.Open();
+        var ditto = peer.Db;
+        using (await ditto.Store.ExecuteAsync("INSERT INTO orders DOCUMENTS (:o)", new() {
+            ["o"] = new Dictionary<string, object> { ["_id"] = "A1", ["status"] = "placed" } })) { }
+        async Task<bool> MoveAsync(string orderId, string from, string to)
+        {
+            // <snippet name="store-guarded-transition">
+            // Check-and-set: the UPDATE only matches while the order is still in the expected phase.
+            using var result = await ditto.Store.ExecuteAsync(
+                "UPDATE orders SET status = :to, status_at = :at WHERE _id = :id AND status = :from",
+                new() { ["id"] = orderId, ["from"] = from, ["to"] = to, ["at"] = DateTimeOffset.UtcNow.ToString("O") });
+            return result.MutatedDocumentIds.Count == 1; // false: not found, or not in `from` any more
+            // </snippet>
+        }
+        Assert.True(await MoveAsync("A1", "placed", "preparing"));
+        Assert.False(await MoveAsync("A1", "placed", "preparing")); // already moved
+        Assert.False(await MoveAsync("A1", "ready", "completed"));  // wrong phase
+        Assert.True(await MoveAsync("A1", "preparing", "ready"));
+    }
+
+    [Fact]
+    public async Task SignalNextAfterTheObserverIsDisposedIsSafe()
+    {
+        using var peer = await Peer.Open();
+        var signal = new TaskCompletionSource<Action>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var observer = peer.Db.Store.RegisterObserver("SELECT * FROM late", (result, signalNext) =>
+        {
+            using (result) signal.TrySetResult(signalNext);
+        });
+        var signalNext = await signal.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        observer.Cancel();
+        observer.Dispose();
+        signalNext(); // queued UI work may run after shutdown; this must not crash the process
     }
 
 #if DITTO_50
@@ -495,8 +569,9 @@ public sealed class TaskQueryTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var license = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
-            ?? throw new InvalidOperationException("Set DITTO_OFFLINE_LICENSE.");
+        // DITTOAPP_, not DITTO_: Ditto's native core reads DITTO_* variables itself.
+        var license = Environment.GetEnvironmentVariable("DITTOAPP_OFFLINE_LICENSE")
+            ?? throw new InvalidOperationException("Set DITTOAPP_OFFLINE_LICENSE.");
         ditto = await Ditto.OpenAsync(new DittoConfig(DittoConfig.DefaultDatabaseId,
             new DittoConfigConnect.SmallPeersOnly(), directory));
         ditto.SetOfflineOnlyLicenseToken(license);

@@ -18,6 +18,73 @@
       "defaultValue": "5.2.0",
       "replaces": "DITTO_PACKAGE_VERSION",
       "description": "Exact stable Ditto version resolved from NuGet (5.x)."
+    },
+    "name-upper": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "name",
+        "toLower": false
+      },
+      "replaces": "DITTOTASKS",
+      "description": "Upper-case app name used as the environment-variable prefix (NAME_DATABASE_ID)."
+    },
+    "framework": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "net10.0",
+      "replaces": "MAUI_TFM",
+      "description": ".NET MAUI major: net10.0 builds Apple targets with Xcode 26.x; net11.0 needs Xcode 27 or later.",
+      "choices": [
+        {
+          "choice": "net10.0"
+        },
+        {
+          "choice": "net11.0"
+        }
+      ]
+    },
+    "IsNet11": {
+      "type": "computed",
+      "value": "(framework == \"net11.0\")"
+    },
+    "maccatalystMin": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "MACCATALYST_MIN",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          {
+            "condition": "(framework == \"net11.0\")",
+            "value": "17.0"
+          },
+          {
+            "condition": "",
+            "value": "16.4"
+          }
+        ]
+      }
+    },
+    "mauiControlsVersion": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "MAUI_CONTROLS_VERSION",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          {
+            "condition": "(framework == \"net11.0\")",
+            "value": "$(MauiVersion)"
+          },
+          {
+            "condition": "",
+            "value": "10.0.1"
+          }
+        ]
+      }
     }
   },
   "sources": [
@@ -28,11 +95,44 @@
             "**/bin/**",
             "**/obj/**"
           ]
+        },
+        {
+          "condition": "(!IsNet11)",
+          "exclude": [
+            "Platforms/iOS/SceneDelegate.cs",
+            "Platforms/MacCatalyst/SceneDelegate.cs"
+          ]
         }
       ],
       "rename": {
         "gitignore.in": ".gitignore"
       }
     }
-  ]
+  ],
+  "SpecialCustomOperations": {
+    "**/*.plist": {
+      "operations": [
+        {
+          "type": "conditional",
+          "configuration": {
+            "actionableIf": [
+              "<!--#if"
+            ],
+            "actionableElse": [
+              "<!--#else"
+            ],
+            "actionableElseif": [
+              "<!--#elseif"
+            ],
+            "endif": [
+              "<!--#endif"
+            ],
+            "trim": true,
+            "wholeLine": true,
+            "evaluator": "C++"
+          }
+        }
+      ]
+    }
+  }
 }

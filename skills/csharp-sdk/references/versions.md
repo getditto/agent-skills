@@ -74,7 +74,11 @@ On 5.2.0 and later, set it when opening:
 `new DittoConfig(...) { SystemParameters = new Dictionary<string, object> { ["DQL_STRICT_MODE"] = true } }`.
 On 5.0.x and 5.1.x, run `ALTER SYSTEM SET DQL_STRICT_MODE = true` through `ExecuteAsync`
 after `OpenAsync` and before `Sync.Start()`. An app that already set `false` in v4 needs
-no change. Both forms were run against 5.2.0 (and `ALTER SYSTEM` against 5.0.4). The
+no change. Both forms were run against 5.2.0 (and `ALTER SYSTEM` against 5.0.4); the
+parameter name is case-insensitive in both. Keeping `true` matches Ditto's migration
+prompt. The data-modeling skill instead moves every peer to `false` before upgrading;
+pick one per mesh, and contact Ditto support before switching an existing mesh to
+`false`, as the migration guide advises. The
 4.14.7 test fixture runs with strict mode **off**, so its results do not cover v4's
 default behavior.
 

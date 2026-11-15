@@ -1,5 +1,14 @@
 # Store, transactions and storage
 
+## Contents
+
+- [CAP-08 Executing DQL](#cap-08-executing-dql)
+  - [Composite document IDs](#composite-document-ids)
+  - [Status workflows](#status-workflows)
+- [CAP-09 Transactions](#cap-09-transactions)
+- [CAP-10 Indexing](#cap-10-indexing)
+- [CAP-17 Device storage management](#cap-17-device-storage-management)
+
 ## CAP-08 Executing DQL
 
 Source: [C# DQL migration](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-dql),
@@ -57,6 +66,62 @@ using (var updated = await ditto.Store.ExecuteAsync("UPDATE tasks SET done = :do
 `MutatedDocumentIds` is empty when a mutation matched nothing. Updating only `done` or
 `title` leaves other fields alone; writing a whole stale DTO back would overwrite them.
 The bundled TaskStore/TaskItem sources show the same calls in a complete adapter.
+
+### Composite document IDs
+
+The data-modeling skill recommends an object `_id` (for example `{ store_id, order_id }`)
+to scope documents. Bind it as a nested dictionary, filter on its fields with
+`_id.<field>`, and map it to a nested type rather than `string Id`:
+
+<!-- snippet: store-composite-id-dto -->
+```csharp
+public sealed record OrderKey(
+    [property: JsonPropertyName("store_id")] string StoreId,
+    [property: JsonPropertyName("order_id")] string OrderId);
+
+public sealed record OrderDto(
+    [property: JsonPropertyName("_id")] OrderKey Id,
+    [property: JsonPropertyName("status")] string Status);
+```
+
+<!-- snippet: store-composite-id -->
+```csharp
+// An object _id groups documents by scope; bind it as a nested dictionary.
+var id = new Dictionary<string, object> { ["store_id"] = "store-7", ["order_id"] = "A1" };
+using (await ditto.Store.ExecuteAsync("INSERT INTO orders DOCUMENTS (:order)",
+    new() { ["order"] = new Dictionary<string, object> { ["_id"] = id, ["status"] = "placed" } })) { }
+
+// Look up one document by its whole _id, or filter on one of its fields.
+using (var one = await ditto.Store.ExecuteAsync("SELECT * FROM orders WHERE _id = :id", new() { ["id"] = id }))
+using (var forStore = await ditto.Store.ExecuteAsync(
+    "SELECT * FROM orders WHERE _id.store_id = :store", new() { ["store"] = "store-7" }))
+{
+    // Map the object _id to a nested record, not a string.
+    var order = JsonSerializer.Deserialize<OrderDto>(one.Items[0].JsonString())!;
+    Console.WriteLine($"{order.Id.StoreId}/{order.Id.OrderId}: {order.Status}, {forStore.Items.Count} for store");
+}
+```
+
+### Status workflows
+
+To move a document through phases (placed, preparing, ready, completed), make each step a
+check-and-set: the UPDATE matches only while the document is still in the expected phase,
+and `MutatedDocumentIds` says whether it moved. Field names cannot be parameters, so
+keep phase names in trusted code.
+
+<!-- snippet: store-guarded-transition -->
+```csharp
+// Check-and-set: the UPDATE only matches while the order is still in the expected phase.
+using var result = await ditto.Store.ExecuteAsync(
+    "UPDATE orders SET status = :to, status_at = :at WHERE _id = :id AND status = :from",
+    new() { ["id"] = orderId, ["from"] = from, ["to"] = to, ["at"] = DateTimeOffset.UtcNow.ToString("O") });
+return result.MutatedDocumentIds.Count == 1; // false: not found, or not in `from` any more
+```
+
+The guard is atomic on one peer only. `status` is a last-write-wins field across the
+mesh, so two devices changing the same document while offline can still merge to an
+earlier phase. Let each device own one transition (the kitchen starts and finishes, the
+window hands off), and keep per-phase timestamps so a regression is detectable.
 
 ## CAP-09 Transactions
 

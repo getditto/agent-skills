@@ -17,6 +17,16 @@ public sealed class Settings
     public bool EnablePeerToPeerRadios { get; set; }
     // Optional store location override (for example, test isolation). Null uses the host's path.
     public string? PersistenceDirectory { get; set; }
+    // Optional direct TCP sync. TcpListenPort 0 means off; TcpListenAddress defaults to
+    // 127.0.0.1 (use 0.0.0.0 to accept other machines); TcpConnect is "host:port[,host:port]".
+    public int TcpListenPort { get; set; }
+    public string? TcpListenAddress { get; set; }
+    public string? TcpConnect { get; set; }
+
+    public IReadOnlyList<string> TcpServers() =>
+        string.IsNullOrWhiteSpace(TcpConnect)
+            ? []
+            : TcpConnect.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     public static Settings Load()
     {
@@ -30,6 +40,10 @@ public sealed class Settings
         settings.Token = Override("TOKEN", settings.Token);
         settings.AuthProvider = Override("AUTH_PROVIDER", settings.AuthProvider);
         settings.PersistenceDirectory = Override("PERSISTENCE_DIRECTORY", settings.PersistenceDirectory);
+        settings.TcpListenAddress = Override("TCP_LISTEN_ADDRESS", settings.TcpListenAddress);
+        settings.TcpConnect = Override("TCP_CONNECT", settings.TcpConnect);
+        if (Override("TCP_LISTEN_PORT", null) is { } port)
+            settings.TcpListenPort = int.TryParse(port, out var parsed) ? parsed : -1;
         // The token is checked in TaskStore.StartAsync, which knows whether one is fetched at runtime.
         settings.Validate(requireToken: false);
         return settings;
@@ -50,6 +64,11 @@ public sealed class Settings
     {
         if (!Guid.TryParse(DatabaseId, out _))
             throw new InvalidOperationException($"Set DatabaseId in appsettings.json or {Prefix}DATABASE_ID.");
+        if (TcpListenPort is < 0 or > ushort.MaxValue)
+            throw new InvalidOperationException($"TcpListenPort ({Prefix}TCP_LISTEN_PORT) must be 0-65535.");
+        foreach (var server in TcpServers())
+            if (server.LastIndexOf(':') is var colon && (colon <= 0 || !ushort.TryParse(server[(colon + 1)..], out _)))
+                throw new InvalidOperationException($"TcpConnect ({Prefix}TCP_CONNECT) entries must be host:port, got '{server}'.");
         if (string.IsNullOrWhiteSpace(Url))
         {
             if (string.IsNullOrWhiteSpace(OfflineLicense))

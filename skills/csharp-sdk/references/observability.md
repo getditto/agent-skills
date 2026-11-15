@@ -11,7 +11,9 @@ version. Record TFM, OS/process architecture and runtime identifier when diagnos
 native loading. AbsolutePersistenceDirectory identifies the actual store location.
 
 v5 logging types are in DittoSDK.Logging. DittoLogger.MinimumLogLevel and IsEnabled
-control console logging. CustomLogCallback receives DittoLogLevel and string; catch
+control console logging. At the default INFO level, every instance writes many lines to
+stdout, including its CA certificate, peer key and app ID; the starters set
+`DittoLogger.MinimumLogLevel = DittoLogLevel.Warning` before opening. CustomLogCallback receives DittoLogLevel and string; catch
 exceptions in custom callbacks. ExportToFileAsync(path) creates a support log export;
 review logs for application data before sharing. File logging may differ from console
 filtering, so disabling console output is not a data-retention policy.

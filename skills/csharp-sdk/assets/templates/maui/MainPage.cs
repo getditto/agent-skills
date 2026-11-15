@@ -4,13 +4,19 @@ namespace DittoTasks;
 
 public sealed class MainPage : ContentPage
 {
-    private readonly TasksViewModel model = new TasksViewModel(action => MainThread.BeginInvokeOnMainThread(action));
+    private readonly TasksViewModel model;
     private readonly Entry title = new Entry { Placeholder = "Task title" };
     private readonly CollectionView list = new CollectionView { SelectionMode = SelectionMode.Single };
     private bool started;
     public MainPage()
     {
-        Title = "Ditto Tasks";
+        // IDispatcher.Dispatch reports rejection (false) instead of dropping work silently.
+        model = new TasksViewModel(action =>
+        {
+            if (!Dispatcher.Dispatch(action))
+                throw new InvalidOperationException("The UI dispatcher rejected the work.");
+        });
+        Title = "DittoTasks";
         BindingContext = model;
         var status = new Label();
         status.SetBinding(Label.TextProperty, nameof(TasksViewModel.Status));

@@ -31,6 +31,10 @@ def environment(version):
         raise SystemExit("DITTO_OFFLINE_LICENSE is required (environment or repository .env).")
     if not env.get("DITTO_DATABASE_ID"):
         env.pop("DITTO_DATABASE_ID", None)
+    # Customer-facing examples read DITTOAPP_* (Ditto's native core reads DITTO_* itself).
+    env.setdefault("DITTOAPP_OFFLINE_LICENSE", env["DITTO_OFFLINE_LICENSE"])
+    if env.get("DITTO_DATABASE_ID"):
+        env.setdefault("DITTOAPP_DATABASE_ID", env["DITTO_DATABASE_ID"])
     env["DITTO_CSHARP_VERSION"] = version
     env["RUST_LOG"] = "error"
     env.pop("NO_COLOR", None)

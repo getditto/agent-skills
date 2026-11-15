@@ -7,8 +7,9 @@ for the actual observer result before cancelling and shutting down.
 ## Run
 
 Create a .NET 10 console project and add NuGet package `Ditto` at **5.2.0**.
-Replace its Program.cs with the program below. Set `DITTO_OFFLINE_LICENSE`; set
-`DITTO_DATABASE_ID` too if the license is database-bound. No server is contacted.
+Replace its Program.cs with the program below. Set `DITTOAPP_OFFLINE_LICENSE`; set
+`DITTOAPP_DATABASE_ID` too if the license is database-bound. No server is contacted.
+The names avoid the `DITTO_` prefix because Ditto's native core reads `DITTO_*` variables.
 The directory is temporary but not automatically deleted; use a persistent application
 data directory for a real application.
 
@@ -25,10 +26,10 @@ internal static class Program
 {
     public static async Task Main()
     {
-        var license = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
-            ?? throw new InvalidOperationException("Set DITTO_OFFLINE_LICENSE.");
+        var license = Environment.GetEnvironmentVariable("DITTOAPP_OFFLINE_LICENSE")
+            ?? throw new InvalidOperationException("Set DITTOAPP_OFFLINE_LICENSE.");
         // Offline stores accept the SDK default; a real app supplies its own database ID.
-        var id = Environment.GetEnvironmentVariable("DITTO_DATABASE_ID")
+        var id = Environment.GetEnvironmentVariable("DITTOAPP_DATABASE_ID")
             ?? DittoConfig.DefaultDatabaseId;
         var path = Path.Combine(Path.GetTempPath(), "ditto-minimal-" + Guid.NewGuid());
         using var ditto = await Ditto.OpenAsync(new DittoConfig(id,

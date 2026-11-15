@@ -32,20 +32,44 @@ def resolve_version():
     return max(stable, key=lambda v: tuple(map(int, v.split("."))))
 
 
+WINFORMS_FRAMEWORKS = {"net48", "net481", "net10.0-windows"}
+MAUI_FRAMEWORKS = {"net10.0", "net11.0"}
+# Apple targets build only with the Xcode their workload's Apple packs were made for.
+MAUI_XCODE = {
+    "net10.0": "Apple targets need Xcode 26.x; with Xcode 27 or later, use --framework net11.0.",
+    "net11.0": "Apple targets need Xcode 27 or later and the .NET 11 SDK with the MAUI workload.",
+}
+
+
+def maui_framework_for_active_sdk():
+    """net11.0 when the active SDK (which honours global.json) is .NET 11 or later, else net10.0."""
+    try:
+        active = subprocess.run(["dotnet", "--version"], capture_output=True, text=True,
+                                check=True, timeout=60).stdout.strip()
+        major = int(active.split(".")[0])
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return "net10.0"
+    return "net11.0" if major >= 11 else "net10.0"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("kind", choices=["console", "winforms", "maui", "uno", "avalonia"])
     parser.add_argument("output", type=Path)
     parser.add_argument("--name", default="DittoTasks")
     parser.add_argument("--sdk-version", help="Exact stable v5 pin; otherwise resolve NuGet")
-    parser.add_argument("--framework", choices=["net48", "net481", "net10.0-windows"], help="WinForms only")
+    parser.add_argument("--framework", choices=sorted(WINFORMS_FRAMEWORKS | MAUI_FRAMEWORKS),
+                        help="WinForms: net48 (default), net481, net10.0-windows. "
+                             "MAUI: net10.0 or net11.0 (default: matches the active .NET SDK).")
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", args.name):
         parser.error("Name must be a C# identifier starting with a letter.")
     if args.name.lower() == "ditto":
         parser.error("Name must not be 'Ditto': a project named after the Ditto package cannot restore it (NU1108).")
-    if args.framework and args.kind != "winforms":
-        parser.error("--framework is currently a WinForms option.")
+    if args.framework and not (
+            (args.kind == "winforms" and args.framework in WINFORMS_FRAMEWORKS)
+            or (args.kind == "maui" and args.framework in MAUI_FRAMEWORKS)):
+        parser.error(f"--framework {args.framework} is not an option for the {args.kind} starter.")
     destination = args.output.resolve()
     if destination.exists() and (not destination.is_dir() or any(destination.iterdir())):
         parser.error("Output must be absent or empty; existing projects are never overwritten.")
@@ -59,9 +83,13 @@ def main():
     minimum = MINIMUM_VERSIONS.get(target)
     if minimum and tuple(map(int, version.split("."))) < minimum[0]:
         parser.error(f"Ditto {version} is too old for this starter: {minimum[1]}")
-    print(f"Creating {args.kind} with Ditto {version}. Knowledge baseline: 5.2.0.")
+    if args.kind == "maui" and not args.framework:
+        args.framework = maui_framework_for_active_sdk()
+    if args.kind == "maui":
+        print(f"MAUI {args.framework}: " + MAUI_XCODE[args.framework], flush=True)
+    print(f"Creating {args.kind} with Ditto {version}. Knowledge baseline: 5.2.0.", flush=True)
     if tuple(map(int, version.split("."))) > (5, 2, 0):
-        print("Read the newer release notes and validate this generated app before relying on it.")
+        print("Read the newer release notes and validate this generated app before relying on it.", flush=True)
     with tempfile.TemporaryDirectory(prefix="ditto-template-hive-") as temporary:
         hive = str(Path(temporary).resolve())
         subprocess.run(["dotnet", "new", "install", str(SKILL / "assets/templates"),

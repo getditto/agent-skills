@@ -106,7 +106,7 @@ background behavior, server authentication renewal/durability, cross-version sto
 migration, traditional packages.config runtime, and behavior across all agent hosts.
 Observed app-to-app replication does not establish server durability or a transport path.
 
-**Last verified:** 2026-11-14.
+**Last verified:** 2026-11-15.
 
 ## Installation and quick start
 

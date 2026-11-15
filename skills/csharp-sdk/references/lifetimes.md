@@ -39,6 +39,9 @@ finally
 }
 ```
 
+The `signalNext` callback is separate: calling it after the observer is cancelled and
+disposed is safe (run against 5.0.4-5.2.0).
+
 Never use a v5 store observer or subscription after Dispose: any member access,
 including `IsCancelled`, crashes the process natively (SIGSEGV) instead of throwing. Avoid reference cycles from callbacks capturing an entire
 window. Unsubscribe application events and reject queued UI updates after teardown.

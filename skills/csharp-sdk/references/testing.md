@@ -8,7 +8,9 @@ contain older API forms; compile against the selected package rather than copyin
 those forms without verification.
 
 Give every test its own temporary store directory and a valid offline license, and
-assert on actual observations and read-back values. A zero exit code or successful
+assert on actual observations and read-back values. The fixture below is xUnit v2
+(`xunit` 2.x); on xUnit v3 (`xunit.v3`), `IAsyncLifetime` methods return `ValueTask`. It
+reads `DITTOAPP_*` variables because Ditto's native core reads `DITTO_*` names itself. A zero exit code or successful
 restore does not establish correctness. Provide a database ID when the license is
 bound to one; otherwise `DittoConfig.DefaultDatabaseId` works for isolated offline
 stores.
@@ -23,8 +25,9 @@ public sealed class TaskQueryTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var license = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
-            ?? throw new InvalidOperationException("Set DITTO_OFFLINE_LICENSE.");
+        // DITTOAPP_, not DITTO_: Ditto's native core reads DITTO_* variables itself.
+        var license = Environment.GetEnvironmentVariable("DITTOAPP_OFFLINE_LICENSE")
+            ?? throw new InvalidOperationException("Set DITTOAPP_OFFLINE_LICENSE.");
         ditto = await Ditto.OpenAsync(new DittoConfig(DittoConfig.DefaultDatabaseId,
             new DittoConfigConnect.SmallPeersOnly(), directory));
         ditto.SetOfflineOnlyLicenseToken(license);
@@ -68,7 +71,9 @@ Notes for real suites:
   either too slow or flaky. To prove something did *not* happen, wait a short bounded
   time and assert nothing changed.
 - Native code can deadlock where managed timeouts cannot help. Run CI with a test-host
-  watchdog, for example `dotnet test --blame-hang-timeout 45s`.
+  watchdog: `dotnet test --blame-hang-timeout 45s` with the VSTest runner (xUnit v2), or
+  `dotnet test --timeout 3m` with Microsoft.Testing.Platform (xUnit v3 on .NET 10+ SDKs,
+  which also needs `{"test": {"runner": "Microsoft.Testing.Platform"}}` in global.json).
 - For two-peer tests, connect the peers over loopback TCP (see
   [transports](transports.md)) with radios disabled. A localhost peer test proves
   replication logic, not BLE, Wi-Fi Aware or cloud durability.

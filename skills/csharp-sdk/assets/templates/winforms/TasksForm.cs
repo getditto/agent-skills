@@ -20,7 +20,7 @@ namespace DittoTasks
 
         public TasksForm()
         {
-            Text = "Ditto Tasks";
+            Text = "DittoTasks";
             Size = new Size(700, 450);
             // The view model ignores work that arrives after it stops, so always run it.
             model = new TasksViewModel(action => {

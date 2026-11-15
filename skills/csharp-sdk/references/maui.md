@@ -1,19 +1,41 @@
 # .NET MAUI
 
+## Contents
+
+- [Targets and toolchains](#targets-and-toolchains)
+  - [Solution layout for a tested app](#solution-layout-for-a-tested-app)
+- [Permissions and lifecycle](#permissions-and-lifecycle)
+- [Release validation](#release-validation)
+- [New SDK, older workload manifests](#new-sdk-older-workload-manifests)
+- [IDE cannot find the Mac Catalyst bundle](#ide-cannot-find-the-mac-catalyst-bundle)
+
 Sources: [Ditto installation and permissions](https://docs.ditto.live/sdk/latest/install-guides/c-sharp),
 [MAUI quickstart](https://docs.ditto.live/sdk/latest/quickstarts/dotnet-maui), and
 published 5.2.0 platform assemblies. The helper lives in DittoSDK.Sync.
 
 ## Targets and toolchains
 
-The starter targets .NET 10 Android/iOS/Mac Catalyst, plus Windows x64 on Windows.
+**Choose the framework from the Xcode you build Apple targets with.** `create-app.py maui`
+takes `--framework net10.0` or `net11.0` and defaults to the active SDK's major
+(`dotnet --version`, which honours global.json):
+
+| Framework | Apple targets build with | Mac Catalyst minimum | MAUI Controls | Scene setup |
+|---|---|---|---|---|
+| net10.0 | Xcode 26.x | 16.4 | 10.0.1 | Not needed |
+| net11.0 | Xcode 27 or later | 17.0 | `$(MauiVersion)` (from the workload) | UIApplicationSceneManifest + SceneDelegate, included |
+
+`dotnet workload update` cannot make a net10.0 Apple pack accept Xcode 27: generate with
+net11.0 instead. Android builds with either. Both include Windows x64 when built on
+Windows. Other minimums: Android 24, iOS 15.4, Windows 10.0.17763.0. macOS uses
+maccatalyst-arm64, not osx-arm64.
+
 **Use Ditto 5.2.0 or later.** Before 5.2.0, .NET 10 Android apps (which resolve
 Xamarin.Kotlin 2.x) abort at startup with "Built-in class kotlin.Any is not found";
 5.2.0 also fixed an armeabi-v7a open crash and a RequestPermissionsAsync
 background-thread crash. `create-app.py` rejects older versions for MAUI.
-Its minimums follow the package assets conservatively: Android 24, iOS 15.4,
-Mac Catalyst 16.4, Windows 10.0.17763.0. macOS uses maccatalyst-arm64, not osx-arm64.
-Restore only the selected target when the host cannot build the other targets.
+
+Build one target at a time when the host cannot build the others (replace net10.0 with
+your framework):
 
 ```bash
 dotnet build -f net10.0-android -p:TargetFrameworks=net10.0-android
@@ -22,11 +44,23 @@ dotnet build -f net10.0-maccatalyst -p:TargetFrameworks=net10.0-maccatalyst
 dotnet build -f net10.0-windows10.0.19041.0 -p:TargetFrameworks=net10.0-windows10.0.19041.0
 ```
 
+`-p:TargetFrameworks` applies to every referenced project, so use it only for the
+single-project starter. Once the app references a class library, build with `-f` alone
+(it fails with NETSDK1005 otherwise) and install the workloads for every listed target.
+
 Install matching .NET/MAUI workloads, Android SDK/JDK, and Xcode as appropriate.
-Xcode and Apple workload versions must match; a successful override probe is not a
-supported toolchain recommendation. Physical iOS deployment additionally needs signing.
-Use a real canonical filesystem path for builds on macOS; building through a symlinked
-path such as /tmp (which points to /private/tmp) can drop generated icon resources.
+Physical iOS deployment additionally needs signing. Use a real canonical filesystem path
+for builds on macOS; building through a symlinked path such as /tmp (which points to
+/private/tmp) can drop generated icon resources.
+
+### Solution layout for a tested app
+
+Keep Ditto logic in a plain `netX.0` class library that both the MAUI app and an xUnit
+project reference; a test project cannot reference the MAUI app itself. Reference the
+`Ditto` package from the library **and** the MAUI app: the library compiles against
+Ditto's .NET assembly, while the app deploys the platform assemblies and native assets.
+`DittoSyncPermissions` exists only in the mobile assemblies, so call it from the MAUI
+app and pass it to the library as a `Func<Task<bool>>`, as the starter does.
 
 ## Permissions and lifecycle
 
@@ -40,16 +74,27 @@ The required sequence is OpenAsync → main-thread permission request → check 
 bool → start sync. Android's DittoSyncPermissions helper needs initialized native
 transports. The shared adapter opens first; MainThread.InvokeOnMainThreadAsync invokes
 the permission helper and returns its bool. The adapter asks only when
-EnablePeerToPeerRadios is set (the MAUI default). A denial is not fatal: the store stays
+EnablePeerToPeerRadios is true; the MAUI template's appsettings.json sets it (the Settings
+class itself defaults to false, so a config file without the key turns radios off). A denial is not fatal: the store stays
 open, Bluetooth and Wi-Fi peer-to-peer transports are turned off, LAN and server sync
 still start, and the status line reports the denial. Offer a way to request again
 rather than treating the first answer as final. Windows builds must not reference the mobile-only helper.
 
-UI updates use MainThread.BeginInvokeOnMainThread. The starter owns its view model per
-window and stops it on destruction. It does not promise continuous background sync.
-If required, follow the official Android foreground-service setup (including notification
-resources/runtime permission) and Apple background-mode requirements, then verify on
-hardware. Do not keep restarting the instance for each page appearance.
+UI updates go through the page's `IDispatcher.Dispatch`, which returns false when it
+cannot accept work; the starter turns that into the exception the store's back-pressure
+needs (see [observers](observers.md)). The starter owns its view model per window and
+stops it on destruction. Do not keep restarting the instance for each page appearance.
+
+On Android, Back destroys the window but not the process, and a relaunch calls
+`CreateWindow` again in the same process. If you move the store to an app-scoped service,
+make its start and stop re-entrant (a stop must allow the next start) and create
+window-owned pages per window rather than reusing singleton pages or Shell.
+
+The starter does not promise continuous background sync. If required, follow the
+official Android foreground-service setup (including notification resources/runtime
+permission) and, on iOS/Mac Catalyst, add `bluetooth-central` and `bluetooth-peripheral`
+to `UIBackgroundModes`; Ditto logs a warning naming them when BLE runs without them.
+Verify background behavior on hardware.
 
 ## Release validation
 
@@ -61,24 +106,16 @@ Apple starter uses MtouchLink=None instead of an invalid PublishTrimmed=false se
 
 ## New SDK, older workload manifests
 
-A newly installed stable .NET SDK can still select older workload packs, including an
-Apple pack that requires a different Xcode. Run `dotnet workload update`, then check
-`dotnet workload --version`, `dotnet workload list` and the Apple pack the build
-selects before concluding that Xcode must be downgraded. Use the intended SDK and
-global.json context, and validate the pairing without disabling Xcode checks.
+A newly installed .NET SDK can still select older workload packs. Check
+`dotnet workload --version`, `dotnet workload list` and the Apple pack the build selects
+before concluding that Xcode must change, and keep the Xcode checks enabled. Choose the
+framework by the table above rather than by updating workloads.
 
-The shipped template's .NET 10/MAUI 10 pins are reproducible starter baselines, not
-claims about the newest framework release. When a user requests a newer framework,
-update the target frameworks, workload set and Microsoft.Maui.Controls together, then
-build each intended native target. Changing only the .NET SDK installation is insufficient.
-
-Framework majors can also change Apple minimum OS versions and the UIKit scene
-configuration (UIApplicationSceneManifest and SceneDelegate); an outdated entry point
-fails with errors such as MT7199. When moving framework majors, compare native entry
-points and plist files with a fresh `dotnet new maui --no-restore` project for that SDK,
-preserve Ditto permission entries, and compile. Updating only TargetFrameworks and
-package numbers can leave obsolete platform bootstrap code even when the shared C#
-service compiles.
+When a user asks for a newer framework than the template offers, update the target
+frameworks, workload set, Microsoft.Maui.Controls, Apple minimums and the platform entry
+points together: compare native entry points and plist files with a fresh
+`dotnet new maui --no-restore` project for that SDK, keep the Ditto permission entries,
+and build each target. An outdated entry point fails with errors such as MT7199.
 
 ## IDE cannot find the Mac Catalyst bundle
 

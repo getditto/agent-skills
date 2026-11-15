@@ -9,10 +9,10 @@ internal static class Program
 {
     public static async Task Main()
     {
-        var license = Environment.GetEnvironmentVariable("DITTO_OFFLINE_LICENSE")
-            ?? throw new InvalidOperationException("Set DITTO_OFFLINE_LICENSE.");
+        var license = Environment.GetEnvironmentVariable("DITTOAPP_OFFLINE_LICENSE")
+            ?? throw new InvalidOperationException("Set DITTOAPP_OFFLINE_LICENSE.");
         // Offline stores accept the SDK default; a real app supplies its own database ID.
-        var id = Environment.GetEnvironmentVariable("DITTO_DATABASE_ID")
+        var id = Environment.GetEnvironmentVariable("DITTOAPP_DATABASE_ID")
             ?? DittoConfig.DefaultDatabaseId;
         var path = Path.Combine(Path.GetTempPath(), "ditto-minimal-" + Guid.NewGuid());
         using var ditto = await Ditto.OpenAsync(new DittoConfig(id,

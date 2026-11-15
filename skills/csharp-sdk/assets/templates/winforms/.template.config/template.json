@@ -35,6 +35,16 @@
           "choice": "net10.0-windows"
         }
       ]
+    },
+    "name-upper": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "name",
+        "toLower": false
+      },
+      "replaces": "DITTOTASKS",
+      "description": "Upper-case app name used as the environment-variable prefix (NAME_DATABASE_ID)."
     }
   },
   "sources": [

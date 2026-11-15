@@ -51,8 +51,7 @@ ARM64 only (4.14.x also ships osx-x64).
 
 ## Supported versions and packages
 
-Package: `Ditto`; namespaces include `DittoSDK`, `DittoSDK.Store`, `DittoSDK.Sync`
-and `DittoSDK.Auth` on v5. [versions.md](references/versions.md) owns the compatibility
+Package `Ditto`; v5 namespaces: `DittoSDK`, `.Store`, `.Sync`, `.Auth`, `.Exceptions`. [versions.md](references/versions.md) owns the compatibility
 matrix, including v4 namespace differences and exact executed versions.
 
 For a new app, resolve the latest stable compatible NuGet version, then pass that

@@ -49,6 +49,22 @@ class CSharpToolingTests(unittest.TestCase):
     def test_common_sources_are_synchronized(self):
         subprocess.run([sys.executable, str(ROOT / 'tests/csharp-sdk/scripts/sync-starters.py'), '--check'], check=True)
 
+    def test_maui_framework_follows_the_active_sdk(self):
+        for version, expected in (('11.0.100', 'net11.0'), ('10.0.102', 'net10.0'), ('12.0.100', 'net11.0')):
+            completed = subprocess.CompletedProcess([], 0, stdout=version + '\n')
+            with patch.object(GENERATOR.subprocess, 'run', return_value=completed):
+                self.assertEqual(GENERATOR.maui_framework_for_active_sdk(), expected)
+        with patch.object(GENERATOR.subprocess, 'run', side_effect=OSError('no dotnet')):
+            self.assertEqual(GENERATOR.maui_framework_for_active_sdk(), 'net10.0')
+
+    def test_framework_options_are_checked_per_starter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for kind, framework in (('console', 'net11.0'), ('maui', 'net48'), ('winforms', 'net11.0')):
+                argv = ['create-app.py', kind, str(Path(directory) / 'app'), '--framework', framework, '--sdk-version', '5.2.0']
+                with patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as error: GENERATOR.main()
+                self.assertEqual(error.exception.code, 2)
+
     def test_published_csharp_blocks_match_executed_snippets(self):
         subprocess.run([sys.executable, str(ROOT / 'tests/csharp-sdk/scripts/verify-snippets.py')], check=True)
 

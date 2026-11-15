@@ -14,8 +14,9 @@ dotnet run
 ```
 
 MainWindow binds Items and Status. SDK callbacks produce DTO snapshots; the adapter
-queues changes with Dispatcher.UIThread.Post. ObservableCollection changes occur on
-the UI thread. Avoid native objects in data templates and property getters.
+queues changes with Dispatcher.UIThread.Post, which cannot report rejection, so the
+store is stopped before the window closes and no observer outlives the dispatcher.
+ObservableCollection changes occur on the UI thread. Avoid native objects in data templates and property getters.
 Closing is cancelled until StopAsync completes, then retried once. Reject queued state
 updates after the view model closes.
 

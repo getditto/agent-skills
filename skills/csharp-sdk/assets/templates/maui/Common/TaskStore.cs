@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DittoSDK;
 using DittoSDK.Auth;
+using DittoSDK.Logging;
 using DittoSDK.Store;
 using DittoSDK.Sync;
 
@@ -61,6 +62,10 @@ public sealed class TaskStore(Action<Action>? dispatch = null) : IDisposable, IA
     private volatile bool stopped = true;
     private int disposed;
 
+    // The latest snapshot applied on the consumer's thread. An observer delivers the current
+    // result once and then only on change, so a view created later must read this first.
+    public IReadOnlyList<TaskItem> Current { get; private set; } = [];
+
     public event Action<IReadOnlyList<TaskItem>>? Changed;
     public event Action<string>? Failed;
 
@@ -86,6 +91,8 @@ public sealed class TaskStore(Action<Action>? dispatch = null) : IDisposable, IA
             DittoConfigConnect connection = string.IsNullOrWhiteSpace(settings.Url)
                 ? new DittoConfigConnect.SmallPeersOnly()
                 : new DittoConfigConnect.Server(new Uri(settings.Url));
+            // Native INFO logging prints certificates and peer keys to stdout; keep it to warnings.
+            DittoLogger.MinimumLogLevel = DittoLogLevel.Warning;
             // OpenAsync and ExecuteAsync complete synchronously in v5 (they return finished
             // tasks), so awaiting them alone would run store work on the caller's UI thread.
             var dittoConfig = new DittoConfig(settings.DatabaseId, connection, directory);
@@ -124,13 +131,24 @@ public sealed class TaskStore(Action<Action>? dispatch = null) : IDisposable, IA
             if (permissionsDenied)
                 Report(new UnauthorizedAccessException(
                     "Sync permissions were denied, so Bluetooth and Wi-Fi peer-to-peer sync are off until they are granted."));
-            if (!radios)
-                ditto.UpdateTransportConfig(config =>
+            var tcpServers = settings.TcpServers();
+            ditto.UpdateTransportConfig(config =>
+            {
+                if (!radios)
                 {
                     config.PeerToPeer.BluetoothLE.Enabled = false;
                     config.PeerToPeer.Awdl.Enabled = false;
                     config.PeerToPeer.WifiAware.Enabled = false;
-                });
+                }
+                // Optional direct TCP, for example two instances on one machine or a known server.
+                if (settings.TcpListenPort > 0)
+                {
+                    config.Listen.Tcp.Enabled = true;
+                    config.Listen.Tcp.InterfaceIp = settings.TcpListenAddress ?? "127.0.0.1";
+                    config.Listen.Tcp.Port = (ushort)settings.TcpListenPort;
+                }
+                foreach (var server in tcpServers) config.Connect.TcpServers.Add(server);
+            });
             subscription = ditto.Sync.RegisterSubscription("SELECT * FROM tasks");
             observer = ditto.Store.RegisterObserver(Query, OnResult);
             ditto.Sync.Start();
@@ -168,6 +186,7 @@ public sealed class TaskStore(Action<Action>? dispatch = null) : IDisposable, IA
                 try
                 {
                     if (stopped) return;
+                    Current = rows;
                     Changed?.Invoke(rows);
                     if (skipped.Count > 0)
                         Report(new InvalidDataException($"Skipped {skipped.Count} task document(s) " +

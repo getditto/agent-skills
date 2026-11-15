@@ -1,5 +1,10 @@
 # Observers, diffing and back-pressure
 
+## Contents
+
+- [CAP-11 Observers](#cap-11-observers)
+  - [Manual back-pressure for fire-and-forget UI dispatch](#manual-back-pressure-for-fire-and-forget-ui-dispatch)
+
 ## CAP-11 Observers
 
 Source: [observing data](https://docs.ditto.live/sdk/latest/crud/observing-data-changes),
@@ -66,8 +71,8 @@ Call `signalNext` exactly once on every path, and always from a `finally` so an
 exception from your own error handler cannot skip it. Changes that arrive while the
 signal is held are coalesced into one delivery of the latest state.
 
-The dispatcher must report rejection by throwing. `DispatcherQueue.TryEnqueue` returns
-`false` instead, so the Uno starter wraps it:
+The dispatcher must report rejection by throwing. `DispatcherQueue.TryEnqueue` (Uno) and
+MAUI's `IDispatcher.Dispatch` return `false` instead, so those starters wrap them:
 
 <!-- source: assets/templates/uno/MainPage.xaml.cs -->
 ```csharp
@@ -77,8 +82,12 @@ model = new TasksViewModel(action => {
 });
 ```
 
-`Control.BeginInvoke` throws once the window handle is gone. A dispatcher that silently
-drops work leaves the observer paused until it is cancelled. The overload that also
+`Control.BeginInvoke` throws once the window handle is gone. Avalonia's
+`Dispatcher.UIThread.Post` cannot report rejection at all; there, cancel observers before
+the dispatcher shuts down (the starter stops the store before the window closes). A
+dispatcher that silently drops work leaves the observer paused until it is cancelled.
+Calling `signalNext` after the observer has been cancelled and disposed is safe (run
+against 5.0.4-5.2.0), so queued UI work that drains during shutdown cannot crash. The overload that also
 takes a query-arguments dictionary accepts the same manual callback. The snippet uses
 C# 12; the WinForms starter's C# 7.3 copy
 ([common-legacy/TaskStore.cs](../assets/common-legacy/TaskStore.cs)) implements the same
@@ -88,6 +97,12 @@ Dispose each delivered result after mapping to plain managed DTOs. Send DTOs to 
 UI's dispatcher, not native result items. Hold the observer on the screen/service;
 Cancel stops observation, and v5 Dispose releases the handle. Already queued UI work
 must check whether the view model has stopped.
+
+**An observer delivers the current result once, then only when it changes.** A consumer
+that subscribes later (a lazily created tab, a second view model sharing one store) sees
+nothing until the next change. Give each consumer its own observer, or keep the last
+snapshot: the starter's `TaskStore.Current` holds it, so read `Current` before
+subscribing to `Changed`.
 
 The starters apply each snapshot with `TaskList.Apply`
 ([TasksViewModel.cs](../assets/common/TasksViewModel.cs)): an identity-based diff on the

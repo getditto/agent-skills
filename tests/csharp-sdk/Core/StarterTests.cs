@@ -167,6 +167,65 @@ public class StarterTests
     });
 
     [Fact]
+    public async Task LateSubscribersReadTheCurrentSnapshot()
+    {
+        // An observer delivers the current result once, then only on change. A view created
+        // after that (a lazily created tab) must start from Current.
+        var store = new TaskStore();
+        var delivered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        store.Changed += rows => { if (rows.Count == 1) delivered.TrySetResult(); };
+        try
+        {
+            await store.StartAsync(OfflineSettings(), Path.Combine(Path.GetTempPath(), "ditto-current-" + Guid.NewGuid()));
+            await store.CreateAsync(new TaskItem { Id = "early", Title = "Early" });
+            await delivered.Task.WaitAsync(TimeSpan.FromSeconds(15));
+            IReadOnlyList<TaskItem>? late = null;
+            store.Changed += rows => late = rows; // subscribes after the delivery, sees nothing yet
+            Assert.Null(late);
+            Assert.Equal("early", Assert.Single(store.Current).Id);
+        }
+        finally { await store.StopAsync(); }
+    }
+
+    [Fact]
+    public async Task TcpSettingsLetTwoStarterStoresSync()
+    {
+        using var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        var kitchen = new TaskStore();
+        var window = new TaskStore();
+        var seen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        kitchen.Changed += rows => { if (rows.Any(row => row.Id == "over-tcp")) seen.TrySetResult(); };
+        var listening = OfflineSettings();
+        listening.TcpListenPort = port;
+        var connecting = OfflineSettings();
+        connecting.TcpConnect = "127.0.0.1:" + port;
+        try
+        {
+            await kitchen.StartAsync(listening, Path.Combine(Path.GetTempPath(), "ditto-tcp-a-" + Guid.NewGuid()));
+            await window.StartAsync(connecting, Path.Combine(Path.GetTempPath(), "ditto-tcp-b-" + Guid.NewGuid()));
+            await window.CreateAsync(new TaskItem { Id = "over-tcp", Title = "Synced" });
+            await seen.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        finally { await window.StopAsync(); await kitchen.StopAsync(); }
+    }
+
+    [Theory]
+    [InlineData(-1, null)]
+    [InlineData(70000, null)]
+    [InlineData(0, "no-port")]
+    [InlineData(0, "host:notaport")]
+    public void InvalidTcpSettingsAreRejected(int listenPort, string? connect)
+    {
+        var settings = OfflineSettings();
+        settings.TcpListenPort = listenPort;
+        settings.TcpConnect = connect;
+        Assert.Throws<InvalidOperationException>(() => settings.Validate());
+    }
+
+    [Fact]
     public void BothStarterCopiesTreatMissingTitlesAndDatabaseIdsAlike()
     {
         // Runs against the modern copy (Core) and the C# 7.3 copy (LegacyStarterTests).

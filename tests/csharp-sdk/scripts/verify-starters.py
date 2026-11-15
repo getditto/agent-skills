@@ -73,12 +73,14 @@ class ConsoleApp:
 
 def console_runtime(dll, env, store_path):
     env = env.copy()
-    # The starter reads application-prefixed variables, never Ditto's own DITTO_* names.
-    env.pop("DITTOTASKS_URL", None)
-    env.pop("DITTOTASKS_TOKEN", None)
-    env["DITTOTASKS_OFFLINE_LICENSE"] = env["DITTO_OFFLINE_LICENSE"]
-    env["DITTOTASKS_DATABASE_ID"] = env.get("DITTO_DATABASE_ID") or str(uuid.uuid4())
-    env["DITTOTASKS_PERSISTENCE_DIRECTORY"] = str(store_path)
+    # A generated app reads <NAME>_* variables (the template derives the prefix from the app
+    # name, e.g. VERIFIEDTASKS_), never Ditto's own DITTO_* names.
+    prefix = Path(dll).stem.upper() + "_"
+    env.pop(prefix + "URL", None)
+    env.pop(prefix + "TOKEN", None)
+    env[prefix + "OFFLINE_LICENSE"] = env["DITTO_OFFLINE_LICENSE"]
+    env[prefix + "DATABASE_ID"] = env.get("DITTO_DATABASE_ID") or str(uuid.uuid4())
+    env[prefix + "PERSISTENCE_DIRECTORY"] = str(store_path)
     app = ConsoleApp(dll, env)
     try:
         app.until(lambda line: line.startswith("Commands:"))
@@ -112,6 +114,8 @@ def main():
     parser.add_argument("--sdk-version", default="5.2.0")
     parser.add_argument("--runtime", action="store_true", help="Requires offline license; exercise published console")
     parser.add_argument("--apple-target", choices=["ios", "maccatalyst"], default="maccatalyst")
+    parser.add_argument("--maui-framework", choices=["net10.0", "net11.0"], default="net10.0",
+                        help="net10.0 needs Xcode 26.x for Apple targets; net11.0 needs Xcode 27+")
     args = parser.parse_args()
     command([sys.executable, str(Path(__file__).with_name("sync-starters.py")), "--check"])
     with tempfile.TemporaryDirectory(prefix="ditto-generated-check-") as temporary:
@@ -127,11 +131,12 @@ def main():
                 generate = ["dotnet", "new", "ditto-" + kind, "-n", "VerifiedTasks", "-o", str(folder),
                             "--ditto-version", args.sdk_version, "--debug:custom-hive", str(hive)]
                 if framework: generate += ["--framework", framework]
+                if kind == "maui": generate += ["--framework", args.maui_framework]
                 command(generate)
                 build = ["dotnet", "build", str(folder)]
                 if kind == "maui":
                     target = {"android": "android", "maui-windows": "windows10.0.19041.0"}.get(args.platform, args.apple_target)
-                    tfm = "net10.0-" + target
+                    tfm = args.maui_framework + "-" + target
                     build += ["-f", tfm, "-p:TargetFrameworks=" + tfm]
                     if args.apple_target == "ios" and args.platform == "apple": build += ["-r", "iossimulator-arm64"]
                 command(build, timeout=600)

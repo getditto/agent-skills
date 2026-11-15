@@ -44,16 +44,25 @@ with the latest available release.
 
 ## Configure and run
 
-Edit the generated appsettings.json. For offline operation set DatabaseId and
-OfflineLicense. For server operation set DatabaseId, Url and Token. An empty
-AuthProvider selects the Development (playground) provider; set your production
-provider's name instead, and obtain per-user tokens at runtime rather than embedding a
-token: pass a `fetchToken` callback to `TasksViewModel.StartAsync` / `TaskStore.StartAsync`
-and leave Token empty. Anything in appsettings.json is compiled into the app. Desktop environment variables DITTOTASKS_DATABASE_ID, DITTOTASKS_OFFLINE_LICENSE,
-DITTOTASKS_URL, DITTOTASKS_TOKEN and DITTOTASKS_AUTH_PROVIDER override the corresponding
-fields. DITTOTASKS_PERSISTENCE_DIRECTORY optionally overrides the store path (useful
-for test isolation). The prefix keeps them apart from variables Ditto's native core
-reads. Without that override, each app stores data in a subdirectory named after the
+**On desktop, put secrets in environment variables, not appsettings.json:** anything in
+that file is compiled into the app. The variables use the app name in upper case as a
+prefix (`--name DriveThru` gives `DRIVETHRU_`; the default name gives `DITTOTASKS_`),
+which keeps them apart from the `DITTO_*` names Ditto's native core reads:
+`<NAME>_DATABASE_ID`, `_OFFLINE_LICENSE`, `_URL`, `_TOKEN`, `_AUTH_PROVIDER`,
+`_PERSISTENCE_DIRECTORY` (optional store path, useful for test isolation),
+`_TCP_LISTEN_PORT`, `_TCP_LISTEN_ADDRESS` and `_TCP_CONNECT` (below).
+
+Mobile apps have no shell environment, so set non-secret values in appsettings.json:
+DatabaseId and OfflineLicense for offline operation, or DatabaseId, Url and Token for
+server operation. An empty AuthProvider selects the Development (playground) provider;
+set your production provider's name instead, and obtain per-user tokens at runtime rather
+than embedding a token: pass a `fetchToken` callback to `TasksViewModel.StartAsync` /
+`TaskStore.StartAsync` and leave Token empty.
+
+To sync two instances on one machine (or with a known host), set TcpListenPort on one
+(for example 4040; TcpListenAddress defaults to 127.0.0.1, use 0.0.0.0 to accept other
+machines) and TcpConnect to `127.0.0.1:4040` on the other; give each its own
+PersistenceDirectory and the same DatabaseId. Without that override, each app stores data in a subdirectory named after the
 DatabaseId: Ditto treats data in a reused store as new and syncs it, so switching from a
 development to a production database ID must not reopen the old store. Do not set an external path on mobile unless the application has access to it.
 

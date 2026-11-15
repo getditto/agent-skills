@@ -1,5 +1,14 @@
 # C# failure patterns
 
+## Contents
+
+- [Wrong and right code](#wrong-and-right-code)
+  - [Disposing an observer without cancelling it](#disposing-an-observer-without-cancelling-it)
+  - [Touching a handle after Dispose](#touching-a-handle-after-dispose)
+  - [An async lambda stored as Action<DittoQueryResult>](#an-async-lambda-stored-as-actiondittoqueryresult)
+  - [Interpolating input into DQL](#interpolating-input-into-dql)
+  - [Rewriting the whole document to change one field](#rewriting-the-whole-document-to-change-one-field)
+
 Sources: [C# migration](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-v4)
 and [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sharp).
 

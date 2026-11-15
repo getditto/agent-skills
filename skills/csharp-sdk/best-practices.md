@@ -3,7 +3,9 @@
 Use a long-lived application service for the Ditto instance and a view model for UI
 state. Scope subscriptions/observers to the lifetime that actually needs their data.
 A multi-window app may share an application store while giving each window an observer;
-closing one window should not terminate another's store.
+closing one window should not terminate another's store. An observer delivers the
+current result once and then only on change, so a view created later must read the
+last snapshot (the starter's `TaskStore.Current`) or register its own observer.
 
 Keep DQL and DTO conversion in a small adapter with explicit async operations. The
 bundled TaskStore is an example of that boundary, not a required repository abstraction.

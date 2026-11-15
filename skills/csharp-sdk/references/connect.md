@@ -24,8 +24,8 @@ ditto.Sync.Start();
 
 `new DittoConfigConnect.Server(new Uri(url))` selects server connectivity. The URL is
 the SDK URL copied from the Portal. Keep database ID, credentials and URL configurable.
-The starter's Settings reads its embedded appsettings.json with DITTOTASKS_* environment
-overrides; this is a development convenience, not production credential provisioning.
+The starter's Settings reads its embedded appsettings.json with `<NAME>_*` environment
+overrides (`DITTOTASKS_*` for the default name); this is a development convenience, not production credential provisioning.
 
 ## CAP-04 Authentication
 

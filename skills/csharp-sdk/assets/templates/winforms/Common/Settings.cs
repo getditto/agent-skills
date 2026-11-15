@@ -2,6 +2,7 @@
 // Framework. Keep its public API identical to the modern copy: the same starter tests
 // run against both. Everything else uses the modern, nullable-annotated sources.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -22,6 +23,20 @@ namespace DittoTasks
         public bool EnablePeerToPeerRadios { get; set; }
         // Optional store location override (for example, test isolation). Null uses the host's path.
         public string PersistenceDirectory { get; set; }
+        // Optional direct TCP sync. TcpListenPort 0 means off; TcpListenAddress defaults to
+        // 127.0.0.1 (use 0.0.0.0 to accept other machines); TcpConnect is "host:port[,host:port]".
+        public int TcpListenPort { get; set; }
+        public string TcpListenAddress { get; set; }
+        public string TcpConnect { get; set; }
+
+        public IReadOnlyList<string> TcpServers()
+        {
+            if (string.IsNullOrWhiteSpace(TcpConnect)) return new string[0];
+            var servers = new List<string>();
+            foreach (var part in TcpConnect.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                if (part.Trim().Length > 0) servers.Add(part.Trim());
+            return servers;
+        }
 
         public static Settings Load()
         {
@@ -39,6 +54,14 @@ namespace DittoTasks
             settings.Token = Override("TOKEN", settings.Token);
             settings.AuthProvider = Override("AUTH_PROVIDER", settings.AuthProvider);
             settings.PersistenceDirectory = Override("PERSISTENCE_DIRECTORY", settings.PersistenceDirectory);
+            settings.TcpListenAddress = Override("TCP_LISTEN_ADDRESS", settings.TcpListenAddress);
+            settings.TcpConnect = Override("TCP_CONNECT", settings.TcpConnect);
+            var port = Override("TCP_LISTEN_PORT", null);
+            if (port != null)
+            {
+                int parsed;
+                settings.TcpListenPort = int.TryParse(port, out parsed) ? parsed : -1;
+            }
             // The token is checked in TaskStore.StartAsync, which knows whether one is fetched at runtime.
             settings.Validate(requireToken: false);
             return settings;
@@ -64,6 +87,15 @@ namespace DittoTasks
             Guid databaseId;
             if (!Guid.TryParse(DatabaseId, out databaseId))
                 throw new InvalidOperationException("Set DatabaseId in appsettings.json or " + Prefix + "DATABASE_ID.");
+            if (TcpListenPort < 0 || TcpListenPort > ushort.MaxValue)
+                throw new InvalidOperationException("TcpListenPort (" + Prefix + "TCP_LISTEN_PORT) must be 0-65535.");
+            foreach (var server in TcpServers())
+            {
+                var colon = server.LastIndexOf(':');
+                ushort serverPort;
+                if (colon <= 0 || !ushort.TryParse(server.Substring(colon + 1), out serverPort))
+                    throw new InvalidOperationException("TcpConnect (" + Prefix + "TCP_CONNECT) entries must be host:port, got '" + server + "'.");
+            }
             if (string.IsNullOrWhiteSpace(Url))
             {
                 if (string.IsNullOrWhiteSpace(OfflineLicense))

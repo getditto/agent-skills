@@ -6,6 +6,9 @@ Source: [installation troubleshooting](https://docs.ditto.live/sdk/latest/instal
 [SDK troubleshooting](https://docs.ditto.live/sdk/latest/deployment/troubleshooting)
 and the real-package fixtures.
 
+Ditto's v5 exceptions live in `DittoSDK.Exceptions` and derive from `DittoException`;
+catch that (or a specific subclass) rather than `Exception` around SDK calls.
+
 | Symptom | Diagnose and respond |
 |---|---|
 | Native abort: invalid boolean `--disable-color` | Agent/CI may set `NO_COLOR=1`; normalize to `true` in the launcher or remove it from the child environment; see [diagnostics](observability.md#native-startup-in-agent-and-ci-environments) |

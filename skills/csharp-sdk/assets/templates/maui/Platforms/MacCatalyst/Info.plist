@@ -31,6 +31,26 @@
 	<string>Sync tasks with nearby devices.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sync tasks on your local network.</string>
+	<!--#if (IsNet11) -->
+	<!-- Required by the iOS/Mac Catalyst 27 SDK (Xcode 27) used by .NET 11 MAUI. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>__MAUI_DEFAULT_SCENE_CONFIGURATION__</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<!--#endif -->
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_http-alt._tcp.</string>
