@@ -35,7 +35,10 @@ namespace DittoTasks
         {
             if (closed) return;
             TaskList.Apply(Items, rows);
-            Status = rows.Count + " task(s)";
+            // A delivery replaces the status line, so keep a standing denial visible.
+            Status = rows.Count + " task(s)" + (store.PermissionsDenied
+                ? ". Bluetooth and Wi-Fi sync are off: permission denied"
+                : "");
         }
 
         public Task StartAsync(string path, Func<Task<bool>> permissions = null, Func<Task<string>> fetchToken = null)

@@ -77,7 +77,7 @@ the permission helper and returns its bool. The adapter asks only when
 EnablePeerToPeerRadios is true; the MAUI template's appsettings.json sets it (the Settings
 class itself defaults to false, so a config file without the key turns radios off). A denial is not fatal: the store stays
 open, Bluetooth and Wi-Fi peer-to-peer transports are turned off, LAN and server sync
-still start, and the status line reports the denial. Offer a way to request again
+still start, and the status line keeps showing the denial (`TaskStore.PermissionsDenied`). Offer a way to request again
 rather than treating the first answer as final. Windows builds must not reference the mobile-only helper.
 
 UI updates go through the page's `IDispatcher.Dispatch`, which returns false when it
@@ -85,10 +85,15 @@ cannot accept work; the starter turns that into the exception the store's back-p
 needs (see [observers](observers.md)). The starter owns its view model per window and
 stops it on destruction. Do not keep restarting the instance for each page appearance.
 
-On Android, Back destroys the window but not the process, and a relaunch calls
-`CreateWindow` again in the same process. If you move the store to an app-scoped service,
-make its start and stop re-entrant (a stop must allow the next start) and create
-window-owned pages per window rather than reusing singleton pages or Shell.
+On Android a window can be destroyed and recreated in the same process (Back then
+relaunch, or the system reclaiming the activity), and the new window's `CreateWindow` and
+`OnAppearing` run *before* the old window's `Destroying`. `OpenAsync` retries a locked
+directory only briefly (about a second on a 5.2.0 emulator) and then throws
+`DittoPersistenceDirectoryLockedException`, so a slow teardown leaves the new window
+without a store. The starter's `App` therefore stops the previous page's store before
+the new page starts; keep that ordering if you restructure it. If you move the store to an
+app-scoped service, make its start and stop re-entrant (a stop must allow the next start)
+and create window-owned pages per window rather than reusing singleton pages or Shell.
 
 The starter does not promise continuous background sync. If required, follow the
 official Android foreground-service setup (including notification resources/runtime

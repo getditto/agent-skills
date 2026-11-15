@@ -35,7 +35,10 @@ public sealed class TasksViewModel : INotifyPropertyChanged
     {
         if (closed) return;
         TaskList.Apply(Items, rows);
-        Status = $"{rows.Count} task(s)";
+        // A delivery replaces the status line, so keep a standing denial visible.
+        Status = store.PermissionsDenied
+            ? $"{rows.Count} task(s). Bluetooth and Wi-Fi sync are off: permission denied"
+            : $"{rows.Count} task(s)";
     }
 
     public Task StartAsync(string path, Func<Task<bool>>? permissions = null, Func<Task<string>>? fetchToken = null) => RunAsync(() =>

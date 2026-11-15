@@ -108,6 +108,19 @@ def console_runtime(dll, env, store_path):
     print("PASS published console CRUD, observer delivery and process-restart persistence")
 
 
+def preprocessor_kept(kind, folder):
+    """dotnet new evaluates #if in template .cs files and drops branches for symbols it does
+    not know (ANDROID, NET5_0_OR_GREATER, ...). Each must be wrapped in //-:cnd:noEmit and
+    //+:cnd:noEmit so it reaches the app; fail when a generated file lost one."""
+    directive = re.compile(r"^\s*#(if|elif|else|endif)\b")
+    for source in (SKILL / "assets/templates" / kind).rglob("*.cs"):
+        expected = [line.strip() for line in source.read_text(encoding="utf-8").splitlines() if directive.match(line)]
+        if not expected: continue
+        generated = folder / source.relative_to(SKILL / "assets/templates" / kind)
+        actual = [line.strip() for line in generated.read_text(encoding="utf-8").splitlines() if directive.match(line)]
+        assert actual == expected, f"{kind}: {source.name} lost preprocessor lines {expected} -> {actual}"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--platform", choices=["desktop", "windows", "android", "apple", "maui-windows"], default="desktop")
@@ -133,6 +146,7 @@ def main():
                 if framework: generate += ["--framework", framework]
                 if kind == "maui": generate += ["--framework", args.maui_framework]
                 command(generate)
+                preprocessor_kept(kind, folder)
                 build = ["dotnet", "build", str(folder)]
                 if kind == "maui":
                     target = {"android": "android", "maui-windows": "windows10.0.19041.0"}.get(args.platform, args.apple_target)

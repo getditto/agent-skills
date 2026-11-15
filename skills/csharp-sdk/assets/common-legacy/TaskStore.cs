@@ -61,6 +61,10 @@ namespace DittoTasks
         // The latest snapshot applied on the consumer's thread. An observer delivers the current
         // result once and then only on change, so a view created later must read this first.
         public IReadOnlyList<TaskItem> Current { get; private set; } = new TaskItem[0];
+
+        // True after a start in which the host denied sync permissions: Bluetooth and Wi-Fi
+        // peer-to-peer are off. Failed reports it once; views keep showing it from this flag.
+        public bool PermissionsDenied { get; private set; }
         public event Action<IReadOnlyList<TaskItem>> Changed;
         public event Action<string> Failed;
         public const string Query = "SELECT * FROM tasks ORDER BY title";
@@ -130,6 +134,7 @@ namespace DittoTasks
                     };
                 }
                 stopped = false;
+                PermissionsDenied = permissionsDenied;
                 if (permissionsDenied)
                     Report(new UnauthorizedAccessException(
                         "Sync permissions were denied, so Bluetooth and Wi-Fi peer-to-peer sync are off until they are granted."));

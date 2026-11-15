@@ -7,9 +7,13 @@ public sealed class MainPage : ContentPage
     private readonly TasksViewModel model;
     private readonly Entry title = new Entry { Placeholder = "Task title" };
     private readonly CollectionView list = new CollectionView { SelectionMode = SelectionMode.Single };
+    private readonly Task previousShutdown;
     private bool started;
-    public MainPage()
+    // previousShutdown completes when the store of a previous window in this process has
+    // stopped (see App.CreateWindow); the store must not open before then.
+    public MainPage(Task previousShutdown)
     {
+        this.previousShutdown = previousShutdown;
         // IDispatcher.Dispatch reports rejection (false) instead of dropping work silently.
         model = new TasksViewModel(action =>
         {
@@ -50,17 +54,20 @@ public sealed class MainPage : ContentPage
         base.OnAppearing();
         if (started) return;
         started = true;
+        await previousShutdown;
         await model.StartAsync(Path.Combine(FileSystem.AppDataDirectory, "tasks"),
             RequestPermissionsAsync);
     }
     // Returns false on denial. The store stays open for local data and reports the denial.
     private static Task<bool> RequestPermissionsAsync()
     {
+//-:cnd:noEmit
 #if ANDROID || IOS || MACCATALYST
         return MainThread.InvokeOnMainThreadAsync(() => DittoSyncPermissions.RequestPermissionsAsync());
 #else
         return Task.FromResult(true);
 #endif
+//+:cnd:noEmit
     }
     public Task StopAsync() => model.StopAsync();
 }

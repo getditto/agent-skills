@@ -324,6 +324,7 @@ public class StarterTests
         {
             await store.StartAsync(settings, path, () => Task.FromResult(false));
             Assert.Contains("permissions were denied", Volatile.Read(ref error));
+            Assert.True(store.PermissionsDenied);
             await store.CreateAsync(new TaskItem { Id = "local", Title = "Still local" });
         }
         finally { await store.StopAsync(); }

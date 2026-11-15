@@ -101,7 +101,10 @@ on macOS ARM64.
 
 **App evaluation:** projects-and-tasks apps built from this skill with .NET 11
 frameworks passed native smoke tests; Console, Avalonia and MAUI macOS UI flows were
-exercised. Starter pins remain reproducible baselines.
+exercised. The generated MAUI net11.0 starter ran on an Android 36.1 ARM64 emulator with
+Ditto 5.2.0: permission grant and denial, CRUD, persistence, and repeated
+destroy-and-recreate cycles in one process (including a deliberately slow teardown).
+Starter pins remain reproducible baselines.
 
 **Verified from source:** public NuGet 5.2.0 managed assemblies/native assets and the
 public C# [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sharp),
