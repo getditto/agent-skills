@@ -1,0 +1,4 @@
+# Ditto's prebuilt libdittoffi 5.2.0 is built with rustc 1.91.0; dittolive-ditto-sys
+# fails to compile on rustc 1.98+ (E0690). Keep the fixture on the matching toolchain.
+[toolchain]
+channel = "1.91.0"

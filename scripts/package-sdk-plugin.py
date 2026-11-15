@@ -45,6 +45,18 @@ PLUGINS = {
         "install_doc": "docs/install-kotlin.md",
         "extra_docs": [],
     },
+    "ditto-rust": {
+        "skill": "rust-sdk",
+        "display_name": "Ditto Rust",
+        "short_description": "Build and troubleshoot Ditto Rust apps with Tokio on Linux and macOS.",
+        "homepage": "https://docs.ditto.live/sdk/latest/install-guides/rust",
+        "default_prompt": [
+            "Add Ditto to this Tokio service with an observer feeding an async task.",
+            "Generate a runnable Cargo project that syncs a collection with Ditto.",
+            "Diagnose why my Rust app fails to link or aborts after opening Ditto."],
+        "install_doc": "docs/install-rust.md",
+        "extra_docs": [],
+    },
 }
 
 NAME = "ditto-swift"

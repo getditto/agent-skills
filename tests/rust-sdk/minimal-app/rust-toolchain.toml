@@ -1,0 +1,7 @@
+# Pins the compiler for the rust-sdk skill fixture.
+# snippet:start rust-toolchain-pin
+# dittolive-ditto-sys (4.14.7-5.2.0) fails on rustc 1.98+ with E0690; the prebuilt
+# libdittoffi is built with 1.91.0. Any of 1.91.0-1.97.x builds.
+[toolchain]
+channel = "1.91.0"
+# snippet:end rust-toolchain-pin

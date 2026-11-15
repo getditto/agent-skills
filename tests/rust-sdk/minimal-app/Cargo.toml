@@ -1,0 +1,23 @@
+# Fixture for the rust-sdk skill's examples/minimal-app.md. tests/rust-sdk/scripts/run-fixture.sh
+# runs it against other SDK versions on a copy; the committed pin is the knowledge baseline.
+# snippet:start rust-minimal-cargo
+[package]
+name = "ditto-minimal-app"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91"
+publish = false
+
+[dependencies]
+dittolive-ditto = "=5.2.0"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+# snippet:end rust-minimal-cargo
+
+# Only the skill's test suites use these.
+[dev-dependencies]
+tempfile = "3"
+futures = "0.3"
+tracing = "0.1"

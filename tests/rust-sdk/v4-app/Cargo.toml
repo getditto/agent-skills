@@ -1,0 +1,13 @@
+# 4.14.x (LTS) fixture: verifies the v4 API shapes in skills/rust-sdk/references/versions.md.
+[package]
+name = "ditto-v4-app"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+
+[dependencies]
+dittolive-ditto = "=4.14.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+serde_json = "1"
+anyhow = "1"

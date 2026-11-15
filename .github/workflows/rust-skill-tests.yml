@@ -1,0 +1,84 @@
+name: Rust SDK Skill Tests
+
+on:
+  pull_request:
+    paths:
+      - 'skills/rust-sdk/**'
+      - 'tests/rust-sdk/**'
+      - '.github/workflows/rust-skill-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/rust-sdk/**'
+      - 'tests/rust-sdk/**'
+      - '.github/workflows/rust-skill-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  v5:
+    name: Minimal app, probes and samples against Ditto SDK ${{ matrix.sdk }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['5.0.4', '5.1.0', '5.2.0']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Dependabot-triggered runs read Dependabot secrets, not Actions secrets.
+      - name: Check the offline license is configured
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: |
+          if [[ -z "$DITTO_OFFLINE_LICENSE" ]]; then
+            echo '::error::Set DITTO_OFFLINE_LICENSE in Actions secrets and Dependabot secrets before running the Rust fixtures.'
+            exit 1
+          fi
+
+      # The fixture's rust-toolchain.toml pins 1.91.0: dittolive-ditto-sys does not build
+      # on rustc 1.98+. rustup on the hosted image installs it on first use.
+      - name: Install the pinned toolchain
+        working-directory: tests/rust-sdk/minimal-app
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup component add clippy rustfmt
+
+      # The prebuilt libdittoffi is 100–200 MB per version; cache it with the registry.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            tests/rust-sdk/.target/${{ matrix.sdk }}
+          key: rust-skill-${{ runner.os }}-${{ matrix.sdk }}-${{ hashFiles('tests/rust-sdk/minimal-app/Cargo.lock') }}
+
+      - name: Check formatting
+        working-directory: tests/rust-sdk/minimal-app
+        run: cargo fmt --check
+
+      # Lints (clippy -D warnings), runs and tests against matrix.sdk on a copy of the
+      # fixture, building into the cached tests/rust-sdk/.target/<sdk>.
+      - name: Lint, run the minimal app and the test suites
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: tests/rust-sdk/scripts/run-fixture.sh "${{ matrix.sdk }}"
+
+  v4:
+    name: 4.14.7 fixture
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the pinned toolchain
+        working-directory: tests/rust-sdk/v4-app
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Build, lint and run
+        working-directory: tests/rust-sdk/v4-app
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+        run: |
+          cargo clippy --locked -- -D warnings
+          cargo run --locked --quiet 2>/dev/null | tee run.log
+          grep -q 'Mutating DQL statements require' run.log
+          grep -qx 'observer: 1 car(s)' run.log
+          grep -qx 'SDK version: 4.14.7' run.log

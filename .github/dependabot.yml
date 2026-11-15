@@ -43,3 +43,20 @@ updates:
       gradle-security:
         applies-to: security-updates
         patterns: ["*"]
+  - package-ecosystem: "cargo"
+    directories:
+      - "/tests/rust-sdk/minimal-app"
+      - "/tests/rust-sdk/v4-app"
+    # Ditto pins are the skill's verified versions; bump them by hand with the skill.
+    ignore:
+      - dependency-name: "dittolive-ditto"
+      - dependency-name: "dittolive-ditto-sys"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    versioning-strategy: lockfile-only
+    groups:
+      cargo-security:
+        applies-to: security-updates
+        patterns: ["*"]
