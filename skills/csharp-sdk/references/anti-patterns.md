@@ -24,6 +24,7 @@ and [installation](https://docs.ditto.live/sdk/latest/install-guides/c-sharp).
 | Full document rewrite when toggling done | UPDATE only done; avoid overwriting concurrent field changes |
 | Direct callback mutation of ObservableCollection | Marshal the snapshot to the framework dispatcher |
 | net48 AnyCPU preferring 32-bit | x64/Prefer32Bit=false; prevents BadImageFormatException |
+| Modern syntax (records, `new()`, `using var`, nullable annotations) pasted into the C# 7.3 WinForms starter | Follow its `Common/` code: classes, `using (...)` blocks; otherwise language-version errors |
 | Ditto only on a referenced Framework library | Install on startup .exe too; prevents missing native DLL |
 | Uno default WebAssembly target | Select supported native targets explicitly; Ditto has no wasm runtime |
 | .NET Standard means every .NET runtime works | Inspect actual native assets, OS support and published output |

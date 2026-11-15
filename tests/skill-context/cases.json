@@ -70,7 +70,7 @@
       "id": "kotlin_observer",
       "prompt": "Our Android app uses com.ditto:ditto-kotlin 5.1.0. A ViewModel exposes ditto.store.observe(\"SELECT * FROM cars\") { r -> r.items.map { json.decodeFromString<Car>(it.jsonString()) } }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()), yet the list still janks during sync bursts. A second screen uses registerObserver, keeps result.items in a field for a detail view, and after one malformed document it never updated again. Explain what is wrong and give the corrected Kotlin.",
       "review_criteria": [
-        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform \u2014 hop with withContext(Dispatchers.IO) inside the transform or handler",
+        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform — hop with withContext(Dispatchers.IO) inside the transform or handler",
         "Never retain result.items beyond the handler; extract plain data inside the lambda (closed-item IllegalStateException)",
         "An exception escaping a registerObserver handler closes the observer silently; catch inside, do not rethrow",
         "Flow collected in viewModelScope/stateIn needs no manual close; a registerObserver handle must be closed explicitly",
@@ -130,6 +130,36 @@
         "IAsyncEnumerable is an explicit app adapter with bounded buffering and cleanup, not a presumed SDK method",
         "Initialize Ditto before Android permission helper, dispatch request to main thread, check bool before sync",
         "Distinguish compile gates from physical-device and cloud verification"
+      ]
+    },
+    {
+      "id": "csharp_no_ditto",
+      "prompt": "Our .NET 10 ASP.NET Core minimal API has a BackgroundService that polls a SQL Server queue table with EF Core. When the database is unreachable at startup the whole host stops, and on shutdown in-flight work is cut off. No sync library is involved. How should we structure ExecuteAsync, error handling and graceful shutdown?",
+      "review_criteria": [
+        "Trigger scope: the csharp-sdk skill is not invoked and no Ditto guidance file is read for a task with no Ditto dependency",
+        "Answer does not recommend adding Ditto or apply Ditto-specific guidance; saying the installed Ditto skills do not apply is acceptable",
+        "Handles exceptions inside ExecuteAsync with a retry/backoff loop (or BackgroundServiceExceptionBehavior.Ignore deliberately), honours stoppingToken throughout, and uses HostOptions.ShutdownTimeout or equivalent for in-flight work; creates a DbContext per iteration via IServiceScopeFactory/IDbContextFactory"
+      ]
+    },
+    {
+      "id": "csharp_maui_xcode27",
+      "prompt": "We're starting a .NET MAUI app with Ditto for a field crew on iOS, Mac Catalyst and Android. Our build Mac has Xcode 27 and the .NET 11 SDK. Which target framework and starter setup should we use, and what do we need for Apple minimums and the app lifecycle so the Apple builds work?",
+      "review_criteria": [
+        "Routing: the csharp-sdk skill is used",
+        "Chooses net11.0 because Xcode 27 cannot build net10.0 Apple targets, and says workload updates do not fix that; uses the skill's generator (create-app.py maui, framework net11.0 or chosen from the active SDK)",
+        "Mac Catalyst minimum 17.0 (iOS 15.4) and the UIKit scene setup (UIApplicationSceneManifest and SceneDelegate), which the net11.0 starter includes",
+        "Ditto 5.2.0 or later for MAUI (earlier versions abort on .NET 10+ Android); does not disable Xcode version validation",
+        "Requests permissions after opening Ditto and on the main thread, and treats denial as non-fatal"
+      ]
+    },
+    {
+      "id": "csharp_late_subscriber",
+      "prompt": "Our MAUI drive-through app (Ditto 5.2.0) has one app-wide service that registers a store observer for open orders at startup. The Kitchen tab is created lazily by Shell; when you first open it, it shows no orders until someone places a new one. Its view model subscribes to the service's OrdersChanged event in its constructor. Why, and how should we fix it?",
+      "review_criteria": [
+        "Routing: the csharp-sdk skill is used",
+        "Explains that an observer delivers the current result once and then only on change, so a consumer that subscribes after the first delivery sees nothing until the data changes",
+        "Fix: keep the latest snapshot in the service (as the starter's TaskStore.Current does) and seed the view model from it before subscribing, or register a separate observer per consumer",
+        "Applies the snapshot on the UI thread via the dispatcher, copies DTOs and disposes results inside the callback; does not touch native result items from the view model"
       ]
     },
     {

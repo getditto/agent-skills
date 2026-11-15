@@ -1,62 +1,67 @@
 ---
 name: csharp-sdk
 description: >
-  Use ONLY for Ditto C#/.NET code (not other Ditto language SDKs or .NET
-  WebAssembly): .cs, .csproj, packages.config, NuGet Ditto, DittoSDK,
-  Ditto.OpenAsync, Store.RegisterObserver. Builds Console, WinForms (.NET Framework
-  4.8 and modern .NET), MAUI, Uno and Avalonia apps; diagnoses native loading,
-  callbacks, disposal and errors such as DittoPersistenceDirectoryLockedException,
-  ExpirationHandlerMissingException and "Document references in mutation values".
-  Covers 4.14.x through 5.2.0.
+  Use ONLY for tasks that use the Ditto C#/.NET SDK (not other languages' Ditto SDKs
+  or .NET WebAssembly). Builds and troubleshoots Ditto .NET apps: Console, WinForms
+  (incl. .NET Framework 4.8), MAUI, Uno and Avalonia starters, DQL, observers, native
+  loading, threading and disposal. Triggers on .cs, .csproj or packages.config using
+  NuGet Ditto or DittoSDK, and errors like DittoPersistenceDirectoryLockedException or
+  ExpirationHandlerMissingException. Covers Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Ditto C# / .NET SDK
 
-This guidance is derived from the shipping SDK and supersedes prior training on
-Ditto C#: v5 uses `Ditto.OpenAsync(DittoConfig)` and DQL, not identity constructors
-or collection `Find`/`Upsert` APIs. Never emit a deprecated API. First establish the
-project's Ditto version (project file, central package file, resolved assets); on v4,
-prefer APIs shared with v5.
-Read only the reference the task needs.
+Use the shipping API: v5 opens with `Ditto.OpenAsync(DittoConfig)` and uses DQL; identity
+constructors and collection `Find`/`Upsert` APIs are removed. Establish the project's
+Ditto version first (project file, central package file, resolved assets); on 4.14.x,
+prefer forms that also exist in v5. Do not invent APIs from memory.
+
+Read only the reference sections the task needs; for long files, read the contents list
+first. Do not preload all references or the README, which holds the capability and
+evidence map for coverage reviews.
 
 ## What this skill does
 
-Builds and reviews C# integrations with NuGet `Ditto`, including working project
-starters, async programming, native deployment, UI dispatch and resource cleanup.
-One skill covers Console, WinForms, MAUI, Uno and Avalonia on supported native targets.
+Writes and reviews Ditto C# code: project generation, connection and authentication,
+DQL, observers, threading, lifetimes and native deployment. Supports **4.14.x (LTS),
+5.0.x, 5.1.x and 5.2.0** with Console, WinForms, MAUI, Uno and Avalonia starters.
+
+For a new app, follow [project-generation.md](references/project-generation.md), then the
+framework reference. Inspect an existing project's framework, language version, package
+management and architecture before editing it.
+
+**C# version:** the newest the target framework supports; leave `LangVersion` unset.
+Only the WinForms starter is C# 7.3 (for .NET Framework); examples use C# 12. See
+[C# idioms](references/csharp-idioms.md).
+
+**Native targets only:** no .NET WebAssembly (omit browser targets from Uno/Avalonia).
+Windows assets are x64; on 5.x, macOS desktop assets are ARM64 only (4.14.x also ships
+osx-x64). Don't infer support from a UI framework's platform list or NuGet compatibility.
 
 ## When to use this skill
 
-Use for C# SDK syntax, .NET build configuration and framework integration.
-For a new app, read [project generation](references/project-generation.md) and the
-chosen framework reference. Inspect an existing project's framework, language version,
-package management style and architecture before editing it.
+Use for C# Ditto integration, .NET build configuration and framework integration. Other
+topics have separate skills; load one only when the task needs its semantics:
 
-**C# version:** use the newest C# the target framework supports: leave `LangVersion`
-unset. Only the WinForms starter is C# 7.3 (for .NET Framework); examples use C# 12. See [C# idioms](references/csharp-idioms.md).
-
-| Topic | Skill if installed | Public fallback |
+| Question | Skill if installed | Otherwise |
 |---|---|---|
-| DQL grammar and indexing strategy | `write-dql` | https://docs.ditto.live/dql/dql |
-| CRDT/data model decisions | `data-modeling` | https://docs.ditto.live/key-concepts |
-| Subscription semantics | `sync-subscriptions` | https://docs.ditto.live/sdk/latest/sync/syncing-data |
-| Radio capabilities and mesh strategy | `ditto-mesh-networking` | https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations |
-
-Do not infer native support from a UI framework's supported-platform list or NuGet's
-computed target compatibility. **No .NET WebAssembly**: omit browser/WASM targets from
-Uno/Avalonia projects. Windows native assets are x64; on 5.x, desktop macOS assets are
-ARM64 only (4.14.x also ships osx-x64).
+| DQL syntax and semantics | `write-dql` | <https://docs.ditto.live/dql/dql> |
+| CRDT selection, embed vs split, document size | `data-modeling` | <https://docs.ditto.live/key-concepts> |
+| Subscription propagation | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
+| Radio selection and platform transport support | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
+| v4 → v5 migration procedure | — | Ditto's tested [AI Agent Prompt](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-v4#ai-agent-prompt); outline and cautions in [versions.md](references/versions.md) |
 
 ## Supported versions and packages
 
-Package `Ditto`; v5 namespaces: `DittoSDK`, `.Store`, `.Sync`, `.Auth`, `.Exceptions`. [versions.md](references/versions.md) owns the compatibility
-matrix, including v4 namespace differences and exact executed versions.
+Package `Ditto`; v5 namespaces `DittoSDK`, `.Store`, `.Sync`, `.Auth`, `.Exceptions`.
+Read the relevant section of [versions.md](references/versions.md) for pins, floors and
+version differences.
 
-For a new app, resolve the latest stable compatible NuGet version, then pass that
-exact version to the starter. **5.2.0 is the knowledge/test baseline, not a perpetual
-latest-version claim.** Preserve existing pins unless upgrading. Read release notes
-and compile/run the app when selecting a newer version; never silently use prereleases.
+**5.2.0 is the latest version this skill knows about**, not a claim about today's latest.
+Existing project pins win; for a new app resolve the latest stable NuGet version (the
+generator does this) as in [project-generation.md](references/project-generation.md). If
+lookup is unavailable, say so rather than calling 5.2.0 "latest". Never use prereleases.
 
 ## Capability exceptions
 
@@ -110,10 +115,10 @@ before shutting down.
 - Store observer and attachment callbacks run on Ditto native threads without a
   SynchronizationContext; the first `Presence.Observe` callback runs on the calling
   thread. Dispatch DTOs to the UI explicitly.
-- With manual back-pressure, call `signalNext()` in `finally`; missing a signal stops
-  subsequent delivery. Catch callback exceptions before they cross native boundaries.
-- Execute transaction statements on `tx`, not the outer store; nested transactions
-  and outer-store calls can deadlock. See [concurrency.md](references/concurrency.md).
+- With manual back-pressure, call `signalNext()` in `finally`; a missing signal stops
+  delivery for good.
+- Run transaction statements on `tx`, never the outer store; see
+  [concurrency.md](references/concurrency.md).
 
 ## Object lifetimes and retention
 
@@ -127,52 +132,45 @@ Attachment fetchers use `Stop()` for cancellation. See [lifetimes.md](references
 
 ## Anti-patterns
 
-- **AnyCPU + Prefer32Bit in legacy WinForms:** `BadImageFormatException`. Set x64 and
-  `Prefer32Bit=false`; install Ditto on the startup executable as well as its library.
-- **Missing native payload:** `DllNotFoundException`. Inspect the actual publish/output
-  directory, selected runtime identifier and startup project's NuGet references.
-- **Anonymous objects passed to ExecuteAsync:** wrong overload/compile failure. Its
-  argument container is `Dictionary<string, object>`; observer overloads differ.
-- **Native result retained by a view model:** disposed result access. Materialize DTOs
-  inside the callback and dispose its result there.
-- **UI collection updated directly in an observer:** cross-thread UI failure. Dispatch
-  the copied snapshot through the host framework.
-- **Modern syntax pasted into the C# 7.3 WinForms starter:** language-version errors.
-  Follow its `Common/` code: ordinary classes, `using (...)` blocks, no nullable syntax.
+Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
+
+- AnyCPU + Prefer32Bit on .NET Framework: `BadImageFormatException`; use x64.
+- Missing native payload (`DllNotFoundException`): Ditto must be on the startup project.
+- Anonymous objects passed to `ExecuteAsync` do not compile: use `Dictionary<string, object>`.
+- A view model holding `DittoQueryResultItem`s reads disposed memory: copy DTOs first.
+- Updating UI collections in an observer callback fails cross-thread: dispatch a snapshot.
+
+Modern syntax in the C# 7.3 WinForms starter is covered there too.
 
 ## Version differences
 
-For v4→v5, follow Ditto's tested [AI Agent Prompt](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-v4#ai-agent-prompt) (note the
+For v4 → v5, follow Ditto's tested [AI Agent Prompt](https://docs.ditto.live/sdk/latest/migration-guides/c-sharp-v4#ai-agent-prompt) (note the
 `DQL_STRICT_MODE` default flip); [versions.md](references/versions.md) outlines its
 checklist and adds verified cautions.
 
 ## References
 
-Load a reference only when its topic is in play; each framework has its own dispatcher,
-lifecycle and deployment constraints.
+Pick one row; these are alternatives, not a reading list.
 
-- [project-generation.md](references/project-generation.md): install self-contained local templates; select the native target and resolve the dependency first.
-- [setup.md](references/setup.md): the startup executable must carry native assets; TFM compatibility alone is insufficient.
-- [winforms.md](references/winforms.md): the C# 7.3 starter, net48, packages.config, binding and form shutdown.
-- [maui.md](references/maui.md): initialize native transports before requesting permissions; do not ignore the returned permission result.
-- [uno.md](references/uno.md): desktop starter omits WebAssembly; mobile integration needs its own permission and lifecycle verification.
-- [avalonia.md](references/avalonia.md): dispatch collection changes and await cleanup before closing the desktop window.
-- [console.md](references/console.md): explicit async entry point, CLI shutdown and native publish tests.
-- [csharp-idioms.md](references/csharp-idioms.md): dictionaries, POCOs, records, JSON, LINQ and async streams without invented SDK overloads.
-- [connect.md](references/connect.md): configuration, authentication, startup rollback and ownership.
-- [store.md](references/store.md): dispose query results; bind values, transact through `tx`, manage indexes and eviction.
-- [observers.md](references/observers.md): Task overloads, snapshot copying, diffing and manual back-pressure.
-- [concurrency.md](references/concurrency.md): cancellation of a wait is not cancellation of native work.
-- [lifetimes.md](references/lifetimes.md): cancellation and disposal have different jobs.
-- [sync.md](references/sync.md): subscriptions outlive local queries; local commits do not establish remote durability.
-- [transports.md](references/transports.md): transport builders and deterministic TCP tests.
-- [attachments.md](references/attachments.md): metadata is string-valued; stop a pending fetch explicitly.
-- [presence.md](references/presence.md): use current graph/metadata APIs and retain observation handles.
-- [observability.md](references/observability.md): SDK version, logs, disk usage and diagnostic queries.
-- [errors.md](references/errors.md): native loading, query, permission and callback failures.
-- [anti-patterns.md](references/anti-patterns.md): concrete fixes for the default-code traps above.
-- [testing.md](references/testing.md): real SDK fixtures, generated projects and honest evidence levels.
-- [versions.md](references/versions.md): exact versions and migration boundaries.
-- [preview.md](references/preview.md): do not invent a .NET Data Streams API.
-- [best-practices.md](best-practices.md): application architecture and field-level updates.
-- [minimal-app.md](examples/minimal-app.md): complete executable program.
+| Task | Read |
+|---|---|
+| Generate a new app, configure it, choose the MAUI framework | [project-generation.md](references/project-generation.md) |
+| Native assets, RIDs, packages.config | [setup.md](references/setup.md); the startup executable must carry the native library |
+| WinForms / MAUI / Uno / Avalonia / Console specifics | [winforms.md](references/winforms.md), [maui.md](references/maui.md), [uno.md](references/uno.md), [avalonia.md](references/avalonia.md), [console.md](references/console.md) |
+| Dictionaries, POCOs, records, JSON, async streams | [csharp-idioms.md](references/csharp-idioms.md) |
+| Open, authenticate, start/stop | [connect.md](references/connect.md) |
+| Execute DQL, composite IDs, status workflows, transact, index, evict | [store.md](references/store.md) |
+| Store observer, back-pressure, UI dispatch | [observers.md](references/observers.md) |
+| Callback threads, cancellation | [concurrency.md](references/concurrency.md) |
+| Retention, cancellation, disposal | [lifetimes.md](references/lifetimes.md) |
+| Subscribe, commit IDs, sync status | [sync.md](references/sync.md) |
+| Radios and TCP | [transports.md](references/transports.md) |
+| Create/fetch attachments | [attachments.md](references/attachments.md) |
+| Presence and peer metadata | [presence.md](references/presence.md) |
+| Logging, SDK version, disk usage | [observability.md](references/observability.md) |
+| Diagnose a symptom | [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md) if needed |
+| Write tests | [testing.md](references/testing.md) |
+| Compare versions, migrate v4 → v5 | [versions.md](references/versions.md), only the relevant delta |
+| Preview/platform APIs | [preview.md](references/preview.md) |
+| Architectural tradeoffs | [best-practices.md](best-practices.md) |
+| A complete runnable program | [minimal-app.md](examples/minimal-app.md) |
