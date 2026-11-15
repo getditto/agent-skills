@@ -87,3 +87,27 @@ jobs:
       - name: Assemble the Android fixture
         working-directory: tests/kotlin-sdk/android-app
         run: ./gradlew assembleDebug -PdittoLine="${{ matrix.line }}" -PdittoVersion="${{ matrix.sdk }}" -PdittoAbi=arm64-v8a --console=plain
+
+  # The skill ships generated copies of marked regions of the fixtures above. Rebuild
+  # the reference projects from the skill's Markdown alone, so a copy that matches its
+  # source but doesn't build on its own (a value defined outside the markers) fails.
+  from-skill:
+    name: Build the reference projects from the skill's Markdown
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17.0.21+9'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Compile the JVM project and its test from the skill
+        run: |
+          python3 tests/kotlin-sdk/build-from-skill.py jvm "$RUNNER_TEMP/jvm"
+          cd "$RUNNER_TEMP/jvm"
+          ./gradlew compileKotlin compileTestKotlin -PdittoVersion=5.2.0 --console=plain
+      - name: Assemble the Android project from the skill
+        run: |
+          python3 tests/kotlin-sdk/build-from-skill.py android "$RUNNER_TEMP/android" v5
+          cd "$RUNNER_TEMP/android"
+          ./gradlew assembleDebug -PdittoLine=v5 -PdittoVersion=5.2.0 --console=plain

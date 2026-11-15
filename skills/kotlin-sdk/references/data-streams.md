@@ -3,7 +3,7 @@
 How to express Ditto Data Streams in Kotlin, on Android and the JVM. Concepts, lifecycle
 rules and design patterns live in the `data-streams` skill
 (<https://docs.ditto.live/sdk/latest/sync/data-streams>); this file is the Kotlin spelling
-and what the two-peer fixture `tests/kotlin-sdk/minimal-app/src/test/kotlin/DataStreamsTest.kt`
+and what the two-peer Data Streams test CI runs on the JVM reference project
 proved (**executed** on the JVM with 5.0.3, 5.1.0 and 5.2.0). Everything here is
 **Public Preview** and may change without notice.
 

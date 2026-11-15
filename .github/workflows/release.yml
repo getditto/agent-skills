@@ -46,6 +46,11 @@ jobs:
       - name: Validate skills before packaging
         run: python3 scripts/validate-sdk-skills.py
 
+      # Skills ship with copies of tested code from tests/. Refuse to publish a copy
+      # that differs from the code CI ran.
+      - name: Check skill snippets match the tested code
+        run: python3 scripts/sync-snippets.py --check
+
       - name: Build skills manifest
         run: python3 scripts/build-release-manifest.py dist/skills-manifest.json
 

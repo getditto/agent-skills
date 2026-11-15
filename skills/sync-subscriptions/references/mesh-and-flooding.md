@@ -1,5 +1,13 @@
 # Mesh Propagation and Document Flooding
 
+## Contents
+
+- [Pairwise sessions](#pairwise-sessions)
+- [The two rules](#the-two-rules)
+- [Transitive sync (flooding)](#transitive-sync-flooding)
+- [The A→B→C subset problem](#the-abc-subset-problem)
+- [Loop safety and efficiency, briefly](#loop-safety-and-efficiency-briefly)
+
 How subscriptions determine which documents move through the peer-to-peer
 mesh — and the multi-hop behavior behind most "missing documents" reports.
 Worked scenarios: [../examples/mesh-scenarios.md](../examples/mesh-scenarios.md).

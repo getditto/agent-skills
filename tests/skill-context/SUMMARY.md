@@ -167,3 +167,89 @@ private orchestration script must not be copied into the public repository uncha
 Every result records its own digest. Subsequent wording or static example corrections
 must be described as after these snapshots; these runs do not certify the exact final
 working-tree bytes.
+
+## Best-practices alignment — 2026-11-14
+
+Descriptions for `write-dql`, `data-modeling`, `sync-subscriptions`,
+`ditto-mesh-networking`, `data-streams`, `js-sdk`, `swift-sdk` and `kotlin-sdk` were
+rewritten to say what the skill does (after any `Use ONLY for` gate) and to drop SDK
+release lists. `write-dql` gained a workflow (version from build files, field grounding,
+parameters, plan check, destructive-statement confirmation). Eleven cases were added for
+the concept skills: four DQL, three subscription (one negative), two mesh (one negative)
+and two Data Streams (one boundary). All 21 cases ran once per host; the four DQL cases
+were rerun after the final workflow wording.
+
+Hosts: Claude Code 2.1.325 (`claude-opus-5-5`), Codex 0.167.1 (`gpt-6.1-sol`, fresh
+`HOME`/`CODEX_HOME`). Routing was correct on every run: each case invoked or read the
+expected skill, and the four no-Ditto/boundary controls (`swift_no_ditto`,
+`kotlin_no_ditto`, `subs_negative_kafka`, `mesh_negative_zigbee`) invoked no skill and read
+no Ditto file on either host. No tool errors.
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| Existing ten cases | Core pass on all | Core pass on all |
+| `dql_missing_field` (new) | Pass, all criteria | First run missed parameters; final rerun pass |
+| `dql_join_version_gate` (new) | Pass | Pass |
+| `dql_destructive_delete` (new) | Pass | First run: no confirmation, trailing `;`; final rerun asks for confirmation but omits the explicit DELETE-is-mesh-wide contrast |
+| `dql_boundary_model` (new) | Pass; routed to `data-modeling` | Pass; routed to `data-modeling` |
+| `subs_rejected_query` (new) | Pass | Core pass; does not mention splitting the collection |
+| `subs_restart` (new) | Pass | Pass |
+| `subs_negative_kafka` (new) | Pass; no skill | Pass; no skill file read |
+| `mesh_ios_lan_discovery` (new) | Pass | Pass |
+| `mesh_negative_zigbee` (new) | Pass; no skill | Pass; no skill file read |
+| `ds_handshake_timeout` (new) | Pass | Pass |
+| `ds_negative_doc_sync` (new) | Pass | Pass (read `sync-subscriptions`) |
+
+- The full run's digests are `473f4689…`/`9fc76412…` (a `write-dql/README.md` table edit
+  landed mid-run; no case read the README). The DQL rerun digest is `03d73147…`.
+- One run per host and case. Claude reported USD 2.74 for the full run and USD 0.46 for
+  the rerun; Codex does not report cost. Generated snippets were not compiled.
+
+### Follow-up: stubs, version claims, concept workflows, JS cases — 2026-11-14
+
+Stub sections in `write-dql` and the Swift minimal-app example were removed and their links
+retargeted; blanket "works identically on …" and "all supported versions (…)" claims now
+name 5.2.0 (each backed by the harness passing those examples on 4.14.6, 5.0.3, 5.1.0 and
+5.2.0); a searched-`CASE` note that wrongly claimed 4.14.x support was corrected.
+`ditto-mesh-networking`, `sync-subscriptions` and `data-streams` gained trigger lists and
+copyable diagnosis checklists. Five JS platform cases were added (Expo Go, Next.js SSR,
+Electron, bare RN Android permissions, and a plain React negative control).
+
+All 26 cases ran once per host (Claude Code 2.1.325 `claude-opus-5-5`, Codex 0.167.1
+`gpt-6.1-sol`) against digest `9caba082…`. Routing was correct on every run; the five
+negative controls invoked no skill on either host; no tool errors.
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| Earlier 21 cases | Core pass on all | Core pass on all |
+| `js_expo_go` (new) | Pass | Pass |
+| `js_next_ssr` (new) | Pass | Core pass; omits the memory-only storage note |
+| `js_electron` (new) | Pass | Pass |
+| `js_rn_cli_permissions` (new) | Pass | Pass |
+| `js_negative_react` (new) | Pass; mentions Ditto only to say the skills do not apply | Pass |
+
+- Ancillary gaps repeated this run: neither host mentioned splitting the collection in
+  `subs_rejected_query`, and Codex's `dql_destructive_delete` again asked for
+  confirmation without contrasting `DELETE`'s mesh-wide effect.
+- One run per host and case. Claude reported USD 3.10; Codex does not report cost.
+
+### SDK entry points under the 10,000-character target — 2026-11-14
+
+`kotlin-sdk` (11,477 → 9,626 characters) and `swift-sdk` (10,775 → 9,944) moved detail
+that already lives in their references (threading table, full anti-pattern list, release
+resolution procedure, routing caveats) out of SKILL.md. Every version mention was kept
+(22 and 24, before and after), as were both version-difference sections. The six SDK cases
+ran once per host against digest `8a27a090…`: routing correct, negative controls invoked
+no skill, and all core criteria passed on both hosts. Claude reported USD 0.84.
+
+### Supported versions restored to descriptions — 2026-11-14
+
+The supported SDK range was put back into the six descriptions that originally carried it
+(`write-dql`, `data-modeling`, `sync-subscriptions`, `js-sdk`, `swift-sdk`, `kotlin-sdk`),
+and the validator rule rejecting release numbers in descriptions was dropped: customers
+span 4.14 LTS and 5.x, and the description must say which lines a skill covers. All 26
+cases ran once per host against digest `01704287…`: routing correct on all 52 runs, the
+five negative controls invoked no skill, no tool errors. Codex's `dql_destructive_delete`
+answer this time named the local/mesh-wide difference but did not ask for confirmation
+(it did in the previous run); one run per host, so treat that as variance to watch.
+Claude reported USD 3.12.

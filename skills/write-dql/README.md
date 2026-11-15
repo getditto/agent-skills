@@ -37,7 +37,11 @@ Located in [`references/`](references):
 | [`functions.md`](references/functions.md) | Built-in scalar and aggregate functions |
 | [`expressions.md`](references/expressions.md) | Path expressions, literals, type coercion |
 | [`statements.md`](references/statements.md) | INSERT, UPDATE, DELETE, EVICT statement forms |
-| [`select.md`](references/select.md) | SELECT, projections, ORDER BY, subscriptions |
+| [`select-basics.md`](references/select-basics.md) | SELECT grammar, projections, WHERE, GROUP BY, ORDER BY |
+| [`select-access.md`](references/select-access.md) | USE IDS, USE INDEX, USE DIRECTIVES |
+| [`joins.md`](references/joins.md) | JOIN queries (5.1+) |
+| [`subscription-queries.md`](references/subscription-queries.md) | Subscription query restrictions |
+| [`query-diagnostics.md`](references/query-diagnostics.md) | EXPLAIN, `#profile`, ADVISE |
 | [`types-mutators.md`](references/types-mutators.md) | DQL type system and CRDT mutators |
 | [`indexing.md`](references/indexing.md) | CREATE INDEX, query planning, performance |
 | [`versions.md`](references/versions.md) | Per-feature SDK compatibility matrix |
@@ -57,7 +61,7 @@ Located in [`references/`](references):
 /plugin install ditto-dql
 ```
 
-**Other agent tools**: see the [repo root README](../../README.md) for per-tool install instructions.
+**Other agent tools**: see the agent-skills repository README for per-tool install instructions.
 
 ## Quick start
 
@@ -87,7 +91,7 @@ npm run report
 
 Current status: **205 PASS / 53 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@4.14.6`; **222 PASS / 36 PASS-AS-EXPECTED-FAIL** on `@dittolive/ditto@5.0.3`; **252 PASS / 6 PASS-AS-EXPECTED-FAIL** on both `@dittolive/ditto@5.1.0` and `5.2.0` (258 catalog entries per version, 0 FAIL). PASS-AS-EXPECTED-FAIL is the runner correctly identifying features that aren't available on the running version (e.g., `XOR` everywhere, `JOIN`/composite indexes/`RETURNING`/`ADVISE` pre-5.1, `CASE`/`BETWEEN` pre-5.0). The 5.2.0 run also asserts mutation, planner, startup-configuration and diagnostics regressions in `runner/sdk52.mjs`.
 
-See [`tests/dql/README.md`](../../tests/dql/README.md) for the harness internals.
+See `tests/dql/README.md` in the agent-skills repository for the harness internals.
 
 ## Links
 

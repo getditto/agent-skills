@@ -88,9 +88,13 @@ read-back make: Toyota
 SDK version: 5.2.0
 ```
 
-The program text below `// MARK: - begin documented program` in `MainV5.kt` must stay
-byte-identical to the `## Program` block in `skills/kotlin-sdk/examples/minimal-app.md`;
-`python3 scripts/validate-sdk-skills.py` fails when they drift.
+The program between the `snippet:start kotlin-minimal-app` and `snippet:end` markers in
+`MainV5.kt` is copied into the `## Program` block of
+`skills/kotlin-sdk/examples/minimal-app.md` by `python3 scripts/sync-snippets.py`. The
+marked parts of `build.gradle.kts`, `settings.gradle.kts`, the Android build files, and
+`DittoStoreTest.kt` are copied into the skill's `references/` the same way. Edit the
+source here, then run the script; CI fails when a copy drifts. Code outside the markers
+(the `.env` fallback, test logging, per-line source sets) is CI-only.
 
 | Test | Claim it backs |
 |---|---|

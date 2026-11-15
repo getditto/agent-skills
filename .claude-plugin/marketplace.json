@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ditto-plugins",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Claude Code plugin marketplace for Ditto - the peer-to-peer sync platform",
   "owner": {
     "name": "Ditto",
@@ -11,7 +11,7 @@
     {
       "name": "ditto-dql",
       "description": "DQL (Ditto Query Language) assistance for writing queries, subscriptions, and data operations",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -22,7 +22,7 @@
     {
       "name": "ditto-mesh",
       "description": "Ditto mesh networking and transport configuration — transports, peer discovery, runtime config updates, and transport-aware data modeling",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -44,7 +44,7 @@
     {
       "name": "ditto-data-modeling",
       "description": "CRDT-aware data modeling for Ditto: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed vs split decisions, document size budgets, and JSON review across SDK 4.14.x and 5.x",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -55,7 +55,7 @@
     {
       "name": "ditto-data-streams",
       "description": "Ditto Data Streams (preview): low-latency, bidirectional raw-byte channels between peers over named topics — lifecycle, candidate ownership, reliability, NGN setup, and troubleshooting. Language-agnostic; pairs with the Kotlin and Swift SDK skills",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -66,7 +66,7 @@
     {
       "name": "ditto-kotlin",
       "description": "Ditto Kotlin SDK assistance — Android and JVM apps: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -77,7 +77,7 @@
     {
       "name": "ditto-swift",
       "description": "Build runnable SwiftUI apps and integrate or troubleshoot the Ditto Swift SDK on iOS, iPadOS, macOS and Mac Catalyst. Includes Xcode project generation, diagnostics, lifecycle and concurrency guidance for SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "Ditto",
         "email": "support@ditto.com"
@@ -87,7 +87,7 @@
     },
     {
       "name": "ditto-js",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Build and troubleshoot Ditto JavaScript/TypeScript apps on Node.js, web/React, React Native and Expo, with tested provider patterns and shared native configuration.",
       "author": {
         "name": "Ditto",

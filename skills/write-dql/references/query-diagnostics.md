@@ -13,7 +13,7 @@ For movies/reviews examples, see the [schema](schema.md) only when adapting thos
 
 ## 6. EXPLAIN
 
-`EXPLAIN <statement>` returns the planner's chosen plan **without executing** the statement. See [`statements.md`](statements.md) §6 for the leading-keyword form; this section focuses on what you should be looking for in the output.
+`EXPLAIN <statement>` returns the planner's chosen plan **without executing** the statement. See [`system-statements.md`](system-statements.md#6-explain) §6 for the leading-keyword form; this section focuses on what you should be looking for in the output.
 
 ### 6.1 Recognising the operator family
 
@@ -48,7 +48,7 @@ WHERE year = 2010
 ORDER BY ratings.imdb DESC;
 ```
 
-> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x) — the `EXPLAIN` examples below.
+> **Available in:** all supported versions (4.14.x, 5.0.x, 5.1.x and 5.2.0) — the `EXPLAIN` examples below.
 
 Expect a single `IndexScan` operator referencing `movies_year_imdb`. No `Fetch`, no `Sort`.
 

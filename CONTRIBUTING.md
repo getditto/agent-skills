@@ -110,7 +110,7 @@ enough that a reviewer knows what to check.
 
 **Acceptable:**
 
-> Adds `RIGHT [OUTER] JOIN` to `select.md` §14. It works on 5.1.0 but the
+> Adds `RIGHT [OUTER] JOIN` to `joins.md` §14. It works on 5.1.0 but the
 > grammar block only listed `INNER | LEFT`, so an agent asked about right joins
 > would say they don't exist. Also corrects the §14 claim that `FULL OUTER` is
 > supported — it is rejected on all three lines.
@@ -152,11 +152,24 @@ whole line is an extrapolation, and it has been wrong here before.
    > `Explain DML is not supported`.
    ```
 
-2. **In the matrix**, at
-   [`skills/write-dql/references/versions.md`](skills/write-dql/references/versions.md) §4.
+2. **In the matrix**: the skill's `references/versions.md`, which for DQL routes
+   to the per-area tables in
+   [`compatibility-statements.md`](skills/write-dql/references/compatibility-statements.md),
+   [`compatibility-expressions.md`](skills/write-dql/references/compatibility-expressions.md)
+   and [`compatibility-types-sync.md`](skills/write-dql/references/compatibility-types-sync.md).
 
 Those must agree. `versions.md` calls itself the single source of truth, so an
 inline tag that contradicts it is worse than no tag — it makes both untrustworthy.
+
+### Keep blanket coverage claims in step with the supported lines
+
+Each skill declares its supported SDK lines once, in the SKILL.md body
+(`Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**`). Any blanket claim elsewhere —
+a `Covers Ditto SDK …` header, `all supported versions (…)`, or `works identically on
+…` — must name exactly those lines; examples may name a subset. No `Available in` note
+may cite a line newer than the newest declared one. `scripts/validate-sdk-skills.py`
+enforces this, so adding a release line fails CI until every such claim has been
+re-verified and updated — not just the SKILL.md declaration.
 
 ### Include the failure mode, not just the availability
 
@@ -347,10 +360,16 @@ Only these keys are permitted: `name`, `description`, `license`,
 in stricter loaders — the skill fails to package rather than being ignored, so
 a Claude-Code-only field breaks the skill everywhere else.
 
-- `name` — lowercase, hyphenated, ≤64 chars, **must match the directory name**.
+- `name` — lowercase, hyphenated, ≤64 chars, **must match the directory name**,
+  and must not contain `anthropic` or `claude`.
 - `description` — ≤1024 chars, third person, covers *what* it does **and**
   *when* to use it, with concrete trigger keywords front-loaded. This is the
-  activation mechanism; a vague description means the skill never loads.
+  activation mechanism; a vague description means the skill never loads. Say what
+  the skill does first (a `Use ONLY for …` gate may precede it), name the supported
+  Ditto SDK versions, and use no XML tags.
+- `SKILL.md` body under **500 lines** (Anthropic's skill-authoring guidance).
+
+`scripts/validate-sdk-skills.py` enforces these rules for every skill.
 
 ### Keep SKILL.md lean
 
@@ -365,11 +384,47 @@ detail to focused references, linked one level deep. Tell the agent to select a 
 and read the matching section rather than loading the full library. READMEs and
 capability/evidence maps should load only for installation or coverage questions.
 
-Supporting files over **8,000 characters or 200 lines** need a linked `## Contents`
+Supporting files over **8,000 characters or 100 lines** need a linked `## Contents`
 near the top. **20,000 characters** is the repository hard limit: split independent tasks rather
 than assuming the model will issue a partial read. Keep runnable programs intact and
 move separate setup/run notes when necessary. A short file with dense tables can
 cost more context than a long file with short lines; measure both characters and lines.
+
+### Keep skills self-contained
+
+Installed skills contain only `skills/`: the release archive, `dittosh skills add`
+and agent skill directories never include `tests/` or `docs/`, and agents may have no
+web access. No file in a skill, `README.md` included, may link outside `skills/` (inline,
+reference-style or HTML) or refer to this repository on GitHub in any form.
+`scripts/validate-sdk-skills.py` enforces this. Name a repository file in plain text
+when a README needs to cite it.
+
+To show code that CI runs, copy it in with `scripts/sync-snippets.py` instead of
+pasting it. Mark the region in the test file with comment lines:
+
+```kotlin
+// snippet:start kotlin-store-test
+class DittoStoreTest { … }
+// snippet:end kotlin-store-test
+```
+
+and place a block in the skill where the code belongs:
+
+```markdown
+<!-- snippet: kotlin-store-test -->
+<!-- /snippet -->
+```
+
+To copy a whole file, put the start marker after its header comment and the end marker
+on its last line.
+
+Run `python3 scripts/sync-snippets.py` to fill the block, and commit both files. CI
+and the Release workflow run it with `--check` and fail when a copy differs from the
+tested code. A name may have several regions; mark only the parts an app needs, and
+keep harness-only code (license loading from `.env`, test logging) outside the markers
+— restructure the source if needed so the marked parts stand on their own. Example
+programs under `## Program` must be one region covering the whole file. Hand-written
+code blocks are not checked, so prefer a snippet whenever the code exists in a test.
 
 Run `python3 scripts/validate-sdk-skills.py --context-report` to audit every skill,
 reference, example and README. It checks links and structure, not model behavior.

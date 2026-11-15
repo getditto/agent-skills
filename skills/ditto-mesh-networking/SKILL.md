@@ -1,6 +1,15 @@
 ---
 name: ditto-mesh-networking
-description: Use ONLY for Ditto peer-to-peer networking: choosing BLE, LAN, AWDL, Wi-Fi Aware, WebSocket or TCP transports; diagnosing discovery and connection failures; runtime transport configuration, multihop sync, connection budgets and BLE document sizing. Not Zigbee, Thread, BLE Mesh, router mesh or service mesh. Per-language syntax belongs to the Ditto SDK skill.
+description: >
+  Use ONLY for Ditto peer-to-peer networking, not Zigbee, Thread, BLE Mesh, router
+  mesh or service mesh. Chooses and configures Ditto transports (BLE, LAN, AWDL, Wi-Fi
+  Aware, WebSocket, TCP), diagnoses discovery and connection failures, and sizes
+  multihop sync, connection budgets and BLE documents. Use when devices don't discover
+  each other or keep disconnecting, sync must work without Wi-Fi or internet, or
+  transports are configured at runtime. Per-language syntax belongs to the Ditto SDK
+  skill.
+
+allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
 # Ditto Mesh Networking and Transports
@@ -11,7 +20,32 @@ virtual connection and selects a path for traffic (the rainbow connection). Pres
 and multihop routing let peers sync without a direct connection or a server.
 
 For 5.2.0 connection limits, keepalive defaults, wireless fixes and NGN settings, read
-[versions.md](references/versions.md#sdk-520). Latest known release: **5.2.0**.
+[versions.md](references/versions.md#sdk-520). Knowledge baseline: **5.2.0**; check release notes for anything newer.
+
+## When this skill applies
+
+- "Two devices never see each other" or "it syncs on Wi-Fi but not offline."
+- "Which transports should a mixed iOS/Android fleet use without an access point?"
+- "Can we change transports while the app is running?"
+- "It connects, but sync over Bluetooth is very slow."
+- Transport-condition callbacks, Local Network prompts, `NSBonjourServices`, Wi-Fi Aware
+  or Android Bluetooth permissions.
+
+## Diagnosis workflow
+
+Copy this checklist when peers do not connect or data does not arrive:
+
+```
+- [ ] 1. Effective transport config logged on both peers (read-modify-write, not a fresh config)
+- [ ] 2. Platform support, radio toggles, granted permissions and plist/manifest entries checked
+- [ ] 3. Identity valid (an invalid certificate silently zeroes every P2P transport)
+- [ ] 4. Failing stage located: discovery → connection → presence → subscription → replication → local query
+- [ ] 5. One change applied, then re-observed from both peers over a time window
+```
+
+The full order is in [platform-requirements.md §8](references/platform-requirements.md#8-diagnosis-order).
+"Sync active" is engine status, not proof of connectivity; change one setting at a time
+and check both peers again before changing the next.
 
 ## Start with the task
 

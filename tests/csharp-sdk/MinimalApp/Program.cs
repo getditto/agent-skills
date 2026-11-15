@@ -1,4 +1,5 @@
 // MARK: - begin documented program
+// snippet:start csharp-minimal-app
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,3 +55,4 @@ internal static class Program
         }
     }
 }
+// snippet:end csharp-minimal-app

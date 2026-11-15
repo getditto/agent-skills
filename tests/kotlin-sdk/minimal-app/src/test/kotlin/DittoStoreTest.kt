@@ -1,24 +1,27 @@
+// snippet:start kotlin-store-test
 import com.ditto.kotlin.Ditto
 import com.ditto.kotlin.DittoConfig
 import com.ditto.kotlin.DittoFactory
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
+import kotlin.test.assertEquals
+// snippet:end kotlin-store-test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertNotEquals
 import kotlin.time.Duration.Companion.seconds
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import kotlin.test.assertEquals
 
 // Executed pattern for skills/kotlin-sdk/references/testing.md.
 // Run: gradle test -PdittoLine=v5 -PdittoVersion=5.1.0
 // (DITTO_OFFLINE_LICENSE must be in the environment.)
+// snippet:start kotlin-store-test
 class DittoStoreTest {
 
     @TempDir
@@ -57,6 +60,7 @@ class DittoStoreTest {
             ditto.close()   // v5 classes implement DittoResource (AutoCloseable)
         }
     }
+// snippet:end kotlin-store-test
 
     // NOTE: runBlocking, not runTest. Ditto delivers observer events from real
     // background FFI threads, but runTest fast-forwards *virtual* time — a
@@ -117,4 +121,6 @@ class DittoStoreTest {
             ditto.close()
         }
     }
+// snippet:start kotlin-store-test
 }
+// snippet:end kotlin-store-test

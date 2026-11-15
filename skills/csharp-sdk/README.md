@@ -1,5 +1,13 @@
 # Ditto C# / .NET SDK skill
 
+## Contents
+
+- [Scope and versions](#scope-and-versions)
+- [Capability map](#capability-map)
+- [Verification](#verification)
+- [Installation and quick start](#installation-and-quick-start)
+- [Maintenance](#maintenance)
+
 Tool-agnostic guidance for NuGet **Ditto** with Console, Windows Forms (including
 .NET Framework 4.8), .NET MAUI, Uno and Avalonia starters. Browser/WebAssembly targets
 are excluded. Uno and Avalonia starters are desktop apps; mobile extensions need
@@ -82,11 +90,11 @@ server behavior, mobile deployment, or every framework's window lifecycle.
 CRUD, parameter binding/serialization, observers/back-pressure, cancellation, transactions
 where verified, indexing/eviction, attachments, TCP replication/presence, startup rollback,
 field-preserving edits and persistence. The published generated Console app executes
-CRUD and process-restart persistence. See the [harness](https://github.com/getditto/agent-skills/blob/main/tests/csharp-sdk/README.md)
-for counts, commands and remaining gates.
+CRUD and process-restart persistence. The repository's `tests/csharp-sdk` harness, which
+is not installed with the skill, records the counts, commands and remaining gates.
 
-**CI evidence:** [run 43640358320](https://github.com/getditto/agent-skills/actions/runs/43640358320)
-passed all 19 jobs: the Windows/Linux/macOS core matrix, desktop generation/runtime,
+**CI evidence:** the repository's CSharp SDK Skill Tests workflow passed all 19 jobs on
+2026-11-15: the Windows/Linux/macOS core matrix, desktop generation/runtime,
 Windows net48 native smoke and four MAUI build targets with matching toolchains.
 Both suites (modern and C# 7.3 starter copies) also pass on .NET 11 with Ditto 5.2.0
 on macOS ARM64.
@@ -110,8 +118,9 @@ Observed app-to-app replication does not establish server durability or a transp
 
 ## Installation and quick start
 
-See [installation](https://github.com/getditto/agent-skills/blob/main/docs/install-csharp.md) for scoped host packages. The skill
-contains its templates/scripts and works without this repository's tests or other skills.
+Scoped packages for each agent host are described in the agent-skills repository's
+`docs/install-csharp.md`. The skill contains its templates and scripts and works without
+that repository's tests or other skills.
 
 ```bash
 /plugin marketplace add getditto/agent-skills

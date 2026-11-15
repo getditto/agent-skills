@@ -47,7 +47,7 @@ persistence/lifetime limitations before choosing this deployment.
 
 ## Verification
 
-[Fixture commands and evidence](../../tests/js-sdk/README.md). The minimal program
+The repository's JS test harness runs the [minimal program](../js-sdk/assets/minimal-app.mjs) in CI. It
 uses a disposable directory; production examples must choose an application data path.
 No real customer backend or cloud resources are provisioned by this recipe.
 

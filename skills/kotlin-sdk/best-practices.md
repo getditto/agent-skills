@@ -1,5 +1,17 @@
 # Best practices — Ditto Kotlin SDK
 
+## Contents
+
+- [Instance ownership](#instance-ownership)
+- [Structuring async work](#structuring-async-work)
+- [Retaining handles](#retaining-handles)
+- [Writes](#writes)
+- [Reads and observers](#reads-and-observers)
+- [Error handling](#error-handling)
+- [Sync handling](#sync-handling)
+- [Performance](#performance)
+- [Common mistakes](#common-mistakes)
+
 Idiom and judgement, not API reference. If a claim here were about the API surface it
 would live in `references/`; these are the choices between two approaches that both
 compile. Anything with a named symptom (exception, compiler error, profiler symbol) is

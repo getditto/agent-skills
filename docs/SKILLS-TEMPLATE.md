@@ -38,16 +38,21 @@ Rules:
 ---
 name: <skill-name>        # required; must equal the directory name
 description: >            # required; this is the trigger
-  Use when <concrete situations>. <What the skill does>.
+  <What the skill does, third person>. Use when <concrete situations>.
                           # Front-load literal keywords users will say.
 ---
 ```
 
 The `description` decides whether the skill activates. It must cover both
 **what** the skill does and **when** to use it, written in third person
-("Use when …", not "I help with …"). Front-load concrete trigger keywords
-(API names, error strings, file names). If the skill should stay quiet on
-adjacent topics, gate with "Use ONLY when …".
+("Reviews Ditto data models … Use when …", not "I help with …" or "You can use
+this …"). State what the skill does first; a bare "Use when …" opener fails CI.
+Front-load concrete trigger keywords (API names, error strings, file names) and
+the phrases users actually type. If the skill should stay quiet on adjacent
+topics, lead with a "Use ONLY for …" gate, then say what the skill does. Name the
+Ditto SDK versions the skill covers (for example "Covers SDK 4.14.x, 5.0.x, 5.1.x and
+5.2.0"): customers span 4.14 LTS and 5.x. No XML tags; the name must not contain
+`anthropic` or `claude`.
 
 Optional frontmatter fields some tools honor: `license`, `compatibility`,
 `allowed-tools`, `metadata`. Only add `allowed-tools` if every target tool
@@ -87,7 +92,7 @@ Repository budgets (authoring policy, not vendor limits):
 |---|---|---|
 | Description | ≤500 characters, concrete triggers first | 1,024 characters |
 | SKILL.md body | ≤10,000 characters | 12,000 characters |
-| Supporting file | One focused task or intact program | ≤20,000 characters; contents above 8,000 characters **or** 200 lines |
+| Supporting file | One focused task or intact program | ≤20,000 characters; contents above 8,000 characters **or** 100 lines |
 
 At four characters per token, a 10,000-character body is roughly 2,500 tokens.
 This is an estimate: code, punctuation and different tokenizers change the ratio.

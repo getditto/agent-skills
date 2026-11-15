@@ -1,6 +1,6 @@
 {
   "name": "ditto-data-modeling",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CRDT-aware data modeling for Ditto: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed vs split decisions, document size budgets, and JSON review across SDK 4.14.x and 5.x",
   "author": {
     "name": "Ditto",

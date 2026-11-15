@@ -131,6 +131,159 @@
         "Initialize Ditto before Android permission helper, dispatch request to main thread, check bool before sync",
         "Distinguish compile gates from physical-device and cloud verification"
       ]
+    },
+    {
+      "id": "dql_missing_field",
+      "prompt": "Ditto SDK 5.1. Our orders documents look like {\"_id\": \"o-1\", \"customer_name\": \"Ana\", \"status\": \"open\", \"total\": 120}. This returns zero rows even though matching orders exist: SELECT customerName, total FROM orders WHERE customerName = 'Ana' AND status = 'open'. Why, and what is the corrected query?",
+      "review_criteria": [
+        "Routing: the write-dql skill is used",
+        "Identifies that customerName does not exist; an absent field evaluates to MISSING, so the filter matches nothing and the projection omits it, without an error",
+        "Corrected query uses customer_name in both the projection and the filter",
+        "Recommends binding 'Ana' as a :name parameter rather than concatenating values"
+      ]
+    },
+    {
+      "id": "dql_join_version_gate",
+      "prompt": "Our Android app is on Ditto 4.14.6. Write a DQL query that lists each order's total together with the customer's name; orders have customer_id and customers have _id and name.",
+      "review_criteria": [
+        "Routing: the write-dql skill is used",
+        "States that JOIN requires 5.1+ and raises a parse error on 4.14.x, and does not present a JOIN as working on 4.14.6",
+        "Offers a 4.14-compatible approach: two queries (fetch orders, then customers by _id) or a denormalized customer name on the order",
+        "Does not invent SDK version numbers or features"
+      ]
+    },
+    {
+      "id": "dql_destructive_delete",
+      "prompt": "Ditto SDK 5.2.0. Give me the DQL to get rid of all orders with status 'cancelled' — we just want them gone from this tablet's database.",
+      "review_criteria": [
+        "Routing: the write-dql skill is used",
+        "Distinguishes EVICT (local, other peers can re-sync it) from DELETE (mesh-wide tombstone) and maps 'gone from this tablet' to EVICT",
+        "Warns that DELETE would remove the orders on every peer and that evicted documents return if a subscription still matches them",
+        "Asks for or states the need for explicit confirmation before running a destructive statement"
+      ]
+    },
+    {
+      "id": "dql_boundary_model",
+      "prompt": "We're starting a Ditto 5.2.0 app for restaurant tables. Several waiter phones edit the same order offline and add items. How should the order document and its items be structured so concurrent additions are not lost?",
+      "review_criteria": [
+        "Routing: the data-modeling skill is used (write-dql alone is not enough for a design question)",
+        "Rejects an array of items for concurrent appends (arrays merge as one last-write-wins register) and proposes a MAP keyed by stable item ID or child documents",
+        "Uses a COUNTER only for accumulating quantities and integer minor units for money",
+        "Recommends a composite _id carrying the restaurant/store scope"
+      ]
+    },
+    {
+      "id": "subs_rejected_query",
+      "prompt": "Ditto SDK 5.1. registerSubscription(\"SELECT _id, name FROM products WHERE price < 10 ORDER BY price LIMIT 50\") fails immediately. We only want the 50 cheapest product names on this device. What is wrong and what should we register instead?",
+      "review_criteria": [
+        "Routing: the sync-subscriptions skill is used",
+        "Identifies that subscriptions require SELECT * (projections rejected) and that 5.x rejects ORDER BY/LIMIT ('Unsupported feature: Limit or Order by')",
+        "Registers SELECT * FROM products WHERE price < 10 (or a similar filter) and applies ORDER BY/LIMIT in a local store query or observer",
+        "Explains that subscriptions sync whole documents; to sync fewer fields, split the collection"
+      ]
+    },
+    {
+      "id": "subs_restart",
+      "prompt": "Ditto SDK 5.2.0 native iOS app. After the app is killed and relaunched, new documents from other devices stop arriving, although documents synced before the restart are still visible. What is happening?",
+      "review_criteria": [
+        "Routing: the sync-subscriptions skill is used",
+        "Explains that subscriptions are in memory and must be re-registered at every app start, while previously synced documents persist in the native store",
+        "Recommends registering subscriptions at startup alongside starting sync",
+        "Does not blame transports or permissions without evidence"
+      ]
+    },
+    {
+      "id": "subs_negative_kafka",
+      "prompt": "Our backend consumes a Kafka topic with a consumer group. After a deploy, the consumer stopped receiving messages from one partition. How do we diagnose consumer-group subscription problems?",
+      "review_criteria": [
+        "Trigger scope: no Ditto skill is invoked and no Ditto guidance is read for a Kafka task",
+        "Answer covers Kafka consumer-group diagnosis (partition assignment, lag, offsets, rebalancing) without Ditto-specific advice"
+      ]
+    },
+    {
+      "id": "mesh_ios_lan_discovery",
+      "prompt": "Ditto 5.1 iOS app: two iPhones on the same Wi-Fi never see each other over LAN, though Bluetooth works. The tester tapped 'Don't Allow' on a network prompt at first launch. What should we check and fix?",
+      "review_criteria": [
+        "Routing: the ditto-mesh-networking skill (and/or native-app-config) is used",
+        "Identifies the sticky Local Network permission denial and re-enabling it in Settings → Privacy → Local Network",
+        "Requires NSLocalNetworkUsageDescription and NSBonjourServices including _http-alt._tcp. in Info.plist; a missing entry fails silently",
+        "Does not recommend the restricted multicast entitlement for ordinary Bonjour discovery"
+      ]
+    },
+    {
+      "id": "mesh_negative_zigbee",
+      "prompt": "Our smart-home hub uses Zigbee and Thread. Some sensors drop off the mesh network when the router is far away. How do we improve mesh coverage and routing?",
+      "review_criteria": [
+        "Trigger scope: the ditto-mesh-networking skill is not invoked and no Ditto guidance is applied to a Zigbee/Thread question",
+        "Answer gives generic Zigbee/Thread advice (repeaters/routers, channel interference, parent selection) without recommending Ditto"
+      ]
+    },
+    {
+      "id": "ds_handshake_timeout",
+      "prompt": "We're trying Ditto Data Streams (preview, 5.2.0) between two peers. connect() always fails with 'Failed to connect stream: Rejected(HandshakeTimedOut)'. Presence shows the other peer. What are the likely causes, in what order should we check them?",
+      "review_criteria": [
+        "Routing: the data-streams skill is used",
+        "Causes: the remote never opened a candidate — topic not bound yet, the bind callback threw before open, or NGN off on one side",
+        "Fixes: bind before connecting with retry/backoff, make the bind callback exception-free, enable NGN on both peers before creating Ditto",
+        "Gives an ordered check: NGN on both → sync started → presence → topic bound → reliability matches → candidate opened in the callback → payload under maxSendSize"
+      ]
+    },
+    {
+      "id": "ds_negative_doc_sync",
+      "prompt": "Ditto 5.2.0: we want every tablet to see the latest order status, even tablets that were offline when it changed. Should we use Data Streams for this?",
+      "review_criteria": [
+        "Routing: the data-streams skill (or its boundary) is consulted",
+        "Answers no: Data Streams are live peer-to-peer messages that are not stored or delivered to offline peers; persisted, eventually consistent state belongs in documents with subscriptions",
+        "Points to document sync (store writes plus registerSubscription) for order status"
+      ]
+    },
+    {
+      "id": "js_expo_go",
+      "prompt": "Our Expo app (managed workflow) added @dittolive/ditto 5.2.0. When we scan the QR code in Expo Go the app crashes saying the native module cannot be found. How do we get Ditto running?",
+      "review_criteria": [
+        "Routing: the js-expo skill is used (not only js-react-native)",
+        "States that Expo Go cannot load Ditto and a custom development build is required (expo-dev-client)",
+        "Adds the @dittolive/ditto config plugin to app config, runs prebuild and builds with expo run:ios/android, then starts Metro with --dev-client",
+        "Notes the plugin does not request Android runtime permissions; the app must request them"
+      ]
+    },
+    {
+      "id": "js_next_ssr",
+      "prompt": "We're adding Ditto 5.2.0 to a Next.js App Router site. We put 'use client' at the top of a component that imports @dittolive/ditto, but the build fails while rendering on the server, and in production the WASM file 404s. What should we change?",
+      "review_criteria": [
+        "Routing: the js-web skill is used",
+        "Explains that 'use client' alone does not stop server evaluation of imports; load Ditto in the browser after mount via dynamic import or a component with SSR disabled",
+        "Serve the installed package's web/ditto.wasm from static assets and pass its URL via initOptions webAssemblyModule, checking base path and application/wasm MIME",
+        "States browser storage is memory-only, so unsynced data is lost on reload; never create a shared server-side instance"
+      ]
+    },
+    {
+      "id": "js_electron",
+      "prompt": "Electron desktop app on @dittolive/ditto 5.2.0. We create Ditto in the renderer process and pass the store object to the main process over IPC; it fails, and in the packaged app the native binary is not found. How should this be structured?",
+      "review_criteria": [
+        "Routing: the js-node skill is used",
+        "The Electron main process owns the Ditto instance; the renderer talks to it through a deliberately scoped IPC API; native handles are never passed across processes",
+        "Bundling externalizes the SDK or preserves its native-binary layout, and the packaged artifact is verified on the target OS",
+        "Uses one instance per persistence path rather than one per window or reload"
+      ]
+    },
+    {
+      "id": "js_rn_cli_permissions",
+      "prompt": "Bare React Native CLI app (no Expo) on @dittolive/ditto 5.2.0. Android 14 devices never find each other over Bluetooth. What native configuration and runtime steps are needed?",
+      "review_criteria": [
+        "Routing: js-react-native and/or native-app-config is used (not js-expo)",
+        "Declares the Android Bluetooth/nearby permissions in AndroidManifest.xml and requests the runtime permissions before starting sync",
+        "Notes the published RN package manifests do not add them automatically",
+        "Points to verifying on physical devices rather than emulators for radio behavior"
+      ]
+    },
+    {
+      "id": "js_negative_react",
+      "prompt": "Our React web app re-renders a large list too often when a Zustand store updates. How can we reduce unnecessary re-renders?",
+      "review_criteria": [
+        "Trigger scope: no Ditto skill is invoked and no Ditto guidance is read for a plain React state task",
+        "Answer covers selectors, shallow equality, memoization and list virtualization without Ditto advice"
+      ]
     }
   ]
 }

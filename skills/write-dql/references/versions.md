@@ -16,7 +16,7 @@ description: Single-pane compatibility matrix for DQL features across Ditto SDK 
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
-This file is the **single source of truth** for "which SDK do I need?" Every version annotation in [`operators.md`](operators.md), [`functions.md`](functions.md), [`expressions.md`](expressions.md), [`statements.md`](statements.md), [`select.md`](select.md), [`types-mutators.md`](types-mutators.md), and [`indexing.md`](indexing.md) ladders up to the tables on this page.
+This file is the **single source of truth** for "which SDK do I need?" Every version annotation in [`operators.md`](operators.md), [`functions.md`](functions.md), [`expressions.md`](expressions.md), [`statements.md`](statements.md), [`select-basics.md`](select-basics.md), [`types-mutators.md`](types-mutators.md), and [`indexing.md`](indexing.md) ladders up to the tables on this page.
 
 If you are debugging a parse error or a behavior change after upgrading, start here.
 
@@ -44,16 +44,16 @@ their original versions. Source: <https://docs.ditto.live/sdk/latest/release-not
 
 ## 2. What shipped in v5.1.0
 
-Verified against `@dittolive/ditto@5.1.0` by the test harness (`tests/dql/`):
+Verified against `@dittolive/ditto@5.1.0` by the repository's DQL test harness:
 
-- **`JOIN`** — `INNER JOIN` / `LEFT [OUTER] JOIN`, multi-join chains, self-joins, MAP-membership `ON` conditions, joins combined with `GROUP BY` / `HAVING` / aggregates. **Requires the right-side match key to be `_id` or indexed** — otherwise the engine rejects the statement and points you at `ADVISE`. See [`select.md`](select.md) §14.
+- **`JOIN`** — `INNER JOIN` / `LEFT [OUTER] JOIN`, multi-join chains, self-joins, MAP-membership `ON` conditions, joins combined with `GROUP BY` / `HAVING` / aggregates. **Requires the right-side match key to be `_id` or indexed** — otherwise the engine rejects the statement and points you at `ADVISE`. See [`joins.md`](joins.md) §14.
 - **Composite (multi-column) `CREATE INDEX`** — e.g. `CREATE INDEX movies_year_imdb ON movies (year ASC, ratings.imdb DESC)`. See [`indexing.md`](indexing.md) §§1, 8.
 - **`RETURNING`** on `INSERT`, `UPDATE`, `DELETE` and `EVICT`. See [`statements.md`](statements.md) §§1.8, 2.5, 4.4, 5.4.
-- **`ADVISE` / `ADVISE AND PROVISION`** — index-recommendation surface. See [`indexing.md`](indexing.md) §9.
-- **`EXPLAIN` on mutations** — `EXPLAIN INSERT/UPDATE/DELETE/EVICT`. On 4.14.x and 5.0.x these raise `Explain DML is not supported`; only `EXPLAIN SELECT` works there. See [`statements.md`](statements.md) §6.
+- **`ADVISE` / `ADVISE AND PROVISION`** — index-recommendation surface. See [`query-diagnostics.md`](query-diagnostics.md#9-advise--advise-and-provision-sdk-51) §9.
+- **`EXPLAIN` on mutations** — `EXPLAIN INSERT/UPDATE/DELETE/EVICT`. On 4.14.x and 5.0.x these raise `Explain DML is not supported`; only `EXPLAIN SELECT` works there. See [`system-statements.md`](system-statements.md#6-explain) §6.
 - **`INSERT INTO <coll> SELECT …`** — insert-from-select. See [`statements.md`](statements.md) §1.9.
-- **`SHOW ALL LIKE / ILIKE … [ESCAPE]`** — the filter clause on `SHOW ALL`. See [`statements.md`](statements.md) §8.
-- **`RIGHT [OUTER] JOIN`** alongside `INNER` / `LEFT [OUTER]`. See [`select.md`](select.md) §14.
+- **`SHOW ALL LIKE / ILIKE … [ESCAPE]`** — the filter clause on `SHOW ALL`. See [`system-statements.md`](system-statements.md#8-show) §8.
+- **`RIGHT [OUTER] JOIN`** alongside `INNER` / `LEFT [OUTER]`. See [`joins.md`](joins.md) §14.
 - **`round()`, `array_sort()`, `serialize_json()`, `object_size()`** scalars. See [`functions.md`](functions.md).
 - **`USE IDS` on `UPDATE` / `DELETE` / `EVICT`** — parses on mutations in 5.1.x, but `DELETE`/`EVICT USE IDS` do not remove documents on 5.1.0. Fixed in 5.2.0; use `WHERE _id IN (…)` when supporting older releases.
 
@@ -78,38 +78,6 @@ When you see a tag like "SDK 4.12+" it means: works on 4.12 through 4.14.x **and
 ## 4. Feature matrix (summary)
 
 > **How to read the ✓/✗ columns.** A ✓ means the statement is accepted *and does what it says* on a local Small Peer. Where a feature parses but misbehaves, the cell is marked ⚠ and the Notes column says why — a parse-level ✓ that silently corrupts your data is worse than a ✗.
-
-### 4.1 Top-level statements
-
-See [compatibility-statements.md](compatibility-statements.md#41-top-level-statements) for this topic.
-
-### 4.2 `INSERT ... ON ID CONFLICT` actions
-
-See [compatibility-statements.md](compatibility-statements.md#42-insert--on-id-conflict-actions) for this topic.
-
-### 4.3 Expressions
-
-See [compatibility-expressions.md](compatibility-expressions.md#43-expressions) for this topic.
-
-### 4.4 CRDT types
-
-See [compatibility-types-sync.md](compatibility-types-sync.md#44-crdt-types) for this topic.
-
-### 4.5 Operators with cross-version differences
-
-See [compatibility-expressions.md](compatibility-expressions.md#45-operators-with-cross-version-differences) for this topic.
-
-### 4.6 Scalar and aggregate functions
-
-See [compatibility-expressions.md](compatibility-expressions.md#46-scalar-and-aggregate-functions) for this topic.
-
-### 4.7 Indexing and planner directives
-
-See [compatibility-statements.md](compatibility-statements.md#47-indexing-and-planner-directives) for this topic.
-
-### 4.8 Subscription-query restrictions
-
-See [compatibility-types-sync.md](compatibility-types-sync.md#48-subscription-query-restrictions) for this topic.
 
 ### 7.1 Check the Ditto SDK package version
 
@@ -169,6 +137,6 @@ Three reasons portability is worth thinking about up front.
 - [`functions.md`](functions.md) — every scalar function (all three SDK versions) and aggregate, plus the 5.1+ scalars.
 - [`expressions.md`](expressions.md) — literals, quantifiers (`ANY`/`EVERY ... SATISFIES`), comprehensions (`ARRAY/OBJECT ... FOR ... END`), `WITHIN`.
 - [`statements.md`](statements.md) — `DO UPDATE_LOCAL_DIFF` (4.12+), `COUNTER` (4.14+), `PN_COUNTER` (4.11+), `PROFILE` (5.0+), `RETURNING` / `INSERT … SELECT` / DML `EXPLAIN` (5.1+), the `DO MERGE` cross-version note.
-- [`select.md`](select.md) — `JOIN` (5.1+) and the subscription restrictions.
+- [`joins.md`](joins.md) — `JOIN` (5.1+); [`subscription-queries.md`](subscription-queries.md) — the subscription restrictions.
 - [`types-mutators.md`](types-mutators.md) — the canonical writeup of the strict-mode flip.
 - [`indexing.md`](indexing.md) — `#profile` (5.0+), composite indexes and `ADVISE` (5.1+).

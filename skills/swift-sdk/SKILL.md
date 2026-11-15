@@ -2,10 +2,11 @@
 name: swift-sdk
 description: >
   Use ONLY for tasks that use the Ditto Swift SDK (not generic SwiftUI/Xcode work
-  without Ditto): .swift, Package.swift or Xcode files touching import DittoSwift,
-  DittoConfig, Ditto.open, observers, authentication, lifetimes and concurrency errors.
-  Covers iOS, iPadOS, macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.0.
-  Other languages use their own Ditto SDK skill.
+  without Ditto; other languages use their own Ditto SDK skill). Builds and
+  troubleshoots Ditto Swift apps: setup, DittoConfig, Ditto.open, observers,
+  authentication, lifetimes and Swift concurrency errors. Triggers on .swift,
+  Package.swift or Xcode files touching import DittoSwift. Covers iOS, iPadOS,
+  macOS/AppKit and Mac Catalyst on Ditto 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -51,13 +52,10 @@ SwiftPM: `https://github.com/getditto/DittoSwiftPackage`, product `DittoSwift`.
 Read the relevant section of [versions.md](references/versions.md) for package pins,
 platform minimums or version differences.
 
-For new apps and POCs, check the package manager for the latest stable release and use
-that resolved version. **5.2.0 is the latest version this skill knows about, not a
-permanent recommendation or claim about today’s latest release.** Preserve an existing
-project’s selected version unless an upgrade is requested. If a newer release is found,
-read its release notes/API changes and validate the generated code. If lookup is
-unavailable, state that limitation; do not silently call 5.2.0 “latest”.
-The generator resolves the latest stable SwiftPM tag by default; see [setup.md](references/setup.md).
+**5.2.0 is the latest version this skill knows about**, not a claim about today's latest.
+Existing project pins win; for a new app resolve the latest stable SwiftPM tag (the
+generator does this) as in [setup.md](references/setup.md). If lookup is unavailable, say
+so rather than calling 5.2.0 “latest”.
 
 Read [sdk-5.2.md](references/sdk-5.2.md) when adopting 5.2.0 features or reviewing an
 upgrade: encryption, store deletion, startup configuration and behavior fixes.
@@ -139,17 +137,13 @@ where actor isolation permits). Do not cache computed `sync.subscriptions` or
 
 Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
-- Numeric casts can silently lose rows: CBOR chooses numeric widths by value; use
-  `NSNumber` or Codable instead of assuming Double.
-- Missing `signalNext()` stops delivery forever without an error; use
-  `defer { signalNext() }` as the handler's first line.
-- Fresh `DittoTransportConfig()` disables other P2P radios while sync stays active;
-  use `ditto.updateTransportConfig { … }`.
-- Dematerializing before `DittoDiffer.diff` crashes: diff → extract → dematerialize;
-  preserve item positions with `map`, not `compactMap`.
-- A retroactive Sendable shim conflicts on v5; delete it (use preconcurrency on v4).
-- `sync.isActive` means started, not connected; inspect presence server connectivity.
-- Copy the portal's Connect via SDK URL; deriving it from the database ID fails auth.
+- Numeric casts can silently drop rows (CBOR picks widths by value): use `NSNumber`/Codable.
+- Missing `signalNext()` stops delivery forever: `defer { signalNext() }` first.
+- A fresh `DittoTransportConfig()` disables other radios: use `updateTransportConfig`.
+- Dematerializing before `DittoDiffer.diff` crashes; diff → extract → dematerialize.
+- `sync.isActive` means started, not connected.
+
+The Sendable-shim and portal-URL mistakes are covered there too.
 
 ## Version differences
 
@@ -160,15 +154,15 @@ calls `fatalError`; preserve parent ownership on every line.
 
 ## References
 
-Choose the matching row and section; these are alternatives, not a reading checklist.
+Pick one row; these are alternatives, not a reading list.
 
 | Task | Read |
 |---|---|
-| Install/package pin, platform minimums, Info.plist/entitlements | [setup.md](references/setup.md); keep signing enabled or the unsigned XCFramework aborts at launch |
-| Open/authenticate, re-auth or logout | [connect.md](references/connect.md); install expirationHandler before sync.start(), await login; hold one instance and re-authenticate in place |
-| Actor crossing or starting SwiftUI exactly once | [concurrency.md](references/concurrency.md); a guard alone does not prevent a double open |
+| Install/package pin, platform minimums, Info.plist/entitlements | [setup.md](references/setup.md); keep signing on or the XCFramework aborts at launch |
+| Open/authenticate, re-auth or logout | [connect.md](references/connect.md); one instance, re-authenticate in place |
+| Actor crossing or starting SwiftUI exactly once | [concurrency.md](references/concurrency.md) |
 | Retention/cancellation | [lifetimes.md](references/lifetimes.md) |
-| Store observer, signalNext, UI diffing | [observers.md](references/observers.md); SELECT only, one stateful DittoDiffer per observer |
+| Store observer, signalNext, UI diffing | [observers.md](references/observers.md) |
 | Diagnose a symptom | [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md) if needed |
 | Compare core versions | [versions.md](references/versions.md), only the relevant delta |
 | Presence/Combine compatibility and patch fixes | [api-compatibility.md](references/api-compatibility.md) |

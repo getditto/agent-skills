@@ -117,7 +117,7 @@ SELECT _id, joinstr(' | ', title, year, ratings.imdb) AS summary FROM movies;
 SELECT title, repeat('★', cast(ratings.imdb, 'integer')) AS stars FROM movies;
 ```
 
-> `round()` would read more naturally here, but it is **SDK 5.1+ only** and is not part of the catalogue in §11 — see [`versions.md`](versions.md) §4.6. On 5.1.x you can write `cast(round(ratings.imdb), 'integer')` instead.
+> `round()` would read more naturally here, but it is **SDK 5.1+ only** and is not part of the catalogue in §11 — see [`compatibility-expressions.md`](compatibility-expressions.md#46-scalar-and-aggregate-functions) §4.6. On 5.1.x you can write `cast(round(ratings.imdb), 'integer')` instead.
 
 ```sql
 -- lpad: zero-pad the year for fixed-width display

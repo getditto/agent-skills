@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
-"""Fail when a published C# block in the skill drifts from the code that is compiled and run.
+"""Fail when a C# block in the skill is not code that is compiled and run.
 
-Every ```csharp (or ```cs) block in skills/csharp-sdk/**/*.md, except the minimal app
-(which verify-minimal.py and validate-sdk-skills.py byte-compare), must be preceded by
-one marker line:
+scripts/sync-snippets.py generates the blocks between `<!-- snippet: NAME -->` and
+`<!-- /snippet -->` from regions marked in tests/ (`// snippet:start NAME` ...
+`// snippet:end NAME`), and its --check fails on drift. This script adds the C#-specific
+coverage rules that it does not enforce:
 
-  <!-- snippet: NAME -->   the region "// <snippet name="NAME">" ... "// </snippet>" in
-                           tests/csharp-sdk/Core/ReferenceSnippetTests.cs (executed tests)
-  <!-- source: PATH -->    contiguous lines of PATH, relative to skills/csharp-sdk
-                           (a starter source file the generator builds)
-
-Indentation is normalized; everything else must match exactly. A region that no
-published block uses is also an error, so dead examples cannot accumulate.
-
---write replaces each <!-- snippet: --> block with its current region (after you edit
-the tested code), then checks as usual. <!-- source: --> blocks are never rewritten.
+- Every ```csharp (or ```cs) fence in skills/csharp-sdk/**/*.md is either inside a
+  generated snippet block, or directly preceded by `<!-- source: PATH -->` and is a
+  contiguous excerpt of PATH (relative to skills/csharp-sdk; starter code the generator
+  builds).
+- Every `csharp-*` region in tests/csharp-sdk/Core/ReferenceSnippetTests.cs is used by
+  some skill block, so dead examples cannot accumulate.
 """
 import re
 import sys
@@ -24,105 +21,65 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 SKILL = ROOT / "skills/csharp-sdk"
 SNIPPETS = ROOT / "tests/csharp-sdk/Core/ReferenceSnippetTests.cs"
-EXCLUDED = {SKILL / "examples/minimal-app.md"}
 FENCE = re.compile(r"^```(csharp|cs)\s*$")
-MARKER = re.compile(r"^<!--\s*(snippet|source):\s*(\S+)\s*-->$")
-START = re.compile(r'^\s*// <snippet name="([a-z0-9-]+)">\s*$')
-END = re.compile(r"^\s*// </snippet>\s*$")
+OPEN = re.compile(r"^<!-- snippet: ([a-z0-9-]+) -->$")
+CLOSE = "<!-- /snippet -->"
+SOURCE = re.compile(r"^<!--\s*source:\s*(\S+)\s*-->$")
+REGION = re.compile(r"^\s*// snippet:start (csharp-[a-z0-9-]+)\s*$")
 
 
 def normalize(lines):
     return textwrap.dedent("\n".join(line.rstrip() for line in lines)).strip("\n")
 
 
-def regions():
-    found, name, body = {}, None, []
-    for number, line in enumerate(SNIPPETS.read_text().splitlines(), 1):
-        start, end = START.match(line), END.match(line)
-        if start:
-            if name: raise SystemExit(f"{SNIPPETS.name}:{number}: nested snippet {start.group(1)}")
-            name, body = start.group(1), []
-        elif end:
-            if not name: raise SystemExit(f"{SNIPPETS.name}:{number}: snippet end without start")
-            if name in found: raise SystemExit(f"{SNIPPETS.name}: duplicate snippet {name}")
-            found[name], name = normalize(body), None
-        elif name:
-            body.append(line)
-    if name: raise SystemExit(f"{SNIPPETS.name}: snippet {name} is not closed")
-    return found
-
-
-def blocks(path):
-    lines = path.read_text().splitlines()
-    index = 0
-    while index < len(lines):
-        if FENCE.match(lines[index]):
-            close = next((j for j in range(index + 1, len(lines)) if lines[j].strip() == "```"), None)
-            if close is None: raise SystemExit(f"{path}:{index + 1}: unclosed code fence")
-            previous = next((lines[j].strip() for j in range(index - 1, -1, -1) if lines[j].strip()), "")
-            yield index + 1, MARKER.match(previous), normalize(lines[index + 1:close])
-            index = close
-        index += 1
-
-
 def contains(path, block):
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     size = len(block.splitlines())
     return any(normalize(lines[i:i + size]) == block for i in range(len(lines) - size + 1))
 
 
-def write(available):
-    for path in sorted(SKILL.rglob("*.md")):
-        if path in EXCLUDED: continue
-        lines, out, index, changed = path.read_text().splitlines(), [], 0, False
-        while index < len(lines):
-            out.append(lines[index])
-            marker = MARKER.match(lines[index].strip())
-            if marker and marker.group(1) == "snippet" and index + 1 < len(lines) and FENCE.match(lines[index + 1]):
-                close = next(j for j in range(index + 2, len(lines)) if lines[j].strip() == "```")
-                name = marker.group(2)
-                if name in available:
-                    out.append(lines[index + 1])
-                    out.extend(available[name].splitlines())
-                    out.append("```")
-                    changed = changed or lines[index + 2:close] != available[name].splitlines()
-                    index = close + 1
-                    continue
-            index += 1
-        if changed:
-            path.write_text("\n".join(out) + "\n")
-            print("updated " + str(path.relative_to(ROOT)))
-
-
 def main():
-    available, used, errors = regions(), set(), []
-    if "--write" in sys.argv[1:]:
-        write(available)
+    errors, used = [], set()
     for path in sorted(SKILL.rglob("*.md")):
-        if path in EXCLUDED: continue
-        relative = path.relative_to(ROOT)
-        for line, marker, block in blocks(path):
-            if not marker:
-                errors.append(f"{relative}:{line}: C# block has no <!-- snippet: --> or <!-- source: --> marker")
-            elif marker.group(1) == "snippet":
-                name = marker.group(2)
-                used.add(name)
-                if name not in available:
-                    errors.append(f"{relative}:{line}: unknown snippet {name}")
-                elif available[name] != block:
-                    errors.append(f"{relative}:{line}: block differs from snippet {name}")
-            else:
-                source = (SKILL / marker.group(2)).resolve()
-                if not source.is_relative_to(SKILL.resolve()) or not source.is_file():
-                    errors.append(f"{relative}:{line}: source {marker.group(2)} is not a file in the skill")
-                elif not contains(source, block):
-                    errors.append(f"{relative}:{line}: block is not a contiguous excerpt of {marker.group(2)}")
-    for name in sorted(set(available) - used):
-        errors.append(f"{SNIPPETS.relative_to(ROOT)}: snippet {name} is not used by any published block")
+        relative = path.relative_to(ROOT).as_posix()
+        lines = path.read_text(encoding="utf-8").splitlines()
+        inside = None
+        index = 0
+        while index < len(lines):
+            line = lines[index].strip()
+            opened = OPEN.match(line)
+            if opened:
+                inside = opened.group(1)
+                used.add(inside)
+            elif line == CLOSE:
+                inside = None
+            elif FENCE.match(line):
+                close = next((j for j in range(index + 1, len(lines)) if lines[j].strip() == "```"), None)
+                if close is None:
+                    errors.append(f"{relative}:{index + 1}: unclosed code fence")
+                    break
+                if inside is None:
+                    previous = next((lines[j].strip() for j in range(index - 1, -1, -1) if lines[j].strip()), "")
+                    source = SOURCE.match(previous)
+                    if not source:
+                        errors.append(f"{relative}:{index + 1}: C# block is neither generated "
+                                      "(<!-- snippet: -->) nor a <!-- source: --> excerpt")
+                    else:
+                        target = (SKILL / source.group(1)).resolve()
+                        block = normalize(lines[index + 1:close])
+                        if not target.is_relative_to(SKILL.resolve()) or not target.is_file():
+                            errors.append(f"{relative}:{index + 1}: source {source.group(1)} is not a file in the skill")
+                        elif not contains(target, block):
+                            errors.append(f"{relative}:{index + 1}: block is not a contiguous excerpt of {source.group(1)}")
+                index = close
+            index += 1
+    regions = {m.group(1) for line in SNIPPETS.read_text(encoding="utf-8").splitlines() if (m := REGION.match(line))}
+    for name in sorted(regions - used):
+        errors.append(f"{SNIPPETS.relative_to(ROOT).as_posix()}: region {name} is not used by any skill block")
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print(f"C# reference snippets match their executed sources ({len(used)} snippets).")
+    print(f"C# blocks are generated from tested code or excerpt the starters ({len(regions)} tested regions in use).")
     return 0
 
 

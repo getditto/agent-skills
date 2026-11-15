@@ -1,6 +1,6 @@
 {
   "name": "ditto-dql",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "DQL (Ditto Query Language) assistance for writing queries, subscriptions, and data operations",
   "author": {
     "name": "Ditto",

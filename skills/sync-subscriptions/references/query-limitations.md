@@ -1,5 +1,14 @@
 # Subscription Query Limitations
 
+## Contents
+
+- [The rules](#the-rules)
+  - [Must be a single `SELECT *` over one collection](#must-be-a-single-select--over-one-collection)
+  - [`LIMIT` and `ORDER BY`: version-dependent](#limit-and-order-by-version-dependent)
+  - [Complexity limits are operational, not syntactic](#complexity-limits-are-operational-not-syntactic)
+- [Why so strict?](#why-so-strict)
+- [Quick reference](#quick-reference)
+
 Subscription queries are a deliberately restricted subset of DQL. Validation
 happens **at registration time** — an unsupported query fails the
 `registerSubscription` call immediately with an error of the form:

@@ -112,37 +112,37 @@
   {
     "id": "sk_movies_cookbook_9bdc9b3f",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 135
+    "line": 127
   },
   {
     "id": "sk_movies_cookbook_a503d1d7",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 149
+    "line": 141
   },
   {
     "id": "sk_movies_cookbook_9182e6b9",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 159
+    "line": 151
   },
   {
     "id": "sk_movies_cookbook_a8bba05d",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 180
+    "line": 172
   },
   {
     "id": "sk_movies_cookbook_4dd707f7",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 198
+    "line": 190
   },
   {
     "id": "sk_movies_cookbook_77a7c1d0",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 217
+    "line": 209
   },
   {
     "id": "sk_movies_cookbook_7a180d88",
     "file": "skills/write-dql/examples/movies-cookbook.md",
-    "line": 222
+    "line": 214
   },
   {
     "id": "sk_retail_cookbook_41c3d0be",
@@ -402,167 +402,167 @@
   {
     "id": "sk_functions_04971111",
     "file": "skills/write-dql/references/functions.md",
-    "line": 47
+    "line": 46
   },
   {
     "id": "sk_functions_3f6b25d7",
     "file": "skills/write-dql/references/functions.md",
-    "line": 51
+    "line": 50
   },
   {
     "id": "sk_functions_9ba799a9",
     "file": "skills/write-dql/references/functions.md",
-    "line": 73
+    "line": 72
   },
   {
     "id": "sk_functions_cc770ad0",
     "file": "skills/write-dql/references/functions.md",
-    "line": 78
+    "line": 77
   },
   {
     "id": "sk_functions_fa36f576",
     "file": "skills/write-dql/references/functions.md",
-    "line": 91
+    "line": 90
   },
   {
     "id": "sk_functions_1184f01e",
     "file": "skills/write-dql/references/functions.md",
-    "line": 115
+    "line": 114
   },
   {
     "id": "sk_functions_50d00782",
     "file": "skills/write-dql/references/functions.md",
-    "line": 123
+    "line": 122
   },
   {
     "id": "sk_functions_2053e314",
     "file": "skills/write-dql/references/functions.md",
-    "line": 128
+    "line": 127
   },
   {
     "id": "sk_functions_fcc034de",
     "file": "skills/write-dql/references/functions.md",
-    "line": 149
+    "line": 144
   },
   {
     "id": "sk_functions_340ab27c",
     "file": "skills/write-dql/references/functions.md",
-    "line": 154
+    "line": 149
   },
   {
     "id": "sk_functions_94739f12",
     "file": "skills/write-dql/references/functions.md",
-    "line": 161
+    "line": 156
   },
   {
     "id": "sk_functions_95b5971b",
     "file": "skills/write-dql/references/functions.md",
-    "line": 197
+    "line": 192
   },
   {
     "id": "sk_functions_8c82f87f",
     "file": "skills/write-dql/references/functions.md",
-    "line": 203
+    "line": 198
   },
   {
     "id": "sk_functions_96e0a961",
     "file": "skills/write-dql/references/functions.md",
-    "line": 209
+    "line": 204
   },
   {
     "id": "sk_functions_b517eac4",
     "file": "skills/write-dql/references/functions.md",
-    "line": 215
+    "line": 210
   },
   {
     "id": "sk_functions_c99f39aa",
     "file": "skills/write-dql/references/functions.md",
-    "line": 220
+    "line": 215
   },
   {
     "id": "sk_functions_7d8e96cb",
     "file": "skills/write-dql/references/functions.md",
-    "line": 225
+    "line": 220
   },
   {
     "id": "sk_functions_4859e26d",
     "file": "skills/write-dql/references/functions.md",
-    "line": 251
+    "line": 238
   },
   {
     "id": "sk_functions_a49341be",
     "file": "skills/write-dql/references/functions.md",
-    "line": 272
+    "line": 259
   },
   {
     "id": "sk_functions_13c56043",
     "file": "skills/write-dql/references/functions.md",
-    "line": 285
+    "line": 272
   },
   {
     "id": "sk_functions_4cd0c7c4",
     "file": "skills/write-dql/references/functions.md",
-    "line": 298
+    "line": 285
   },
   {
     "id": "sk_indexing_101ce71f",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 76
+    "line": 72
   },
   {
     "id": "sk_indexing_40a1e3a4",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 84
+    "line": 80
   },
   {
     "id": "sk_indexing_18dcd919",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 107
+    "line": 103
   },
   {
     "id": "sk_indexing_2ef95496",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 119
+    "line": 115
   },
   {
     "id": "sk_indexing_aa88a56d",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 150
+    "line": 146
   },
   {
     "id": "sk_indexing_0037dfc4",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 190
+    "line": 166
   },
   {
     "id": "sk_indexing_0f14b2c7",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 202
+    "line": 178
   },
   {
     "id": "sk_indexing_b91c5f77",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 219
+    "line": 195
   },
   {
     "id": "sk_indexing_2de8adc5",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 230
+    "line": 206
   },
   {
     "id": "sk_indexing_7fa6f196",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 241
+    "line": 217
   },
   {
     "id": "sk_indexing_1a15c4de",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 253
+    "line": 229
   },
   {
     "id": "sk_indexing_2cb6678e",
     "file": "skills/write-dql/references/indexing.md",
-    "line": 262
+    "line": 238
   },
   {
     "id": "sk_joins_62a39f82",
@@ -932,7 +932,7 @@
   {
     "id": "sk_schema_b3dda3fd",
     "file": "skills/write-dql/references/schema.md",
-    "line": 82
+    "line": 89
   },
   {
     "id": "sk_select_access_c4c27aba",
@@ -972,147 +972,147 @@
   {
     "id": "sk_select_basics_1b855d7a",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 39
+    "line": 58
   },
   {
     "id": "sk_select_basics_77fc1d50",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 46
+    "line": 65
   },
   {
     "id": "sk_select_basics_5c3c320e",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 59
+    "line": 78
   },
   {
     "id": "sk_select_basics_faf8ef0c",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 86
+    "line": 105
   },
   {
     "id": "sk_select_basics_b9199db6",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 112
+    "line": 131
   },
   {
     "id": "sk_select_basics_4f30d764",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 150
+    "line": 169
   },
   {
     "id": "sk_select_basics_6fd5fb19",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 179
+    "line": 198
   },
   {
     "id": "sk_select_basics_46c615a9",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 195
+    "line": 214
   },
   {
     "id": "sk_select_basics_00b7c745",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 228
+    "line": 247
   },
   {
     "id": "sk_select_basics_b47e687f",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 262
+    "line": 281
   },
   {
     "id": "sk_select_basics_745e6a78",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 284
+    "line": 303
   },
   {
     "id": "sk_select_basics_958b2142",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 303
+    "line": 322
   },
   {
     "id": "sk_select_basics_1ee66282",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 348
+    "line": 367
   },
   {
     "id": "sk_select_basics_2eb0da73",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 360
+    "line": 379
   },
   {
     "id": "sk_select_basics_3371cb83",
     "file": "skills/write-dql/references/select-basics.md",
-    "line": 373
+    "line": 392
   },
   {
     "id": "sk_statements_252655df",
     "file": "skills/write-dql/references/statements.md",
-    "line": 59
+    "line": 56
   },
   {
     "id": "sk_statements_e03c0af7",
     "file": "skills/write-dql/references/statements.md",
-    "line": 66
+    "line": 63
   },
   {
     "id": "sk_statements_5d784312",
     "file": "skills/write-dql/references/statements.md",
-    "line": 77
+    "line": 74
   },
   {
     "id": "sk_statements_54258640",
     "file": "skills/write-dql/references/statements.md",
-    "line": 121
+    "line": 118
   },
   {
     "id": "sk_statements_4ffa22af",
     "file": "skills/write-dql/references/statements.md",
-    "line": 152
+    "line": 149
   },
   {
     "id": "sk_statements_60d51b9a",
     "file": "skills/write-dql/references/statements.md",
-    "line": 168
+    "line": 165
   },
   {
     "id": "sk_statements_11990b4f",
     "file": "skills/write-dql/references/statements.md",
-    "line": 183
+    "line": 180
   },
   {
     "id": "sk_statements_949bcd59",
     "file": "skills/write-dql/references/statements.md",
-    "line": 227
+    "line": 224
   },
   {
     "id": "sk_statements_d7719059",
     "file": "skills/write-dql/references/statements.md",
-    "line": 240
+    "line": 237
   },
   {
     "id": "sk_statements_4ba52db1",
     "file": "skills/write-dql/references/statements.md",
-    "line": 253
+    "line": 250
   },
   {
     "id": "sk_statements_656e4ff7",
     "file": "skills/write-dql/references/statements.md",
-    "line": 279
+    "line": 276
   },
   {
     "id": "sk_statements_de4b27d2",
     "file": "skills/write-dql/references/statements.md",
-    "line": 312
+    "line": 309
   },
   {
     "id": "sk_statements_e45a2c2b",
     "file": "skills/write-dql/references/statements.md",
-    "line": 344
+    "line": 341
   },
   {
     "id": "sk_statements_189871f4",
     "file": "skills/write-dql/references/statements.md",
-    "line": 377
+    "line": 374
   },
   {
     "id": "sk_strict_mode_safety_4abb6c6f",
@@ -1357,26 +1357,26 @@
   {
     "id": "sk_types_mutators_6f35b689",
     "file": "skills/write-dql/references/types-mutators.md",
-    "line": 263
+    "line": 259
   },
   {
     "id": "sk_types_mutators_d0046a66",
     "file": "skills/write-dql/references/types-mutators.md",
-    "line": 274
+    "line": 270
   },
   {
     "id": "sk_types_mutators_a5e794db",
     "file": "skills/write-dql/references/types-mutators.md",
-    "line": 292
+    "line": 288
   },
   {
     "id": "sk_versions_3e752b65",
     "file": "skills/write-dql/references/versions.md",
-    "line": 131
+    "line": 99
   },
   {
     "id": "sk_versions_a7a6d942",
     "file": "skills/write-dql/references/versions.md",
-    "line": 144
+    "line": 112
   }
 ]

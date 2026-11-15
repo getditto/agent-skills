@@ -1,7 +1,7 @@
-// Minimal Ditto Kotlin SDK program, v5 (JVM). Everything below the marker is the
-// program published verbatim in skills/kotlin-sdk/examples/minimal-app.md; the
-// validator fails if the two drift. Run: gradle run -PdittoVersion=5.1.0
-// MARK: - begin documented program
+// Minimal Ditto Kotlin SDK program, v5 (JVM). Everything between the snippet markers is
+// copied into the kotlin-sdk skill's examples/minimal-app.md by scripts/sync-snippets.py;
+// CI fails if the copy drifts. Run: gradle run -PdittoVersion=5.1.0
+// snippet:start kotlin-minimal-app
 import com.ditto.kotlin.DittoConfig
 import com.ditto.kotlin.DittoFactory
 import com.ditto.kotlin.Ditto
@@ -63,3 +63,4 @@ fun main() = runBlocking {
 
 fun buildDir(): java.io.File =
     java.io.File(System.getProperty("user.dir"), "ditto-data").apply { mkdirs() }
+// snippet:end kotlin-minimal-app

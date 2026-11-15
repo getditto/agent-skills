@@ -122,10 +122,22 @@ RESOURCE_CHAR_HARD_LIMIT = 20_000
 
 # §3 / §11 — references cost zero context until read, so they are budgeted far more
 # loosely than SKILL.md. Above TOC_REQUIRED_LINES a file needs a `## Contents` list:
-# partial reads (`head -100`) must still reveal the file's full scope.
+# partial reads (`head -100`) must still reveal the file's full scope. 100 lines is the
+# threshold in Anthropic's skill-authoring best practices.
 REFERENCE_LINE_TARGET = 600
 REFERENCE_LINE_HARD_LIMIT = 800
-TOC_REQUIRED_LINES = 200
+TOC_REQUIRED_LINES = 100
+
+# Anthropic skill-authoring best practices: name and description constraints, and a
+# SKILL.md body under 500 lines.
+SKILL_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SKILL_NAME_MAX = 64
+RESERVED_NAME_WORDS = ("anthropic", "claude")
+SKILL_BODY_LINE_LIMIT = 500
+# A description is injected into every session: write it in the third person and say
+# what the skill does before (or right after a `Use ONLY for` gate) when to use it.
+# Supported SDK versions belong in it too — Ditto customers span 4.14 LTS and 5.x.
+DESCRIPTION_PERSON_RE = re.compile(r"\b(?:I|I'm|I'll|me|my|we|our|you|your)\b", re.I)
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -199,16 +211,84 @@ def collect_anchors(text: str) -> set[str]:
     return anchors
 
 
-LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+LINK_RE = re.compile(r"\[[^\]]*\]\(<?([^)\s>]+)>?(?:\s+(?:\"[^\"]*\"|'[^']*'|\([^)]*\)))?\)")
+
+# Installed skills contain only skills/ (the release archive, `dittosh skills add`,
+# agent skill directories), so no skill file may depend on anything else in this
+# repository: no relative link out of skills/, and no URL to the repository, in any
+# form. Tested code is copied in with scripts/sync-snippets.py.
+SNIPPET_HINT = (
+    "Installed skills contain only skills/. Copy tested code in with "
+    "scripts/sync-snippets.py, or describe it in prose."
+)
+REPO_URL_RE = re.compile(
+    r"(?:(?:https?://)?(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)[/:]"
+    r"|(?:https?://)?api\.github\.com/repos/|git@github\.com:)"
+    r"getditto/agent-skills(?![\w-])",
+    re.I,
+)
+# Reference-style definitions (`[x]: target`) and HTML attributes, besides inline links.
+# A definition needs a link-like target, so `[String: Any]: foo` in prose is not one.
+REF_DEF_RE = re.compile(r"^ {0,3}\[[^\]]+\]:[ \t]*<?((?:\.{1,2}/|/|#|[a-z][a-z0-9+.-]*:)[^\s>]*)>?", re.M | re.I)
+HTML_ATTR_RE = re.compile(r"""\b(?:href|src)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>"']+))""", re.I)
+# Schemes that point off-site. Anything else (file:, a bare path) is treated as a path.
+EXTERNAL_SCHEME_RE = re.compile(r"^(?:https?|mailto|tel):", re.I)
+FENCE_LINE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
+
+
+def strip_fences(text: str) -> str:
+    """The text with fenced code blocks blanked out (line count kept)."""
+    out, fence = [], None
+    for line in text.split("\n"):
+        match = FENCE_LINE_RE.match(line)
+        if fence is None and match:
+            fence = match.group(1)
+            out.append("")
+        elif fence is not None:
+            if match and match.group(1)[0] == fence[0] and len(match.group(1)) >= len(fence):
+                fence = None
+            out.append("")
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
+def link_targets(text: str) -> list[str]:
+    prose = strip_fences(text)
+    html = ["".join(groups) for groups in HTML_ATTR_RE.findall(prose)]
+    return LINK_RE.findall(text) + REF_DEF_RE.findall(prose) + html
+
+
+def check_no_repository_references(skill_dir: str) -> None:
+    """Non-Markdown files (scripts, assets) must not point at this repository either."""
+    for root, dirs, files in os.walk(skill_dir):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for filename in files:
+            if filename.endswith(".md"):
+                continue  # check_links reports these with line numbers
+            path = os.path.join(root, filename)
+            try:
+                text = read(path)
+            except (UnicodeDecodeError, OSError):
+                continue
+            for number, line in enumerate(text.split("\n"), 1):
+                match = REPO_URL_RE.search(line)
+                if match:
+                    fail(f"{path}:{number}: refers to this repository ({match.group(0)}). {SNIPPET_HINT}")
 
 
 def check_links(skill_dir: str, relative_path: str) -> None:
     path = os.path.join(skill_dir, relative_path)
     text = read(path)
     base = os.path.dirname(path)
-    for target in LINK_RE.findall(text):
-        if target.startswith(("http://", "https://", "mailto:")):
-            continue
+    for number, line in enumerate(text.split("\n"), 1):
+        match = REPO_URL_RE.search(line)
+        if match:
+            fail(f"{path}:{number}: refers to this repository ({match.group(0)}). {SNIPPET_HINT}")
+    for target in link_targets(text):
+        if EXTERNAL_SCHEME_RE.match(target):
+            continue  # repository URLs are caught above
+        target = re.sub(r"^file:(//)?", "", target, flags=re.I)
         if target.startswith("#"):
             anchor = target[1:]
             if anchor not in collect_anchors(text):
@@ -216,6 +296,10 @@ def check_links(skill_dir: str, relative_path: str) -> None:
             continue
         file_part, _, anchor = target.partition("#")
         resolved = os.path.normpath(os.path.join(base, file_part))
+        skills_root = os.path.normpath(SKILLS_DIR) + os.sep
+        if not resolved.startswith(skills_root):
+            fail(f"{path}: link leaves {SKILLS_DIR}/, so it breaks in installed copies: {target}. {SNIPPET_HINT}")
+            continue
         if not os.path.exists(resolved):
             fail(f"{path}: link target does not exist: {target}")
             continue
@@ -260,6 +344,80 @@ def all_markdown(skill_dir: str) -> list[str]:
     return found
 
 
+# Version-coverage claims. Each skill declares its supported SDK lines once in the
+# SKILL.md body ("Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0**"). Every blanket
+# claim elsewhere — a "Covers/Supports … SDK" header, "all supported versions (…)", or
+# "works identically on …" — must name exactly those lines (examples may name a subset),
+# and no "Available in" note may cite a line newer than the newest declared one. A
+# release that adds a line then fails here until every stale claim is revisited.
+_VERSION_TOKEN = re.compile(r"\b(\d+)\.(\d+)\.(?:x|\d+)\b")
+_VERSION_LIST = (r"((?:\**\d+\.\d+\.(?:x|\d+)(?:\s*\(LTS\))?\**"
+                 r"(?:\s*,\s*(?:and\s+)?|\s+and\s+|\s*/\s*)?)+)")
+_DECLARED_RE = re.compile(r"Support(?:s|ed:)\s*\**\s*(?:Ditto\s+)?(?:SDK\s+)?\**\s*" + _VERSION_LIST)
+_COVERAGE_RE = re.compile(
+    r"(?:Covers|Supports|Supported:|usable on|works identically on)\s+\**\s*(?:Ditto\s+)?(?:SDK\s+)?\**\s*"
+    + _VERSION_LIST
+)
+_ALL_SUPPORTED_RE = re.compile(r"(?i)(?:all|every) supported (?:SDK )?(?:versions?|lines?)\s*\(([^)]*)\)")
+
+
+def version_lines(text: str) -> set[tuple[int, int]]:
+    return {(int(major), int(minor)) for major, minor in _VERSION_TOKEN.findall(text)}
+
+
+def declared_version_lines(body: str) -> set[tuple[int, int]]:
+    match = _DECLARED_RE.search(body)
+    return version_lines(match.group(1)) if match else set()
+
+
+def check_version_claims(skill_dir: str, declared: set[tuple[int, int]]) -> None:
+    if not declared:
+        return
+    newest = max(declared)
+    shown = ", ".join(f"{a}.{b}" for a, b in sorted(declared))
+    for path in all_markdown(skill_dir):
+        text = strip_fences(read(path))
+        relative = os.path.relpath(path, skill_dir)
+        exact = not relative.startswith("examples/") and os.path.basename(path) != "README.md"
+        for regex in (_COVERAGE_RE, _ALL_SUPPORTED_RE):
+            for match in regex.finditer(text):
+                named = version_lines(match.group(1))
+                line = text.count("\n", 0, match.start()) + 1
+                too_many = not named <= declared
+                too_few = exact and len(named) >= 2 and named != declared
+                if too_many or too_few:
+                    fail(
+                        f"{path}:{line}: claims SDK lines "
+                        f"{', '.join(f'{a}.{b}' for a, b in sorted(named))}; the skill declares {shown}"
+                    )
+        for number, line_text in enumerate(text.splitlines(), 1):
+            if "Available in" in line_text:
+                newer = sorted(v for v in version_lines(line_text) if v > newest)
+                if newer:
+                    fail(
+                        f"{path}:{number}: 'Available in' cites "
+                        f"{', '.join(f'{a}.{b}' for a, b in newer)}, newer than the declared {shown}"
+                    )
+
+
+def check_name_and_description(skill_md: str, name: str, description: str) -> None:
+    """Best-practice constraints on the two fields loaded into every session."""
+    if len(name) > SKILL_NAME_MAX or not SKILL_NAME_RE.match(name):
+        fail(f"{skill_md}: name must be ≤{SKILL_NAME_MAX} lowercase letters, digits and single hyphens")
+    if any(word in name for word in RESERVED_NAME_WORDS):
+        fail(f"{skill_md}: name must not contain a reserved word ({', '.join(RESERVED_NAME_WORDS)})")
+    if re.search(r"</?[A-Za-z][^>]*>", description):
+        fail(f"{skill_md}: description must not contain XML/HTML tags")
+    person = DESCRIPTION_PERSON_RE.search(description)
+    if person:
+        fail(f"{skill_md}: description must be third person (found '{person.group(0)}')")
+    if description.startswith("Use when"):
+        fail(
+            f"{skill_md}: description must say what the skill does before 'Use when …' "
+            "(a 'Use ONLY for' exclusion gate may lead)"
+        )
+
+
 def validate_every_skill() -> None:
     """Frontmatter, context budgets and navigation for every skill."""
     for name in sorted(os.listdir(SKILLS_DIR)):
@@ -300,6 +458,11 @@ def validate_every_skill() -> None:
             fail(f"{skill_md}: description must contain 1–1024 characters")
         elif len(description) > DESCRIPTION_CHAR_TARGET:
             warn(f"{skill_md}: description is {len(description)} characters; target ≤500")
+        check_name_and_description(skill_md, declared or "", description)
+
+        body_lines = len(body.strip().splitlines())
+        if body_lines > SKILL_BODY_LINE_LIMIT:
+            fail(f"{skill_md}: body is {body_lines} lines; keep SKILL.md under {SKILL_BODY_LINE_LIMIT}")
 
         body_chars = len(body.strip())
         if body_chars > SKILL_BODY_CHAR_HARD_LIMIT:
@@ -311,6 +474,8 @@ def validate_every_skill() -> None:
         elif body_chars > SKILL_BODY_CHAR_TARGET:
             warn(f"{skill_md}: body is {body_chars:,} characters; target ≤10,000")
 
+        check_no_repository_references(skill_dir)
+        check_version_claims(skill_dir, declared_version_lines(body))
         for path in all_markdown(skill_dir):
             check_links(skill_dir, os.path.relpath(path, skill_dir))
             if path == skill_md:
@@ -324,7 +489,7 @@ def validate_every_skill() -> None:
             has_contents_links = any(target.startswith("#") for target in LINK_RE.findall(contents))
             if needs_contents and not has_contents_links:
                 fail(
-                    f"{path}: needs a linked '## Contents' list (over 200 lines or "
+                    f"{path}: needs a linked '## Contents' list (over {TOC_REQUIRED_LINES} lines or "
                     "8,000 characters), so agents can select a section."
                 )
             if len(resource) > RESOURCE_CHAR_HARD_LIMIT:
@@ -605,7 +770,6 @@ def capability_detail(text: str, cap_id: str) -> str:
 # The fixture is DERIVED from the markdown's own declaration, not from a table here: a
 # hard-coded map silently skips any skill nobody remembered to register, and silently
 # stops checking when a fixture is renamed — both of which were demonstrated.
-FIXTURE_DECL_RE = re.compile(r"This is a copy of `([^`]+)` in the fixture")
 # Any host-language fence counts: the guard used to look for ```swift only, so a Kotlin
 # skill with a harness and no declaration passed silently. Proven.
 CODE_FENCE_RE = re.compile(r"^```(swift|kotlin|java|cs|csharp|cpp|rust|dart|go|js|javascript|ts|typescript)\s*$", re.M)
@@ -641,11 +805,6 @@ DECL_KINDS = ("actor", "struct", "final class", "class", "enum")
 REQUIRED_MIRRORS = {
     "swift-sdk": [("Sources/MinimalApp/MinimalApp.swift", "Deadline.Gate")],
 }
-
-# Everything below this marker in the fixture is the documented program. Declared rather
-# than inferred, so the boundary does not depend on Swift syntax.
-PROGRAM_MARKER = "// MARK: - begin documented program"
-
 
 def extract_declaration(text: str, type_name: str):
     """Returns the source of `type_name`'s declaration, including its leading keyword.
@@ -754,84 +913,72 @@ def check_mirrored_declarations(name: str) -> None:
                     )
 
 
-def check_examples_match_fixture(name: str) -> None:
-    """Every published example that declares a fixture copy must match it byte for byte.
+SNIPPET_BLOCK_RE = re.compile(r"^<!-- snippet: ([a-z0-9][a-z0-9-]*) -->$", re.M)
+SNIPPET_MARK_RE = re.compile(r"^\s*(?://|#|<!--|/\*|--)\s*snippet:(start|end)\s+([a-z0-9][a-z0-9-]*)", re.M)
 
-    Iterates `examples/*.md` rather than naming one file: the skill grew a second example
-    and a hard-coded filename would have checked the old one and silently ignored the new.
+
+def check_examples_are_generated(name: str) -> None:
+    """Every published example program is a whole-file snippet of a fixture CI runs.
+
+    scripts/sync-snippets.py keeps the copy identical to the source. This adds what a
+    documented program needs beyond that: one region covering the whole file below its
+    header comment, so the sample is complete and compiles when pasted on its own.
     """
     directory = os.path.join(SKILLS_DIR, name, "examples")
-    if not os.path.isdir(directory):
+    harness = os.path.join("tests", name)
+    if not os.path.isdir(directory) or not os.path.isdir(harness):
         return
     for entry in sorted(os.listdir(directory)):
-        if entry.endswith(".md"):
-            check_one_example(name, os.path.join(directory, entry))
-
-
-def check_one_example(name: str, example: str) -> None:
-    text = read(example)
-
-    declaration = FIXTURE_DECL_RE.search(text)
-    harness = os.path.join("tests", name)
-    if not declaration:
-        # No declaration and no harness is fine — the skill has no fixture yet. A harness
-        # with no declaration is a gap, not a pass.
-        if os.path.isdir(harness) and CODE_FENCE_RE.search(text):
+        if not entry.endswith(".md"):
+            continue
+        example = os.path.join(directory, entry)
+        program = extract_section(read(example), "Program")
+        if not program or not CODE_FENCE_RE.search(program):
+            continue
+        block = SNIPPET_BLOCK_RE.search(program)
+        if not block:
             fail(
-                f"{example}: {harness}/ exists but the file does not declare which "
-                f"fixture it copies. Add: This is a copy of `<path>` in the fixture."
+                f"{example}: '## Program' is pasted code. Mark the fixture under {harness}/ "
+                "and generate it with scripts/sync-snippets.py."
             )
-        return
+            continue
+        check_whole_file_snippet(example, harness, block.group(1))
 
-    fixture = os.path.join(harness, declaration.group(1))
-    if not within(harness, fixture):
-        fail(
-            f"{example}: declares a copy of `{declaration.group(1)}`, which resolves "
-            f"outside {harness}/. A declaration must not be able to point this check at "
-            f"an arbitrary file."
-        )
-        return
-    if not os.path.isfile(fixture):
-        fail(
-            f"{example}: declares a copy of `{declaration.group(1)}`, which does not "
-            f"resolve to a file ({fixture}). A renamed fixture must not silently "
-            f"disable this check."
-        )
-        return
 
-    match = re.search(r"## Program\n\n```\w+\n(.*?)\n```\n", text, re.S)
-    if not match:
-        fail(f"{example}: no '## Program' fence found to compare against {fixture}")
+def check_whole_file_snippet(example: str, harness: str, snippet: str) -> None:
+    sources = []
+    for root, dirs, files in os.walk(harness):
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in {"build", "node_modules"}]
+        for filename in files:
+            source = os.path.join(root, filename)
+            try:
+                text = read(source)
+            except (UnicodeDecodeError, OSError):
+                continue
+            marks = [(kind, mark) for kind, mark in SNIPPET_MARK_RE.findall(text) if mark == snippet]
+            if marks:
+                sources.append((source, text, marks))
+    if len(sources) != 1:
+        fail(f"{example}: snippet '{snippet}' is not defined by exactly one file under {harness}/")
         return
-
-    source = read(fixture).rstrip("\n")
-    if PROGRAM_MARKER not in source:
-        fail(
-            f"{fixture}: missing the '{PROGRAM_MARKER}' marker that delimits the "
-            f"documented program."
-        )
+    source, text, marks = sources[0]
+    if len(marks) != 2:
+        fail(f"{source}: the program snippet '{snippet}' must be one region covering the whole file")
         return
-    # The marker declares "everything below is the documented program". If code sits
-    # above it, the published sample silently omits a part the fixture compiled — the
-    # reader gets a program that does not build. Only comments and blank lines may
-    # precede it.
-    preamble = source.split(PROGRAM_MARKER, 1)[0].splitlines()
-    for number, line in enumerate(preamble, start=1):
+    lines = text.rstrip("\n").split("\n")
+    start = next(i for i, line in enumerate(lines) if SNIPPET_MARK_RE.match(line))
+    hash_comments = source.endswith((".py", ".sh", ".properties", ".toml", ".yml", ".yaml"))
+    comments = ("//", "/*", "*", "<!--", "<?xml") + (("#",) if hash_comments else ())
+    for number, line in enumerate(lines[:start], 1):
         stripped = line.strip()
-        if stripped and not stripped.startswith("//"):
+        if stripped and not stripped.startswith(comments):
             fail(
-                f"{fixture}:{number}: code above '{PROGRAM_MARKER}' is excluded from "
-                f"the published sample, so the sample would not compile: {stripped!r}"
+                f"{source}:{number}: code above the start of snippet '{snippet}' is left out of "
+                f"the published program, so the sample would not compile: {stripped!r}"
             )
-            break
-
-    expected = source.split(PROGRAM_MARKER, 1)[1].lstrip("\n")
-
-    if match.group(1) != expected:
-        fail(
-            f"{example}: the '## Program' block has drifted from {fixture}. "
-            f"Regenerate it — the fixture is the copy that is compiled and run."
-        )
+            return
+    if not SNIPPET_MARK_RE.match(lines[-1]):
+        fail(f"{source}: snippet '{snippet}' must end on the file's last line, so no code is left out")
 
 
 def main() -> int:
@@ -851,7 +998,7 @@ def main() -> int:
     )
     for name in sdk_skills:
         validate_sdk_skill(name)
-        check_examples_match_fixture(name)
+        check_examples_are_generated(name)
         check_mirrored_declarations(name)
 
     if args.context_report:

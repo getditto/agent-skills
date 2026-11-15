@@ -1,8 +1,9 @@
 #if !DITTO_V4
-// Every ```csharp block in skills/csharp-sdk references and SKILL.md is copied from a
-// region below (between "// <snippet name=...>" and "// </snippet>"). The regions run
-// against the real SDK unless they are marked compile-only. scripts/verify-snippets.py
-// fails when a published block drifts from its region or has no source.
+// Every ```csharp block in skills/csharp-sdk references and SKILL.md is generated from a
+// region below ("// snippet:start csharp-NAME" ... "// snippet:end csharp-NAME") by
+// scripts/sync-snippets.py. The regions run against the real SDK unless they are marked
+// compile-only. tests/csharp-sdk/scripts/verify-snippets.py fails when a C# block in the
+// skill has no tested source or a region is unused.
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -14,14 +15,14 @@ using DittoSDK.Sync;
 using DittoSDK.Transport;
 using Xunit;
 
-// <snippet name="store-dto">
+// snippet:start csharp-store-dto
 public sealed record TaskDto(
     [property: JsonPropertyName("_id")] string Id,
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("done")] bool Done);
-// </snippet>
+// snippet:end csharp-store-dto
 
-// <snippet name="store-composite-id-dto">
+// snippet:start csharp-store-composite-id-dto
 public sealed record OrderKey(
     [property: JsonPropertyName("store_id")] string StoreId,
     [property: JsonPropertyName("order_id")] string OrderId);
@@ -29,7 +30,7 @@ public sealed record OrderKey(
 public sealed record OrderDto(
     [property: JsonPropertyName("_id")] OrderKey Id,
     [property: JsonPropertyName("status")] string Status);
-// </snippet>
+// snippet:end csharp-store-composite-id-dto
 
 public class ReferenceSnippetTests
 {
@@ -45,7 +46,7 @@ public class ReferenceSnippetTests
         var databaseId = DatabaseId();
         var offlineLicense = License();
         var persistenceDirectory = TempDirectory();
-        // <snippet name="skill-minimal">
+        // snippet:start csharp-skill-minimal
         var ditto = await Ditto.OpenAsync(new DittoConfig(databaseId,
             new DittoConfigConnect.SmallPeersOnly(), persistenceDirectory));
         ditto.SetOfflineOnlyLicenseToken(offlineLicense);
@@ -67,7 +68,7 @@ public class ReferenceSnippetTests
         subscription.Dispose();
         ditto.Sync.Stop();
         ditto.Dispose();
-        // </snippet>
+        // snippet:end csharp-skill-minimal
     }
 
     [Fact]
@@ -76,14 +77,14 @@ public class ReferenceSnippetTests
         var databaseId = DatabaseId();
         var offlineLicense = License();
         var persistenceDirectory = TempDirectory();
-        // <snippet name="connect-offline">
+        // snippet:start csharp-connect-offline
         var config = new DittoConfig(databaseId, new DittoConfigConnect.SmallPeersOnly(),
             persistenceDirectory); // a stable per-app directory, one instance per directory
         var ditto = await Ditto.OpenAsync(config);
         ditto.SetOfflineOnlyLicenseToken(offlineLicense);
         Console.WriteLine($"store: {ditto.AbsolutePersistenceDirectory}");
         ditto.Sync.Start();
-        // </snippet>
+        // snippet:end csharp-connect-offline
         // Compare the leaf: macOS resolves /var to /private/var.
         Assert.Equal(Path.GetFileName(persistenceDirectory), Path.GetFileName(ditto.AbsolutePersistenceDirectory.TrimEnd('/', '\\')));
         ditto.Sync.Stop();
@@ -95,7 +96,7 @@ public class ReferenceSnippetTests
         string persistenceDirectory, DittoAuthenticationProvider provider,
         Func<Task<string>> FetchUserTokenAsync, Action<Exception> Report)
     {
-        // <snippet name="connect-server">
+        // snippet:start csharp-connect-server
         var ditto = await Ditto.OpenAsync(new DittoConfig(databaseId,
             new DittoConfigConnect.Server(new Uri(portalSdkUrl)), persistenceDirectory));
         // Required for server connections: Sync.Start throws ExpirationHandlerMissingException
@@ -109,7 +110,7 @@ public class ReferenceSnippetTests
         ditto.Sync.Start();
         // ... on shutdown:
         status.Dispose();
-        // </snippet>
+        // snippet:end csharp-connect-server
         ditto.Sync.Stop();
         ditto.Dispose();
     }
@@ -119,7 +120,7 @@ public class ReferenceSnippetTests
     {
         using var peer = await Peer.Open();
         var ditto = peer.Db;
-        // <snippet name="store-crud">
+        // snippet:start csharp-store-crud
         using (await ditto.Store.ExecuteAsync("INSERT INTO tasks DOCUMENTS (:task)",
             new() {
                 ["task"] = new Dictionary<string, object> { ["_id"] = "t1", ["title"] = "Buy milk", ["done"] = false } })) { }
@@ -140,7 +141,7 @@ public class ReferenceSnippetTests
             if (updated.MutatedDocumentIds.Count == 0)
                 throw new InvalidOperationException("Task t1 no longer exists.");
         }
-        // </snippet>
+        // snippet:end csharp-store-crud
         Assert.Equal("Buy milk", Assert.Single(open).Title);
         using var missing = await ditto.Store.ExecuteAsync("UPDATE tasks SET done = :done WHERE _id = :id",
             new Dictionary<string, object> { ["id"] = "absent", ["done"] = true });
@@ -152,7 +153,7 @@ public class ReferenceSnippetTests
     {
         using var peer = await Peer.Open();
         var ditto = peer.Db;
-        // <snippet name="store-composite-id">
+        // snippet:start csharp-store-composite-id
         // An object _id groups documents by scope; bind it as a nested dictionary.
         var id = new Dictionary<string, object> { ["store_id"] = "store-7", ["order_id"] = "A1" };
         using (await ditto.Store.ExecuteAsync("INSERT INTO orders DOCUMENTS (:order)",
@@ -167,7 +168,7 @@ public class ReferenceSnippetTests
             var order = JsonSerializer.Deserialize<OrderDto>(one.Items[0].JsonString())!;
             Console.WriteLine($"{order.Id.StoreId}/{order.Id.OrderId}: {order.Status}, {forStore.Items.Count} for store");
         }
-        // </snippet>
+        // snippet:end csharp-store-composite-id
         using var check = await ditto.Store.ExecuteAsync("SELECT * FROM orders WHERE _id.store_id = :store", new() { ["store"] = "store-7" });
         var decoded = JsonSerializer.Deserialize<OrderDto>(Assert.Single(check.Items).JsonString())!;
         Assert.Equal(("store-7", "A1", "placed"), (decoded.Id.StoreId, decoded.Id.OrderId, decoded.Status));
@@ -182,13 +183,13 @@ public class ReferenceSnippetTests
             ["o"] = new Dictionary<string, object> { ["_id"] = "A1", ["status"] = "placed" } })) { }
         async Task<bool> MoveAsync(string orderId, string from, string to)
         {
-            // <snippet name="store-guarded-transition">
+            // snippet:start csharp-store-guarded-transition
             // Check-and-set: the UPDATE only matches while the order is still in the expected phase.
             using var result = await ditto.Store.ExecuteAsync(
                 "UPDATE orders SET status = :to, status_at = :at WHERE _id = :id AND status = :from",
                 new() { ["id"] = orderId, ["from"] = from, ["to"] = to, ["at"] = DateTimeOffset.UtcNow.ToString("O") });
             return result.MutatedDocumentIds.Count == 1; // false: not found, or not in `from` any more
-            // </snippet>
+            // snippet:end csharp-store-guarded-transition
         }
         Assert.True(await MoveAsync("A1", "placed", "preparing"));
         Assert.False(await MoveAsync("A1", "placed", "preparing")); // already moved
@@ -224,7 +225,7 @@ public class ReferenceSnippetTests
             ["a"] = new Dictionary<string, object> { ["_id"] = "alice", ["balance"] = 100 } })) { }
         async Task Withdraw(long amount)
         {
-            // <snippet name="store-transaction">
+            // snippet:start csharp-store-transaction
             await ditto.Store.TransactionAsync(async tx =>
             {
                 // Run every statement on tx: never the outer ditto.Store, never a nested transaction.
@@ -238,7 +239,7 @@ public class ReferenceSnippetTests
                     new() { ["id"] = "alice", ["balance"] = balance - amount })) { }
                 // Returning normally commits.
             }, hint: "withdraw");
-            // </snippet>
+            // snippet:end csharp-store-transaction
         }
         await Withdraw(30);
         await Assert.ThrowsAsync<InvalidOperationException>(() => Withdraw(500));
@@ -251,22 +252,22 @@ public class ReferenceSnippetTests
     {
         using var peer = await Peer.Open();
         var ditto = peer.Db;
-        // <snippet name="sync-subscription">
+        // snippet:start csharp-sync-subscription
         var subscription = ditto.Sync.RegisterSubscription(
             "SELECT * FROM tasks WHERE done = :done", new Dictionary<string, object> { ["done"] = false });
         ditto.Sync.Start();
         // ... when the owner no longer needs this data:
         subscription.Cancel();
         subscription.Dispose();
-        // </snippet>
-        // <snippet name="sync-commit-id">
+        // snippet:end csharp-sync-subscription
+        // snippet:start csharp-sync-commit-id
         ulong? commitId;
         using (var inserted = await ditto.Store.ExecuteAsync("INSERT INTO tasks DOCUMENTS (:task)",
             new() { ["task"] = new Dictionary<string, object> { ["_id"] = "t2" } }))
         {
             commitId = inserted.CommitID; // read it before the result is disposed
         }
-        // </snippet>
+        // snippet:end csharp-sync-commit-id
         Assert.NotNull(commitId);
         ditto.Sync.Stop();
     }
@@ -277,7 +278,7 @@ public class ReferenceSnippetTests
         using var peer = await Peer.Open();
         var ditto = peer.Db;
         var seen = 0;
-        // <snippet name="lifetimes-observer">
+        // snippet:start csharp-lifetimes-observer
         DittoStoreObserver? observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", result =>
         {
             using (result) Interlocked.Increment(ref seen);
@@ -292,7 +293,7 @@ public class ReferenceSnippetTests
             observer.Dispose();  // releases the native handle
             observer = null;     // any member access after Dispose can crash the process
         }
-        // </snippet>
+        // snippet:end csharp-lifetimes-observer
         // A delivery already running when Cancel returns may still finish; let it settle,
         // then prove that no new change is delivered after cancellation.
         await Task.Delay(200);
@@ -310,7 +311,7 @@ public class ReferenceSnippetTests
         var delivered = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         Action<Action> dispatch = action => action();
         void ShowPeers(List<string> names) => delivered.TrySetResult(names.Count);
-        // <snippet name="presence-observe">
+        // snippet:start csharp-presence-observe
         var presence = ditto.Presence.Observe(graph =>
         {
             // Copy what the UI needs, then dispatch it to the UI thread yourself.
@@ -320,7 +321,7 @@ public class ReferenceSnippetTests
         ditto.Presence.SetPeerMetadata(new() { ["role"] = "kiosk" });
         // ... later. Presence observers are not IDisposable: Stop() ends observation.
         presence.Stop();
-        // </snippet>
+        // snippet:end csharp-presence-observe
         Assert.Equal(0, await delivered.Task.WaitAsync(TimeSpan.FromSeconds(15)));
     }
 
@@ -335,7 +336,7 @@ public class ReferenceSnippetTests
         using var second = await Peer.Open();
         var ditto = first.Db;
         var otherDitto = second.Db;
-        // <snippet name="transports-tcp">
+        // snippet:start csharp-transports-tcp
         // Listening peer: radios off, TCP on a known port (Port is a ushort).
         ditto.UpdateTransportConfig(config =>
         {
@@ -356,7 +357,7 @@ public class ReferenceSnippetTests
             config.PeerToPeer.Lan.Enabled = false;
             config.Connect.TcpServers.Add($"127.0.0.1:{port}");
         });
-        // </snippet>
+        // snippet:end csharp-transports-tcp
         using var subscription = otherDitto.Sync.RegisterSubscription("SELECT * FROM relay");
         try
         {
@@ -380,7 +381,7 @@ public class ReferenceSnippetTests
         var uniqueStagingPath = Path.Combine(peer.DirectoryPath, "staging-" + Guid.NewGuid());
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void Report(Exception error) => done.TrySetException(error);
-        // <snippet name="attachments">
+        // snippet:start csharp-attachments
         using (var attachment = await ditto.Store.NewAttachmentAsync(filePath,
             new Dictionary<string, string> { ["name"] = "photo.jpg" })) // metadata values are strings
         using (await ditto.Store.ExecuteAsync("INSERT INTO photos DOCUMENTS (:photo)",
@@ -406,7 +407,7 @@ public class ReferenceSnippetTests
             catch (Exception error) { Report(error); } // never throw into native code
         });
         // Keep the fetcher until completion. Stop() abandons a pending fetch.
-        // </snippet>
+        // snippet:end csharp-attachments
         try
         {
             await done.Task.WaitAsync(TimeSpan.FromSeconds(15));
@@ -425,7 +426,7 @@ public class ReferenceSnippetTests
         Action<Action> uiPost = pending.Enqueue;
         void Report(Exception error) => shown.TrySetException(error);
         void ShowTitles(List<string> titles) { if (titles.Count == 1) shown.TrySetResult(titles); }
-        // <snippet name="observers-backpressure">
+        // snippet:start csharp-observers-backpressure
         // uiPost: the framework's fire-and-forget post, which must throw if it cannot accept work.
         var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", (result, signalNext) =>
         {
@@ -455,7 +456,7 @@ public class ReferenceSnippetTests
                 try { Report(error); } finally { signalNext(); }
             }
         });
-        // </snippet>
+        // snippet:end csharp-observers-backpressure
         try
         {
             await Peer.Eventually(() => Task.FromResult(!pending.IsEmpty));
@@ -477,47 +478,47 @@ public class ReferenceSnippetTests
     private static async Task AntiPatternsCompileOnly(Ditto ditto, string title, string userInput, Action<Exception> Report)
     {
         {
-            // <snippet name="anti-dispose-wrong">
+            // snippet:start csharp-anti-dispose-wrong
             using var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", r => r.Dispose());
             // Leaving scope disposes the handle, but callbacks keep firing.
-            // </snippet>
+            // snippet:end csharp-anti-dispose-wrong
         }
         {
-            // <snippet name="anti-dispose-right">
+            // snippet:start csharp-anti-dispose-right
             var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", r => r.Dispose());
             try { /* ... */ }
             finally { observer.Cancel(); observer.Dispose(); }
-            // </snippet>
+            // snippet:end csharp-anti-dispose-right
         }
         {
             var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", r => r.Dispose());
-            // <snippet name="anti-after-dispose-wrong">
+            // snippet:start csharp-anti-after-dispose-wrong
             observer.Cancel();
             observer.Dispose();
             Console.WriteLine(observer.IsCancelled); // native crash (SIGSEGV), not an exception
-            // </snippet>
+            // snippet:end csharp-anti-after-dispose-wrong
         }
         {
             var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", r => r.Dispose());
-            // <snippet name="anti-after-dispose-right">
+            // snippet:start csharp-anti-after-dispose-right
             observer.Cancel();
             Console.WriteLine(observer.IsCancelled); // read state before disposing
             observer.Dispose();
             observer = null;
-            // </snippet>
+            // snippet:end csharp-anti-after-dispose-right
         }
         {
-            // <snippet name="anti-async-void-wrong">
+            // snippet:start csharp-anti-async-void-wrong
             Action<DittoQueryResult> handler = async result =>
             {
                 using (result) await SaveAsync(result.Items.Count); // async void, nothing caught
             };
             var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", handler);
-            // </snippet>
+            // snippet:end csharp-anti-async-void-wrong
             observer.Cancel(); observer.Dispose();
         }
         {
-            // <snippet name="anti-async-void-right">
+            // snippet:start csharp-anti-async-void-right
             var observer = ditto.Store.RegisterObserver("SELECT * FROM tasks", async result =>
             {
                 try
@@ -527,40 +528,40 @@ public class ReferenceSnippetTests
                 catch (Exception error) { Report(error); } // an escaping exception ends the process
             });
             // ... Cancel() and Dispose() the observer when its owner stops.
-            // </snippet>
+            // snippet:end csharp-anti-async-void-right
             observer.Cancel(); observer.Dispose();
         }
         {
-            // <snippet name="anti-interpolation-wrong">
+            // snippet:start csharp-anti-interpolation-wrong
             using (await ditto.Store.ExecuteAsync($"SELECT * FROM tasks WHERE title = '{userInput}'")) { }
-            // </snippet>
+            // snippet:end csharp-anti-interpolation-wrong
         }
         {
-            // <snippet name="anti-interpolation-right">
+            // snippet:start csharp-anti-interpolation-right
             using (await ditto.Store.ExecuteAsync("SELECT * FROM tasks WHERE title = :title",
                 new() { ["title"] = userInput })) { }
-            // </snippet>
+            // snippet:end csharp-anti-interpolation-right
         }
         {
-            // <snippet name="anti-rewrite-wrong">
+            // snippet:start csharp-anti-rewrite-wrong
             // Writes every field from a possibly stale copy, overwriting concurrent edits.
             using (await ditto.Store.ExecuteAsync("INSERT INTO tasks DOCUMENTS (:task) ON ID CONFLICT DO UPDATE",
                 new Dictionary<string, object> { ["task"] = new Dictionary<string, object> {
                     ["_id"] = "t1", ["title"] = title, ["done"] = true } })) { }
-            // </snippet>
+            // snippet:end csharp-anti-rewrite-wrong
         }
         {
-            // <snippet name="anti-rewrite-right">
+            // snippet:start csharp-anti-rewrite-right
             using (await ditto.Store.ExecuteAsync("UPDATE tasks SET done = :done WHERE _id = :id",
                 new() { ["id"] = "t1", ["done"] = true })) { }
-            // </snippet>
+            // snippet:end csharp-anti-rewrite-right
         }
     }
 
     private static Task SaveAsync(int count) => Task.CompletedTask;
 }
 
-// <snippet name="testing-fixture">
+// snippet:start csharp-testing-fixture
 // xUnit creates a new instance per test, so every test gets its own store directory.
 public sealed class TaskQueryTests : IAsyncLifetime
 {
@@ -602,5 +603,5 @@ public sealed class TaskQueryTests : IAsyncLifetime
         finally { observer.Cancel(); observer.Dispose(); }
     }
 }
-// </snippet>
+// snippet:end csharp-testing-fixture
 #endif

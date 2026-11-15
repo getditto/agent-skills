@@ -1,5 +1,15 @@
 # Transports — Ditto Swift SDK
 
+## Contents
+
+- [CAP-06 Customizing transports](#cap-06-customizing-transports)
+  - [Always mutate through `updateTransportConfig`](#always-mutate-through-updatetransportconfig)
+  - [The one Swift-specific default that matters here](#the-one-swift-specific-default-that-matters-here)
+  - [Disabling cloud sync while keeping the mesh](#disabling-cloud-sync-while-keeping-the-mesh)
+  - [The setter is fatal, not throwing](#the-setter-is-fatal-not-throwing)
+  - [Transport conditions](#transport-conditions)
+  - [Connection types](#connection-types)
+
 This file names Swift's transport **types, fields and update API**. *Which* transport to
 prefer, what each radio can do on each platform, and the cost of changing transports at
 runtime belong to the `ditto-mesh-networking` skill, or

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "ditto-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Build and troubleshoot Ditto JavaScript/TypeScript apps on Node.js, web/React, React Native and Expo, with tested provider patterns and shared native configuration.",
   "author": {
     "name": "Ditto",

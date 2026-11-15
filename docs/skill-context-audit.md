@@ -62,7 +62,7 @@ thresholds or provider guarantees:
 | SKILL.md body | ≤10,000 characters | 12,000 characters |
 | Supporting Markdown file | One focused topic or intact program | 20,000 characters |
 
-Supporting files above 8,000 characters or 200 lines need linked contents. SDK
+Supporting files above 8,000 characters or 100 lines need linked contents. SDK
 references also retain their 800-line ceiling. A contents list cannot excuse an
 oversized file. The negative controls in `tests/skill-context/test_contract.py`
 exercise this distinction and the strict name-directory rule.

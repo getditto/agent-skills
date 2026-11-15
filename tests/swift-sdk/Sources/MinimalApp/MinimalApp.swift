@@ -1,10 +1,10 @@
 //
 // The normative minimal Ditto app for skills/swift-sdk.
 //
-// This is the program `skills/swift-sdk/examples/minimal-app.md` documents. The markdown
-// carries a byte-identical copy, because a plugin user has no `tests/` tree to open;
-// `scripts/validate-sdk-skills.py` fails the build if the two drift. This file is the
-// one that is compiled and run, so edit it first and regenerate the markdown.
+// This is the program the swift-sdk skill's examples/minimal-app.md documents. The
+// markdown carries a generated copy of everything between the snippet markers, because
+// installed skills have no `tests/` tree; edit this file, then run
+// `python3 scripts/sync-snippets.py`. CI fails if the copy drifts.
 //
 // It runs in one of two modes:
 //   * offline  — `.smallPeersOnly` plus an offline-only license token. Used by CI.
@@ -22,7 +22,7 @@
 // kept in step with `Deadline.run` by hand.
 //
 
-// MARK: - begin documented program
+// snippet:start swift-minimal-app
 #if DITTO_V4
 // 4.14.x predates the `Sendable` conformances v5 added: in Swift 6 language mode
 // `Ditto` and `DittoStore` cannot cross an isolation boundary without this, and the
@@ -347,3 +347,4 @@ enum MinimalApp {
             .appendingPathComponent("ditto-minimal-app-\(UUID().uuidString)", isDirectory: true)
     }
 }
+// snippet:end swift-minimal-app

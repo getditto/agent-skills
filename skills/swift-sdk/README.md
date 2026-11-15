@@ -18,7 +18,7 @@ Covers the SwiftPM package `https://github.com/getditto/DittoSwiftPackage` (prod
 `DittoSwift`) — connecting, authentication, transports, subscriptions, DQL execution,
 observers and `DittoDiffer`, attachments, presence, observability, error handling,
 testing, and the 4.14.x → 5.x delta. Structured against the twenty capability IDs defined
-in [`docs/SDK-SKILL-TEMPLATE.md`](../../docs/SDK-SKILL-TEMPLATE.md).
+in `docs/SDK-SKILL-TEMPLATE.md` in the agent-skills repository.
 
 Deliberately **out of scope** — these have their own skills:
 
@@ -125,7 +125,7 @@ beginning `sdk/` or `snippets/` are pages of the published documentation at
 **Executed against:** Ditto **4.14.6**, **5.0.3**, **5.1.0** and **5.2.0** on Apple silicon. The code
 samples and both examples are compiled for macOS, iOS Simulator, iOS device and Mac
 Catalyst on all four versions, and the minimal app is run in CI. Contributors: see
-[`tests/swift-sdk/README.md`](../../tests/swift-sdk/README.md).
+`tests/swift-sdk/README.md` in the agent-skills repository.
 
 **Not covered by automated tests:**
 
@@ -139,7 +139,7 @@ Catalyst on all four versions, and the minimal app is run in CI. Contributors: s
 ## Getting started and installation
 
 [Create an app](references/getting-started.md), [check deliverables](references/project-deliverables.md),
-or [troubleshoot](references/troubleshooting.md). See the [installation guide](../../docs/install-swift.md)
+or [troubleshoot](references/troubleshooting.md). See the installation guide (`docs/install-swift.md` in the agent-skills repository)
 for all hosts and standalone packages.
 
 ## Maintenance
@@ -148,4 +148,4 @@ For a new SDK minor, read the official Swift release notes and SDK source, then
 update [version guidance](references/versions.md), fixture pins, capability evidence
 and example transcripts. Repeat the relevant fixture/platform/persistence checks;
 record exact patches and distinguish execution, compilation and source inspection.
-For starter generation and host packaging, see [the installation guide](../../docs/install-swift.md).
+For starter generation and host packaging, see the installation guide (`docs/install-swift.md` in the agent-skills repository).

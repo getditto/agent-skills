@@ -9,5 +9,5 @@ Copy it into an empty Node project, install `@dittolive/ditto@5.2.0`, set
 applications use a stable writable path instead.
 
 Expected successful output: `SDK: 5.2.0; observed: Learn Ditto`.
-A missing license or observer timeout exits nonzero. Actual execution results are in
-[the harness report](../../../tests/js-sdk/README.md).
+A missing license or observer timeout exits nonzero. The repository's test harness runs
+it in CI.

@@ -74,4 +74,4 @@ documentation-verified, not execution-verified, and see the tracking note in
 
 ## Installation
 
-See the [repo root README](../../README.md) for per-tool install instructions.
+See the agent-skills repository README for per-tool install instructions.

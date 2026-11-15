@@ -1,6 +1,12 @@
 ---
 name: data-modeling
-description: Use when designing, reviewing, or migrating Ditto data models from JSON or SQL: CRDT merge semantics, arrays and counters, composite IDs, embedding vs splitting collections, attachments, document size and BLE sync budgets. Covers Ditto SDK 4.14.x, 5.0.x, 5.1.x and 5.2.0, including strict-mode migration.
+description: >
+  Designs and reviews Ditto data models so concurrent offline edits merge without data
+  loss: CRDT type per field (REGISTER, MAP, COUNTER, ATTACHMENT), composite _id, embed
+  vs split, document size and BLE budgets, strict-mode migration. Covers Ditto SDK
+  4.14.x, 5.0.x, 5.1.x and 5.2.0. Use when someone shares JSON or a SQL schema to
+  model in Ditto, or reports lost array appends, counter increments or overwritten
+  objects after sync. Not for DQL syntax (write-dql).
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
@@ -10,6 +16,15 @@ Design collections around how concurrent offline edits merge. Each field is a CR
 choosing `REGISTER`, `MAP`, `COUNTER`, `PN_COUNTER` or `ATTACHMENT` determines what
 survives when peers reconnect. This skill owns model design; use `write-dql` for query
 syntax, or <https://docs.ditto.live/dql/dql> if that skill is unavailable.
+
+## When this skill applies
+
+- "Review this JSON before we ship it to devices that edit offline."
+- "We're moving this Postgres schema to Ditto — how should the collections look?"
+- "Two tablets added items to the same order and one disappeared."
+- "Should line items live in the order document or their own collection?"
+- "How should I design `_id` so permissions can scope by store?"
+- "Will this document sync fast enough over Bluetooth?"
 
 ## Start with the task
 
@@ -69,7 +84,7 @@ peers before upgrading to v5 so the upgrade changes no merge behavior.
    and indexable; avoid delimiter-joined IDs and redundant scope fields in the body.
 5. **Move binary payloads to `ATTACHMENT`.** Bytes are fetched separately and excluded
    from document size. Ask about the MongoDB Connector first: it does not carry
-   attachments, so connector-synced collections currently use inline base64 with a
+   attachments, so connector-synced collections need inline base64 (as of the 5.2.0 baseline) with a
    strict size budget; see `best-practices.md`.
 6. **Budget serialized size including CRDT metadata.** The soft warning is 256 KiB;
    the hard limit is 5 MiB. **5.1+ rejects oversized local writes; 4.14.x/5.0.x log.**

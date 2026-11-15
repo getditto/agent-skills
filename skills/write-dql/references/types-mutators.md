@@ -11,11 +11,11 @@ description: REGISTER, MAP, COUNTER (4.14+), PN_COUNTER (4.11+), and ATTACHMENT 
 - [1. REGISTER](#1-register)
 - [2. MAP](#2-map)
 - [3. COUNTER](#3-counter)
-- [4. PN_COUNTER](#4-pn_counter)
 - [5. ATTACHMENT](#5-attachment)
 - [6. Reading typed fields with `SELECT`](#6-reading-typed-fields-with-select)
-- [7. Strict mode and the `dql_strict_mode` system parameter](#7-strict-mode-and-the-dql_strict_mode-system-parameter)
 - [8. Quick decision matrix](#8-quick-decision-matrix)
+
+Covered in other files: [4. PN_COUNTER](legacy-types.md#4-pn_counter), [7. Strict mode and the `dql_strict_mode` system parameter](legacy-types.md#7-strict-mode-and-the-dql_strict_mode-system-parameter).
 
 > All examples in this file query the `movies` / `reviews` schema documented in [`schema.md`](schema.md).
 
@@ -231,10 +231,6 @@ Counters can be combined with other mutation clauses in one statement — but `A
 
 ---
 
-## 4. PN_COUNTER
-
-See [legacy-types.md](legacy-types.md#4-pn_counter) for this topic.
-
 ## 5. ATTACHMENT
 
 **Merge semantics:** binary blob stored out-of-band. The document field is a *handle* containing the blob's id, length, and metadata; the bytes themselves live in attachment storage. The handle field merges as last-write-wins (like a `REGISTER`), but the blob is content-addressed by id.
@@ -300,13 +296,9 @@ SELECT SUM(watch_count) AS total_views
 FROM   COLLECTION movies (watch_count COUNTER);
 ```
 
-See [`select.md`](select.md) for the rest of the `SELECT` grammar.
+See [`select-basics.md`](select-basics.md) for the rest of the `SELECT` grammar.
 
 ---
-
-## 7. Strict mode and the `dql_strict_mode` system parameter
-
-See [legacy-types.md](legacy-types.md#7-strict-mode-and-the-dql_strict_mode-system-parameter) for this topic.
 
 ## 8. Quick decision matrix
 

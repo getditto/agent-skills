@@ -52,7 +52,7 @@ FROM stores
 USE IDS ('store_seattle');
 ```
 
-**Notes:** two round trips, ordered — you cannot run them in parallel (the second depends on the first). `USE IDS` is SELECT-only and hits the primary id index directly (see [`select.md`](../references/select.md) §3). On 5.0+ an explicit `USE IDS` is optional — the planner already rewrites `WHERE _id = '…'` to the same direct path (QE-313; see §3 of `select.md`), so write `USE IDS` explicitly only when you care about the 4.14.x plan shape. Micro-optimisation: if your UI shows the same store often, cache it — stores are tiny and stable.
+**Notes:** two round trips, ordered — you cannot run them in parallel (the second depends on the first). `USE IDS` is SELECT-only and hits the primary id index directly (see [`select-access.md`](../references/select-access.md) §3). On 5.0+ an explicit `USE IDS` is optional — the planner already rewrites `WHERE _id = '…'` to the same direct path (QE-313; see §3 of `select-access.md`), so write `USE IDS` explicitly only when you care about the 4.14.x plan shape. Micro-optimisation: if your UI shows the same store often, cache it — stores are tiny and stable.
 
 ### Task R2 — Recent orders with customer names
 
@@ -221,6 +221,6 @@ If any of the cost rows apply to hot paths AND every peer that reads the data is
 
 ## Cross references
 
-- SELECT grammar, `USE IDS`, `WHERE … IN (…)` — [`select.md`](../references/select.md) §§3, 6
+- SELECT grammar, `USE IDS`, `WHERE … IN (…)` — [`select-access.md`](../references/select-access.md) §3 and [`select-basics.md`](../references/select-basics.md) §6
 - FK indexing — [`indexing.md`](../references/indexing.md) §1
-- Aggregates / `HAVING` — [`functions.md`](../references/functions.md); [`select.md`](../references/select.md) §§7–8
+- Aggregates / `HAVING` — [`functions.md`](../references/functions.md); [`select-basics.md`](../references/select-basics.md) §§7–8
