@@ -7,7 +7,7 @@
 - [12.2 What is — and isn't — allowed in a subscription](#122-what-is--and-isnt--allowed-in-a-subscription)
 - [12.3 Portable subscription patterns](#123-portable-subscription-patterns)
 
-Topic index: [select.md](select.md). Covers Ditto SDK 4.14.x (LTS),
+Covers Ditto SDK 4.14.x (LTS),
 5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.

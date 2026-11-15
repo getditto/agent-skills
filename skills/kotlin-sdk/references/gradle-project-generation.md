@@ -1,5 +1,12 @@
 # Generating a runnable Gradle project — Kotlin
 
+## Contents
+
+- [Mandatory rules, in order](#mandatory-rules-in-order)
+- [The diagnostics screen (generate it by default)](#the-diagnostics-screen-generate-it-by-default)
+- [Testing the generated project](#testing-the-generated-project)
+- [Coming from the Swift SDK?](#coming-from-the-swift-sdk)
+
 > Rules for producing a **complete, compilable** Android or JVM project with Ditto —
 > the Kotlin analogue of a project generator. Every rule exists because the failure
 > was observed (see [`errors.md`](errors.md)) or because the build genuinely cannot

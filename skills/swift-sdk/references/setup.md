@@ -1,5 +1,15 @@
 # Setup — Ditto Swift SDK
 
+## Contents
+
+- [CAP-01 Prerequisites, toolchain, package install](#cap-01-prerequisites-toolchain-package-install)
+  - [Swift Package Manager is the only installation path](#swift-package-manager-is-the-only-installation-path)
+  - [`import Foundation` is now your responsibility](#import-foundation-is-now-your-responsibility)
+  - [Nothing to initialize before the first call](#nothing-to-initialize-before-the-first-call)
+- [CAP-02 Platform permissions, entitlements, build config](#cap-02-platform-permissions-entitlements-build-config)
+  - [Code signing and the embedded XCFramework](#code-signing-and-the-embedded-xcframework)
+  - [Crash reporting](#crash-reporting)
+
 Everything here is the **5.2.0** form. Package shape, platform minimums and toolchain
 floors differ per line and are owned by [versions.md](versions.md).
 

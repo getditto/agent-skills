@@ -241,7 +241,7 @@ The point of the JOIN is not only speed: the semantics live in one statement, so
 
 ## Cross references
 
-- JOIN grammar and rules — [`select.md`](../references/select.md) §14
+- JOIN grammar and rules — [`joins.md`](../references/joins.md) §14
 - Composite indexes / ESR / ADVISE — [`indexing.md`](../references/indexing.md) §§1, 8, 9
 - Aggregates in projections — [`functions.md`](../references/functions.md) §aggregates
 - The non-JOIN writeups of these exact tasks — [`retail-cookbook.md`](retail-cookbook.md)

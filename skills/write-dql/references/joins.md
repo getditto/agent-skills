@@ -10,7 +10,7 @@
 - [14.5 Anti-join — movies with no reviews](#145-anti-join--movies-with-no-reviews)
 - [14.6 Compound ON and multi-join chains](#146-compound-on-and-multi-join-chains)
 
-Topic index: [select.md](select.md). Covers Ditto SDK 4.14.x (LTS),
+Covers Ditto SDK 4.14.x (LTS),
 5.0.x, 5.1.x and 5.2.0; version-specific notes remain inline. Read only the topic needed.
 
 For movies/reviews examples, see the [schema](schema.md) only when adapting those examples; other examples define their own fields.
@@ -31,7 +31,7 @@ FROM <collection> [AS] <alias>
 
 Rules and behavior (all verified against SDK 5.1.0):
 
-- **Index the join key.** A join whose right-side match key is neither `_id` nor an indexed field fails: `Joining to "<alias>" disallowed without appropriate index support. Please run ADVISE for recommendations.` Create the index (or run `ADVISE` on the statement; see [`indexing.md`](indexing.md) §9) before relying on the join.
+- **Index the join key.** A join whose right-side match key is neither `_id` nor an indexed field fails: `Joining to "<alias>" disallowed without appropriate index support. Please run ADVISE for recommendations.` Create the index (or run `ADVISE` on the statement; see [`query-diagnostics.md`](query-diagnostics.md#9-advise--advise-and-provision-sdk-51) §9) before relying on the join.
 - **Aliases** — every joined collection should have one (`reviews r`), and qualified paths (`r.movie_id`) disambiguate columns. Unqualified projections like `SELECT *` across a join are allowed but ambiguous fields collide.
 - **`ON` is a boolean expression** — equality on the FK (`r.movie_id = m._id`), compound `AND` terms, and even function predicates such as `array_contains(object_keys(m.members), u._id)` for MAP-based many-to-many relations.
 - **Outer joins surface `MISSING`** on unmatched rows — filter with `<alias>.<pk> IS MISSING` for anti-joins, and wrap projected outer fields with `coalesce(...)` for defaults.

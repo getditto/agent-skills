@@ -1,5 +1,17 @@
 # Logging, diagnostics and stats — Ditto Swift SDK
 
+## Contents
+
+- [CAP-15 Logging, diagnostics and stats](#cap-15-logging-diagnostics-and-stats)
+  - [`DittoLogger`](#dittologger)
+  - [Routing logs into your own logger](#routing-logs-into-your-own-logger)
+  - [Exporting logs](#exporting-logs)
+  - [Crash reports](#crash-reports)
+  - [Disk usage](#disk-usage)
+  - [Small-peer info](#small-peer-info)
+  - [System information through DQL](#system-information-through-dql)
+  - [DittoSwiftTools](#dittoswifttools)
+
 For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
 
 

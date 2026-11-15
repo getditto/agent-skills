@@ -24,15 +24,15 @@ For movies/reviews examples, see the [schema](schema.md) only when adapting thos
 | `TOMBSTONE FROM`                         |   ✗    |   ✗   |   ✗   |   ✗   | **Rejected on every tested SDK version** with `Tombstone is not supported` — it is a deprecated Big-Peer-only statement and the Small Peer refuses it after parsing. Use `DELETE`. |
 | `ALTER SYSTEM SET/RESET <param>`         |   ✓    |   ✓   |   ✓   |   ✓   | Used to flip `dql_strict_mode` and other engine flags.                                            |
 | `SHOW <param>` / `SHOW ALL`              |   ✓    |   ✓   |   ✓   |   ✓   | `SHOW INDEXES` is **not** present on any SDK version.                                                    |
-| `SHOW ALL LIKE/ILIKE … [ESCAPE …]`       |   ✗    |   ✗   |   ✓   |   ✓   | The filter clause is 5.1+; parse error on 4.14.x / 5.0.x. Case-sensitive. See [`statements.md`](statements.md) §8. |
+| `SHOW ALL LIKE/ILIKE … [ESCAPE …]`       |   ✗    |   ✗   |   ✓   |   ✓   | The filter clause is 5.1+; parse error on 4.14.x / 5.0.x. Case-sensitive. See [`system-statements.md`](system-statements.md#8-show) §8. |
 | `SYNC CONTEXT ... SELECT/SHOW`           |   ✓    |   ✓   |   ✓   |   ✓   | Remote query wrapper. Big Peer only — not executable from a Small Peer.                           |
 | `CREATE INDEX [IF NOT EXISTS]`           |   ✓    |   ✓   |   ✓   |   ✓   | Single-column and nested-path. Composite is 5.1+ — see §4.7.                                  |
 | `DROP INDEX [IF EXISTS]`                 |   ✓    |   ✓   |   ✓   |   ✓   |                                                                                                   |
 | `EXPLAIN SELECT`                         |   ✓    |   ✓   |   ✓   |   ✓   | Plan inspection without execution.                                                                |
-| `EXPLAIN` on DML (`INSERT`/`UPDATE`/`DELETE`/`EVICT`) | ✗ | ✗ |   ✓   |   ✓   | 4.14.x / 5.0.x raise `Explain DML is not supported`. See [`statements.md`](statements.md) §6.     |
+| `EXPLAIN` on DML (`INSERT`/`UPDATE`/`DELETE`/`EVICT`) | ✗ | ✗ |   ✓   |   ✓   | 4.14.x / 5.0.x raise `Explain DML is not supported`. See [`system-statements.md`](system-statements.md#6-explain) §6.     |
 | `PROFILE <stmt>`                         |   ✗    |   ✓   |   ✓   |   ✓   | **SDK 5.0+**. Leading keyword form; sets `#profile` on the request.                               |
-| `ADVISE <stmt>` / `ADVISE AND PROVISION` |   ✗    |   ✗   |   ✓   |   ✓   | Parse error on 4.14.x / 5.0.x. See [`indexing.md`](indexing.md) §9.                               |
-| `INNER JOIN` / `LEFT [OUTER] JOIN`       |   ✗    |   ✗   |   ✓   |   ✓   | Right-side match key must be `_id` or indexed. See [`select.md`](select.md) §14.                  |
+| `ADVISE <stmt>` / `ADVISE AND PROVISION` |   ✗    |   ✗   |   ✓   |   ✓   | Parse error on 4.14.x / 5.0.x. See [`query-diagnostics.md`](query-diagnostics.md#9-advise--advise-and-provision-sdk-51) §9.                               |
+| `INNER JOIN` / `LEFT [OUTER] JOIN`       |   ✗    |   ✗   |   ✓   |   ✓   | Right-side match key must be `_id` or indexed. See [`joins.md`](joins.md) §14.                  |
 | `RIGHT [OUTER] JOIN`                     |   ✗    |   ✗   |   ✓   |   ✓   | Works and is fully functional on 5.1.x. `FULL OUTER` and `CROSS` are rejected on every SDK version.       |
 | `RETURNING` on `INSERT` / `UPDATE`       |   ✗    |   ✗   |   ✓   |   ✓   | See [`statements.md`](statements.md) §§1.8, 2.5.                                                  |
 | `RETURNING` on `DELETE` / `EVICT`        |   ✗    |   ✗   |   ✓   |   ✓   | See [`statements.md`](statements.md) §§4.4, 5.4.                                                  |
@@ -66,6 +66,6 @@ For movies/reviews examples, see the [schema](schema.md) only when adapting thos
 | `USE IDS` on `UPDATE`                              |   ✗    |   ✗   |   ✓   |   ✓   | 5.1+, and **only before `SET`** (`UPDATE coll USE IDS 'x' SET …`). Applies correctly. |
 | `USE IDS` on `DELETE` / `EVICT`                    |   ✗    |   ✗   | ⚠ | ✓ | 5.1.0 parses but removes nothing; fixed in 5.2.0. Use `WHERE _id IN (…)` on older releases. |
 | `USE IDS` on `TOMBSTONE`                           |   ✗    |   ✗   |   ✗   |   ✗   | `TOMBSTONE` itself is unavailable on every SDK version.                            |
-| `ADVISE` / `ADVISE AND PROVISION`                  |   ✗    |   ✗   |   ✓   |   ✓   | See [`indexing.md`](indexing.md) §9.                                        |
+| `ADVISE` / `ADVISE AND PROVISION`                  |   ✗    |   ✗   |   ✓   |   ✓   | See [`query-diagnostics.md`](query-diagnostics.md#9-advise--advise-and-provision-sdk-51) §9.                                        |
 
 > **Planner directives fail silently.** An unrecognised directive — including a misspelling, an unknown collection name, or a wrong-typed value — is **accepted without error and ignored** on every version. "It didn't error" therefore proves nothing about support. The only reliable check is to diff `EXPLAIN` plans against the same query without the directive: a honoured directive changes the plan shape, an ignored one leaves it byte-identical.

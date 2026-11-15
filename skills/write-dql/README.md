@@ -37,7 +37,11 @@ Located in [`references/`](references):
 | [`functions.md`](references/functions.md) | Built-in scalar and aggregate functions |
 | [`expressions.md`](references/expressions.md) | Path expressions, literals, type coercion |
 | [`statements.md`](references/statements.md) | INSERT, UPDATE, DELETE, EVICT statement forms |
-| [`select.md`](references/select.md) | SELECT, projections, ORDER BY, subscriptions |
+| [`select-basics.md`](references/select-basics.md) | SELECT grammar, projections, WHERE, GROUP BY, ORDER BY |
+| [`select-access.md`](references/select-access.md) | USE IDS, USE INDEX, USE DIRECTIVES |
+| [`joins.md`](references/joins.md) | JOIN queries (5.1+) |
+| [`subscription-queries.md`](references/subscription-queries.md) | Subscription query restrictions |
+| [`query-diagnostics.md`](references/query-diagnostics.md) | EXPLAIN, `#profile`, ADVISE |
 | [`types-mutators.md`](references/types-mutators.md) | DQL type system and CRDT mutators |
 | [`indexing.md`](references/indexing.md) | CREATE INDEX, query planning, performance |
 | [`versions.md`](references/versions.md) | Per-feature SDK compatibility matrix |

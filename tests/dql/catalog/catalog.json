@@ -462,7 +462,7 @@
     "id": "sk_movies_cookbook_9bdc9b3f",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 135,
+      "line": 127,
       "heading": "### Task 19 — Reviews joined to their movie (INNER JOIN)"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title, m.year\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nORDER BY r.created_at DESC\nLIMIT 10",
@@ -479,7 +479,7 @@
     "id": "sk_movies_cookbook_a503d1d7",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 149,
+      "line": 141,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_id ON reviews (movie_id)",
@@ -498,7 +498,7 @@
     "id": "sk_movies_cookbook_9182e6b9",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 159,
+      "line": 151,
       "heading": "### Task 20 — Every movie with its review stats (LEFT JOIN + GROUP BY)"
     },
     "query": "SELECT m._id, m.title,\n       COUNT(r._id)      AS review_count,\n       coalesce(AVG(r.score), 0) AS avg_score\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nORDER BY review_count DESC, m.title ASC\nLIMIT 10",
@@ -521,7 +521,7 @@
     "id": "sk_movies_cookbook_a8bba05d",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 180,
+      "line": 172,
       "heading": "### Task 21 — Only well-reviewed movies (JOIN + HAVING)"
     },
     "query": "SELECT m._id, m.title, AVG(r.score) AS avg_score\nFROM movies m\nINNER JOIN reviews r ON r.movie_id = m._id\nGROUP BY m._id, m.title\nHAVING AVG(r.score) >= 8.0\nORDER BY avg_score DESC\nLIMIT 10",
@@ -538,7 +538,7 @@
     "id": "sk_movies_cookbook_4dd707f7",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 198,
+      "line": 190,
       "heading": "### Task 22 — Movies with no reviews (anti-join)"
     },
     "query": "SELECT m._id, m.title, m.year\nFROM movies m\nLEFT OUTER JOIN reviews r ON r.movie_id = m._id\nWHERE r._id IS MISSING\nORDER BY m.year DESC\nLIMIT 10",
@@ -560,7 +560,7 @@
     "id": "sk_movies_cookbook_77a7c1d0",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 217,
+      "line": 209,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "CREATE INDEX IF NOT EXISTS reviews_movie_created\n  ON reviews (movie_id ASC, created_at DESC)",
@@ -577,7 +577,7 @@
     "id": "sk_movies_cookbook_7a180d88",
     "source": {
       "file": "skills/write-dql/examples/movies-cookbook.md",
-      "line": 222,
+      "line": 214,
       "heading": "### Task 23 — Composite index for the review feed"
     },
     "query": "SELECT r._id, r.score, r.user_id, m.title\nFROM reviews r\nINNER JOIN movies m ON r.movie_id = m._id\nWHERE r.movie_id = 'tt0111161'\nORDER BY r.created_at DESC\nLIMIT 20",
@@ -1546,7 +1546,7 @@
     "id": "sk_functions_04971111",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 47,
+      "line": 46,
       "heading": "## 1. Mathematical"
     },
     "query": "SELECT title, ceil(runtime_minutes / 60.0) AS approx_hours FROM movies",
@@ -1565,7 +1565,7 @@
     "id": "sk_functions_3f6b25d7",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 51,
+      "line": 50,
       "heading": "## 1. Mathematical"
     },
     "query": "SELECT title, abs(box_office_millions - 100) AS distance_from_100m FROM movies",
@@ -1584,7 +1584,7 @@
     "id": "sk_functions_9ba799a9",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 73,
+      "line": 72,
       "heading": "## 2. Conditional / null-handling"
     },
     "query": "\nSELECT title, coalesce(cast(ratings.imdb, 'string'), 'N/A') AS imdb FROM movies",
@@ -1603,7 +1603,7 @@
     "id": "sk_functions_cc770ad0",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 78,
+      "line": 77,
       "heading": "## 2. Conditional / null-handling"
     },
     "query": "\nSELECT _id, decode(score,\n    5, 'love',\n    4, 'like',\n    3, 'meh',\n    2, 'dislike',\n    1, 'hate',\n    'unrated'\n) AS label\nFROM reviews",
@@ -1622,7 +1622,7 @@
     "id": "sk_functions_fa36f576",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 91,
+      "line": 90,
       "heading": "## 2. Conditional / null-handling"
     },
     "query": "\nSELECT _id, nullif(score, 0) AS score FROM reviews",
@@ -1641,7 +1641,7 @@
     "id": "sk_functions_1184f01e",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 115,
+      "line": 114,
       "heading": "## 3. Type / conversion"
     },
     "query": "\nSELECT title, cast(year, 'string') AS year_str FROM movies",
@@ -1660,7 +1660,7 @@
     "id": "sk_functions_50d00782",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 123,
+      "line": 122,
       "heading": "## 3. Type / conversion"
     },
     "query": "\nSELECT _id, type(ratings.imdb) AS imdb_type FROM movies",
@@ -1679,7 +1679,7 @@
     "id": "sk_functions_fcc034de",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 149,
+      "line": 144,
       "heading": "## 5. Array"
     },
     "query": "\nSELECT title FROM movies WHERE array_contains(genres, 'Drama')",
@@ -1698,7 +1698,7 @@
     "id": "sk_functions_340ab27c",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 154,
+      "line": 149,
       "heading": "## 5. Array"
     },
     "query": "\n\nSELECT title, array_length(`cast`) AS cast_size FROM movies\nORDER BY cast_size DESC LIMIT 5",
@@ -1721,7 +1721,7 @@
     "id": "sk_functions_94739f12",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 161,
+      "line": 156,
       "heading": "## 5. Array"
     },
     "query": "\nSELECT _id FROM movies WHERE array_contains_null(tags)",
@@ -1740,7 +1740,7 @@
     "id": "sk_functions_95b5971b",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 197,
+      "line": 192,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_keys(ratings) AS metrics FROM movies WHERE _id = 'tt0111161'",
@@ -1759,7 +1759,7 @@
     "id": "sk_functions_8c82f87f",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 203,
+      "line": 198,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_set(ratings, 'imdb', 9.4, true) AS new_ratings\nFROM movies WHERE _id = 'tt0111161'",
@@ -1778,7 +1778,7 @@
     "id": "sk_functions_96e0a961",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 209,
+      "line": 204,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_concat({'imdb': 0, 'rotten_tomatoes': 0, 'metacritic': 0}, ratings) AS filled\nFROM movies",
@@ -1797,7 +1797,7 @@
     "id": "sk_functions_b517eac4",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 215,
+      "line": 210,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_unset(director, 'born') AS dir_no_dob FROM movies",
@@ -1816,7 +1816,7 @@
     "id": "sk_functions_c99f39aa",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 220,
+      "line": 215,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_rename(ratings, 'imdb', 'imdb_rating') AS renamed FROM movies",
@@ -1835,7 +1835,7 @@
     "id": "sk_functions_7d8e96cb",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 225,
+      "line": 220,
       "heading": "### 6.2 Object examples"
     },
     "query": "\nSELECT object_content(ratings, 'nested') AS flat FROM movies WHERE _id = 'tt0111161'",
@@ -1854,7 +1854,7 @@
     "id": "sk_functions_a49341be",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 272,
+      "line": 259,
       "heading": "### 10.1 `count` — three useful forms"
     },
     "query": "\nSELECT count(*) AS total FROM movies",
@@ -1873,7 +1873,7 @@
     "id": "sk_functions_13c56043",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 285,
+      "line": 272,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT\n    count(*)                       AS total_movies,\n    count(ratings.imdb)            AS rated_movies,\n    count(DISTINCT director.name)  AS directors,\n    avg(ratings.imdb)              AS avg_imdb,\n    median(ratings.imdb)           AS median_imdb,\n    max(box_office_millions)       AS top_grossing,\n    min(year)                      AS earliest_year\nFROM movies",
@@ -1892,7 +1892,7 @@
     "id": "sk_functions_4cd0c7c4",
     "source": {
       "file": "skills/write-dql/references/functions.md",
-      "line": 298,
+      "line": 285,
       "heading": "### 10.2 Aggregate examples"
     },
     "query": "\nSELECT year, count(*) AS n, avg(ratings.imdb) AS avg_rating\nFROM movies\nGROUP BY year\nHAVING count(*) > 1\nORDER BY year DESC",
@@ -1916,7 +1916,7 @@
     "id": "sk_indexing_101ce71f",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 76,
+      "line": 72,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
@@ -1933,7 +1933,7 @@
     "id": "sk_indexing_40a1e3a4",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 84,
+      "line": 80,
       "heading": "### 1.2 Form A — `name ON collection`"
     },
     "query": "\nCREATE INDEX IF NOT EXISTS movies_year ON movies (year)",
@@ -1952,7 +1952,7 @@
     "id": "sk_indexing_18dcd919",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 107,
+      "line": 103,
       "heading": "### 1.3 Form B — `collection.name`"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies.movies_year_imdb\n  (year ASC, ratings.imdb DESC)",
@@ -1969,7 +1969,7 @@
     "id": "sk_indexing_2ef95496",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 119,
+      "line": 115,
       "heading": "### 1.4 Indexing nested paths"
     },
     "query": "CREATE INDEX movies_imdb  ON movies (ratings.imdb DESC)",
@@ -1988,7 +1988,7 @@
     "id": "sk_indexing_aa88a56d",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 150,
+      "line": 146,
       "heading": "### 2.2 Examples"
     },
     "query": "DROP INDEX IF EXISTS movies_year_imdb ON movies",
@@ -2007,7 +2007,7 @@
     "id": "sk_indexing_0037dfc4",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 190,
+      "line": 166,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "SELECT title, ratings.imdb\nFROM movies\nWHERE year = 2010              \n  AND ratings.imdb > 8.0       \nORDER BY ratings.imdb DESC",
@@ -2026,7 +2026,7 @@
     "id": "sk_indexing_0f14b2c7",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 202,
+      "line": 178,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX IF NOT EXISTS movies_year_imdb\n  ON movies (year ASC, ratings.imdb DESC)",
@@ -2043,7 +2043,7 @@
     "id": "sk_indexing_b91c5f77",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 219,
+      "line": 195,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "\nSELECT title FROM movies\nWHERE year = 2010\n  AND director.name = 'Christopher Nolan'\n  AND box_office_millions >= 500\nORDER BY year DESC",
@@ -2062,7 +2062,7 @@
     "id": "sk_indexing_2de8adc5",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 230,
+      "line": 206,
       "heading": "### 8.1 The ESR rule — Equality, Sort, Range"
     },
     "query": "CREATE INDEX movies_year_director_box\n  ON movies (year DESC, director.name ASC, box_office_millions ASC)",
@@ -2079,7 +2079,7 @@
     "id": "sk_indexing_7fa6f196",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 241,
+      "line": 217,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "\nSELECT year, ratings.imdb\nFROM movies\nWHERE year = 2010\nORDER BY ratings.imdb DESC",
@@ -2098,7 +2098,7 @@
     "id": "sk_indexing_1a15c4de",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 253,
+      "line": 229,
       "heading": "### 8.2 Covering indexes"
     },
     "query": "/*+ {\"#disable_covering\": true} */\nSELECT year, ratings.imdb FROM movies WHERE year = 2010",
@@ -2117,7 +2117,7 @@
     "id": "sk_indexing_2cb6678e",
     "source": {
       "file": "skills/write-dql/references/indexing.md",
-      "line": 262,
+      "line": 238,
       "heading": "### 8.3 Index direction matters for `ORDER BY`"
     },
     "query": "CREATE INDEX movies_year_asc ON movies (year ASC)",
@@ -3434,7 +3434,7 @@
     "id": "sk_schema_b3dda3fd",
     "source": {
       "file": "skills/write-dql/references/schema.md",
-      "line": 82,
+      "line": 89,
       "heading": "## Seeding the dataset"
     },
     "query": "INSERT INTO COLLECTION movies (\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0111161',\n  'title': 'The Shawshank Redemption',\n  'year': 1994,\n  'runtime_minutes': 142,\n  'genres': ['Drama'],\n  'director': { 'name': 'Frank Darabont', 'born': 1959 },\n  'cast': [\n    { 'name': 'Tim Robbins', 'role': 'Andy Dufresne' },\n    { 'name': 'Morgan Freeman', 'role': 'Ellis Boyd \"Red\" Redding' }\n  ],\n  'ratings': { 'imdb': 9.3, 'rotten_tomatoes': 91, 'metacritic': 80 },\n  'box_office_millions': 73,\n  'tags': ['prison', 'friendship', 'redemption'],\n  'watch_count': 0,\n  'is_classic': true,\n  'released': '1994-09-23'\n})\nON ID CONFLICT DO UPDATE",
@@ -3595,7 +3595,7 @@
     "id": "sk_select_basics_1b855d7a",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 39,
+      "line": 58,
       "heading": "### 1.1 Wildcard"
     },
     "query": "SELECT * FROM movies",
@@ -3614,7 +3614,7 @@
     "id": "sk_select_basics_77fc1d50",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 46,
+      "line": 65,
       "heading": "### 1.2 Explicit expression list with aliases"
     },
     "query": "SELECT title, year, ratings.imdb AS imdb\nFROM movies",
@@ -3633,7 +3633,7 @@
     "id": "sk_select_basics_5c3c320e",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 59,
+      "line": 78,
       "heading": "### 1.3 `DISTINCT`"
     },
     "query": "\nSELECT DISTINCT year FROM movies ORDER BY year ASC",
@@ -3650,7 +3650,7 @@
     "id": "sk_select_basics_faf8ef0c",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 86,
+      "line": 105,
       "heading": "## 2. FROM clause"
     },
     "query": "\nSELECT title, year FROM movies WHERE year >= 1990",
@@ -3669,7 +3669,7 @@
     "id": "sk_select_basics_b9199db6",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 112,
+      "line": 131,
       "heading": "## 6. WHERE clause"
     },
     "query": "\nSELECT title, year, box_office_millions\nFROM movies\nWHERE year >= 1990\n  AND box_office_millions IS NOT MISSING",
@@ -3688,7 +3688,7 @@
     "id": "sk_select_basics_4f30d764",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 150,
+      "line": 169,
       "heading": "### 6.1 Quantifier expressions (v5.0+)"
     },
     "query": "\nSELECT title FROM movies\nWHERE ANY c IN `cast` SATISFIES c.role = 'Cooper' END",
@@ -3706,7 +3706,7 @@
     "id": "sk_select_basics_6fd5fb19",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 179,
+      "line": 198,
       "heading": "### 7.1 Single-key grouping"
     },
     "query": "\nSELECT year, count(*) AS n\nFROM movies\nGROUP BY year\nORDER BY n DESC, year DESC",
@@ -3729,7 +3729,7 @@
     "id": "sk_select_basics_46c615a9",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 195,
+      "line": 214,
       "heading": "### 7.2 Multi-key grouping"
     },
     "query": "\nSELECT year, genres[0] AS primary_genre, count(*) AS n\nFROM movies\nGROUP BY year, genres[0]\nORDER BY year DESC, n DESC",
@@ -3753,7 +3753,7 @@
     "id": "sk_select_basics_00b7c745",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 228,
+      "line": 247,
       "heading": "## 8. HAVING"
     },
     "query": "\nSELECT\n  director.name      AS director,\n  count(*)           AS films,\n  avg(ratings.imdb)  AS avg_imdb\nFROM movies\nGROUP BY director.name\nHAVING count(*) >= 3\n   AND avg(ratings.imdb) > 8.0\nORDER BY avg_imdb DESC",
@@ -3772,7 +3772,7 @@
     "id": "sk_select_basics_b47e687f",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 262,
+      "line": 281,
       "heading": "## 9. ORDER BY"
     },
     "query": "\nSELECT title, ratings.imdb AS imdb\nFROM movies\nORDER BY imdb DESC, title ASC\nLIMIT 10",
@@ -3795,7 +3795,7 @@
     "id": "sk_select_basics_745e6a78",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 284,
+      "line": 303,
       "heading": "### NULL / MISSING in ORDER BY"
     },
     "query": "SELECT title, box_office_millions\nFROM movies\nWHERE box_office_millions IS NOT MISSING\nORDER BY box_office_millions DESC\nLIMIT 20",
@@ -3818,7 +3818,7 @@
     "id": "sk_select_basics_958b2142",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 303,
+      "line": 322,
       "heading": "## 10. LIMIT / OFFSET"
     },
     "query": "\nSELECT _id, title, year FROM movies\nORDER BY released DESC\nLIMIT 20",
@@ -3842,7 +3842,7 @@
     "id": "sk_select_basics_1ee66282",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 348,
+      "line": 367,
       "heading": "## 11. Cross-type sort order"
     },
     "query": "\n\nSELECT title, box_office_millions FROM movies\nORDER BY box_office_millions ASC",
@@ -3861,7 +3861,7 @@
     "id": "sk_select_basics_2eb0da73",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 360,
+      "line": 379,
       "heading": "## 11. Cross-type sort order"
     },
     "query": "SELECT title, box_office_millions FROM movies\nORDER BY ifmissingornull(box_office_millions, -1) DESC",
@@ -3884,7 +3884,7 @@
     "id": "sk_select_basics_3371cb83",
     "source": {
       "file": "skills/write-dql/references/select-basics.md",
-      "line": 373,
+      "line": 392,
       "heading": "## 13. Worked examples (movies dataset)"
     },
     "query": "\nSELECT _id, title, ratings.imdb AS imdb\nFROM movies\nWHERE ratings.imdb IS NOT MISSING\nORDER BY imdb DESC\nLIMIT 10",
@@ -3908,7 +3908,7 @@
     "id": "sk_statements_252655df",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 59,
+      "line": 56,
       "heading": "### 1.2 Plain insert with auto-generated id"
     },
     "query": "INSERT INTO movies DOCUMENTS\n  ({ 'title': 'Inception', 'year': 2010, 'runtime_minutes': 148 })",
@@ -3927,7 +3927,7 @@
     "id": "sk_statements_e03c0af7",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 66,
+      "line": 63,
       "heading": "### 1.3 Explicit `_id` with batched documents"
     },
     "query": "INSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt0468569', 'title': 'The Dark Knight',   'year': 2008 }),\n  ({ '_id': 'tt1375666', 'title': 'Inception',         'year': 2010 }),\n  ({ '_id': 'tt1853728', 'title': 'Django Unchained',  'year': 2012 })",
@@ -3952,7 +3952,7 @@
     "id": "sk_statements_5d784312",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 77,
+      "line": 74,
       "heading": "### 1.4 Full schema with CRDT type definitions"
     },
     "query": "INSERT INTO COLLECTION movies (\n  director    MAP,\n  ratings     MAP,\n  watch_count COUNTER\n)\nDOCUMENTS ({\n  '_id': 'tt0816692',\n  'title': 'Interstellar',\n  'year': 2014,\n  'runtime_minutes': 169,\n  'genres': ['Adventure', 'Drama', 'Sci-Fi'],\n  'director': { 'name': 'Christopher Nolan', 'born': 1970 },\n  'cast': [\n    { 'name': 'Matthew McConaughey', 'role': 'Cooper' },\n    { 'name': 'Anne Hathaway',       'role': 'Brand' }\n  ],\n  'ratings': { 'imdb': 8.6, 'rotten_tomatoes': 73, 'metacritic': 74 },\n  'box_office_millions': 677.5,\n  'tags': ['space', 'time'],\n  'watch_count': 0,\n  'is_classic': false,\n  'released': '2014-11-07'\n})\nON ID CONFLICT DO UPDATE",
@@ -3977,7 +3977,7 @@
     "id": "sk_statements_54258640",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 121,
+      "line": 118,
       "heading": "### 1.5 `ON ID CONFLICT` actions"
     },
     "query": "\nINSERT INTO movies DOCUMENTS\n  ({ '_id': 'tt1160419', 'title': 'Dune', 'year': 2021 })\nON ID CONFLICT DO UPDATE",
@@ -4004,7 +4004,7 @@
     "id": "sk_statements_4ffa22af",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 152,
+      "line": 149,
       "heading": "### 1.7 `INITIAL` — seed default data (Small Peer)"
     },
     "query": "\nINSERT INTO movies INITIAL DOCUMENTS\n  ({ '_id': 'seed-1', 'title': 'Sample Movie', 'year': 2000 })",
@@ -4029,7 +4029,7 @@
     "id": "sk_statements_60d51b9a",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 168,
+      "line": 165,
       "heading": "### 1.8 `RETURNING`"
     },
     "query": "INSERT INTO reviews DOCUMENTS\n  ({ 'movie_id': 'tt0111161', 'user_id': 'u-99', 'score': 5,\n     'comment': 'Perfect.', 'created_at': '2024-06-01T12:00:00Z' })\nRETURNING _id, movie_id, score",
@@ -4049,7 +4049,7 @@
     "id": "sk_statements_11990b4f",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 183,
+      "line": 180,
       "heading": "### 1.9 `INSERT ... SELECT` — insert from a query"
     },
     "query": "\nINSERT INTO movies_archive SELECT * FROM movies WHERE year < 1950",
@@ -4066,7 +4066,7 @@
     "id": "sk_statements_949bcd59",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 227,
+      "line": 224,
       "heading": "### 2.2 `SET` and `UNSET`"
     },
     "query": "\nUPDATE movies\nSET is_classic = true,\n    box_office_millions = 28.34\nUNSET tags\nWHERE _id = 'tt0111161'",
@@ -4091,7 +4091,7 @@
     "id": "sk_statements_d7719059",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 240,
+      "line": 237,
       "heading": "### 2.3 Updating nested MAP fields"
     },
     "query": "\nUPDATE COLLECTION movies (ratings MAP)\nSET ratings = { 'imdb': 9.4 }\nWHERE _id = 'tt0111161'",
@@ -4116,7 +4116,7 @@
     "id": "sk_statements_4ba52db1",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 253,
+      "line": 250,
       "heading": "### 2.4 Counters — `APPLY INCREMENT BY`, `RESTART`"
     },
     "query": "\nUPDATE COLLECTION movies (watch_count COUNTER)\nAPPLY watch_count INCREMENT BY 1\nWHERE _id = 'tt0111161'",
@@ -4144,7 +4144,7 @@
     "id": "sk_statements_656e4ff7",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 279,
+      "line": 276,
       "heading": "### 2.5 Combined clauses + `RETURNING`"
     },
     "query": "\nUPDATE movies\nSET is_classic = true\nWHERE year < 1980\nRETURNING _id, title, year, is_classic",
@@ -4164,7 +4164,7 @@
     "id": "sk_statements_de4b27d2",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 312,
+      "line": 309,
       "heading": "## 3. EVICT"
     },
     "query": "\nEVICT FROM movies\nWHERE year < 1950",
@@ -4186,7 +4186,7 @@
     "id": "sk_statements_e45a2c2b",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 344,
+      "line": 341,
       "heading": "## 4. TOMBSTONE"
     },
     "query": "\nTOMBSTONE FROM movies\nWHERE _id = 'tt0111161'\nRETURNING _id, title, year",
@@ -4205,7 +4205,7 @@
     "id": "sk_statements_189871f4",
     "source": {
       "file": "skills/write-dql/references/statements.md",
-      "line": 377,
+      "line": 374,
       "heading": "## 5. DELETE — the mesh-wide delete"
     },
     "query": "\nDELETE FROM movies\nWHERE _id IN ('tt9999990', 'tt9999991', 'tt9999992')",
@@ -5147,7 +5147,7 @@
     "id": "sk_types_mutators_a5e794db",
     "source": {
       "file": "skills/write-dql/references/types-mutators.md",
-      "line": 292,
+      "line": 288,
       "heading": "## 6. Reading typed fields with `SELECT`"
     },
     "query": "\nSELECT director.name, ratings.imdb\nFROM   COLLECTION movies (director MAP, ratings MAP)\nWHERE  _id = 'tt0111161'",
@@ -5166,7 +5166,7 @@
     "id": "sk_versions_3e752b65",
     "source": {
       "file": "skills/write-dql/references/versions.md",
-      "line": 131,
+      "line": 99,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nSHOW dql_strict_mode",
@@ -5185,7 +5185,7 @@
     "id": "sk_versions_a7a6d942",
     "source": {
       "file": "skills/write-dql/references/versions.md",
-      "line": 144,
+      "line": 112,
       "heading": "### 7.2 Detect the strict-mode flip from inside DQL"
     },
     "query": "\nALTER SYSTEM SET dql_strict_mode = false",

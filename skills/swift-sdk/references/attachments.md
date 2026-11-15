@@ -1,5 +1,15 @@
 # Attachments — Ditto Swift SDK
 
+## Contents
+
+- [CAP-12 Attachments](#cap-12-attachments)
+  - [Creating](#creating)
+  - [Storing it in a document](#storing-it-in-a-document)
+  - [Fetching](#fetching)
+  - [Combine](#combine)
+  - [Fetcher lifetime](#fetcher-lifetime)
+  - [Size](#size)
+
 For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
 
 

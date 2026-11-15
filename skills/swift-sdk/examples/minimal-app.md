@@ -3,11 +3,9 @@
 ## Contents
 
 - [What it does](#what-it-does)
-- [Dependency](#dependency)
 - [Program](#program)
-- [Running it](#running-it)
-- [Expected output](#expected-output)
-- [Verified on](#verified-on)
+
+Covered in other files: [Dependency](../references/minimal-app-running.md#dependency), [Running it](../references/minimal-app-running.md#running-it), [Expected output](../references/minimal-app-running.md#expected-output), [Verified on](../references/minimal-app-running.md#verified-on).
 
 A complete, runnable program: configure, open, authenticate, start sync, subscribe,
 observe, write, and read the write back through the observer.
@@ -33,10 +31,6 @@ In **server mode** the program ends with `exit(0)` while still holding the insta
 an app does at process termination, so it leaves its temporary directory behind. Apps
 hold one instance for the process lifetime and never call `exit()`; see
 [connect.md](../references/connect.md#shutdown).
-
-## Dependency
-
-See [minimal-app-running.md](../references/minimal-app-running.md#dependency) for this topic.
 
 ## Program
 
@@ -370,14 +364,3 @@ enum MinimalApp {
 ```
 <!-- /snippet -->
 
-## Running it
-
-See [minimal-app-running.md](../references/minimal-app-running.md#running-it) for this topic.
-
-## Expected output
-
-See [minimal-app-running.md](../references/minimal-app-running.md#expected-output) for this topic.
-
-## Verified on
-
-See [minimal-app-running.md](../references/minimal-app-running.md#verified-on) for this topic.

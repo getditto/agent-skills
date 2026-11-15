@@ -27,7 +27,7 @@ An **expression** evaluates to a value (or `NULL` / `MISSING`). This file catalo
 
 Operators (arithmetic, comparison, logical, `IN`, `LIKE`, `IS NULL`, etc.) live in [`operators.md`](operators.md). Functions (`array_contains`, `cast`, `coalesce`, `regexp_like`, type predicates, aggregates, date helpers) live in [`functions.md`](functions.md). Statement-level clauses (`SELECT`, `WHERE`, `ORDER BY`, `INSERT … DOCUMENTS`, mutators) live in `statements.md` / `select.md`.
 
-Sections that exist only on Ditto SDK 5.0+ carry an "Available in" callout. Everything else works identically on 4.14.x and 5.0.x.
+Version-gated sections carry an "Available in" callout. Everything else works identically on 4.14.x, 5.0.x, 5.1.x and 5.2.0.
 
 ---
 
@@ -76,7 +76,7 @@ You must delimit an identifier when it:
 2. Contains `.`, spaces, or other non-`[A-Za-z0-9_]` characters.
 3. Collides with a contextual SQL keyword. The most common offenders in this codebase:
    - `` `cast` `` — when used as a field name. The `cast` field on `movies` (the array of actors) shadows the `cast()` function and the `CAST(... AS ...)` keyword. See the `array_length(`cast`)` example in [`functions.md`](functions.md).
-   - `` `trim` `` — when calling the function as a regular call. `TRIM(...)` is a reserved keyword form, so `trim('  hello  ')` parses but `` `trim`('  hello  ') `` is the unambiguous form. See [`functions.md`](functions.md) §4.
+   - `` `trim` `` — when calling the function as a regular call. `TRIM(...)` is a reserved keyword form, so `trim('  hello  ')` parses but `` `trim`('  hello  ') `` is the unambiguous form. See [`string-functions.md`](string-functions.md#4-string) §4.
    - `` `year` ``, `` `month` ``, `` `day` `` — clash with `EXTRACT(YEAR FROM ...)` only inside the `EXTRACT` clause; safe as plain field names elsewhere, but backtick if a query gets parser-confused.
 
 The parser only treats a word as a keyword when grammar position allows it: `SELECT * FROM where` works because `WHERE` cannot appear right after `FROM`; `SELECT * FROM collection` fails because `COLLECTION` is allowed there.

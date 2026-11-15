@@ -1,5 +1,14 @@
 # Presence — Ditto Swift SDK
 
+## Contents
+
+- [CAP-13 Presence graph and connection requests](#cap-13-presence-graph-and-connection-requests)
+  - [The graph](#the-graph)
+  - [Observing](#observing)
+  - [Peer metadata](#peer-metadata)
+  - [`DittoPeerOS` and exhaustive switches](#dittopeeros-and-exhaustive-switches)
+  - [Connection requests](#connection-requests)
+
 ## CAP-13 Presence graph and connection requests
 
 ### The graph

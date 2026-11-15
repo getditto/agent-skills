@@ -1,5 +1,17 @@
 # Sync subscriptions, scopes and status — Ditto Swift SDK
 
+## Contents
+
+- [CAP-07 Sync subscriptions and sync scopes](#cap-07-sync-subscriptions-and-sync-scopes)
+  - [Registering](#registering)
+  - [Introspecting and cancelling](#introspecting-and-cancelling)
+  - [`ditto.sync.subscriptions` is computed — do not cache it](#dittosyncsubscriptions-is-computed--do-not-cache-it)
+  - [Sync scopes are DQL, not a Swift type](#sync-scopes-are-dql-not-a-swift-type)
+- [CAP-14 Sync status and local commit tracking](#cap-14-sync-status-and-local-commit-tracking)
+  - [Is sync running?](#is-sync-running)
+  - [Local commits](#local-commits)
+  - [Cloud sync status](#cloud-sync-status)
+
 *What* a subscription is, how it propagates through the mesh, and which queries a
 subscription accepts belong to the `sync-subscriptions` skill, or
 <https://docs.ditto.live/sdk/latest/sync/syncing-data>. This file is the Swift call shape.

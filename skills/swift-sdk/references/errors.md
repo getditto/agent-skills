@@ -1,5 +1,14 @@
 # Error handling — Ditto Swift SDK
 
+## Contents
+
+- [CAP-16 Error handling](#cap-16-error-handling)
+- [The cases you will actually hit](#the-cases-you-will-actually-hit)
+- [Failures that are not `DittoError`](#failures-that-are-not-dittoerror)
+- [Errors you cannot catch](#errors-you-cannot-catch)
+- [Errors the SDK stopped producing](#errors-the-sdk-stopped-producing)
+- [Retry, surface, or fail](#retry-surface-or-fail)
+
 For 5.2.0 additions and migration changes, read [sdk-5.2.md](sdk-5.2.md).
 
 

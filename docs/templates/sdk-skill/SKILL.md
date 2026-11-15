@@ -2,8 +2,9 @@
 name: TODO-lang-sdk
 description: >
   Use ONLY for the Ditto TODO_LANGUAGE SDK (not TODO_OTHER_EIGHT — each has its own
-  skill). Triggers on TODO_FILE_EXTENSIONS, TODO_BUILD_FILE_NAMES,
-  TODO_PACKAGE_COORDINATE, TODO_API_NAME_1, TODO_API_NAME_2, TODO_OBSERVED_ERROR_STRING.
+  skill). Builds and troubleshoots Ditto TODO_LANGUAGE apps on TODO_PLATFORMS. Triggers
+  on TODO_FILE_EXTENSIONS, TODO_BUILD_FILE_NAMES, TODO_PACKAGE_COORDINATE,
+  TODO_API_NAME_1, TODO_API_NAME_2, TODO_OBSERVED_ERROR_STRING.
   Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---

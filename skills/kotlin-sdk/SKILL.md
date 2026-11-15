@@ -1,13 +1,11 @@
 ---
 name: kotlin-sdk
 description: >
-  Use ONLY for the Ditto Kotlin SDK (not Swift, Java, JS, C#, C++, Rust, Flutter or
-  Go — each has its own skill). Triggers on .kt/.kts files, build.gradle.kts,
-  com.ditto:ditto-kotlin or live.ditto:ditto coordinates, DittoConfig,
-  DittoFactory.create, registerObserver, ditto.store.execute, and errors like
-  "Query result item has already been closed.", "Unable to find binary
-  'libdittoall'", "Identifier conflict … FAIL conflict policy". Android and JVM
-  targets. Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.x.
+  Use ONLY for the Ditto Kotlin SDK (not Swift, Java, JS, C#, C++, Rust, Flutter or Go
+  — each has its own skill). Builds and troubleshoots Ditto apps on Android and the
+  JVM. Triggers on .kt/.kts files, build.gradle.kts, com.ditto:ditto-kotlin, live.ditto:ditto, DittoConfig, DittoFactory.create, registerObserver, and errors like "Query result item has already been closed.",
+  "Unable to find binary 'libdittoall'", "Identifier conflict … FAIL conflict policy".
+  Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.x.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -56,14 +54,10 @@ and `live.ditto:ditto` (4.14.x, Android-only). Published API reference:
 across version lines**, including package coordinates per version and the minimum
 toolchain. v4 and v5 are different APIs, not two versions of one.
 
-For new apps and POCs, check the package manager for the latest stable release and use
-that resolved version. **5.2.0 is the latest version this skill knows about, not a
-permanent recommendation or claim about today’s latest release.** Preserve an existing
-project’s selected version unless an upgrade is requested. If a newer release is found,
-read its release notes/API changes and validate the generated code. If lookup is
-unavailable, state that limitation; do not silently call 5.2.0 “latest”.
-Resolve Maven Central metadata and share the selected version across Kotlin and native
-binaries; see [setup.md](references/setup.md).
+**5.2.0 is the latest version this skill knows about**, not a claim about today's latest.
+Existing project pins win; for a new app resolve the latest stable release from Maven
+Central and use it for both artifacts, as in [setup.md](references/setup.md) CAP-01. If
+lookup is unavailable, say so rather than calling 5.2.0 “latest”.
 
 Read [sdk-5.2.md](references/sdk-5.2.md) when adopting 5.2.0 features or reviewing an
 upgrade: encryption, store deletion, startup configuration and behavior fixes.
@@ -113,26 +107,16 @@ Complete program, dependencies and run transcripts (5.2.0/5.1.0/5.0.3 JVM and An
 
 ## Concurrency and threading model
 
-Read [concurrency.md](references/concurrency.md) for the per-API table and reasoning.
-Core constraints:
+[concurrency.md](references/concurrency.md) has the per-API suspend/thread table. Core rules:
 
-- **Observer handlers start on the SDK's scope: the main thread on Android
-  (`MainScope()`), `Dispatchers.Default` on JVM** — source-verified and executed on a
-  Pixel. Treat every handler as UI-thread code.
-- **Hop inside the handler**: `withContext(Dispatchers.IO)` for extraction and decode,
-  then plain data back to the UI. The result stays open while the handler is suspended.
-  **`.flowOn()` does not reach the `observe()` transform** — it runs on the SDK scope.
-- `DittoFactory.create`, `sync.start()/stop()`, `registerSubscription`,
-  `registerObserver` are **not** suspend. `store.execute`, `store.collect`,
-  `auth.login`, attachment fetches **are** suspend.
-- Handlers are **serialized with back-pressure**: the next event is produced only after
-  the handler returns, coalescing intermediate changes. Never `launch` per event, never
-  `.buffer()`; use `.conflate()`/`stateIn` for latest-only UI, `collect()` for ordered
-  pipelines.
-- Cancelling the collecting scope (`viewModelScope`, `lifecycleScope`) closes an
-  `observe()`/`collect()` observer; a `registerObserver` handle needs `close()`.
-- `expirationHandler` is a property holding a **suspend** lambda — call `login` directly
-  in its body, never inside `launch { }`.
+- **Handlers start on the SDK scope: main thread on Android (`MainScope()`),
+  `Dispatchers.Default` on JVM.** Hop with `withContext(Dispatchers.IO)` *inside* the
+  handler; **`.flowOn()` does not reach the `observe()` transform**.
+- Handlers are serialized with back-pressure: never `launch` per event or `.buffer()`;
+  use `.conflate()`/`stateIn` for latest-only UI.
+- `create`, `sync.start()`, `registerSubscription`, `registerObserver` are not suspend;
+  `store.execute`, `auth.login` and attachment fetches are. `expirationHandler` is a
+  suspend lambda: call `login` directly in it, never inside `launch { }`.
 
 ## Object lifetimes and retention
 
@@ -149,19 +133,13 @@ table and per-component cleanup: [lifetimes.md](references/lifetimes.md).
 
 Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
-- Returning `result.items` (or the result) from a handler or `observe()` transform:
-  `Query result item has already been closed.` / "You must not return DittoQueryResult".
-- An exception escaping a `registerObserver` handler: the SDK logs
-  `Unhandled exception in observer event handler` and **closes the observer**.
-- `.buffer()` on an `observe()` chain: unbounded queue, eventual OOM.
-- `scope.launch { … }` per event inside a handler: lost ordering, closed-item crashes.
-- `.flowOn(Dispatchers.IO)` to move decoding off main: no effect on the transform.
-- Casting `item.value["x"] as String`: `ClassCastException` — use `.stringOrNull` or
-  `jsonString()`.
-- `setExpirationHandler(…)` does not compile; `launch` around `auth.login` abandons it.
-- Plain `INSERT` of an existing `_id`: `Identifier conflict … FAIL conflict policy` —
-  add `ON ID CONFLICT DO UPDATE`.
+- Returning `result.items` from a handler: `Query result item has already been closed.`
+- An exception escaping a `registerObserver` handler **closes the observer** (logged only).
+- Casting `item.value["x"]` directly: `ClassCastException`; use `jsonString()`.
+- Plain `INSERT` of an existing `_id`: `Identifier conflict … FAIL conflict policy`.
 - JVM without `ditto-binaries`: `Unable to find binary 'libdittoall…'` on create.
+
+`.buffer()`, `launch`-per-event, `flowOn` and `setExpirationHandler` mistakes are covered there too.
 
 ## Version differences
 
@@ -180,27 +158,27 @@ Full delta, on-disk migration and removed-API table: [`references/versions.md`](
 
 ## References
 
-Choose the matching row and section; alternatives, not a reading checklist.
+Pick one row; these are alternatives, not a reading list.
 
-| If you need to know… | Read |
+| Task | Read |
 |---|---|
-| How do I install it and what are the platform minimums? | [setup.md](references/setup.md) |
-| How do I open Ditto, authenticate, and start syncing? | [connect.md](references/connect.md) |
-| Which thread does a handler run on; how do I hop safely? | [concurrency.md](references/concurrency.md) |
-| What must I retain or close, and where? | [lifetimes.md](references/lifetimes.md) |
+| Install, platform minimums | [setup.md](references/setup.md) |
+| Open, authenticate, start sync | [connect.md](references/connect.md) |
+| Threads and hopping | [concurrency.md](references/concurrency.md) |
+| Retain or close | [lifetimes.md](references/lifetimes.md) |
 | Diagnose a symptom | [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md) |
-| How do I change which transports are used? | [transports.md](references/transports.md) |
-| How do I subscribe and check sync status? | [sync.md](references/sync.md) |
-| How do I run DQL, transact, index, or evict? | [store.md](references/store.md) |
-| How do observers, Flows, diffing and back-pressure work? | [observers.md](references/observers.md) |
-| How do I store and fetch a file? | [attachments.md](references/attachments.md) |
-| Who else is on the mesh right now? | [presence.md](references/presence.md) |
-| How do I turn on logs and see disk usage? | [observability.md](references/observability.md) |
-| How do I test code that uses Ditto? | [testing.md](references/testing.md) |
-| What changed between 4.14.x and 5.x, on disk and in the API? | [versions.md](references/versions.md) |
-| What is preview or platform-specific here? | [preview.md](references/preview.md) |
-| Stream raw bytes to one peer (Data Streams, preview) | [data-streams.md](references/data-streams.md); concepts in the `data-streams` skill |
-| How do I generate a whole runnable Gradle project? | [gradle-project-generation.md](references/gradle-project-generation.md) |
-| What do tested Gradle build files look like? | [reference-projects.md](references/reference-projects.md) |
-| Where should the instance live; which observer shape? | [best-practices.md](best-practices.md) |
-| Build a complete example | [minimal-app.md](examples/minimal-app.md) (compiled and run) |
+| Transports | [transports.md](references/transports.md) |
+| Subscriptions, sync status | [sync.md](references/sync.md) |
+| DQL, transactions, indexes, evict | [store.md](references/store.md) |
+| Observers, Flows, diffing | [observers.md](references/observers.md) |
+| Attachments | [attachments.md](references/attachments.md) |
+| Presence | [presence.md](references/presence.md) |
+| Logs, disk usage | [observability.md](references/observability.md) |
+| Testing | [testing.md](references/testing.md) |
+| 4.14.x vs 5.x API and on-disk changes | [versions.md](references/versions.md) |
+| Preview/platform APIs | [preview.md](references/preview.md) |
+| Data Streams (preview) | [data-streams.md](references/data-streams.md); concepts in `data-streams` |
+| Generate a Gradle project | [gradle-project-generation.md](references/gradle-project-generation.md) |
+| Tested Gradle build files | [reference-projects.md](references/reference-projects.md) |
+| Instance placement, observer shape | [best-practices.md](best-practices.md) |
+| Complete example | [minimal-app.md](examples/minimal-app.md) (compiled and run) |

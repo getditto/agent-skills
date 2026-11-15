@@ -50,7 +50,7 @@ EXPLAIN SELECT * FROM tasks WHERE assignee = 'alice'
 -- Filter          = Residual WHERE predicate the index could not satisfy
 ```
 
-> Operator names and JSON shape are diagnostic, not a stable contract — see [`references/indexing.md`](indexing.md) §6 for the canonical operator catalog and worked example plans. Older SDKs and some tools render lowercase variants (e.g. `index_scan`); read shape, not exact spelling.
+> Operator names and JSON shape are diagnostic, not a stable contract — see [`references/query-diagnostics.md`](query-diagnostics.md#6-explain) §6 for the canonical operator catalog and worked example plans. Older SDKs and some tools render lowercase variants (e.g. `index_scan`); read shape, not exact spelling.
 
 ### Optimization Strategies
 
@@ -149,7 +149,7 @@ SELECT * FROM system:collections
 SELECT * FROM __presence
 ```
 
-See [`references/select.md`](select.md) for the FROM-clause grammar that accepts these datasources.
+See [`references/select-basics.md`](select-basics.md) for the FROM-clause grammar that accepts these datasources.
 
 ### Performance Tips
 
@@ -182,7 +182,7 @@ SELECT * FROM tasks ORDER BY created_at DESC LIMIT 20
 SELECT * FROM tasks ORDER BY created_at DESC  -- No LIMIT
 ```
 
-For full `SELECT` clause grammar — `WHERE`, `ORDER BY`, `LIMIT`/`OFFSET`, `GROUP BY`/`HAVING`, subqueries, `USE IDS`, and system datasources — see [`references/select.md`](select.md). System datasources like `system:collections`, `system:vitals`, and `system:active_requests` are documented there (§ on FROM clauses).
+For full `SELECT` clause grammar — `WHERE`, `ORDER BY`, `LIMIT`/`OFFSET`, `GROUP BY`/`HAVING`, subqueries, `USE IDS`, and system datasources — see [`references/select-basics.md`](select-basics.md). System datasources like `system:collections`, `system:vitals`, and `system:active_requests` are documented there (§ on FROM clauses).
 
 **Push Filters to WHERE (not HAVING):**
 ```sql
