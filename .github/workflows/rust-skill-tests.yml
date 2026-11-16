@@ -71,7 +71,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install the pinned toolchain
         working-directory: tests/rust-sdk/v4-app
-        run: rustup show active-toolchain || rustup toolchain install
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup component add clippy
       - name: Build, lint and run
         working-directory: tests/rust-sdk/v4-app
         env:
