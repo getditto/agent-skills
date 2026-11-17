@@ -92,7 +92,8 @@ for arg in "$@"; do
   case "$arg" in
     --dart-define-from-file=*)
       file="${arg#--dart-define-from-file=}"
-      printf 'mode: %s\n' "$(stat -f %Lp "$file" 2>/dev/null || stat -c %a "$file")" >> "$log"
+      # Python, not stat(1): BSD and GNU stat flags differ.
+      printf 'mode: %s\n' "$("$FAKE_PYTHON" -c 'import os, sys; print(format(os.stat(sys.argv[1]).st_mode & 0o777, "o"))' "$file")" >> "$log"
       printf 'defines: %s\n' "$(cat "$file")" >> "$log"
       printf 'file: %s\n' "$file" >> "$log"
       ;;
@@ -125,14 +126,32 @@ class RunFixture(unittest.TestCase):
         (self.temp / "logs").mkdir()
         self.environment = {
             **os.environ, "FLUTTER": str(flutter), "PYTHON": str(python), "FAKE_RECORD": str(self.record),
+            "FAKE_PYTHON": sys.executable,
             "TMPDIR": str(self.temp / "tmp"), "FIXTURE_LOG_DIR": str(self.temp / "logs"),
             "DITTO_OFFLINE_LICENSE": FAKE_LICENSE, "PROBE_DEFAULT_LOGGING": "true",
         }
         self.environment.pop("DITTO_PLATFORM", None)
 
-    def run_fixture(self, *args):
-        return subprocess.run(["bash", str(HARNESS / "scripts/run-fixture.sh"), *args],
-                              env=self.environment, capture_output=True, text=True, timeout=300)
+    def run_fixture(self, *args, bash="bash", environment=None):
+        return subprocess.run([bash, str(HARNESS / "scripts/run-fixture.sh"), *args],
+                              env=environment or self.environment, capture_output=True, text=True, timeout=300)
+
+    def test_runs_without_a_timeout_command(self):
+        # A PATH with every tool the script needs except `timeout`. /bin/bash is
+        # bash 3.2 on macOS, where an empty "${array[@]}" fails under `set -u`.
+        tools = self.temp / "path"
+        tools.mkdir()
+        for name in ("sed", "tr", "grep", "mktemp", "rm", "date", "tee", "dirname", "cat", "env", "seq", "tail"):
+            found = shutil.which(name)
+            self.assertIsNotNone(found, name)
+            (tools / name).symlink_to(found)
+        self.assertIsNone(shutil.which("timeout", path=str(tools)))
+        bash = "/bin/bash" if Path("/bin/bash").exists() else shutil.which("bash")
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart",
+                                  bash=bash, environment={**self.environment, "PATH": str(tools)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("no `timeout` command", result.stderr)
+        self.assertIn("[test]", self.record.read_text())
 
     def test_license_goes_through_a_private_file_that_is_deleted(self):
         result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart")

@@ -129,15 +129,17 @@ gemini extensions install ./dist/flutter/ditto-flutter-gemini
 gemini extensions list
 ```
 
-The extension contains a real `skills/flutter-sdk/` tree and is Flutter-only.
+The extension contains real `skills/flutter-sdk/` and `skills/native-app-config/` trees
+and is Flutter-only.
 
 ## OpenCode and direct skill installation
 
-Copy `ditto-flutter-marketplace/plugins/ditto-flutter/skills/flutter-sdk/` into the host's
-skill directory — the whole directory, including `references/` and `examples/`, not
-only `SKILL.md`. OpenCode reads `skills.paths`; opening this repository in OpenCode
+Copy both `ditto-flutter-marketplace/plugins/ditto-flutter/skills/flutter-sdk/` and
+`.../skills/native-app-config/` into the host's skill directory, side by side — whole
+directories, including `references/` and `examples/`, not only `SKILL.md`; flutter-sdk
+links to native-app-config by relative path. OpenCode reads `skills.paths`; opening this repository in OpenCode
 loads every canonical skill through the committed `.opencode/opencode.json`. For a
-personal install add the copied directory to `skills.paths` in
+personal install add the copied directories to `skills.paths` in
 `~/.config/opencode/opencode.jsonc`. On Windows copy rather than symlink.
 
 The host discovers the skill; the chosen model (including Kimi through OpenCode) uses

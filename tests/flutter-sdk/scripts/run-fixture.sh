@@ -167,10 +167,10 @@ for target in "$@"; do
     echo "== defines: $PUBLIC_DEFINES DITTO_LICENSE=<redacted>"
     echo "== $target"
     if [[ "$DEVICE" == "chrome" ]]; then
-      (cd "$WORKDIR" && "${BOUND[@]}" "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
+      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
         --target="$target" -d chrome --headless "${DEFINES[@]}")
     else
-      (cd "$WORKDIR" && "${BOUND[@]}" "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" "${DEFINES[@]}")
+      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" "${DEFINES[@]}")
     fi
   } 2>&1 | tee "$log" || target_status=$?
   echo "== $target: exit $target_status" | tee -a "$log"
