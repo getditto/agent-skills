@@ -38,6 +38,8 @@ jobs:
         run: python tests/flutter-sdk/scripts/test_packaging.py -v
       - name: Check Flutter fixture scripts
         run: python tests/flutter-sdk/scripts/test_fixture_scripts.py -v
+      - name: Check the Flutter Web probe script
+        run: python tests/flutter-sdk/scripts/test_web_probe.py -v
 
   validate:
     name: Validate plugins
@@ -103,10 +105,11 @@ jobs:
       - name: Check the Dart fence analyzer
         run: python3 tests/flutter-sdk/scripts/test_analyze_skill_snippets.py
 
-      - name: Check Flutter packaging and fixture scripts
+      - name: Check Flutter packaging, fixture and web probe scripts
         run: |
           python3 tests/flutter-sdk/scripts/test_packaging.py
           python3 tests/flutter-sdk/scripts/test_fixture_scripts.py
+          python3 tests/flutter-sdk/scripts/test_web_probe.py
 
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py

@@ -113,7 +113,36 @@ export CHROMEDRIVER="$SCRATCH/chromedriver/mac_arm-157.0.8103.79/chromedriver-ma
 ```
 
 Web builds embed `--dart-define` values in the compiled JavaScript, so never publish
-web build output.
+web build output. `run-fixture.sh` checks that ChromeDriver answers `/status` on
+:4444 before driving, and stops with `ChromeDriver did not come up on 127.0.0.1:4444`
+otherwise.
+
+The Flutter Web probes live in `minimal_app/integration_test/web/`. A web
+`flutter drive` target's directory is its app root (`org-dartlang-app:///`), so a
+target cannot import files above `integration_test/web/`; the web probes therefore
+have their own harness, `web/web_harness.dart`, with no `dart:io`, no temporary
+directory (`persistenceDirectory: null`) and Ditto logging at its default.
+`web_all_test.dart` (5.0+) and `web_51_test.dart` (5.1+) are the two drive targets:
+
+```bash
+tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 \
+  integration_test/web/web_all_test.dart integration_test/web/web_51_test.dart
+```
+
+`scripts/web-probe.py --line <line>` builds `integration_test/web/probe_app.dart` in
+release mode (dart2js, `--wasm`, `--base-href /app/`), serves each bundle with the
+headers a probe needs, loads it in headless Chrome through ChromeDriver (an existing
+one on :4444, else `$CHROMEDRIVER` on a free port), and asserts the transcript the app
+publishes. The license reaches Flutter only through a mode-600
+`--dart-define-from-file` file; every bundle is deleted before the script exits.
+`--skip-manual` skips the timing probe `web_large_result_jank`.
+`scripts/test_web_probe.py` checks its secret handling, server and timing helpers.
+Results per probe ID, with versions and build modes, are in `web-results/5.2.0.md`.
+
+`scripts/hot-restart.py --device macos|chrome --mode v1|v2|holder [--peer]` runs
+`integration_test/hot_restart/hot_restart_app.dart` with `flutter run` (debug), sends
+`R` once the app is ready, watches, sends `q` and kills what is left. The records it
+produced are in [Manual records](#manual-records).
 
 The native behavior probes live in `minimal_app/integration_test/probes/`. Version-gated
 code is split by directory, never by `skip:`: a line runs every directory at or below
@@ -262,6 +291,26 @@ harness (see Finding 1):
   AWDL and Wi-Fi Aware on** (source: `lib/src/transport_config.dart` in 5.0.4 assigns
   `true` to both instead of the argument; 5.1.0 assigns the argument). Not executed
   here. The harness and the minimal app turn each transport off one by one instead.
+- **Under `flutter build web --wasm` (dart2wasm), every query result after the first
+  is the first one again** (5.1.0, 5.2.0; release; Chrome 157 headless;
+  `web-probe.py` `web_wasm_build`). Ditto initializes and opens, but a second
+  `INSERT` reports the first `INSERT`'s mutated IDs (`[blue-toyota]` for a document
+  with `_id` `red-honda`) and `SELECT * FROM cars` returns 0 items, with or without
+  COOP/COEP. The web bridge keys its pointer registry on
+  `Object.hashAll([JSString type, JSNumber addr])` (`lib/src/bridge/wasm/types.dart`,
+  `_JSPointer._hashCode`, 5.2.0), and in the same dart2wasm bundle
+  `1.toJS.hashCode == 2.toJS.hashCode`: every pointer of one type gets the same key, so
+  the registry hands back the first wrapper. dart2js is unaffected (`web_default_build`).
+- **A V2 observer orphaned by a hot restart crashes the app when its live query next
+  fires** (5.2.0, macOS debug, `hot-restart.py --device macos --mode v2 --peer`). After
+  `R`, a second instance wrote one document to the orphaned instance over TCP
+  loopback; 0.2 s later the app died, `Lost connection to device.`, with
+  `EXC_BAD_ACCESS (SIGBUS) KERN_PROTECTION_FAILURE` on the thread
+  `live query callback 2`, whose top frame is in a writable, non-executable region (the
+  freed `NativeCallable.listener` trampoline). The same run with a V1 observer (`--mode
+  v1 --peer`) did not crash: 5.2.0 delivers V1 callbacks through a port, as its source
+  comments say (`lib/src/bridge/native/store.dart`). Details:
+  [Manual records](#manual-records).
 
 ### Native builds, 2026-11-17
 
@@ -296,6 +345,40 @@ Flutter 3.50.0 (AGP 9.3.1, Gradle 9.5.0 from its template), Xcode 27.2, CocoaPod
 - **Android INTERNET:** the `ditto_live` plugin's own manifest declares
   `android.permission.INTERNET` (5.0.4 and 5.2.0), so the merged manifest of every
   build type has it; the fixture's main-manifest declaration is explicit, not required.
+
+### Flutter Web probes, 2026-11-17
+
+Flutter 3.50.0, Google Chrome 157.0.8103.79 headless with ChromeDriver 157.0.8103.79,
+macOS 27.2.1 arm64. Every probe ID's outcome, with build mode and version, is in
+`web-results/5.2.0.md`; this is the summary.
+
+| Line | Target | Build mode | Outcome |
+|---|---|---|---|
+| 5.2.0 | `web_all_test.dart` (13), `web_51_test.dart` (2) | debug (DDC), `flutter drive` | pass |
+| 5.1.0 | `web_all_test.dart` (13), `web_51_test.dart` (2) | debug (DDC), `flutter drive` | pass |
+| 5.0.4 | `web_all_test.dart` (13) | debug (DDC), `flutter drive` | pass |
+| 5.2.0, 5.1.0 | `web-probe.py` (7 probes) | release: dart2js, dart2wasm | pass; the dart2wasm probes assert the defect in [SDK defects](#sdk-defects-the-fixture-records-2026-11-17) |
+| all | Firefox, Safari, Edge; a hosted CDN | — | not run |
+
+- **Gate P2P with `kIsWeb` first.** `defaultTargetPlatform` is the host OS on web
+  (`macOS` here), so a capability gate on it enables LAN in the browser. Enabling any
+  peer-to-peer transport on web throws `DittoException(<validation> Expected valid
+  TransportConfig. Invalid config: The following P2P transports are enabled in the
+  transport config but are not supported in the current environment: <LAN|BluetoothLE>)`:
+  from `sync.start()` on 5.2.0, from `updateTransportConfig` itself on 5.0.4 and 5.1.0.
+  The published `enablePeerToPeer` (region `flutter-web-1`) returns early on `kIsWeb`.
+- **A web app below the site root needs `wasmShimUrl`.** The shim's default URL is the
+  absolute `/assets/packages/ditto_live/lib/assets/ditto.wasm.js`; under
+  `--base-href /app/` it 404s and `Ditto.init()` throws `Failed to initialize Ditto
+  WebAssembly`. `Ditto.init(wasmShimUrl: './assets/packages/ditto_live/lib/assets/ditto.wasm.js')`
+  (region `flutter-web-2`) works; without the `./` it fails with
+  `Failed to resolve module specifier`.
+- **Hosting:** Ditto needs no COOP/COEP headers. A CSP must allow
+  `'wasm-unsafe-eval'`, but without it Flutter's own bootstrap fails before `main()`,
+  so that is a Flutter requirement as much as Ditto's.
+- **Large results (dart2js, 5.2.0):** for 5,000 documents, `execute` took 20 ms;
+  reading every `item.value` as well took 79 ms in one long task, the longest frame gap
+  67 ms (an earlier run: 66 ms, 50 ms). With `LIMIT 50` it took 2 ms and no long task.
 
 ## Findings that changed a research lead
 
@@ -336,6 +419,35 @@ Flutter 3.50.0 (AGP 9.3.1, Gradle 9.5.0 from its template), Xcode 27.2, CocoaPod
   throws": it reports login failures in `AuthResponse.exception`, but a closed
   instance throws. The published handler now returns early when `ditto.isClosed`.
   Seen on 5.0.4 only; 5.1.0 and 5.2.0 ran only the guarded version.
+- **Web, `setOfflineOnlyLicenseToken` with an invalid token does not throw** (5.0.4,
+  5.1.0, 5.2.0; Chrome, debug; `bad offline license on web`). It logs
+  `setOfflineOnlyLicenseToken is a no-op on the web platform.` and returns. Overturns the
+  spec Correction that on web it "still verifies and can throw": the source does call
+  the verifier, but no error surfaced for `'not-a-license'`.
+- **Web, the in-memory store outlives `close()` within a page** (5.0.4, 5.1.0, 5.2.0;
+  debug; `close then reopen in the same page loses data`). A document written before
+  `close()` is there after a new `Ditto.open(DittoConfig())` in the same page; only a
+  page load clears it (`web_reload_persistence`: 1 document before, 0 after, release).
+  Refines the lead "in-memory, lost on reload": lost on reload, not on close.
+- **Web, `Attachment.copyToPath` fails with a `DittoException`, not an
+  `UnsupportedError`**, through its Future: `DittoException(Retrieving a filesystem path
+  for attachments is not supported on the Web.)`. `newAttachment(path)` likewise fails
+  through its Future (`DittoException(Creating attachments from files is not supported
+  on Flutter Web.)`), while `DittoLogger.exportLogs` throws `UnsupportedError: Not
+  supported on the web platform` **synchronously** at the call, so `await`ing it in a
+  `try` catches it but `.catchError` on its Future does not (5.0.4, 5.1.0, 5.2.0).
+- **Web, enabling a P2P transport throws in `updateTransportConfig` on 5.0.4 and 5.1.0**,
+  not only in `sync.start()` as the lead says (5.2.0). See
+  [Flutter Web probes](#flutter-web-probes-2026-11-17).
+- **Web, `--wasm` is not usable with 5.1.0 or 5.2.0** (wrong query results). The lead
+  only called the docs ambiguous; see
+  [SDK defects](#sdk-defects-the-fixture-records-2026-11-17).
+- **Hot restart does not "work" on native, and re-opening fails on web too.** On macOS
+  and Chrome (5.2.0, debug), `Ditto.open` after `R` fails with
+  `DittoException(File already locked, ...)`: the restart orphans the open instance,
+  which keeps its directory (web: its in-memory store) locked. Neither an app-scoped
+  holder (statics are reset by the restart) nor a retry for 20 s recovers; only a full
+  restart does. Details: [Manual records](#manual-records).
 
 ## Manual records
 
@@ -399,3 +511,80 @@ Earlier the same day, a `v50/presence_two_peer_test.dart` crash on 5.0.4 showed 
 finalizer path through the drop of an `FfiSyncSubscription`, and the log line from the
 `TaskRuntime` drop. That run used logging at its default and ran before the harness
 workaround existed.
+
+### Hot restart, 2026-11-17
+
+**Driven by script, not by hand:** `scripts/hot-restart.py` runs `flutter run` with
+stdin attached and types the keys. macOS 27.2.1 arm64, Flutter 3.50.0, ditto_live 5.2.0,
+debug builds, Ditto logging at its default, the SDK default persistence directory
+(`DittoConfig()`). Chrome 157 ran headless (`--web-browser-flag=--headless=new`). Each
+run was bounded by `timeout 1500`; the script kills the `flutter run` process group and,
+on macOS, any app left from the fixture copy. Each run was its own command, from the
+repository root; these loops issue the same commands:
+
+```bash
+for mode in v1 v2 holder; do
+  timeout 1500 python3 tests/flutter-sdk/scripts/hot-restart.py --device macos --mode "$mode" --observe 40
+  timeout 1500 python3 tests/flutter-sdk/scripts/hot-restart.py --device chrome --mode "$mode" --observe 40
+done
+for mode in v1 v2; do
+  timeout 1500 python3 tests/flutter-sdk/scripts/hot-restart.py --device macos --mode "$mode" --observe 40 --peer
+done
+```
+
+(The first macOS `v1` run used `--observe 30`; the Chrome `v1` run also used 30.)
+
+Steps the app and script take: open Ditto, register the observer (V1
+`registerObserver`, or V2 `registerObserverV2`), listen to `changes`, insert one
+document, update it every 2 s, print `HR: ready`; the script waits 5 s, sends `R`,
+watches, sends `q`. `holder` opens through an app-scoped static holder that retries
+`Ditto.open` every 500 ms for 20 s. `--peer` also makes the first run listen on TCP
+127.0.0.1:45631 with a subscription; after the restart, when the default directory
+cannot be opened, a second instance in its own directory connects there and inserts a
+document, which reaches the orphaned instance as a remote change would.
+
+| Device | Mode | After `R` | Crash |
+|---|---|---|---|
+| macOS | `v1` | `Ditto.open` fails 1.1 s later (error below); the old observer prints nothing more | none in 30 s |
+| macOS | `v2` | the same error | none in 40 s |
+| macOS | `holder` | attempt 1 fails with the same error; still failing at 20 s (`open failed`) | none in 40 s |
+| macOS | `v1 --peer` | the same error; the peer connects to the orphaned instance (1 remote peer) and inserts | none in 40 s |
+| macOS | `v2 --peer` | the same error; the peer inserts, and 0.2 s later `Lost connection to device.` | **yes**: `EXC_BAD_ACCESS (SIGBUS)`, `KERN_PROTECTION_FAILURE`, thread `live query callback 2` |
+| Chrome | `v1` | `Ditto.open` fails at once (error below) | none in 30 s |
+| Chrome | `v2` | the same error | none in 40 s |
+| Chrome | `holder` | attempt 1 fails; still failing at 20 s | none in 40 s |
+
+The re-open error, macOS (the home directory shortened to `~`):
+
+```text
+flutter: HR: open failed: DittoException: DittoException(File already locked, working dir = ~/Library/Containers/live.ditto.skills.minimalApp/Data/Library/Application Support/live.ditto.skills.minimalApp/ditto-00000000-0000-0000-0000-000000000000, retried 5 times.
+flutter: Multiple Ditto instances cannot run at the same time within the same working directory. Either use unique working directories for each instance, or consider managing your Ditto instance as a singleton instead.)
+```
+
+Chrome:
+
+```text
+HR: open failed: DittoException: DittoException(File already locked, working dir = ditto-00000000-0000-0000-0000-000000000000/__ditto_lock_file, retried 0 times.
+Multiple Ditto instances cannot run at the same time within the same working directory. Either use unique working directories for each instance, or consider managing your Ditto instance as a singleton instead.)
+```
+
+The V2 crash, trimmed (`v2 --peer`; the report's faulting thread):
+
+```text
+[  19.2s] flutter: HR: peer: inserted a document for the orphaned instance
+[  19.4s] Lost connection to device.
+Exception Type:  EXC_BAD_ACCESS (SIGBUS), KERN_PROTECTION_FAILURE at 0x0000000124d40198
+Thread name:     live query callback 2
+Frame 0:         0x124d40198, in an untagged rw- region (not code)
+Frame 1:         DittoCore std::sys::backtrace::__rust_begin_short_backtrace
+```
+
+Mitigations: **neither works in-process.** A hot restart resets every Dart static, so
+an app-scoped holder cannot hand the old instance to the new `main()`, and nothing in
+the old isolate runs to close it first; `holder` shows a retry does not help either,
+because the orphaned instance never releases its directory (or, on web, its in-memory
+store). What recovered every time was a full restart: each new `flutter run` launch
+opened the same directory at once and saw the documents of the earlier runs (the
+observer's first item count grows run to run: 0, 1, 2, 3, ...). The Finding 1
+GC-finalizer hazard did not show in these runs, which re-open nothing successfully in
+the same process.

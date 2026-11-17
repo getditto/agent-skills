@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import stat
 import subprocess
 import sys
@@ -179,6 +180,19 @@ class RunFixture(unittest.TestCase):
                 result = self.run_fixture("minimal_app", device, "5.2", "integration_test/minimal_app_test.dart")
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("not supported", result.stderr)
+
+    def test_chrome_fails_early_when_chromedriver_does_not_come_up(self):
+        with socket.socket() as probe:
+            if probe.connect_ex(("127.0.0.1", 4444)) == 0:
+                self.skipTest("something already listens on 127.0.0.1:4444")
+        broken = self.temp / "chromedriver"
+        broken.write_text("#!/bin/bash\nexit 1\n")
+        broken.chmod(0o755)
+        result = self.run_fixture("minimal_app", "chrome", "5.2", "integration_test/web/web_all_test.dart",
+                                  environment={**self.environment, "CHROMEDRIVER": str(broken)})
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("ChromeDriver did not come up on 127.0.0.1:4444", result.stderr)
+        self.assertNotIn("[drive]", self.record.read_text() if self.record.exists() else "")
 
 
 if __name__ == "__main__":

@@ -149,8 +149,19 @@ if [[ "$DEVICE" == "chrome" ]] && ! nc -z 127.0.0.1 4444 2>/dev/null; then
   CHROMEDRIVER_PID=$!
   for _ in $(seq 1 50); do
     nc -z 127.0.0.1 4444 2>/dev/null && break
+    kill -0 "$CHROMEDRIVER_PID" 2>/dev/null || break
     sleep 0.2
   done
+fi
+# Fail here, not later at "Unable to start a WebDriver session": whatever listens on
+# :4444 (started above or already running) must answer ChromeDriver's /status.
+if [[ "$DEVICE" == "chrome" ]]; then
+  status_json="$(curl -sf --max-time 5 http://127.0.0.1:4444/status 2>/dev/null || true)"
+  if [[ "$(printf '%s' "$status_json" | tr -d ' \n')" != *'"ready":true'* ]]; then
+    echo "ChromeDriver did not come up on 127.0.0.1:4444 (CHROMEDRIVER=${CHROMEDRIVER:-chromedriver})." >&2
+    echo "Install one matching the local Chrome; see tests/flutter-sdk/README.md, Running fixtures." >&2
+    exit 1
+  fi
 fi
 
 FLUTTER_VERSION="$(cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p | tr -d '\r')"
