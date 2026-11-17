@@ -26,7 +26,7 @@ Ditto SDK. No other SDK skill, cloud credentials, hooks or MCP servers are bundl
 | Host | Native route | Offline/local fallback |
 |---|---|---|
 | Claude Code CLI / Claude Desktop Code tab | Marketplace + `ditto-flutter` | Local marketplace directory |
-| Claude Desktop Customize | Add marketplace and install `ditto-flutter` | Upload `flutter-sdk.zip` as a skill |
+| Claude Desktop Customize | Add marketplace and install `ditto-flutter` | Upload `flutter-sdk.zip` and `native-app-config.zip` as skills |
 | Codex CLI / Desktop | Marketplace + plugin browser | Materialized local marketplace |
 | Cursor | Team marketplace on Teams/Enterprise | Materialized local plugin, when local imports are allowed |
 | GitHub Copilot CLI | Plugin marketplace | Local plugin directory |
@@ -57,12 +57,13 @@ existing output. It generates:
 | `ditto-flutter-plugin.zip` | Same standalone plugin, rooted at `ditto-flutter/` |
 | `ditto-flutter-antigravity/` and matching ZIP | Antigravity manifest and real skill files |
 | `ditto-flutter-gemini/` and matching ZIP | Gemini extension and real skill files |
-| `flutter-sdk.zip` | Per-skill upload, rooted at `flutter-sdk/SKILL.md` (install `native-app-config` alongside it) |
+| `flutter-sdk.zip`, `native-app-config.zip` | Per-skill uploads, each rooted at its `SKILL.md`; upload both |
 | `SHA256SUMS` | Archive checksums |
 
 ZIP files are distribution artifacts: extract them before using a CLI that expects a
 directory. The standalone packages contain real files and need no repository symlinks;
-maintainer links to repository docs/tests are rewritten to GitHub URLs.
+links between `flutter-sdk` and `native-app-config` stay relative because both ship
+together, and maintainer links to repository docs/tests are rewritten to GitHub URLs.
 
 ## Claude Code and Claude Desktop
 
@@ -75,7 +76,8 @@ For a PR/local package, replace the marketplace source with the absolute path to
 `dist/flutter/ditto-flutter-marketplace`. Run `/plugin` to inspect the installed skill.
 In Desktop **Customize → Plugins**, add the repository as a marketplace and install
 **Ditto Flutter**; where marketplace installation is not offered, use **Skills → Upload a
-skill** with `flutter-sdk.zip`. Start a new session after changing installations.
+skill** with `flutter-sdk.zip`, then again with `native-app-config.zip`. Start a new
+session after changing installations.
 
 ## Codex CLI and Desktop
 

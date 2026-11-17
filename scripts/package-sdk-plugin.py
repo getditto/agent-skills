@@ -19,10 +19,13 @@ SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 
 # Per-plugin identity that is not derivable from the canonical Claude manifest. Add a
 # row when a new SDK plugin lands; everything else (version, description, author,
-# keywords) is read from plugins/<name>/.claude-plugin/plugin.json.
+# keywords) is read from plugins/<name>/.claude-plugin/plugin.json. "skill" is the
+# plugin's primary skill; "skills" lists every skill the wrapper ships (it must match
+# plugins/<name>/skills/ exactly), so sibling skills are packaged together.
 PLUGINS = {
     "ditto-swift": {
         "skill": "swift-sdk",
+        "skills": ["swift-sdk"],
         "display_name": "Ditto Swift",
         "short_description": "Build and troubleshoot Ditto Swift apps for Apple platforms.",
         "homepage": "https://docs.ditto.live/sdk/latest/install-guides/swift",
@@ -35,6 +38,7 @@ PLUGINS = {
     },
     "ditto-kotlin": {
         "skill": "kotlin-sdk",
+        "skills": ["kotlin-sdk"],
         "display_name": "Ditto Kotlin",
         "short_description": "Integrate and troubleshoot the Ditto Kotlin SDK on Android and the JVM.",
         "homepage": "https://docs.ditto.live/sdk/latest/install-guides/kotlin",
@@ -47,6 +51,8 @@ PLUGINS = {
     },
     "ditto-flutter": {
         "skill": "flutter-sdk",
+        # flutter-sdk links to native-app-config for the Apple/Android declarations.
+        "skills": ["flutter-sdk", "native-app-config"],
         "display_name": "Ditto Flutter",
         "short_description": "Build and troubleshoot Ditto Flutter apps on mobile, desktop and web.",
         "homepage": "https://docs.ditto.live/sdk/latest/install-guides/flutter",
@@ -161,16 +167,31 @@ def archive(folder, destination):
             output.writestr(member, path.read_bytes())
 
 
-def copy_skill(destination):
-    source = ROOT / "skills" / META["skill"]
+def check_scope():
+    """The wrapper's skill symlinks must be exactly META["skills"], each to its canonical skill."""
+    wrappers = PLUGIN / "skills"
+    names = {path.name for path in wrappers.iterdir()} if wrappers.is_dir() else set()
+    if names != set(META["skills"]):
+        raise ValueError(f"plugins/{NAME}/skills holds {sorted(names)}; PLUGINS declares {sorted(META['skills'])}")
+    for name in META["skills"]:
+        link = wrappers / name
+        if not link.is_symlink() or link.resolve() != (ROOT / "skills" / name).resolve():
+            raise ValueError(f"plugins/{NAME}/skills/{name} must be a symlink to skills/{name}")
+
+
+def copy_skill(destination, name=None):
+    name = META["skill"] if name is None else name
+    source = ROOT / "skills" / name
+    shipped = [(ROOT / "skills" / skill).resolve() for skill in META["skills"]]
     # Validate before copytree dereferences links: the archive guard cannot detect
     # an outside file once it has become a regular file in the staging directory.
     if source.is_symlink() or any(path.is_symlink() for path in source.rglob("*")):
-        raise ValueError(f"Canonical {META['skill']} skill must not contain symlinks; release only real scoped files.")
+        raise ValueError(f"Canonical {name} skill must not contain symlinks; release only real scoped files.")
     shutil.copytree(source, destination,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", ".env", ".git"))
     # Maintainer links to repository docs/tests are navigation, not runtime skill
     # dependencies. Resolve those links to the published repository in releases.
+    # Links into a skill the plugin also ships stay relative: they ship together.
     for original in source.rglob("*.md"):
         def target(match):
             value = match.group(1)
@@ -178,16 +199,17 @@ def copy_skill(destination):
                 return match.group(0)
             file_part, marker, anchor = value.partition("#")
             resolved = (original.parent / file_part).resolve()
-            if resolved.is_relative_to(source.resolve()) or not resolved.is_relative_to(ROOT.resolve()):
+            if any(resolved.is_relative_to(skill) for skill in shipped) or not resolved.is_relative_to(ROOT.resolve()):
                 return match.group(0)
             kind = "tree" if resolved.is_dir() else "blob"
-            url = f"https://github.com/getditto/agent-skills/{kind}/main/{resolved.relative_to(ROOT).as_posix()}"
+            url = f"https://github.com/getditto/agent-skills/{kind}/main/{resolved.relative_to(ROOT.resolve()).as_posix()}"
             return "](" + url + (marker + anchor if marker else "") + ")"
         write(destination / original.relative_to(source), re.sub(r"\]\(([^)]+)\)", target, original.read_text(encoding="utf-8")))
 
 
 def build(destination):
     sync(check=True)
+    check_scope()
     if destination.exists():
         raise ValueError(f"Output already exists: {destination}. Choose a new directory.")
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -210,9 +232,10 @@ def build(destination):
             }]}))
         (package / ".claude-plugin").mkdir()
         write(package / ".claude-plugin/plugin.json", encoded(legacy))
-        # Materialize only the explicitly shipped canonical skill. Never copy the
+        # Materialize only the explicitly shipped canonical skills. Never copy the
         # repository root, environment, test credentials, or another plugin's skills.
-        copy_skill(package / "skills" / META["skill"])
+        for name in META["skills"]:
+            copy_skill(package / "skills" / name, name)
         if (ROOT / "LICENSE").is_file():
             shutil.copy2(ROOT / "LICENSE", package / "LICENSE")
         shutil.copy2(ROOT / META["install_doc"], marketplace / "INSTALL.md")
@@ -237,15 +260,18 @@ def build(destination):
         shutil.copytree(package / "skills", gemini / "skills")
         if (ROOT / "LICENSE").is_file():
             shutil.copy2(ROOT / "LICENSE", gemini / "LICENSE")
-        # Claude's per-skill upload fallback gets a skill folder at the archive root.
+        # Claude's per-skill upload fallback gets one archive per skill, each with the
+        # skill folder at the archive root.
         uploads = staging / "skill-upload"
         uploads.mkdir()
-        shutil.copytree(package / "skills" / META["skill"], uploads / META["skill"])
+        for name in META["skills"]:
+            shutil.copytree(package / "skills" / name, uploads / name)
         archive(marketplace, staging / f"{NAME}-marketplace.zip")
         archive(package, staging / f"{NAME}-plugin.zip")
         archive(antigravity, staging / f"{NAME}-antigravity.zip")
         archive(gemini, staging / f"{NAME}-gemini.zip")
-        archive(uploads / META["skill"], staging / f"{META['skill']}.zip")
+        for name in META["skills"]:
+            archive(uploads / name, staging / f"{name}.zip")
         write(staging / "SHA256SUMS", "".join(
             f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in sorted(staging.glob("*.zip"))))
         staging.rename(destination)
