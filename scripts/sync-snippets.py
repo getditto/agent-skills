@@ -17,7 +17,7 @@ syntax (`//`, `#`, `<!--`, `/*` or `--`):
 Marker lines are not copied. To copy a whole file, put the start marker after any
 header comment and the end marker on the last line. A name may have several regions
 in one file. They are joined in order with a blank line between them. In code
-(Kotlin, Swift, JS/TS) there is no blank line when the next region continues an
+(Kotlin, Swift, Rust, JS/TS) there is no blank line when the next region continues an
 expression: it starts with `)`, `]`, `}`, `?:`, `?.`, `.`, `&&`, `||` or `+`. The
 joined code's common leading indentation is removed. Markdown files under tests/
 are documentation and are not scanned.
@@ -47,11 +47,12 @@ from pathlib import Path
 
 SKILLS_DIR = "skills"
 SOURCE_DIRS = ("tests",)
-SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv"}
+SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv", "target"}
 SOURCE_SUFFIXES = {
     ".kt": "kotlin",
     ".kts": "kotlin",
     ".swift": "swift",
+    ".rs": "rust",
     ".ts": "ts",
     ".tsx": "tsx",
     ".js": "javascript",
@@ -78,7 +79,7 @@ STRICT_ARG_RE = re.compile(rf"^\s+({NAME})\s*(?:-->|\*/)?\s*$")
 OPEN_RE = re.compile(r"<!-- */?snippet\b")
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 CONTINUES = (")", "]", "}", "?:", "?.", ".", "&&", "||", "+")
-CODE_LANGUAGES = {"kotlin", "swift", "ts", "tsx", "javascript", "jsx"}
+CODE_LANGUAGES = {"kotlin", "swift", "rust", "ts", "tsx", "javascript", "jsx"}
 
 
 class SnippetError(Exception):
@@ -91,7 +92,8 @@ def candidate_files(root: Path):
         if not base.is_dir():
             continue
         for directory, dirs, files in os.walk(base):
-            dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.startswith("."))
+            # `.cargo/config.toml` is real project configuration a skill may publish.
+            dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and (d == ".cargo" or not d.startswith(".")))
             for name in sorted(files):
                 if not name.endswith(".md"):  # documentation may show the marker syntax
                     yield Path(directory) / name

@@ -1,0 +1,24 @@
+{
+  "name": "ditto-rust",
+  "version": "1.0.0",
+  "description": "Ditto Rust SDK assistance — Linux and macOS apps with Tokio: Cargo and toolchain setup, connecting, authentication, transports, subscriptions, DQL execution, observers bridged into async code, transactions, attachments, presence, support bundles, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cargo",
+    "database",
+    "ditto",
+    "dql",
+    "multi-version",
+    "offline-first",
+    "rust",
+    "sync",
+    "tokio"
+  ],
+  "repository": "https://github.com/getditto/agent-skills",
+  "homepage": "https://docs.ditto.live/sdk/latest/install-guides/rust",
+  "skills": "./skills/"
+}

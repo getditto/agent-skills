@@ -1,0 +1,7 @@
+# snippet:start rust-linux-link-fix
+# libdittoffi.a carries its own copy of Rust's std. On Linux, GNU ld ("multiple definition
+# of `std::io::error::Error::new'") and rust-lld ("duplicate symbol: __rustc::rust_panic")
+# both reject the duplicates; macOS's linker accepts them. Ditto's own CI links this way.
+[target.'cfg(target_os = "linux")']
+rustflags = ["-C", "link-arg=-Wl,--allow-multiple-definition"]
+# snippet:end rust-linux-link-fix
