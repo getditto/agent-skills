@@ -97,7 +97,8 @@ tests/flutter-sdk/scripts/run-probes.sh macos 5.2
 
 Every probe uses `probes/harness.dart` `withDitto`: a fresh temporary directory, the
 license, all peer-to-peer transports off, `close()` in `finally`. The harness also turns
-Ditto logging off; see the first entry in
+Ditto logging off unless `PROBE_DEFAULT_LOGGING=true` is set in the environment
+(passed as `--dart-define=PROBE_DEFAULT_LOGGING=true`); see Finding 1 in
 [Findings that changed a research lead](#findings-that-changed-a-research-lead).
 
 ## Findings
@@ -150,17 +151,21 @@ runs are debug builds.
 
 ### Native behavior probes, 2026-11-17
 
-Same toolchain as above. macOS desktop, debug builds, `scripts/run-probes.sh macos <line>`.
-Every probe name below passed on every line listed; nothing else was run.
+Same toolchain as above. macOS desktop, debug builds, `scripts/run-probes.sh macos <line>`
+with `PROBE_DEFAULT_LOGGING` unset. Every probe name below passed on every line listed;
+nothing else was run. **Ditto logging disabled in the harness (see Finding 1)**: every probe except `init_once` (which does not use the
+harness) ran with `DittoLogger.isEnabled = false`, so these results do not describe an
+app with Ditto's default logging.
 
 | Line | Directories | Outcome |
 |---|---|---|
-| 5.0.4 | `init_once`, `v50` (22 tests) | pass |
-| 5.1.0 | `init_once`, `v50`, `v51` (28 tests) | pass |
-| 5.2.0 | `init_once`, `v50`, `v51`, `v52` (30 tests) | pass |
+| 5.0.4 | `init_once` (1 test), `v50` (22) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.1.0 | `init_once` (1), `v50` (22), `v51` (6) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.2.0 | `init_once` (1), `v50` (22), `v51` (6), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
 | all | iOS, Android, Chrome, Windows, Linux | not run |
 
-Recorded outcomes (asserted exactly, so a change breaks the probe):
+Recorded outcomes (asserted exactly, so a change breaks the probe). Except for
+`DittoLogger getter before init`, each was observed with Ditto logging disabled in the harness (see Finding 1):
 
 - `DittoLogger getter before init`: `DittoLogger.isEnabled` throws synchronously
   ``DittoError(Ditto not initialized. Call `Ditto.init()` and await the `Future` before using any Ditto functionality)``,
@@ -171,47 +176,51 @@ Recorded outcomes (asserted exactly, so a change breaks the probe):
 - `login failure in AuthResponse.exception`: deterministic offline. With
   `DittoConfigConnectServer(url: 'https://REPLACE_ME.invalid')`, `auth.login` returns
   `exception` = `DittoException(Error logging in. Status code 1. Client info: null)`
-  on all three lines.
+  on all three lines ({N}).
 - `signalNext gates delivery and coalesces` (5.1.0, 5.2.0): callbacks deliver item
   counts `[0]`, nothing more for 2 s after three inserts, then `[0, 3]` after
-  `signalNext()`: the three writes arrive in one callback.
+  `signalNext()`: the three writes arrive in one callback ({N}).
 - `observeTransportConditions emits within 5 s` (5.1.0, 5.2.0): with every
   peer-to-peer transport off and `sync.start()`, no event arrives within 5 s, on the
-  callback or the stream.
+  callback or the stream ({N}).
 - `handler deny blocks` / `handler throw denies`: B's handler is invoked with A's
   `peerKey` within 20 s when A listens on TCP loopback and B connects; denying or
-  throwing keeps A's document off B for the 5 s window.
+  throwing keeps A's document off B for the 5 s window ({N}).
 - `ConnectionType switch compiles`: four values on 5.0.4, five on 5.1.0 and 5.2.0. The
   `v50` switch carries a wildcard arm (`// ignore: unreachable_switch_case`), since an
   exhaustive four-value switch does not compile on 5.1+.
 
 ## Findings that changed a research lead
 
-- **A native handle that outlives `close()` kills or hangs the process when the GC
-  finalizes it** (macOS, debug; `v50/store_test.dart` and
-  `v50/presence_two_peer_test.dart` before the harness workaround). An internal
-  `Transaction` (`dittoffi_transaction_free`) or a cancelled `SyncSubscription`
-  (`FfiSyncSubscription` drop) still holds the native core after `await ditto.close()`.
-  A later GC (`Dart_NotifyIdle` → `Scavenge`/`MournFinalizerEntry`) drops it on the
-  main thread, the core shuts down inside the GC, and its log line
-  (`sqlite3_log` from `verifyDbFile` once the directory is deleted, or the
-  `TaskRuntime` drop) calls the Dart log callback:
-  - 5.0.4: `EXC_CRASH (SIGABRT)`, `dart::Assert::Fail` in
-    `DLRT_GetFfiCallbackMetadata` under `ditto_logger_set_custom_log_cb::call_callback`.
-    Reproduced 3 of 3 runs of `store_test.dart`, with and without deleting the
-    persistence directory.
-  - 5.1.0 and 5.2.0: deadlock. The main thread waits in `Thread::join` under
-    `dittoffi_transaction_free`; the tokio worker waits in
-    `IsolateGroup::EnterTemporaryIsolate` under the same log callback (sampled with
-    `sample`). The test never completes.
-  - Overturns the Known-hazards lead that awaiting `close()` is enough to avoid the
-    SIGABRT class: `close()` does not end the native lifetime while Dart handles that
-    the app cannot reach (`Transaction`) or already cancelled (`SyncSubscription`)
-    await finalization. Reopening Ditto in the same process (tests, logout/login,
-    switching databases) is exposed.
-  - Workaround in the harness only: `DittoLogger.isEnabled = false` after
-    `Ditto.init()`; with it every probe passes on all three lines.
-    `logging_test.dart` turns logging back on inside its single test.
+- **Finding 1: re-opening Ditto in one process can abort or hang it when the GC
+  finalizes a native handle from the earlier instance.** A new hazard that awaiting
+  `close()` does not prevent; it does not refute the Known-hazards lead about awaiting
+  `close()`. Observed on macOS, debug builds only, when one process closes Ditto and
+  then opens it again (`v50/store_test.dart` opens a fresh instance per test). The
+  crash report and `sample` frames show the native log callback being invoked from
+  inside a GC finalizer: a GC (`ScavengerVisitor` or `MarkingVisitor`) →
+  `MournFinalizerEntry` →
+  `dittoffi_transaction_free` (an internal `Transaction`) or the drop of an
+  `FfiSyncSubscription` → native core teardown → `sqlite3_log` (from `verifyDbFile`)
+  or the `TaskRuntime` drop → `ditto_logger_set_custom_log_cb::call_callback` →
+  `DLRT_GetFfiCallbackMetadata`.
+  - 5.0.4: `EXC_CRASH (SIGABRT)` at `dart::Assert::Fail` under
+    `DLRT_GetFfiCallbackMetadata`, in 3 of 3 runs. In 5.0.4 the log `NativeCallable.listener` is
+    created once and never freed (`lib/src/logger.dart`, `_setLogCallbackWithCore`
+    discards the freeable), so this is not the closed-`NativeCallable` hazard; the
+    callback is live and is entered from inside the GC.
+  - 5.1.0 and 5.2.0: a deadlock instead (5.1.0 in 3 of 3 runs, 5.2.0 in 2 of 3). The main thread waits in `Thread::join`
+    under `dittoffi_transaction_free` (inside the GC); a tokio worker waits in
+    `IsolateGroup::EnterTemporaryIsolate` under the same log callback. In these
+    versions `close()` unregisters the log callback and frees it after a 500 ms drain
+    (`cleanupLogger`), and the next `Ditto.open` registers it again
+    (`privateSetupLogCallback` in `_constructorPreamble`), which fits a hang that
+    appears only once the process re-opens Ditto.
+  - Reproduction counts and commands: [Manual records](#manual-records).
+  - Workaround in the harness only, not a recommendation: `withDitto` sets
+    `DittoLogger.isEnabled = false` unless `--dart-define=PROBE_DEFAULT_LOGGING=true`
+    (`PROBE_DEFAULT_LOGGING=true` in the environment of `run-fixture.sh` or
+    `run-probes.sh`). `logging_test.dart` turns logging back on inside its single test.
 - **The expiration handler can run after `close()`, and `login()` then throws**
   (5.0.4, `v50/auth_test.dart`, first run). The handler set with
   `setExpirationHandler` was delivered after the test closed Ditto; `ditto.auth.login`
@@ -222,3 +231,62 @@ Recorded outcomes (asserted exactly, so a change breaks the probe):
   Seen on 5.0.4 only; 5.1.0 and 5.2.0 ran only the guarded version.
 
 ## Manual records
+
+### Finding 1 reproduction, 2026-11-17
+
+macOS 27.2.1 arm64, Flutter 3.50.0, debug. `v50/store_test.dart` with Ditto logging at
+its default (`PROBE_DEFAULT_LOGGING=true`), three attempts per line, each bounded by
+`timeout 240`. A hung app is killed afterwards. From the repository root:
+
+```bash
+for line in 5.0 5.1 5.2; do
+  for attempt in 1 2 3; do
+    PROBE_DEFAULT_LOGGING=true timeout 240 tests/flutter-sdk/scripts/run-fixture.sh \
+      minimal_app macos "$line" integration_test/probes/v50/store_test.dart
+    echo "$line attempt $attempt: exit $?"
+    pkill -f "flutter-fixture-$line/minimal_app/build/macos" || true
+  done
+done
+```
+
+| Line | Attempts | Outcome |
+|---|---|---|
+| 5.0.4 | 3 | 3 crashed (exit 1). The app aborted during test 2, `rollback action rolls back`; each run left a SIGABRT crash report |
+| 5.1.0 | 3 | 3 hung, killed by `timeout 240` (exit 124). Last progress: twice in test 2, once in test 5, `CREATE INDEX and EVICT via execute succeed` |
+| 5.2.0 | 3 | 2 hung, killed by `timeout 240` (exit 124), stopped in test 2 and test 4. 1 passed all 5 tests (exit 0) |
+
+One more bounded attempt per line on 5.1.0 and 5.2.0 was sampled with `sample <pid> 2`
+90 s in. Both hung in test 2 and were killed at 240 s.
+
+Trimmed faulting frames, 5.0.4 (all three `.ips` reports are identical in these frames):
+
+```text
+libsystem_c.dylib  abort
+FlutterMacOS       dart::Assert::Fail
+FlutterMacOS       DLRT_GetFfiCallbackMetadata
+DittoCore          dittoffi::logger::ditto_logger_set_custom_log_cb::call_callback
+DittoCore          sqlite3_log
+DittoCore          verifyDbFile
+DittoCore          dittoffi_transaction_free
+FlutterMacOS       dart::MournFinalizerEntry<dart::MarkingVisitor>
+FlutterMacOS       dart::MarkingVisitor::FinalizeMarking
+```
+
+Trimmed `sample` frames, 5.2.0 (5.1.0 shows the same frames):
+
+```text
+main thread   dart::MournFinalizerEntry<dart::MarkingVisitor>
+              dittoffi_transaction_free
+              <dittoffi::runtime::TaskRuntime as Drop>::drop
+              std::sys::thread::unix::Thread::join  -> __ulock_wait
+tokio worker  verifyDbFile -> sqlite3_log
+              dittoffi::logger::ditto_logger_set_custom_log_cb::call_callback
+              DLRT_GetFfiCallbackMetadata
+              dart::IsolateGroup::EnterTemporaryIsolate
+              dart::Thread::AddActiveThread -> ConditionVariable::WaitMicros
+```
+
+Earlier the same day, a `v50/presence_two_peer_test.dart` crash on 5.0.4 showed the
+finalizer path through the drop of an `FfiSyncSubscription`, and the log line from the
+`TaskRuntime` drop. That run used logging at its default and ran before the harness
+workaround existed.

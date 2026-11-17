@@ -8,6 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 const license = String.fromEnvironment('DITTO_LICENSE');
 const expectedVersion = String.fromEnvironment('DITTO_VERSION');
 
+/// `--dart-define=PROBE_DEFAULT_LOGGING=true` leaves Ditto logging at its
+/// default (on) instead of turning it off in [withDitto].
+const probeDefaultLogging = bool.fromEnvironment('PROBE_DEFAULT_LOGGING');
+
 /// The pinned ditto_live line of this run, e.g. `5.0`.
 String get pinnedLine {
   final match = RegExp(r'^(\d+\.\d+)\.').firstMatch(expectedVersion);
@@ -20,7 +24,7 @@ String get pinnedLine {
 /// Opens a Ditto instance in a fresh temporary directory, runs [body], and
 /// always closes the instance and deletes the directory afterwards.
 ///
-/// Ditto logging is disabled (see below). The offline license is set for small-peers-only configs (the default).
+/// Ditto logging is disabled unless [probeDefaultLogging] (see below). The offline license is set for small-peers-only configs (the default).
 /// With [p2pOff] every peer-to-peer transport (Bluetooth LE, LAN, AWDL,
 /// Wi-Fi Aware) is disabled before [body] runs; [body] starts sync itself.
 Future<void> withDitto(
@@ -32,14 +36,14 @@ Future<void> withDitto(
   expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
   // Required on 5.0.x, automatic from 5.1.0; memoized.
   await Ditto.init();
-  // Workaround, not a recommendation: a native handle that outlives close()
-  // (an internal Transaction, a SyncSubscription) keeps the native core
-  // alive until a later GC finalizes it. The core then shuts down inside the
-  // GC, and any log line it writes on the way calls the Dart log callback:
-  // SIGABRT on 5.0.4, a deadlock on 5.1.0 and 5.2.0 (macOS; see Findings in
-  // tests/flutter-sdk/README.md). With logging off the probes can open and
-  // close many instances in one process. logging_test.dart turns it back on.
-  DittoLogger.isEnabled = false;
+  // Workaround, not a recommendation (README, Findings that changed a
+  // research lead, entry 1): when one process closes Ditto and opens it
+  // again, a native handle (an internal Transaction, a SyncSubscription)
+  // finalized by the GC after close() logs from inside the GC finalizer and
+  // aborts (5.0.4) or deadlocks (5.1.0, 5.2.0) the process on macOS debug.
+  // Logging off keeps the suite runnable. --dart-define=
+  // PROBE_DEFAULT_LOGGING=true keeps Ditto's default (logging on) instead.
+  if (!probeDefaultLogging) DittoLogger.isEnabled = false;
   final directory = await Directory.systemTemp.createTemp('ditto_probe_');
   final ditto = await Ditto.open(
     connect == null

@@ -18,7 +18,8 @@
 #
 # Reads DITTO_OFFLINE_LICENSE from the environment, else from the gitignored repo-root
 # .env, and passes it as --dart-define=DITTO_LICENSE, with DITTO_VERSION (the pin) and
-# DITTO_PLATFORM (the expected Ditto.currentPlatform.name, from <device>). Web builds embed defines, so
+# DITTO_PLATFORM (the expected Ditto.currentPlatform.name, from <device>), and
+# PROBE_DEFAULT_LOGGING when that variable is set. Web builds embed defines, so
 # never publish the web build output. Output is copied to
 # tests/flutter-sdk/run-<device>-<line>.log (gitignored).
 #
@@ -106,6 +107,11 @@ fi
 
 DEFINES=(--dart-define=DITTO_LICENSE="$DITTO_OFFLINE_LICENSE" --dart-define=DITTO_VERSION="$PIN"
   --dart-define=DITTO_PLATFORM="$DITTO_PLATFORM")
+# PROBE_DEFAULT_LOGGING=true keeps Ditto logging at its default in the probe harness
+# (integration_test/probes/harness.dart), which otherwise turns it off.
+if [[ -n "${PROBE_DEFAULT_LOGGING:-}" ]]; then
+  DEFINES+=(--dart-define=PROBE_DEFAULT_LOGGING="$PROBE_DEFAULT_LOGGING")
+fi
 
 status=0
 {

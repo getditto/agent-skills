@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:ditto_live/ditto_live.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -47,8 +46,15 @@ void main() {
             provider: Authenticator.developmentProvider,
           )
           .timeout(const Duration(seconds: 20));
-      debugPrint('login response: ${response.exception}');
-      expect(response.exception, isA<DittoException>());
+      log('login response: ${response.exception}', name: 'probe');
+      expect(
+        response.exception,
+        isA<DittoException>().having(
+          (e) => e.toString(),
+          'toString()',
+          'DittoException(Error logging in. Status code 1. Client info: null)',
+        ),
+      );
     });
   });
 }

@@ -12,6 +12,10 @@
 #   5.1  v50 v51
 #   5.2  v50 v51 v52
 #
+# The harness turns Ditto logging off (README, Findings that changed a research
+# lead, entry 1). PROBE_DEFAULT_LOGGING=true in the environment keeps the default
+# (logging on); run-fixture.sh passes it as a --dart-define.
+#
 # Everything else (license, pins, log file) is run-fixture.sh's.
 set -euo pipefail
 
