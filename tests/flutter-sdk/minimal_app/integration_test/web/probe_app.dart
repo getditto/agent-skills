@@ -29,7 +29,7 @@ const _license = String.fromEnvironment('DITTO_LICENSE');
 /// shim from the absolute path /assets/packages/ditto_live/lib/assets/
 /// by default, which is outside /app/. A relative URL resolves against the
 /// app's own script, next to its assets. Keep the `./`: a bare `assets/`
-/// path is not a valid module specifier. For a CDN, pass full URLs.
+/// path is not a valid module specifier.
 Future<void> initDittoForSubpath() => Ditto.init(
   wasmShimUrl: kIsWeb
       ? './assets/packages/ditto_live/lib/assets/ditto.wasm.js'
@@ -71,11 +71,12 @@ class _ProbeAppState extends State<_ProbeApp> {
       _add('release: $kReleaseMode');
       _add('crossOriginIsolated: ${_jsBool('crossOriginIsolated')}');
       // ditto_live's web bridge keys its pointer registry on
-      // Object.hashAll([JSString, JSNumber]); record whether those hash by
-      // value under this compiler.
-      final sameText = 'a'.toJS.hashCode == 'a'.toJS.hashCode;
-      final distinctNumbers = 1.toJS.hashCode != 2.toJS.hashCode;
-      _add('js hashCode by value: text=$sameText numbers=$distinctNumbers');
+      // Object.hashAll([JSString, JSNumber]); record the raw hash codes of
+      // two JS strings and two JS numbers under this compiler.
+      _add(
+        'js hashCode: a=${'a'.toJS.hashCode} b=${'b'.toJS.hashCode} '
+        '1=${1.toJS.hashCode} 2=${2.toJS.hashCode}',
+      );
       if (query['shim'] == 'relative') {
         await initDittoForSubpath();
       } else {

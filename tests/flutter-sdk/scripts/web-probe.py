@@ -73,7 +73,11 @@ CSP_BASE = ("default-src 'self'; script-src 'self'{wasm}; style-src 'self' 'unsa
 # Runs before any page script (CDP Page.addScriptToEvaluateOnNewDocument): long tasks
 # and requestAnimationFrame timestamps, both on the performance.now() clock.
 PERF_SCRIPT = """
-window.__probePerf = {longTasks: [], frames: []};
+window.__probePerf = {longTasks: [], frames: [], cspViolations: []};
+document.addEventListener('securitypolicyviolation', (e) => {
+  window.__probePerf.cspViolations.push(
+    [e.effectiveDirective, e.blockedURI, (e.sourceFile || '').split('/').pop()]);
+});
 try {
   new PerformanceObserver((list) => {
     for (const e of list.getEntries()) window.__probePerf.longTasks.push([e.startTime, e.duration]);
@@ -169,6 +173,17 @@ def build_args(variant: str, out: Path, defines: Path) -> list[str]:
     return args
 
 
+def remove_web_build_output(workdir: Path) -> None:
+    """Deletes what Flutter web builds leave in a fixture copy besides -o: the
+    intermediate main.dart.js (with every define, the license included) under
+    .dart_tool/flutter_build/<hash>/, build/web, and the incremental-compile caches
+    build/*.cache.dill.track.dill, which embed the defines too."""
+    shutil.rmtree(workdir / ".dart_tool" / "flutter_build", ignore_errors=True)
+    shutil.rmtree(workdir / "build" / "web", ignore_errors=True)
+    for cache in (workdir / "build").glob("*.cache.dill.track.dill"):
+        cache.unlink(missing_ok=True)
+
+
 class Builds:
     """Builds bundle variants on demand, once each; deletes them all on close."""
 
@@ -191,6 +206,7 @@ class Builds:
 
     def close(self) -> None:
         shutil.rmtree(self.root, ignore_errors=True)
+        remove_web_build_output(self.workdir)
 
 
 # --- serving ------------------------------------------------------------------------
@@ -326,10 +342,11 @@ class Browser:
         with contextlib.suppress(OSError, urllib.error.URLError):
             _request("DELETE", self.url)
 
-    def load(self, url: str) -> dict:
-        """Loads [url] and waits for the probe app's transcript."""
+    def load(self, url: str, timeout: float = LOAD_TIMEOUT) -> dict:
+        """Loads [url] and waits for the probe app's transcript; status "timeout"
+        when the app never publishes one (main() did not run to the end)."""
         self.navigate(url)
-        deadline = time.monotonic() + LOAD_TIMEOUT
+        deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             published = self.script("return window.dittoProbe || null;")
             if published:
@@ -388,13 +405,13 @@ def expect_wasm_defect(transcript: dict, isolated: bool) -> None:
     """The dart2wasm bundle, as observed on 5.1.0 and 5.2.0: Ditto initializes and
     opens, but every query result after the first resolves to the first one (the web
     bridge's pointer registry keys on Object.hashAll([JSString, JSNumber]), and under
-    dart2wasm a JSNumber's hashCode does not depend on its value), so the second INSERT
-    reports the first INSERT's mutated IDs and the SELECT returns no items."""
+    dart2wasm every JS value's hashCode is 0, strings and numbers alike), so the second
+    INSERT reports the first INSERT's mutated IDs and the SELECT returns no items."""
     expect(transcript.get("status") == "done", f"status {transcript.get('status')}: {transcript}")
     expect(transcript_value(transcript, "compiler") == "dart2wasm", f"compiler: {transcript}")
     expect(transcript_value(transcript, "crossOriginIsolated") == str(isolated).lower(),
            f"crossOriginIsolated: {transcript}")
-    expect(transcript_value(transcript, "js hashCode by value") == "text=true numbers=false",
+    expect(transcript_value(transcript, "js hashCode") == "a=0 b=0 1=0 2=0",
            f"hashCode: {transcript}")
     expect(transcript_value(transcript, "insert mutated") == "[blue-toyota]", f"insert: {transcript}")
     expect(transcript_value(transcript, "literal insert mutated") == "[blue-toyota]",
@@ -413,9 +430,9 @@ class Context:
         self.secret = secret
 
     def load(self, variant: str, query: str = "", prefix: str = "/",
-             headers: dict[str, str] | None = None) -> dict:
+             headers: dict[str, str] | None = None, timeout: float = LOAD_TIMEOUT) -> dict:
         with serve(self.builds.get(variant), prefix, headers) as url:
-            return self.browser.load(url + query)
+            return self.browser.load(url + query, timeout)
 
 
 def web_default_build(ctx: Context) -> str:
@@ -430,7 +447,7 @@ def web_wasm_build(ctx: Context) -> str:
     expect_wasm_defect(transcript, isolated=False)
     return ("--wasm release bundle runs as dart2wasm; init and open ok, but the second "
             "INSERT reports the first one's mutated IDs [blue-toyota] and SELECT * returns "
-            "0 items (JSNumber.hashCode is not value-based under dart2wasm)")
+            "0 items (every JS value's hashCode is 0 under dart2wasm)")
 
 
 def web_no_coop_coep(ctx: Context) -> str:
@@ -453,13 +470,19 @@ def web_csp(ctx: Context) -> str:
         else:
             expect_smoke(allowed, compiler, isolated=False)
         ctx.browser.console()  # drop earlier entries
-        blocked = ctx.load(variant, headers={"Content-Security-Policy": CSP_BASE.format(wasm="")})
-        expect(blocked.get("status") != "done",
-               f"{variant} without 'wasm-unsafe-eval' unexpectedly worked: {blocked}")
+        blocked = ctx.load(variant, headers={"Content-Security-Policy": CSP_BASE.format(wasm="")},
+                           timeout=30)
+        # No transcript at all: the app's main() never ran.
+        expect(blocked == {"status": "timeout", "lines": []},
+               f"{variant} without 'wasm-unsafe-eval': {blocked}")
         errors = [e for e in ctx.browser.console() if e.startswith("SEVERE")]
-        outcomes.append(f"{compiler}: with 'wasm-unsafe-eval' ok; without it "
-                        f"{blocked.get('status')} {blocked.get('lines')}, first console error: "
-                        f"{errors[0][:300] if errors else 'none'}")
+        violations = (ctx.browser.script("return window.__probePerf.cspViolations;") or [])
+        expect(bool(errors) and "CompileError" in errors[0], f"first console error: {errors[:1]}")
+        expect(bool(violations) and violations[0][:2] == ["script-src", "wasm-eval"],
+               f"CSP violations: {violations}")
+        outcomes.append(f"{compiler}: with 'wasm-unsafe-eval' ok; without it no transcript "
+                        f"(main() never ran), first console error {errors[0][:200]!r}, "
+                        f"first CSP violation {violations[0]} of {len(violations)}")
     return "; ".join(outcomes)
 
 

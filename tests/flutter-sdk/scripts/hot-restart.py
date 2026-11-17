@@ -16,7 +16,8 @@ Prints every `HR: ` line the app writes plus the flutter tool's restart, crash a
 lines, each with seconds since launch; the full output goes to
 tests/flutter-sdk/hot-restart-<device>-<line>-<mode>.log (gitignored). The license
 reaches Flutter only through web-probe.py's mode-600 --dart-define-from-file file and
-is redacted from the output. Bounded: 900 s for the first launch, then --observe.
+is redacted from the output; the build output that embeds it (.dart_tool/flutter_build,
+build/web) is deleted at the end. Bounded: 900 s for the first launch, then --observe.
 """
 
 from __future__ import annotations
@@ -145,6 +146,8 @@ def main(argv: list[str]) -> int:
                 subprocess.run(["pkill", "-f", f"flutter-fixture-[^/]*/{args.line}/minimal_app/build/macos"],
                                check=False)
             emit(f"(script) {status}; flutter run exit {process.wait()}")
+            # The debug build embeds the defines, the license included.
+            WEB_PROBE.remove_web_build_output(workdir)
     print(f"== full output: {log_path}")
     return 0
 

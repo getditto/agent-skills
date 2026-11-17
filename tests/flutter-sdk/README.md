@@ -122,11 +122,14 @@ The Flutter Web probes live in `minimal_app/integration_test/web/`. A web
 target cannot import files above `integration_test/web/`; the web probes therefore
 have their own harness, `web/web_harness.dart`, with no `dart:io`, no temporary
 directory (`persistenceDirectory: null`) and Ditto logging at its default.
-`web_all_test.dart` (5.0+) and `web_51_test.dart` (5.1+) are the two drive targets:
+The drive targets are `web_all_test.dart` (5.0+), `web_51_test.dart` (5.1+) and
+`web_license_test.dart` (5.0+; one probe that needs a fresh page). The chrome leg's
+EXIT trap deletes the debug web build output (`.dart_tool/flutter_build`, `build/web`)
+from the fixture copy, since it embeds the license:
 
 ```bash
-tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 \
-  integration_test/web/web_all_test.dart integration_test/web/web_51_test.dart
+tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 integration_test/web/web_all_test.dart \
+  integration_test/web/web_51_test.dart integration_test/web/web_license_test.dart
 ```
 
 `scripts/web-probe.py --line <line>` builds `integration_test/web/probe_app.dart` in
@@ -134,7 +137,8 @@ release mode (dart2js, `--wasm`, `--base-href /app/`), serves each bundle with t
 headers a probe needs, loads it in headless Chrome through ChromeDriver (an existing
 one on :4444, else `$CHROMEDRIVER` on a free port), and asserts the transcript the app
 publishes. The license reaches Flutter only through a mode-600
-`--dart-define-from-file` file; every bundle is deleted before the script exits.
+`--dart-define-from-file` file; every bundle, and the intermediate output under
+`.dart_tool/flutter_build` and `build/web`, is deleted before the script exits.
 `--skip-manual` skips the timing probe `web_large_result_jank`.
 `scripts/test_web_probe.py` checks its secret handling, server and timing helpers.
 Results per probe ID, with versions and build modes, are in `web-results/5.2.0.md`.
@@ -297,19 +301,25 @@ harness (see Finding 1):
   `INSERT` reports the first `INSERT`'s mutated IDs (`[blue-toyota]` for a document
   with `_id` `red-honda`) and `SELECT * FROM cars` returns 0 items, with or without
   COOP/COEP. The web bridge keys its pointer registry on
-  `Object.hashAll([JSString type, JSNumber addr])` (`lib/src/bridge/wasm/types.dart`,
-  `_JSPointer._hashCode`, 5.2.0), and in the same dart2wasm bundle
-  `1.toJS.hashCode == 2.toJS.hashCode`: every pointer of one type gets the same key, so
-  the registry hands back the first wrapper. dart2js is unaffected (`web_default_build`).
-- **A V2 observer orphaned by a hot restart crashes the app when its live query next
-  fires** (5.2.0, macOS debug, `hot-restart.py --device macos --mode v2 --peer`). After
-  `R`, a second instance wrote one document to the orphaned instance over TCP
-  loopback; 0.2 s later the app died, `Lost connection to device.`, with
+  `Object.hashAll([JSString type, JSNumber addr])`
+  (`sdks/flutter/ditto_live/lib/src/bridge/wasm/types.dart:168` @ `sdk-release-5.2.0`,
+  `_JSPointer._hashCode`), and in the same dart2wasm bundle every JS value hashes to 0,
+  strings and numbers alike (`'a'.toJS`, `'b'.toJS`, `1.toJS` and `2.toJS` all report
+  `hashCode` 0): every pointer of one type gets the same key, so the registry hands back
+  the first wrapper. dart2js is unaffected (`web_default_build`).
+- **A hot restart with a V2 observer live crashed the app once (n=1)** (5.2.0, macOS
+  debug, `hot-restart.py --device macos --mode v2 --peer`). After `R`, a second
+  instance started connecting to the orphaned instance over TCP loopback and inserted
+  one document; 0.2 s later the app died, `Lost connection to device.`, with
   `EXC_BAD_ACCESS (SIGBUS) KERN_PROTECTION_FAILURE` on the thread
-  `live query callback 2`, whose top frame is in a writable, non-executable region (the
-  freed `NativeCallable.listener` trampoline). The same run with a V1 observer (`--mode
-  v1 --peer`) did not crash: 5.2.0 delivers V1 callbacks through a port, as its source
-  comments say (`lib/src/bridge/native/store.dart`). Details:
+  `live query callback 2`, whose top frame is in a writable, non-executable region.
+  Presence still reported 0 connected peers at the insert, so the trigger may have been
+  the connection or sync activity rather than the document reaching the observer.
+  That the region is the freed `NativeCallable.listener` trampoline of the orphaned V2
+  observer is an inference: the 5.2.0 source says the V2 path still uses a
+  `NativeCallable.listener` and shares the hot-restart hazard, while V1 callbacks go
+  through a port (`lib/src/bridge/native/store.dart`). The single V1 run with the same
+  steps (`--mode v1 --peer`) did not crash. One run each; not yet repeated. Details:
   [Manual records](#manual-records).
 
 ### Native builds, 2026-11-17
@@ -354,12 +364,16 @@ macOS 27.2.1 arm64. Every probe ID's outcome, with build mode and version, is in
 
 | Line | Target | Build mode | Outcome |
 |---|---|---|---|
-| 5.2.0 | `web_all_test.dart` (13), `web_51_test.dart` (2) | debug (DDC), `flutter drive` | pass |
-| 5.1.0 | `web_all_test.dart` (13), `web_51_test.dart` (2) | debug (DDC), `flutter drive` | pass |
-| 5.0.4 | `web_all_test.dart` (13) | debug (DDC), `flutter drive` | pass |
+| 5.2.0 | `web_all_test.dart` (12), `web_51_test.dart` (2), `web_license_test.dart` (1) | debug (DDC), `flutter drive` | pass |
+| 5.1.0 | `web_all_test.dart` (12), `web_51_test.dart` (2), `web_license_test.dart` (1) | debug (DDC), `flutter drive` | pass |
+| 5.0.4 | `web_all_test.dart` (12), `web_license_test.dart` (1) | debug (DDC), `flutter drive` | pass |
 | 5.2.0, 5.1.0 | `web-probe.py` (7 probes) | release: dart2js, dart2wasm | pass; the dart2wasm probes assert the defect in [SDK defects](#sdk-defects-the-fixture-records-2026-11-17) |
 | all | Firefox, Safari, Edge; a hosted CDN | — | not run |
 
+- **The published `enablePeerToPeer` gate** (region `flutter-web-1`, in
+  `integration_test/web/p2p_gate.dart`) also runs natively: `v50/p2p_gate_test.dart`
+  asserts `bluetoothLE=true lan=true awdl=true wifiAware=false` on macOS (5.0.4, 5.1.0,
+  5.2.0, debug, sync not started). Its Android, Linux and Windows branches are untested.
 - **Gate P2P with `kIsWeb` first.** `defaultTargetPlatform` is the host OS on web
   (`macOS` here), so a capability gate on it enables LAN in the browser. Enabling any
   peer-to-peer transport on web throws `DittoException(<validation> Expected valid
@@ -374,8 +388,10 @@ macOS 27.2.1 arm64. Every probe ID's outcome, with build mode and version, is in
   (region `flutter-web-2`) works; without the `./` it fails with
   `Failed to resolve module specifier`.
 - **Hosting:** Ditto needs no COOP/COEP headers. A CSP must allow
-  `'wasm-unsafe-eval'`, but without it Flutter's own bootstrap fails before `main()`,
-  so that is a Flutter requirement as much as Ditto's.
+  `'wasm-unsafe-eval'`: without it Flutter's bootstrap fails to compile its own
+  WebAssembly renderer (`CompileError`, CSP violation `script-src` / `wasm-eval` from
+  `flutter_bootstrap.js`) and `main()` never runs. Ditto is never reached, so its own
+  requirement is masked rather than observed.
 - **Large results (dart2js, 5.2.0):** for 5,000 documents, `execute` took 20 ms;
   reading every `item.value` as well took 79 ms in one long task, the longest frame gap
   67 ms (an earlier run: 66 ms, 50 ms). With `LIMIT 50` it took 2 ms and no long task.
@@ -420,12 +436,19 @@ macOS 27.2.1 arm64. Every probe ID's outcome, with build mode and version, is in
   instance throws. The published handler now returns early when `ditto.isClosed`.
   Seen on 5.0.4 only; 5.1.0 and 5.2.0 ran only the guarded version.
 - **Web, `setOfflineOnlyLicenseToken` with an invalid token does not throw** (5.0.4,
-  5.1.0, 5.2.0; Chrome, debug; `bad offline license on web`). It logs
-  `setOfflineOnlyLicenseToken is a no-op on the web platform.` and returns. Overturns the
-  spec Correction that on web it "still verifies and can throw": the source does call
-  the verifier, but no error surfaced for `'not-a-license'`.
+  5.1.0, 5.2.0; Chrome, debug; `bad offline license on web`, run alone in
+  `web_license_test.dart`: a fresh page, `DittoConfig(databaseID:
+  '11111111-2222-4333-8444-555555555555')`, no valid license set before it). It logs
+  `setOfflineOnlyLicenseToken is a no-op on the web platform.` and returns. The source
+  (`sdks/flutter/ditto_live/lib/src/ditto.dart:252-260` @ `sdk-release-5.2.0`) logs that
+  warning when `kIsWeb` and then still calls
+  `core.dittoFfiTryVerifyLicense(ptr, licenseToken).extract()`, which would throw on an
+  error result; for `'not-a-license'` the web core returned none. So the Correction is
+  right that the call still verifies; that it throws for an invalid token was not
+  observed (one invalid token tried, on all three lines).
 - **Web, the in-memory store outlives `close()` within a page** (5.0.4, 5.1.0, 5.2.0;
-  debug; `close then reopen in the same page loses data`). A document written before
+  debug; `close then reopen in the same page keeps data`, named `... loses data` in the
+  task brief). A document written before
   `close()` is there after a new `Ditto.open(DittoConfig())` in the same page; only a
   page load clears it (`web_reload_persistence`: 1 document before, 0 after, release).
   Refines the lead "in-memory, lost on reload": lost on reload, not on close.
@@ -549,7 +572,7 @@ document, which reaches the orphaned instance as a remote change would.
 | macOS | `v2` | the same error | none in 40 s |
 | macOS | `holder` | attempt 1 fails with the same error; still failing at 20 s (`open failed`) | none in 40 s |
 | macOS | `v1 --peer` | the same error; the peer connects to the orphaned instance (1 remote peer) and inserts | none in 40 s |
-| macOS | `v2 --peer` | the same error; the peer inserts, and 0.2 s later `Lost connection to device.` | **yes**: `EXC_BAD_ACCESS (SIGBUS)`, `KERN_PROTECTION_FAILURE`, thread `live query callback 2` |
+| macOS | `v2 --peer` | the same error; the peer inserts (presence: 0 connected peers yet), and 0.2 s later `Lost connection to device.` | **yes, once (n=1)**: `EXC_BAD_ACCESS (SIGBUS)`, `KERN_PROTECTION_FAILURE`, thread `live query callback 2`; trigger and cause not isolated |
 | Chrome | `v1` | `Ditto.open` fails at once (error below) | none in 30 s |
 | Chrome | `v2` | the same error | none in 40 s |
 | Chrome | `holder` | attempt 1 fails; still failing at 20 s | none in 40 s |

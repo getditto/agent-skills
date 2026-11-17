@@ -101,6 +101,13 @@ for arg in "$@"; do
   esac
 done
 [[ "${1:-}" == "--version" ]] && echo "Flutter 0.0.0-fake"
+# Stand-ins for the web build output a real flutter leaves in the fixture copy.
+if [[ "${1:-}" == "pub" ]]; then
+  mkdir -p .dart_tool/flutter_build/0123abcd build/web
+  echo "synthetic" > .dart_tool/flutter_build/0123abcd/main.dart.js
+  echo "synthetic" > build/web/main.dart.js
+  echo "synthetic" > build/0123abcd.cache.dill.track.dill
+fi
 exit 0
 """
 
@@ -192,7 +199,21 @@ class RunFixture(unittest.TestCase):
                                   environment={**self.environment, "CHROMEDRIVER": str(broken)})
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("ChromeDriver did not come up on 127.0.0.1:4444", result.stderr)
-        self.assertNotIn("[drive]", self.record.read_text() if self.record.exists() else "")
+        record = self.record.read_text()
+        self.assertNotIn("[drive]", record)
+        # The EXIT trap deletes the chrome leg's web build output in the fixture copy.
+        workdir = Path(next(line for line in record.splitlines() if line.startswith("pwd: "))[6:-1])
+        self.assertTrue(workdir.is_dir(), workdir)
+        self.assertFalse((workdir / ".dart_tool" / "flutter_build").exists())
+        self.assertFalse((workdir / "build" / "web").exists())
+        self.assertEqual(list((workdir / "build").glob("*.cache.dill.track.dill")), [])
+
+    def test_native_runs_leave_the_fixture_build_alone(self):
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        workdir = Path(next(line for line in self.record.read_text().splitlines()
+                            if line.startswith("pwd: "))[6:-1])
+        self.assertTrue((workdir / "build" / "web").exists())
 
 
 if __name__ == "__main__":

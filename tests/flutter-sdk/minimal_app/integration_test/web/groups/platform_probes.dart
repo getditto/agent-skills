@@ -3,33 +3,8 @@ import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../p2p_gate.dart';
 import '../web_harness.dart';
-
-// snippet:start flutter-web-1
-/// Turns on the peer-to-peer transports this platform has. Web has none,
-/// and enabling one there throws a DittoException (from `sync.start()` on
-/// 5.2.0, from `updateTransportConfig` on 5.0.4 and 5.1.0).
-/// Check `kIsWeb` first: it is a constant, so web builds drop the rest.
-/// Then decide with `Ditto.currentPlatform`, never `defaultTargetPlatform`,
-/// which reports the browser's host OS on web.
-void enablePeerToPeer(Ditto ditto) {
-  if (kIsWeb) return;
-  ditto.updateTransportConfig((config) {
-    config.peerToPeer.bluetoothLE.isEnabled = true;
-    config.peerToPeer.lan.isEnabled = true;
-    switch (Ditto.currentPlatform) {
-      case SupportedPlatform.ios || SupportedPlatform.macos:
-        config.peerToPeer.awdl.isEnabled = true;
-      case SupportedPlatform.android:
-        config.peerToPeer.wifiAware.isEnabled = true;
-      case SupportedPlatform.linux ||
-          SupportedPlatform.windows ||
-          SupportedPlatform.web:
-        break;
-    }
-  });
-}
-// snippet:end flutter-web-1
 
 /// The four peer-to-peer transports, as `name=isEnabled`.
 String _p2pState(Ditto ditto) {

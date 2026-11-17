@@ -1,4 +1,6 @@
-// Web probes: logging export, licensing and the in-memory store.
+// Web probes: logging export and the in-memory store. The bad-license
+// probe is its own target, web_license_test.dart, so no earlier instance in
+// the page has set a valid license.
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,22 +21,7 @@ void lifecycleProbes() {
     });
   });
 
-  testWidgets('bad offline license on web', (t) async {
-    await Ditto.init();
-    final ditto = await Ditto.open(DittoConfig());
-    try {
-      final outcome = await outcomeOf(
-        () => ditto.setOfflineOnlyLicenseToken('not-a-license'),
-      );
-      record('setOfflineOnlyLicenseToken(bad)', outcome);
-      // Observed: an invalid token is accepted on web; nothing is thrown.
-      expect(outcome, 'ok');
-    } finally {
-      await ditto.close();
-    }
-  });
-
-  testWidgets('close then reopen in the same page loses data', (t) async {
+  testWidgets('close then reopen in the same page keeps data', (t) async {
     await withWebDitto((ditto) async {
       await ditto.store.execute(
         'INSERT INTO web_reopen DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE',
@@ -49,8 +36,8 @@ void lifecycleProbes() {
     await withWebDitto((ditto) async {
       final read = await ditto.store.execute('SELECT * FROM web_reopen');
       record('reopen: after close and open', '${read.items.length} doc(s)');
-      // Observed: the in-memory store outlives close() within the page, so
-      // the document is still there (it is lost on a page reload; see
+      // The in-memory store outlives close() within the page, so the
+      // document is still there (it is lost on a page reload; see
       // web-probe.py web_reload_persistence).
       expect(read.items.length, 1);
     });

@@ -18,7 +18,7 @@ TODO
 /// shim from the absolute path /assets/packages/ditto_live/lib/assets/
 /// by default, which is outside /app/. A relative URL resolves against the
 /// app's own script, next to its assets. Keep the `./`: a bare `assets/`
-/// path is not a valid module specifier. For a CDN, pass full URLs.
+/// path is not a valid module specifier.
 Future<void> initDittoForSubpath() => Ditto.init(
   wasmShimUrl: kIsWeb
       ? './assets/packages/ditto_live/lib/assets/ditto.wasm.js'

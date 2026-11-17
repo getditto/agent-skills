@@ -116,6 +116,13 @@ cleanup() {
   if [[ -n "$CHROMEDRIVER_PID" ]]; then
     kill "$CHROMEDRIVER_PID" 2>/dev/null || true
   fi
+  # The chrome leg's debug web build leaves compiled JavaScript with every define
+  # (the license included) in the fixture copy; delete it.
+  # Flutter's incremental-compile caches (build/*.cache.dill.track.dill) embed it too.
+  if [[ "$DEVICE" == "chrome" && -n "$WORKDIR" ]]; then
+    rm -rf "$WORKDIR/.dart_tool/flutter_build" "$WORKDIR/build/web"
+    rm -f "$WORKDIR"/build/*.cache.dill.track.dill
+  fi
 }
 trap cleanup EXIT
 
@@ -156,8 +163,16 @@ fi
 # Fail here, not later at "Unable to start a WebDriver session": whatever listens on
 # :4444 (started above or already running) must answer ChromeDriver's /status.
 if [[ "$DEVICE" == "chrome" ]]; then
-  status_json="$(curl -sf --max-time 5 http://127.0.0.1:4444/status 2>/dev/null || true)"
-  if [[ "$(printf '%s' "$status_json" | tr -d ' \n')" != *'"ready":true'* ]]; then
+  ready=""
+  for _ in $(seq 1 10); do
+    status_json="$(curl -sf --max-time 5 http://127.0.0.1:4444/status 2>/dev/null || true)"
+    if [[ "$(printf '%s' "$status_json" | tr -d ' \n')" == *'"ready":true'* ]]; then
+      ready=1
+      break
+    fi
+    sleep 0.2
+  done
+  if [[ -z "$ready" ]]; then
     echo "ChromeDriver did not come up on 127.0.0.1:4444 (CHROMEDRIVER=${CHROMEDRIVER:-chromedriver})." >&2
     echo "Install one matching the local Chrome; see tests/flutter-sdk/README.md, Running fixtures." >&2
     exit 1

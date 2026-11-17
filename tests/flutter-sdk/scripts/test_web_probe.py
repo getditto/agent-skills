@@ -84,8 +84,18 @@ class BuildArgs(unittest.TestCase):
             builds = WEB_PROBE.Builds(Path(temp), Path(temp) / "d.json")
             (builds.root / "js").mkdir(parents=True)
             (builds.root / "js" / "main.dart.js").write_text(FAKE_LICENSE)
+            for leftover in (Path(temp) / ".dart_tool" / "flutter_build" / "0123abcd",
+                             Path(temp) / "build" / "web"):
+                leftover.mkdir(parents=True)
+                (leftover / "main.dart.js").write_text(FAKE_LICENSE)
+            (Path(temp) / "build" / "macos").mkdir()
+            (Path(temp) / "build" / "0123abcd.cache.dill.track.dill").write_text(FAKE_LICENSE)
             builds.close()
             self.assertFalse(builds.root.exists())
+            self.assertFalse((Path(temp) / ".dart_tool" / "flutter_build").exists())
+            self.assertFalse((Path(temp) / "build" / "web").exists())
+            self.assertTrue((Path(temp) / "build" / "macos").exists())
+            self.assertEqual(list((Path(temp) / "build").glob("*.cache.dill.track.dill")), [])
 
 
 class Server(unittest.TestCase):
