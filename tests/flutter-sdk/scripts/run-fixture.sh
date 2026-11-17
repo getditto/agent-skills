@@ -17,7 +17,8 @@
 # `chromedriver` on PATH) and stops it on exit.
 #
 # Reads DITTO_OFFLINE_LICENSE from the environment, else from the gitignored repo-root
-# .env, and passes it as --dart-define=DITTO_LICENSE. Web builds embed defines, so
+# .env, and passes it as --dart-define=DITTO_LICENSE, with DITTO_VERSION (the pin) and
+# DITTO_PLATFORM (the expected Ditto.currentPlatform.name, from <device>). Web builds embed defines, so
 # never publish the web build output. Output is copied to
 # tests/flutter-sdk/run-<device>-<line>.log (gitignored).
 #
@@ -88,7 +89,23 @@ if [[ "$DEVICE" == "chrome" ]] && ! nc -z 127.0.0.1 4444 2>/dev/null; then
   done
 fi
 
-DEFINES=(--dart-define=DITTO_LICENSE="$DITTO_OFFLINE_LICENSE" --dart-define=DITTO_VERSION="$PIN")
+# The `Ditto.currentPlatform.name` the run must report (SupportedPlatform values in
+# ditto_live: android, ios, linux, macos, web, windows). Phone and simulator device
+# IDs carry no platform, so set DITTO_PLATFORM for those.
+if [[ -z "${DITTO_PLATFORM:-}" ]]; then
+  case "$DEVICE" in
+    macos | linux | windows) DITTO_PLATFORM="$DEVICE" ;;
+    chrome | edge | web-server) DITTO_PLATFORM=web ;;
+    emulator-*) DITTO_PLATFORM=android ;;
+    *)
+      echo "Cannot tell the platform of device '$DEVICE'; set DITTO_PLATFORM (android or ios)." >&2
+      exit 2
+      ;;
+  esac
+fi
+
+DEFINES=(--dart-define=DITTO_LICENSE="$DITTO_OFFLINE_LICENSE" --dart-define=DITTO_VERSION="$PIN"
+  --dart-define=DITTO_PLATFORM="$DITTO_PLATFORM")
 
 status=0
 {

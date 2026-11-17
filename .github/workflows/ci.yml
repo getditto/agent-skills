@@ -287,6 +287,15 @@ jobs:
           print("All plugin wrappers are correctly scoped")
           EOF
 
+      # `flutter create` copies the local signing team into the Xcode projects; a
+      # committed Apple Developer Team ID identifies a real account.
+      - name: No Apple Developer Team IDs in Flutter fixtures
+        run: |
+          if git grep -nE 'DEVELOPMENT_TEAM = [A-Z0-9]{10}' -- tests/flutter-sdk/; then
+            echo "ERROR: remove the DEVELOPMENT_TEAM lines above" >&2
+            exit 1
+          fi
+
       - name: Validate SDK skill structure
         run: python3 scripts/validate-sdk-skills.py
 

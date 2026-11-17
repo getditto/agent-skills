@@ -5,6 +5,7 @@ import 'package:minimal_app/minimal_app.dart';
 
 const license = String.fromEnvironment('DITTO_LICENSE');
 const expectedVersion = String.fromEnvironment('DITTO_VERSION');
+const expectedPlatform = String.fromEnvironment('DITTO_PLATFORM');
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,11 @@ void main() {
       isNotEmpty,
       reason: 'pass --dart-define=DITTO_VERSION',
     );
+    expect(
+      expectedPlatform,
+      isNotEmpty,
+      reason: 'pass --dart-define=DITTO_PLATFORM',
+    );
 
     final lines = await runMinimalApp(
       license: license,
@@ -24,17 +30,14 @@ void main() {
     );
     binding.reportData = {'transcript': lines};
 
-    expect(
-      lines,
-      containsAllInOrder([
-        'observer: 1 car(s)',
-        'read-back make: Toyota',
-        'closed: true',
-      ]),
-    );
-    expect(
-      lines.firstWhere((l) => l.startsWith('SDK version: ')),
-      contains(expectedVersion),
-    );
+    // `Ditto.version` is the core string (e.g. `iOSF5.2.0_<sha>`); the program
+    // prints only its x.y.z, which must be the pinned pub version.
+    expect(lines, [
+      'observer: 1 car(s)',
+      'read-back make: Toyota',
+      'SDK version: $expectedVersion',
+      'platform: $expectedPlatform',
+      'closed: true',
+    ]);
   });
 }
