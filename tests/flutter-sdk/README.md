@@ -13,6 +13,7 @@ every fixture, script and CI job reads them from there.
 - [Local toolchain](#local-toolchain)
 - [Running fixtures](#running-fixtures)
 - [Findings](#findings)
+- [Findings that changed a research lead](#findings-that-changed-a-research-lead)
 - [Manual records](#manual-records)
 
 ## Pins and rationale
@@ -82,6 +83,23 @@ export CHROMEDRIVER="$SCRATCH/chromedriver/mac_arm-157.0.8103.79/chromedriver-ma
 Web builds embed `--dart-define` values in the compiled JavaScript, so never publish
 web build output.
 
+The native behavior probes live in `minimal_app/integration_test/probes/`. Version-gated
+code is split by directory, never by `skip:`: a line runs every directory at or below
+its version (5.0: `v50`; 5.1: `v50 v51`; 5.2: `v50 v51 v52`). `init_once` runs first,
+alone, in its own process, because nothing may call `Ditto.init()` before it.
+`scripts/run-probes.sh` runs exactly that list through `run-fixture.sh`:
+
+```bash
+tests/flutter-sdk/scripts/run-probes.sh macos 5.0
+tests/flutter-sdk/scripts/run-probes.sh macos 5.1
+tests/flutter-sdk/scripts/run-probes.sh macos 5.2
+```
+
+Every probe uses `probes/harness.dart` `withDitto`: a fresh temporary directory, the
+license, all peer-to-peer transports off, `close()` in `finally`. The harness also turns
+Ditto logging off; see the first entry in
+[Findings that changed a research lead](#findings-that-changed-a-research-lead).
+
 ## Findings
 
 ### minimal_app, 2026-11-17
@@ -129,5 +147,78 @@ runs are debug builds.
 - **5.0.4 needs a current CocoaPods index.** The first 5.0 run failed in
   `pod install` with `None of your spec sources contain a spec satisfying the
   dependency: DittoFlutter (= 5.0.4)`; `pod repo update trunk` fixed it.
+
+### Native behavior probes, 2026-11-17
+
+Same toolchain as above. macOS desktop, debug builds, `scripts/run-probes.sh macos <line>`.
+Every probe name below passed on every line listed; nothing else was run.
+
+| Line | Directories | Outcome |
+|---|---|---|
+| 5.0.4 | `init_once`, `v50` (22 tests) | pass |
+| 5.1.0 | `init_once`, `v50`, `v51` (28 tests) | pass |
+| 5.2.0 | `init_once`, `v50`, `v51`, `v52` (30 tests) | pass |
+| all | iOS, Android, Chrome, Windows, Linux | not run |
+
+Recorded outcomes (asserted exactly, so a change breaks the probe):
+
+- `DittoLogger getter before init`: `DittoLogger.isEnabled` throws synchronously
+  ``DittoError(Ditto not initialized. Call `Ditto.init()` and await the `Future` before using any Ditto functionality)``,
+  on all three lines.
+- `api after close throws DittoClosedException`: `store.execute` does not throw at the
+  call; its Future fails with `DittoClosedException`. `sync.start()` and
+  `store.registerObserver` throw `DittoClosedException` synchronously.
+- `login failure in AuthResponse.exception`: deterministic offline. With
+  `DittoConfigConnectServer(url: 'https://REPLACE_ME.invalid')`, `auth.login` returns
+  `exception` = `DittoException(Error logging in. Status code 1. Client info: null)`
+  on all three lines.
+- `signalNext gates delivery and coalesces` (5.1.0, 5.2.0): callbacks deliver item
+  counts `[0]`, nothing more for 2 s after three inserts, then `[0, 3]` after
+  `signalNext()`: the three writes arrive in one callback.
+- `observeTransportConditions emits within 5 s` (5.1.0, 5.2.0): with every
+  peer-to-peer transport off and `sync.start()`, no event arrives within 5 s, on the
+  callback or the stream.
+- `handler deny blocks` / `handler throw denies`: B's handler is invoked with A's
+  `peerKey` within 20 s when A listens on TCP loopback and B connects; denying or
+  throwing keeps A's document off B for the 5 s window.
+- `ConnectionType switch compiles`: four values on 5.0.4, five on 5.1.0 and 5.2.0. The
+  `v50` switch carries a wildcard arm (`// ignore: unreachable_switch_case`), since an
+  exhaustive four-value switch does not compile on 5.1+.
+
+## Findings that changed a research lead
+
+- **A native handle that outlives `close()` kills or hangs the process when the GC
+  finalizes it** (macOS, debug; `v50/store_test.dart` and
+  `v50/presence_two_peer_test.dart` before the harness workaround). An internal
+  `Transaction` (`dittoffi_transaction_free`) or a cancelled `SyncSubscription`
+  (`FfiSyncSubscription` drop) still holds the native core after `await ditto.close()`.
+  A later GC (`Dart_NotifyIdle` → `Scavenge`/`MournFinalizerEntry`) drops it on the
+  main thread, the core shuts down inside the GC, and its log line
+  (`sqlite3_log` from `verifyDbFile` once the directory is deleted, or the
+  `TaskRuntime` drop) calls the Dart log callback:
+  - 5.0.4: `EXC_CRASH (SIGABRT)`, `dart::Assert::Fail` in
+    `DLRT_GetFfiCallbackMetadata` under `ditto_logger_set_custom_log_cb::call_callback`.
+    Reproduced 3 of 3 runs of `store_test.dart`, with and without deleting the
+    persistence directory.
+  - 5.1.0 and 5.2.0: deadlock. The main thread waits in `Thread::join` under
+    `dittoffi_transaction_free`; the tokio worker waits in
+    `IsolateGroup::EnterTemporaryIsolate` under the same log callback (sampled with
+    `sample`). The test never completes.
+  - Overturns the Known-hazards lead that awaiting `close()` is enough to avoid the
+    SIGABRT class: `close()` does not end the native lifetime while Dart handles that
+    the app cannot reach (`Transaction`) or already cancelled (`SyncSubscription`)
+    await finalization. Reopening Ditto in the same process (tests, logout/login,
+    switching databases) is exposed.
+  - Workaround in the harness only: `DittoLogger.isEnabled = false` after
+    `Ditto.init()`; with it every probe passes on all three lines.
+    `logging_test.dart` turns logging back on inside its single test.
+- **The expiration handler can run after `close()`, and `login()` then throws**
+  (5.0.4, `v50/auth_test.dart`, first run). The handler set with
+  `setExpirationHandler` was delivered after the test closed Ditto; `ditto.auth.login`
+  inside it threw `DittoClosedException` (from `PrivateDittoPtrExtension.ptr`) as an
+  uncaught async error that failed the test. Overturns the CAP-04 lead "`login` never
+  throws": it reports login failures in `AuthResponse.exception`, but a closed
+  instance throws. The published handler now returns early when `ditto.isClosed`.
+  Seen on 5.0.4 only; 5.1.0 and 5.2.0 ran only the guarded version.
 
 ## Manual records
