@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- snippet:start flutter-android-manifest -->
-    <!-- Debug and profile builds get INTERNET from their own manifests; release builds need it here. -->
+    <!-- The ditto_live plugin manifest already declares INTERNET, so every merged
+         manifest (debug and release) has it; declaring it here keeps it explicit. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- snippet:end flutter-android-manifest -->
     <application

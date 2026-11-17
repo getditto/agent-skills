@@ -37,8 +37,22 @@ target 'Runner' do
   end
 end
 
+# snippet:start flutter-podfile-ios-simulator-arch
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+  # ditto_live 5.1.0+: DittoCore ships an arm64-only iOS Simulator slice.
+  # Flutter's Generated.xcconfig resets EXCLUDED_ARCHS[sdk=iphonesimulator*]
+  # to "i386", so exclude x86_64 on the Runner targets themselves
+  # (target-level build settings win over the xcconfig).
+  installer.aggregate_targets.each do |aggregate|
+    aggregate.user_project.native_targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 x86_64'
+      end
+    end
+    aggregate.user_project.save
+  end
 end
+# snippet:end flutter-podfile-ios-simulator-arch
