@@ -153,7 +153,9 @@ def pub_check(lockfile, cutoff):
 
     def one(name, version, sha256):
         data = fetch_json(f"https://pub.dev/api/packages/{urllib.parse.quote(name, safe='')}/versions/{version}")
-        if sha256 != data.get("archive_sha256"):
+        if not sha256 or not data.get("archive_sha256"):
+            raise ValueError(f"pub {name}@{version}: missing sha256 in lockfile or archive_sha256 from pub.dev")
+        if sha256 != data["archive_sha256"]:
             raise ValueError(f"pub {name}@{version}: lockfile sha256 differs from pub.dev archive_sha256")
         require_mature(f"pub {name}@{version}", timestamp(data["published"]), cutoff)
 
@@ -176,6 +178,13 @@ def flutter_check(versions_json, cutoff):
     if release is None:
         raise ValueError(f"Flutter {version}: no stable release in releases_macos.json")
     require_mature(f"Flutter {version}", timestamp(release["release_date"]), cutoff)
+
+
+def pub_lockfiles(root):
+    """Committed pubspec.lock files under tests/flutter-sdk; untracked files do not count."""
+    files = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
+    return sorted(root / name for name in files
+                  if name.startswith("tests/flutter-sdk/") and name.endswith("/pubspec.lock"))
 
 
 def collect(root, cutoff):
@@ -233,8 +242,7 @@ def main():
             if not module["group"] or module["version"] == "unspecified":
                 raise ValueError(f"{inventory}: contains project IDs; regenerate with dependency-inventory.gradle")
             maven.add((module["group"], module["name"], module["version"]))
-    pub_locks = sorted(ROOT.glob("tests/flutter-sdk/**/pubspec.lock"))
-    pub_locks = sorted(ROOT.glob("tests/flutter-sdk/**/pubspec.lock"))
+    pub_locks = pub_lockfiles(ROOT)
     failures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         checks = [pool.submit(npm_check, name, versions, cutoff) for name, versions in npm.items()]

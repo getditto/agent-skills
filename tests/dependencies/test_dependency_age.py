@@ -147,6 +147,19 @@ class DependencyAgeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unsupported source"):
                     AGE.pub_check(lock, self.cutoff)
 
+    def test_pub_missing_sha256_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, self.LOCK.replace('      sha256: "abc123"\n', ""))
+            with patch.object(AGE, "fetch_json", return_value={"published": "2026-10-01T00:00:00Z"}):
+                with self.assertRaisesRegex(ValueError, "missing sha256"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_untracked_pub_lockfile_is_ignored(self):
+        listed = b"tests/flutter-sdk/app/pubspec.lock\0tests/flutter-sdk/app/pubspec.yaml\0other/pubspec.lock\0"
+        with patch.object(AGE.subprocess, "check_output", return_value=listed):
+            found = AGE.pub_lockfiles(Path("/repo"))
+        self.assertEqual(found, [Path("/repo/tests/flutter-sdk/app/pubspec.lock")])
+
     def test_flutter_pin_too_new_flagged(self):
         releases = {"releases": [
             {"version": "3.50.0", "channel": "beta", "release_date": "2026-10-01T00:00:00Z"},
