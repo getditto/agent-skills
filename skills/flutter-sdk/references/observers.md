@@ -138,20 +138,38 @@ class CarsFeed {
 ```dart
 /// 5.1.0+: hands each result to [render] and asks for the next one only
 /// when [render] has finished. Changes made meanwhile arrive together in
-/// the next result. Cancel the returned observer while Ditto is open.
-// ignore: experimental_member_use
-StoreObserverV2 observeCarsPaced(
-  Ditto ditto,
-  Future<void> Function(QueryResult result) render,
-) {
+/// the next result. [cancel] stops observing; call it while Ditto is open.
+class PacedCarsFeed {
+  PacedCarsFeed(Ditto ditto, this._render)
+    // No onChange: with one, every result is also buffered in the unlistened
+    // `changes` stream (5.1.0, 5.2.0). This class holds the one listener.
+    // ignore: experimental_member_use
+    : _observer = ditto.store.registerObserverWithSignalNext(
+        'SELECT * FROM cars',
+      ) {
+    _changes = _observer.changes.listen(
+      (result) => unawaited(_renderThenSignal(result)),
+    );
+  }
+
+  final Future<void> Function(QueryResult result) _render;
   // ignore: experimental_member_use
-  return ditto.store.registerObserverWithSignalNext(
-    'SELECT * FROM cars',
-    onChange: (result, signalNext) {
+  final StoreObserverV2 _observer;
+  late final StreamSubscription<QueryResult> _changes;
+
+  Future<void> _renderThenSignal(QueryResult result) async {
+    try {
+      await _render(result);
+    } catch (error, stackTrace) {
+      log('render failed', name: 'cars', error: error, stackTrace: stackTrace);
+    } finally {
       // Nothing more is delivered until signalNext() is called.
-      unawaited(render(result).whenComplete(signalNext));
-    },
-  );
+      if (!_observer.isCancelled) _observer.signalNext();
+    }
+  }
+
+  /// Cancels the listener, and with it the V2 observer.
+  Future<void> cancel() => _changes.cancel();
 }
 ```
 <!-- /snippet -->

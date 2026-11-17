@@ -194,8 +194,8 @@ default logging.
 | Line | Directories | Outcome |
 |---|---|---|
 | 5.0.4 | `init_once` (1 test), `v50` (26) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.1.0 | `init_once` (1), `v50` (26), `v51` (5) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.2.0 | `init_once` (1), `v50` (26), `v51` (5), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.1.0 | `init_once` (1), `v50` (26), `v51` (7) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.2.0 | `init_once` (1), `v50` (26), `v51` (7), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
 | all | iOS, Android, Chrome, Windows, Linux | not run |
 
 Recorded outcomes. Each is asserted exactly, so a change breaks the probe; where a
@@ -215,9 +215,9 @@ harness (see Finding 1):
   `DittoException(Error logging in. Status code 1. Client info: null)`, compared per
   line; the same string on all three lines.
 - `signalNext gates delivery and coalesces` (5.1.0, 5.2.0): callbacks deliver item
-  counts `[0]`, nothing more for 2 s after three inserts while the first callback's
-  work is unfinished, then exactly `[0, 3]` once it finishes and calls `signalNext()`:
-  the three writes arrive in one callback.
+  counts `[0]`, nothing more for 2 s after three inserts while the first render is
+  unfinished, then exactly `[0, 3]` once that render ends (by throwing; the feed logs
+  it and still calls `signalNext()`): the three writes arrive in one callback.
 - `observeTransportConditions emits within 5 s` (5.1.0, 5.2.0): with every
   peer-to-peer transport off and `sync.start()`, no event arrives within 5 s, on the
   callback or the stream.
@@ -243,15 +243,21 @@ harness (see Finding 1):
 
 ### SDK defects the fixture records, 2026-11-17
 
-- **A V1 observer registered with `onChange` buffers every result in its unlistened
-  `changes` stream** (5.0.4, 5.1.0, 5.2.0; macOS debug, logging disabled in the harness).
-  `StoreObserver` adds each `QueryResult` to a single-subscription controller as well
-  as passing it to `onChange`, and nothing listens, so the stream keeps them all.
-  Probe `SDK defect: v1 onChange observer buffers every result for a late listener`:
-  6 callbacks (the initial result and five inserts), then a late `changes.listen`
-  receives exactly 6 replayed results. The published observer, Repository and minimal
-  app patterns therefore register without `onChange`, hold the one `changes`
-  subscription, and cancel it and then the observer while Ditto is open.
+- **V1 and V2 observers registered with `onChange` buffer every result in their
+  unlistened `changes` stream** (V1: 5.0.4, 5.1.0, 5.2.0; V2 `registerObserverV2` and
+  `registerObserverWithSignalNext`: 5.1.0, 5.2.0; macOS debug, logging disabled in the
+  harness). `StoreObserver` and `StoreObserverV2` add each `QueryResult` to a
+  single-subscription controller as well as passing it to `onChange`, and nothing
+  listens, so the stream keeps them all; a V2 auto-mode stream with no listener is not
+  paused, so delivery never slows. Probes `SDK defect: v1 onChange observer buffers
+  every result for a late listener` (v50) and `SDK defect: registerObserverV2 …` /
+  `SDK defect: registerObserverWithSignalNext …` (v51, the signal-next `onChange`
+  signals each time): 6 callbacks (the initial result and five inserts), then a late
+  `changes.listen` receives exactly 6 replayed results. The published observer,
+  Repository, signal-next and minimal app patterns therefore register without
+  `onChange`, hold the one `changes` subscription (the signal-next feed calls
+  `observer.signalNext()` after each render, also when it throws), and cancel it while
+  Ditto is open.
 - **5.0.x `setAllPeerToPeerEnabled(false)` / `withAllPeerToPeerEnabled(false)` leave
   AWDL and Wi-Fi Aware on** (source: `lib/src/transport_config.dart` in 5.0.4 assigns
   `true` to both instead of the argument; 5.1.0 assigns the argument). Not executed

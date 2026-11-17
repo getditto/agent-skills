@@ -1,5 +1,6 @@
 // registerObserverV2 and registerObserverWithSignalNext: 5.1.0+, @experimental.
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,20 +10,38 @@ import '../harness.dart';
 // snippet:start flutter-observers-4
 /// 5.1.0+: hands each result to [render] and asks for the next one only
 /// when [render] has finished. Changes made meanwhile arrive together in
-/// the next result. Cancel the returned observer while Ditto is open.
-// ignore: experimental_member_use
-StoreObserverV2 observeCarsPaced(
-  Ditto ditto,
-  Future<void> Function(QueryResult result) render,
-) {
+/// the next result. [cancel] stops observing; call it while Ditto is open.
+class PacedCarsFeed {
+  PacedCarsFeed(Ditto ditto, this._render)
+    // No onChange: with one, every result is also buffered in the unlistened
+    // `changes` stream (5.1.0, 5.2.0). This class holds the one listener.
+    // ignore: experimental_member_use
+    : _observer = ditto.store.registerObserverWithSignalNext(
+        'SELECT * FROM cars',
+      ) {
+    _changes = _observer.changes.listen(
+      (result) => unawaited(_renderThenSignal(result)),
+    );
+  }
+
+  final Future<void> Function(QueryResult result) _render;
   // ignore: experimental_member_use
-  return ditto.store.registerObserverWithSignalNext(
-    'SELECT * FROM cars',
-    onChange: (result, signalNext) {
+  final StoreObserverV2 _observer;
+  late final StreamSubscription<QueryResult> _changes;
+
+  Future<void> _renderThenSignal(QueryResult result) async {
+    try {
+      await _render(result);
+    } catch (error, stackTrace) {
+      log('render failed', name: 'cars', error: error, stackTrace: stackTrace);
+    } finally {
       // Nothing more is delivered until signalNext() is called.
-      unawaited(render(result).whenComplete(signalNext));
-    },
-  );
+      if (!_observer.isCancelled) _observer.signalNext();
+    }
+  }
+
+  /// Cancels the listener, and with it the V2 observer.
+  Future<void> cancel() => _changes.cancel();
 }
 // snippet:end flutter-observers-4
 
@@ -63,10 +82,16 @@ void main() {
     await withDitto(t, (ditto) async {
       final counts = <int>[];
       final release = Completer<void>();
-      final observer = observeCarsPaced(ditto, (result) async {
+      var renders = 0;
+      final feed = PacedCarsFeed(ditto, (result) async {
         counts.add(result.items.length);
-        // The first render waits until the test releases it.
-        await release.future;
+        renders++;
+        // The first render waits until the test releases it, then fails:
+        // the feed must still ask for the next result.
+        if (renders == 1) {
+          await release.future;
+          throw StateError('render failed');
+        }
       });
       try {
         await waitUntil(() => counts.isNotEmpty, reason: 'initial callback');
@@ -90,7 +115,7 @@ void main() {
         );
         expect(counts, [0, 3]);
       } finally {
-        observer.cancel();
+        await feed.cancel();
       }
     });
   });
@@ -106,4 +131,60 @@ void main() {
       expect(feed.isActive, isFalse);
     });
   });
+
+  // Recorded SDK defect (5.1.0, 5.2.0): like V1, StoreObserverV2 adds every
+  // result to its single-subscription `changes` controller even when only
+  // onChange consumes it, so a late listener receives them all. In auto mode
+  // (registerObserverV2) the unlistened stream is not paused, so delivery
+  // continues; with signal-next, onChange signals each time here.
+  for (final mode in ['registerObserverV2', 'registerObserverWithSignalNext']) {
+    testWidgets(
+      'SDK defect: $mode onChange observer buffers every result for a late '
+      'listener',
+      (t) async {
+        await withDitto(t, (ditto) async {
+          var callbacks = 0;
+          // ignore: experimental_member_use
+          final StoreObserverV2 observer = mode == 'registerObserverV2'
+              // ignore: experimental_member_use
+              ? ditto.store.registerObserverV2(
+                  'SELECT * FROM cars',
+                  onChange: (_) => callbacks++,
+                )
+              // ignore: experimental_member_use
+              : ditto.store.registerObserverWithSignalNext(
+                  'SELECT * FROM cars',
+                  onChange: (_, signalNext) {
+                    callbacks++;
+                    signalNext();
+                  },
+                );
+          try {
+            await waitUntil(() => callbacks == 1, reason: 'initial callback');
+            for (var i = 0; i < 5; i++) {
+              await _insertCar(ditto, 'car-$i');
+              await waitUntil(() => callbacks == i + 2, reason: 'insert $i');
+            }
+            expect(callbacks, 6);
+
+            var replayed = 0;
+            final late = observer.changes.listen((_) => replayed++);
+            try {
+              await waitUntil(() => replayed >= 6, reason: 'replay');
+              await holdsFor(
+                () => replayed == 6,
+                const Duration(seconds: 1),
+                reason: 'exactly the six buffered results',
+              );
+              expect(replayed, callbacks);
+            } finally {
+              await late.cancel();
+            }
+          } finally {
+            observer.cancel();
+          }
+        });
+      },
+    );
+  }
 }

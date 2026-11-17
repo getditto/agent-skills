@@ -22,8 +22,9 @@ import 'package:flutter/foundation.dart';
 /// closes everything. Returns the transcript; [onLine] sees each line as it
 /// is produced.
 ///
-/// With no [persistenceDirectory], Ditto uses its default directory, so the
-/// data survives restarts (web: an in-memory store).
+/// With no [persistenceDirectory], Ditto uses the SDK's default persistence
+/// directory, which is not deleted between launches (web: an in-memory
+/// store).
 Future<List<String>> runMinimalApp({
   required String license,
   String? persistenceDirectory,
