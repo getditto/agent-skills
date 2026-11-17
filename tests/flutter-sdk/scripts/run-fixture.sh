@@ -7,26 +7,37 @@
 #   tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 integration_test/minimal_app_test.dart
 #
 # <line> is a key of "lines" in tests/flutter-sdk/versions.json. use-version.py copies
-# the fixture to $TMPDIR/flutter-fixture-<line>/ and pins ditto_live there; the
-# committed fixture is never modified.
+# the fixture into a private (mode 0700) per-user directory under the system temp
+# directory and pins ditto_live there; the committed fixture is never modified.
 #
 # Native devices run `flutter test <target> -d <device>`. `chrome` runs
 # `flutter drive --driver=test_driver/integration_test.dart --target=<target> -d chrome
 # --headless`, which needs a chromedriver matching the local Chrome listening on
 # port 4444. If nothing listens there, this script starts $CHROMEDRIVER (default:
-# `chromedriver` on PATH) and stops it on exit.
+# `chromedriver` on PATH) and stops it on exit. Other web devices (edge, web-server)
+# are rejected.
 #
 # Reads DITTO_OFFLINE_LICENSE from the environment, else from the gitignored repo-root
-# .env, and passes it as --dart-define=DITTO_LICENSE, with DITTO_VERSION (the pin) and
-# DITTO_PLATFORM (the expected Ditto.currentPlatform.name, from <device>), and
-# PROBE_DEFAULT_LOGGING when that variable is set. Web builds embed defines, so
-# never publish the web build output. Output is copied to
-# tests/flutter-sdk/run-<device>-<line>.log (gitignored).
+# .env. The defines (DITTO_LICENSE, DITTO_VERSION = the pin, DITTO_PLATFORM = the
+# expected Ditto.currentPlatform.name, and PROBE_DEFAULT_LOGGING when that variable is
+# set) go to Flutter through --dart-define-from-file: a mode-600 temporary file that
+# is deleted on exit, so the license never appears in a process argument list.
+# Compiled builds embed every define, so never cache or upload the fixture copy or its
+# build/ directory.
+#
+# Each flutter invocation is bounded by FIXTURE_TIMEOUT seconds (default 1800) when a
+# `timeout` command is available. Each target's output is copied to
+# tests/flutter-sdk/run-<fixture>-<device>-<line>-<target>.log (gitignored).
+#
+# Environment: FLUTTER (a flutter executable; default `fvm flutter`), PYTHON (default
+# python3), CHROMEDRIVER, DITTO_PLATFORM (required for phone and simulator device IDs),
+# FIXTURE_TIMEOUT, FIXTURE_LOG_DIR (default tests/flutter-sdk), PROBE_DEFAULT_LOGGING.
 #
 set -euo pipefail
 
 HARNESS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$HARNESS/../.." && pwd)"
+PYTHON="${PYTHON:-python3}"
 
 if [[ $# -lt 4 ]]; then
   sed -n '3,7p' "${BASH_SOURCE[0]}" >&2
@@ -40,8 +51,10 @@ shift 3
 if [[ -f "$REPO_ROOT/.env" ]]; then
   # Same parser as tests/swift-sdk/scripts/run.sh: environment variables already set
   # take precedence; split on the FIRST "=" only (base64 tokens end in "="); strip
-  # surrounding quotes and leading whitespace. Keep values unquoted and uncommented.
+  # surrounding quotes, leading whitespace and a Windows line ending. Keep values
+  # unquoted and uncommented.
   while read -r line; do
+    line="${line%$'\r'}"
     key="${line%%=*}"
     value="${line#*=}"
     [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
@@ -61,9 +74,30 @@ if [[ -z "${DITTO_OFFLINE_LICENSE:-}" ]]; then
   exit 1
 fi
 
-PIN="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["lines"][sys.argv[2]])' \
-  "$HARNESS/versions.json" "$LINE")"
-LOG="$HARNESS/run-$DEVICE-$LINE.log"
+# The `Ditto.currentPlatform.name` the run must report (SupportedPlatform values in
+# ditto_live: android, ios, linux, macos, web, windows). Phone and simulator device
+# IDs carry no platform, so set DITTO_PLATFORM for those.
+if [[ "$DEVICE" == "edge" || "$DEVICE" == "web-server" ]]; then
+  echo "Device '$DEVICE' is not supported; web runs use chrome (flutter drive)." >&2
+  exit 2
+fi
+if [[ -z "${DITTO_PLATFORM:-}" ]]; then
+  case "$DEVICE" in
+    macos | linux | windows) DITTO_PLATFORM="$DEVICE" ;;
+    chrome) DITTO_PLATFORM=web ;;
+    emulator-*) DITTO_PLATFORM=android ;;
+    *)
+      echo "Cannot tell the platform of device '$DEVICE'; set DITTO_PLATFORM (android or ios)." >&2
+      exit 2
+      ;;
+  esac
+fi
+export DITTO_PLATFORM
+
+# `tr -d '\r'`: Python on Windows prints CRLF, which Git Bash keeps in $(...).
+PIN="$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["lines"][sys.argv[2]])' \
+  "$HARNESS/versions.json" "$LINE" | tr -d '\r')"
+export DITTO_VERSION="$PIN"
 
 if [[ -n "${FLUTTER:-}" ]]; then
   FLUTTER_CMD=("$FLUTTER")
@@ -71,15 +105,44 @@ else
   FLUTTER_CMD=(fvm flutter)
 fi
 
-WORKDIR="$(python3 "$HARNESS/scripts/use-version.py" "$FIXTURE" "$LINE" | tail -1)"
+WORKDIR="$("$PYTHON" "$HARNESS/scripts/use-version.py" "$FIXTURE" "$LINE" | tail -1 | tr -d '\r')"
 
 CHROMEDRIVER_PID=""
+DEFINES_FILE=""
 cleanup() {
+  if [[ -n "$DEFINES_FILE" ]]; then
+    rm -f "$DEFINES_FILE"
+  fi
   if [[ -n "$CHROMEDRIVER_PID" ]]; then
     kill "$CHROMEDRIVER_PID" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
+
+# The defines file: created mode 600 (umask 077) and written by Python from the
+# environment, so the license is never a command-line argument.
+DEFINES_FILE="$(umask 077 && mktemp "${TMPDIR:-/tmp}/ditto-defines.XXXXXX")"
+"$PYTHON" - "$DEFINES_FILE" <<'EOF'
+import json, os, sys
+defines = {name: os.environ[name] for name in ("DITTO_VERSION", "DITTO_PLATFORM")}
+defines["DITTO_LICENSE"] = os.environ["DITTO_OFFLINE_LICENSE"]
+# PROBE_DEFAULT_LOGGING=true keeps Ditto logging at its default in the probe harness
+# (integration_test/probes/harness.dart), which otherwise turns it off.
+if os.environ.get("PROBE_DEFAULT_LOGGING"):
+    defines["PROBE_DEFAULT_LOGGING"] = os.environ["PROBE_DEFAULT_LOGGING"]
+with open(sys.argv[1], "w", encoding="utf-8") as output:
+    json.dump(defines, output)
+EOF
+DEFINES=(--dart-define-from-file="$DEFINES_FILE")
+PUBLIC_DEFINES="DITTO_VERSION=$PIN DITTO_PLATFORM=$DITTO_PLATFORM PROBE_DEFAULT_LOGGING=${PROBE_DEFAULT_LOGGING:-unset}"
+
+FIXTURE_TIMEOUT="${FIXTURE_TIMEOUT:-1800}"
+BOUND=()
+if command -v timeout >/dev/null 2>&1; then
+  BOUND=(timeout -k 30 "$FIXTURE_TIMEOUT")
+else
+  echo "warning: no \`timeout\` command; flutter runs are not time-bounded" >&2
+fi
 
 if [[ "$DEVICE" == "chrome" ]] && ! nc -z 127.0.0.1 4444 2>/dev/null; then
   "${CHROMEDRIVER:-chromedriver}" --port=4444 >/dev/null 2>&1 &
@@ -90,43 +153,30 @@ if [[ "$DEVICE" == "chrome" ]] && ! nc -z 127.0.0.1 4444 2>/dev/null; then
   done
 fi
 
-# The `Ditto.currentPlatform.name` the run must report (SupportedPlatform values in
-# ditto_live: android, ios, linux, macos, web, windows). Phone and simulator device
-# IDs carry no platform, so set DITTO_PLATFORM for those.
-if [[ -z "${DITTO_PLATFORM:-}" ]]; then
-  case "$DEVICE" in
-    macos | linux | windows) DITTO_PLATFORM="$DEVICE" ;;
-    chrome | edge | web-server) DITTO_PLATFORM=web ;;
-    emulator-*) DITTO_PLATFORM=android ;;
-    *)
-      echo "Cannot tell the platform of device '$DEVICE'; set DITTO_PLATFORM (android or ios)." >&2
-      exit 2
-      ;;
-  esac
-fi
-
-DEFINES=(--dart-define=DITTO_LICENSE="$DITTO_OFFLINE_LICENSE" --dart-define=DITTO_VERSION="$PIN"
-  --dart-define=DITTO_PLATFORM="$DITTO_PLATFORM")
-# PROBE_DEFAULT_LOGGING=true keeps Ditto logging at its default in the probe harness
-# (integration_test/probes/harness.dart), which otherwise turns it off.
-if [[ -n "${PROBE_DEFAULT_LOGGING:-}" ]]; then
-  DEFINES+=(--dart-define=PROBE_DEFAULT_LOGGING="$PROBE_DEFAULT_LOGGING")
-fi
+FLUTTER_VERSION="$(cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p | tr -d '\r')"
+SAFE_DEVICE="$(printf '%s' "$DEVICE" | tr -c 'A-Za-z0-9._-' '_')"
 
 status=0
-{
-  echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-  (cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | head -1)
-  for target in "$@"; do
+for target in "$@"; do
+  slug="$(printf '%s' "${target#integration_test/}" | sed 's/\.dart$//' | tr -c 'A-Za-z0-9._-' '_')"
+  log="${FIXTURE_LOG_DIR:-$HARNESS}/run-$FIXTURE-$SAFE_DEVICE-$LINE-$slug.log"
+  target_status=0
+  {
+    echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+    echo "== $FLUTTER_VERSION"
+    echo "== defines: $PUBLIC_DEFINES DITTO_LICENSE=<redacted>"
     echo "== $target"
     if [[ "$DEVICE" == "chrome" ]]; then
-      (cd "$WORKDIR" && "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
-        --target="$target" -d chrome --headless "${DEFINES[@]}") || status=$?
+      (cd "$WORKDIR" && "${BOUND[@]}" "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
+        --target="$target" -d chrome --headless "${DEFINES[@]}")
     else
-      (cd "$WORKDIR" && "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" "${DEFINES[@]}") || status=$?
+      (cd "$WORKDIR" && "${BOUND[@]}" "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" "${DEFINES[@]}")
     fi
-  done
-  echo "== exit $status"
-  exit "$status"
-} 2>&1 | tee "$LOG"
-exit "${PIPESTATUS[0]}"
+  } 2>&1 | tee "$log" || target_status=$?
+  echo "== $target: exit $target_status" | tee -a "$log"
+  if [[ "$target_status" -ne 0 ]]; then
+    status="$target_status"
+  fi
+done
+echo "== exit $status"
+exit "$status"

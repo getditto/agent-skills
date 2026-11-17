@@ -138,8 +138,12 @@ def parse_pubspec_lock(path):
     return packages
 
 
-def pub_check(lockfile, cutoff):
-    """Check every hosted package in a pubspec.lock: age and archive checksum."""
+def pub_check(lockfile, cutoff, required=("ditto_live",)):
+    """Check every hosted package in a pubspec.lock: age and archive checksum.
+
+    A lockfile with no hosted packages, or without each `required` package, fails: an
+    empty or truncated lock would otherwise pass without checking anything.
+    """
     jobs, errors = [], []
     for name, package in parse_pubspec_lock(lockfile).items():
         source = package.get("source")
@@ -150,6 +154,12 @@ def pub_check(lockfile, cutoff):
             errors.append(f"{lockfile}: pub {name}: unsupported source {source} {description.get('url', '')}".rstrip())
             continue
         jobs.append((name, package["version"], description.get("sha256")))
+    if not jobs and not errors:
+        errors.append(f"{lockfile}: no hosted pub packages; is the lockfile truncated?")
+    hosted = {job[0] for job in jobs}
+    for name in required:
+        if name not in hosted:
+            errors.append(f"{lockfile}: pub {name} is missing; every Flutter fixture lock must pin it")
 
     def one(name, version, sha256):
         data = fetch_json(f"https://pub.dev/api/packages/{urllib.parse.quote(name, safe='')}/versions/{version}")

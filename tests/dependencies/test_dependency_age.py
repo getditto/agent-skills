@@ -107,6 +107,14 @@ class DependencyAgeTests(unittest.TestCase):
       url: "https://pub.dev"
     source: hosted
     version: "6.1.5"
+  ditto_live:
+    dependency: "direct main"
+    description:
+      name: ditto_live
+      sha256: "def456"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -116,7 +124,15 @@ class DependencyAgeTests(unittest.TestCase):
 
     def pub_stub(self, published="2026-10-01T00:00:00Z", sha="abc123"):
         url = "https://pub.dev/api/packages/provider/versions/6.1.5"
-        return lambda requested: {"published": published, "archive_sha256": sha} if requested == url else self.fail(requested)
+        ditto = "https://pub.dev/api/packages/ditto_live/versions/5.2.0"
+
+        def respond(requested):
+            if requested == url:
+                return {"published": published, "archive_sha256": sha}
+            if requested == ditto:
+                return {"published": "2026-10-01T00:00:00Z", "archive_sha256": "def456"}
+            return self.fail(requested)
+        return respond
 
     def write_lock(self, directory, text=None):
         path = Path(directory) / "pubspec.lock"
@@ -145,6 +161,22 @@ class DependencyAgeTests(unittest.TestCase):
             lock = self.write_lock(directory, self.LOCK.replace("https://pub.dev", "https://pub.example.com"))
             with patch.object(AGE, "fetch_json", side_effect=AssertionError("no network for bad source")):
                 with self.assertRaisesRegex(ValueError, "unsupported source"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_pub_lock_without_hosted_packages_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, "packages:\n  flutter:\n    dependency: \"direct main\"\n"
+                                              "    description: flutter\n    source: sdk\n    version: \"0.0.0\"\n")
+            with patch.object(AGE, "fetch_json", side_effect=AssertionError("nothing to fetch")):
+                with self.assertRaisesRegex(ValueError, "no hosted pub packages"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_pub_lock_without_ditto_live_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            text = self.LOCK.split("  ditto_live:")[0] + "  flutter:" + self.LOCK.split("  flutter:")[1]
+            lock = self.write_lock(directory, text)
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub()):
+                with self.assertRaisesRegex(ValueError, "ditto_live is missing"):
                     AGE.pub_check(lock, self.cutoff)
 
     def test_pub_missing_sha256_flagged(self):

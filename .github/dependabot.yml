@@ -46,6 +46,7 @@ updates:
   - package-ecosystem: "pub"
     directories:
       - "/tests/flutter-sdk/minimal_app"
+      - "/tests/flutter-sdk/snippet_check"
       - "/tests/flutter-sdk/v4_app"
     # tests/flutter-sdk/versions.json owns the ditto_live pin per SDK line.
     ignore:

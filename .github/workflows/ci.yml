@@ -34,6 +34,10 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Check portable installation archives
         run: python -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
+      - name: Check Flutter installation archives
+        run: python tests/flutter-sdk/scripts/test_packaging.py -v
+      - name: Check Flutter fixture scripts
+        run: python tests/flutter-sdk/scripts/test_fixture_scripts.py -v
 
   validate:
     name: Validate plugins
@@ -98,6 +102,11 @@ jobs:
 
       - name: Check the Dart fence analyzer
         run: python3 tests/flutter-sdk/scripts/test_analyze_skill_snippets.py
+
+      - name: Check Flutter packaging and fixture scripts
+        run: |
+          python3 tests/flutter-sdk/scripts/test_packaging.py
+          python3 tests/flutter-sdk/scripts/test_fixture_scripts.py
 
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
@@ -291,7 +300,9 @@ jobs:
       # committed Apple Developer Team ID identifies a real account.
       - name: No Apple Developer Team IDs in Flutter fixtures
         run: |
-          if git grep -nE 'DEVELOPMENT_TEAM = [A-Z0-9]{10}' -- tests/flutter-sdk/; then
+          # DEVELOPMENT_TEAM / DevelopmentTeam, any case, quoted or not, with or
+          # without an [sdk=...] qualifier.
+          if git grep -niE '(development_team|developmentteam)(\[[^]]*\])?"?[[:space:]]*=[[:space:]]*"?[a-z0-9]{10}([^a-z0-9]|$)' -- tests/flutter-sdk/; then
             echo "ERROR: remove the DEVELOPMENT_TEAM lines above" >&2
             exit 1
           fi
