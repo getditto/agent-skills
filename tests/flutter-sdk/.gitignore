@@ -1,0 +1,6 @@
+build/
+.dart_tool/
+Pods/
+ephemeral/
+*.log
+.fvm/

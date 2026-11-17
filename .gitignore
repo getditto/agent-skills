@@ -14,3 +14,7 @@ __pycache__/
 
 # Materialized plugin packages and installation archives.
 dist/
+
+# Local planning notes for in-progress work. They cite private repositories and
+# internal reasoning, and this repo is destined to be public.
+docs/superpowers/

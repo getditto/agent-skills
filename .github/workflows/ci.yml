@@ -118,6 +118,19 @@ jobs:
             ${{ runner.temp }}/ditto-kotlin-packages/*.zip
             ${{ runner.temp }}/ditto-kotlin-packages/SHA256SUMS
 
+      - name: Check Flutter host metadata and build standalone packages
+        run: |
+          python3 scripts/package-sdk-plugin.py --plugin ditto-flutter --check
+          python3 scripts/package-sdk-plugin.py --plugin ditto-flutter --output "$RUNNER_TEMP/ditto-flutter-packages"
+
+      - name: Upload Flutter installation packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ditto-flutter-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-flutter-packages/*.zip
+            ${{ runner.temp }}/ditto-flutter-packages/SHA256SUMS
+
       - name: Check plugin references in marketplace
         run: |
           echo "Checking plugin sources exist..."

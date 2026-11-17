@@ -45,6 +45,18 @@ PLUGINS = {
         "install_doc": "docs/install-kotlin.md",
         "extra_docs": [],
     },
+    "ditto-flutter": {
+        "skill": "flutter-sdk",
+        "display_name": "Ditto Flutter",
+        "short_description": "Build and troubleshoot Ditto Flutter apps on mobile, desktop and web.",
+        "homepage": "https://docs.ditto.live/sdk/latest/install-guides/flutter",
+        "default_prompt": [
+            "Add Ditto to this Flutter app with an observer feeding a widget.",
+            "Generate a runnable Flutter project that syncs a collection with Ditto.",
+            "Diagnose why my Flutter release build cannot sync."],
+        "install_doc": "docs/install-flutter.md",
+        "extra_docs": [],
+    },
 }
 
 NAME = "ditto-swift"

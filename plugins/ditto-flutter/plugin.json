@@ -1,0 +1,43 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ditto-flutter",
+  "version": "1.0.0",
+  "description": "Ditto Flutter SDK assistance — iOS, Android, macOS, Windows, Linux and web apps: pubspec setup, connecting, authentication, transports, subscriptions, DQL execution, observers with streams and widgets, attachments, presence, platform permissions and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "database",
+    "dart",
+    "ditto",
+    "dql",
+    "flutter",
+    "multi-version",
+    "offline-first",
+    "sync"
+  ],
+  "repository": "https://github.com/getditto/agent-skills",
+  "homepage": "https://docs.ditto.live/sdk/latest/install-guides/flutter",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Ditto Flutter",
+        "shortDescription": "Build and troubleshoot Ditto Flutter apps on mobile, desktop and web.",
+        "developerName": "Ditto",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://ditto.com",
+        "defaultPrompt": [
+          "Add Ditto to this Flutter app with an observer feeding a widget.",
+          "Generate a runnable Flutter project that syncs a collection with Ditto.",
+          "Diagnose why my Flutter release build cannot sync."
+        ]
+      }
+    }
+  }
+}

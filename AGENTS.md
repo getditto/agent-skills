@@ -40,8 +40,10 @@ tests/                         # Per-skill test harnesses
 ├── swift-sdk/                 # swift-sdk: SwiftPM fixture run against 3 SDK lines
 │   ├── Sources/  Tests/  scripts/
 │   └── README.md
-└── kotlin-sdk/                # kotlin-sdk: Gradle fixtures — JVM (5.x) and Android (4.14.x)
-    ├── minimal-app/  android-app/
+├── kotlin-sdk/                # kotlin-sdk: Gradle fixtures — JVM (5.x) and Android (4.14.x)
+│   ├── minimal-app/  android-app/
+│   └── README.md
+└── flutter-sdk/               # flutter-sdk: pins (versions.json, .fvmrc) and Flutter fixtures
     └── README.md
 
 plugins/                       # Claude Code plugin wrappers (thin)
@@ -64,9 +66,12 @@ plugins/                       # Claude Code plugin wrappers (thin)
 ├── ditto-swift/
 │   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
 │   └── skills/swift-sdk -> ../../../skills/swift-sdk
-└── ditto-kotlin/
+├── ditto-kotlin/
+│   ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
+│   └── skills/kotlin-sdk -> ../../../skills/kotlin-sdk
+└── ditto-flutter/
     ├── .claude-plugin/plugin.json   (+ generated Codex/Cursor/Gemini/portable manifests)
-    └── skills/kotlin-sdk -> ../../../skills/kotlin-sdk
+    └── skills/{flutter-sdk,native-app-config} -> ../../../skills/<name>
 
 .claude-plugin/marketplace.json  # Claude Code marketplace manifest
 .opencode/opencode.json          # opencode project config (skills.paths)
@@ -113,12 +118,12 @@ under `plugins/<plugin>/` containing `.claude-plugin/plugin.json` plus a real
 — if it ships agents — an `agents` symlink pointing at that plugin's namespaced
 subdirectory under `agents/`. Skill content is never duplicated in the wrapper.
 
-The SDK plugins (`ditto-swift`, `ditto-kotlin`) also have generated portable/Codex/Cursor
+The SDK plugins (`ditto-swift`, `ditto-kotlin`, `ditto-flutter`) also have generated portable/Codex/Cursor
 metadata and a Gemini extension manifest. Run
 `python3 scripts/package-sdk-plugin.py --plugin <name> --sync-manifests` after changing
 a plugin's canonical Claude manifest; `--check` is enforced in CI. Release packages materialize scoped symlinks into real
-files in ignored build outputs or CI artifacts. See `docs/install-swift.md` and `docs/install-kotlin.md`
-for all installation surfaces.
+files in ignored build outputs or CI artifacts. See `docs/install-swift.md`, `docs/install-kotlin.md` and
+`docs/install-flutter.md` for all installation surfaces.
 
 **Agents must be linked as a directory, not as individual files.** Claude Code
 follows a symlinked *directory* but not a symlinked *file*: an
