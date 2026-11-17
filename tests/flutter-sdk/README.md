@@ -30,9 +30,24 @@ dependency-age policy is that a pinned tool must be at least 72 hours old.
 | Flutter | 3.50.0 (Dart 3.14.0) | 2026-11-11 | Newest stable on the macOS release manifest that is at least 72 hours old |
 | `flutter_lints` | 6.0.0 | 2025-05-27 | Newest stable on pub.dev; needs Dart `^3.8.0`, which Dart 3.14.0 satisfies |
 
-Every `ditto_live` line publishes the constraint `flutter >=3.19.0`. Pre-release
-versions (`-rc`, `-dev`, `-experimental`, `-preview`) and ditto HEAD (5.3.0) are not
-documented.
+Every `ditto_live` line publishes the constraint `flutter >=3.19.0`, but the Dart SDK
+constraint each line also publishes sets a higher floor on 5.1 and 5.2. Flutter
+versions are mapped to their bundled Dart version from the Flutter macOS release
+manifest:
+
+| Line | Published `environment` | Lowest Flutter that satisfies both |
+|---|---|---|
+| 4.14.7 | `flutter: ">=3.19.0"`, `sdk: ">=3.3.0 <4.0.0"` | 3.19.0 (Dart 3.3.0) |
+| 5.0.4 | `flutter: ">=3.19.0"`, `sdk: '>=3.3.0 <4.0.0'` | 3.19.0 (Dart 3.3.0) |
+| 5.1.0 | `flutter: ">=3.19.0"`, `sdk: '>=3.5.4 <4.0.0'` | 3.24.4 (Dart 3.5.4) |
+| 5.2.0 | `flutter: ">=3.19.0"`, `sdk: '>=3.5.4 <4.0.0'` | 3.24.4 (Dart 3.5.4) |
+
+These floors come from the published pubspecs; only Flutter 3.50.0 was executed.
+Pre-release versions (`-rc`, `-dev`, `-experimental`, `-preview`) and ditto HEAD
+(5.3.0) are not documented.
+
+The fixture packages (`minimal_app`, `snippet_check`) declare `sdk: ^3.8.0`, the floor
+of the pinned `flutter_lints` 6.0.0.
 
 ## Local toolchain
 
@@ -57,13 +72,29 @@ fvm flutter doctor -v
 
 ## Running fixtures
 
-`scripts/run-fixture.sh <fixture> <device> <line> <target>...` copies the fixture to
-`$TMPDIR/flutter-fixture-<line>/` with `scripts/use-version.py`, pins `ditto_live` to
-that line from `versions.json`, and runs each target. The license comes from
-`DITTO_OFFLINE_LICENSE` (environment, else the repo-root `.env`) as
-`--dart-define=DITTO_LICENSE`. Output goes to `run-<device>-<line>.log` here
-(gitignored). The committed `minimal_app/pubspec.yaml` stays at the 5.2 pin;
-`use-version.py` refuses `4.14` for `minimal_app`.
+`scripts/run-fixture.sh <fixture> <device> <line> <target>...` copies the fixture with
+`scripts/use-version.py` to `flutter-fixture-<user>/<line>/<fixture>/` under the system
+temporary directory, pins `ditto_live` to that line from `versions.json`, and runs each
+target. The license comes from `DITTO_OFFLINE_LICENSE` (environment, else the
+repo-root `.env`). It reaches Flutter as `DITTO_LICENSE` through
+`--dart-define-from-file`, a mode-600 temporary file deleted when the script exits, so
+it is never a command-line argument. Each target's output goes to
+`run-<fixture>-<device>-<line>-<target>.log` here (gitignored); its header lists the
+non-secret defines (`DITTO_VERSION`, `DITTO_PLATFORM`, `PROBE_DEFAULT_LOGGING`). The
+committed `minimal_app/pubspec.yaml` stays at the 5.2 pin; `use-version.py` refuses
+`4.14` for `minimal_app`.
+
+**Never cache or upload the fixture copies or any `build/` directory.** Compiled
+builds embed every define, the license included. `use-version.py` creates the per-user
+directory mode 0700 and refuses one that is a symlink, owned by another user, or
+accessible to others.
+
+Time bounds: every probe file sets a 2-minute per-test timeout (`integration_test`
+otherwise has none), and `run-fixture.sh` wraps each `flutter` invocation in
+`timeout` (`FIXTURE_TIMEOUT`, default 1800 s) when the command exists. `PYTHON`
+(default `python3`) and `FLUTTER` (default `fvm flutter`) select the interpreters;
+Python output is stripped of `\r` for Git Bash on Windows. Windows and Linux runs of
+these scripts are untested.
 
 ```bash
 tests/flutter-sdk/scripts/run-fixture.sh minimal_app macos 5.2 integration_test/minimal_app_test.dart
@@ -72,7 +103,8 @@ tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 integration_test
 
 `chrome` runs `flutter drive -d chrome --headless`, which needs a chromedriver that
 matches the local Chrome on port 4444. If nothing listens there, the script starts
-`$CHROMEDRIVER` (default `chromedriver` on PATH). A user-local install, no sudo:
+`$CHROMEDRIVER` (default `chromedriver` on PATH). `edge` and `web-server` are refused.
+A user-local install, no sudo:
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version   # 157.0.8103.79
@@ -96,7 +128,8 @@ tests/flutter-sdk/scripts/run-probes.sh macos 5.2
 ```
 
 Every probe uses `probes/harness.dart` `withDitto`: a fresh temporary directory, the
-license, all peer-to-peer transports off, `close()` in `finally`. The harness also turns
+license, each peer-to-peer transport turned off one by one, `close()` in `finally`, and
+the directory deleted (retried for a few seconds, and also when `Ditto.open` throws). The harness also turns
 Ditto logging off unless `PROBE_DEFAULT_LOGGING=true` is set in the environment
 (passed as `--dart-define=PROBE_DEFAULT_LOGGING=true`); see Finding 1 in
 [Findings that changed a research lead](#findings-that-changed-a-research-lead).
@@ -111,10 +144,10 @@ runs are debug builds.
 
 | Line | Target | Outcome |
 |---|---|---|
-| 5.0.4 | macOS (`flutter test -d macos`) | pass |
-| 5.1.0 | macOS (`flutter test -d macos`) | pass |
-| 5.2.0 | macOS (`flutter test -d macos`) | pass |
-| 5.2.0 | Chrome headless (`flutter drive`) | pass |
+| 5.0.4 | macOS (`flutter test -d macos`) | pass, with the earlier `onChange` version of the program |
+| 5.1.0 | macOS (`flutter test -d macos`) | pass, with the earlier `onChange` version of the program |
+| 5.2.0 | macOS (`flutter test -d macos`) | pass, current program |
+| 5.2.0 | Chrome headless (`flutter drive`) | pass, current program |
 | 5.0.4, 5.1.0 | Chrome | not run |
 | all | iOS, Android, Windows, Linux | not run |
 
@@ -153,19 +186,22 @@ runs are debug builds.
 
 Same toolchain as above. macOS desktop, debug builds, `scripts/run-probes.sh macos <line>`
 with `PROBE_DEFAULT_LOGGING` unset. Every probe name below passed on every line listed;
-nothing else was run. **Ditto logging disabled in the harness (see Finding 1)**: every probe except `init_once` (which does not use the
-harness) ran with `DittoLogger.isEnabled = false`, so these results do not describe an
-app with Ditto's default logging.
+nothing else was run. **Ditto logging disabled in the harness (see Finding 1)**: every
+probe except `init_once` (which does not use the harness) ran with
+`DittoLogger.isEnabled = false`, so these results do not describe an app with Ditto's
+default logging.
 
 | Line | Directories | Outcome |
 |---|---|---|
-| 5.0.4 | `init_once` (1 test), `v50` (22) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.1.0 | `init_once` (1), `v50` (22), `v51` (6) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.2.0 | `init_once` (1), `v50` (22), `v51` (6), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.0.4 | `init_once` (1 test), `v50` (26) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.1.0 | `init_once` (1), `v50` (26), `v51` (5) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.2.0 | `init_once` (1), `v50` (26), `v51` (5), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
 | all | iOS, Android, Chrome, Windows, Linux | not run |
 
-Recorded outcomes (asserted exactly, so a change breaks the probe). Except for
-`DittoLogger getter before init`, each was observed with Ditto logging disabled in the harness (see Finding 1):
+Recorded outcomes. Each is asserted exactly, so a change breaks the probe; where a
+line differs, the probe asserts each line's value. Except for
+`DittoLogger getter before init`, each was observed with Ditto logging disabled in the
+harness (see Finding 1):
 
 - `DittoLogger getter before init`: `DittoLogger.isEnabled` throws synchronously
   ``DittoError(Ditto not initialized. Call `Ditto.init()` and await the `Future` before using any Ditto functionality)``,
@@ -175,20 +211,85 @@ Recorded outcomes (asserted exactly, so a change breaks the probe). Except for
   `store.registerObserver` throw `DittoClosedException` synchronously.
 - `login failure in AuthResponse.exception`: deterministic offline. With
   `DittoConfigConnectServer(url: 'https://REPLACE_ME.invalid')`, `auth.login` returns
-  `exception` = `DittoException(Error logging in. Status code 1. Client info: null)`
-  on all three lines ({N}).
+  `exception` whose `toString()` is
+  `DittoException(Error logging in. Status code 1. Client info: null)`, compared per
+  line; the same string on all three lines.
 - `signalNext gates delivery and coalesces` (5.1.0, 5.2.0): callbacks deliver item
-  counts `[0]`, nothing more for 2 s after three inserts, then `[0, 3]` after
-  `signalNext()`: the three writes arrive in one callback ({N}).
+  counts `[0]`, nothing more for 2 s after three inserts while the first callback's
+  work is unfinished, then exactly `[0, 3]` once it finishes and calls `signalNext()`:
+  the three writes arrive in one callback.
 - `observeTransportConditions emits within 5 s` (5.1.0, 5.2.0): with every
   peer-to-peer transport off and `sync.start()`, no event arrives within 5 s, on the
-  callback or the stream ({N}).
-- `handler deny blocks` / `handler throw denies`: B's handler is invoked with A's
-  `peerKey` within 20 s when A listens on TCP loopback and B connects; denying or
-  throwing keeps A's document off B for the 5 s window ({N}).
+  callback or the stream.
+- `doc written on A syncs to B`: the connecting peer's observer reports exactly the
+  `_id` written on the listening peer (`car-from-listener`).
+- `handler deny blocks` / `handler throw denies`: the connecting peer's handler is
+  invoked first with the listening peer's `peerKey` (asserted) within 20 s when one
+  peer listens on TCP loopback and the other connects; denying or throwing keeps the
+  listener's document off the connecting peer for the 5 s window.
 - `ConnectionType switch compiles`: four values on 5.0.4, five on 5.1.0 and 5.2.0. The
   `v50` switch carries a wildcard arm (`// ignore: unreachable_switch_case`), since an
   exhaustive four-value switch does not compile on 5.1+.
+- `v1 observer isCancelled after close, per line`: after `close()`, a V1 observer's
+  `isCancelled` stays `false` on 5.0.4 and is `true` on 5.1.0 and 5.2.0.
+- `close and customLogCallback, per line`: `close()` leaves
+  `DittoLogger.customLogCallback` set on 5.0.4 and resets it to `null` on 5.1.0 and
+  5.2.0.
+- `observer without onChange: eager on 5.0, on first listen 5.1+`: an observer
+  registered without `onChange`, with one insert before the first `changes.listen`,
+  delivers item counts `[0, 1]` on 5.0.4 (the live query started at registration and
+  the stream buffered both results) and `[1]` on 5.1.0 and 5.2.0 (it started on the
+  listen).
+
+### SDK defects the fixture records, 2026-11-17
+
+- **A V1 observer registered with `onChange` buffers every result in its unlistened
+  `changes` stream** (5.0.4, 5.1.0, 5.2.0; macOS debug, logging disabled in the harness).
+  `StoreObserver` adds each `QueryResult` to a single-subscription controller as well
+  as passing it to `onChange`, and nothing listens, so the stream keeps them all.
+  Probe `SDK defect: v1 onChange observer buffers every result for a late listener`:
+  6 callbacks (the initial result and five inserts), then a late `changes.listen`
+  receives exactly 6 replayed results. The published observer, Repository and minimal
+  app patterns therefore register without `onChange`, hold the one `changes`
+  subscription, and cancel it and then the observer while Ditto is open.
+- **5.0.x `setAllPeerToPeerEnabled(false)` / `withAllPeerToPeerEnabled(false)` leave
+  AWDL and Wi-Fi Aware on** (source: `lib/src/transport_config.dart` in 5.0.4 assigns
+  `true` to both instead of the argument; 5.1.0 assigns the argument). Not executed
+  here. The harness and the minimal app turn each transport off one by one instead.
+
+### Native builds, 2026-11-17
+
+Flutter 3.50.0 (AGP 9.3.1, Gradle 9.5.0 from its template), Xcode 27.2, CocoaPods
+1.17.0, macOS 27.2.1 arm64. `flutter build` on `use-version.py` copies of
+`minimal_app`; builds only, nothing was installed or run on a device or simulator.
+
+| Line | Command | Outcome |
+|---|---|---|
+| 5.2.0 | `flutter build apk --debug` / `--release` | pass / pass (196.0 MB) |
+| 5.1.0 | `flutter build apk --debug` / `--release` | pass / pass (178.9 MB) |
+| 5.0.4 | `flutter build apk --debug` | pass |
+| 5.2.0 | `flutter build ios --simulator --debug` | pass; `Runner.debug.dylib` is `arm64` |
+| 5.0.4 | `flutter build ios --simulator --debug` | pass; `Runner.debug.dylib` is `arm64` |
+| 5.2.0 | both, without the two workarounds below (negative control) | apk: fail at `:ditto_live:checkDebugAarMetadata`; iOS: fail, `Framework 'DittoCore' not found` |
+
+- **Android, ditto_live 5.1.0 and 5.2.0: the plugin compiles with `compileSdk = 34`,
+  but its `com.ditto` Android libraries require compileSdk 36**, and AGP 9 runs
+  `checkAarMetadata` on the `:ditto_live` library module, so every APK build fails.
+  Raising the app's compileSdk does not help. The fixture's root
+  `android/build.gradle.kts` raises the plugin's compileSdk to 36 in a
+  `subprojects { afterEvaluate { … } }` block placed before
+  `evaluationDependsOn(":app")` (region `flutter-android-compilesdk-override`). 5.0.4
+  is unaffected; the override is harmless there.
+- **iOS Simulator, ditto_live 5.1.0+: `DittoCore` ships an arm64-only simulator
+  slice**, and the 5.1+ podspec excludes x86_64 for the simulator, but Flutter's
+  `Generated.xcconfig` resets `EXCLUDED_ARCHS[sdk=iphonesimulator*]` to `i386` on the
+  Runner, so the Runner still links x86_64 and fails. Excluding x86_64 on the pod
+  targets alone does not help. The fixture's `ios/Podfile` `post_install` sets
+  `EXCLUDED_ARCHS[sdk=iphonesimulator*] = 'i386 x86_64'` on the Runner (user
+  project) targets (region `flutter-podfile-ios-simulator-arch`).
+- **Android INTERNET:** the `ditto_live` plugin's own manifest declares
+  `android.permission.INTERNET` (5.0.4 and 5.2.0), so the merged manifest of every
+  build type has it; the fixture's main-manifest declaration is explicit, not required.
 
 ## Findings that changed a research lead
 
@@ -236,7 +337,9 @@ Recorded outcomes (asserted exactly, so a change breaks the probe). Except for
 
 macOS 27.2.1 arm64, Flutter 3.50.0, debug. `v50/store_test.dart` with Ditto logging at
 its default (`PROBE_DEFAULT_LOGGING=true`), three attempts per line, each bounded by
-`timeout 240`. A hung app is killed afterwards. From the repository root:
+`timeout 240`. A hung app is killed afterwards. Recorded before the probes' published
+code moved into named functions; the five test names are unchanged, the collections,
+documents and the rollback test's statements have changed since. From the repository root:
 
 ```bash
 for line in 5.0 5.1 5.2; do
@@ -244,7 +347,7 @@ for line in 5.0 5.1 5.2; do
     PROBE_DEFAULT_LOGGING=true timeout 240 tests/flutter-sdk/scripts/run-fixture.sh \
       minimal_app macos "$line" integration_test/probes/v50/store_test.dart
     echo "$line attempt $attempt: exit $?"
-    pkill -f "flutter-fixture-$line/minimal_app/build/macos" || true
+    pkill -f "flutter-fixture-[^/]*/$line/minimal_app/build/macos" || true
   done
 done
 ```
