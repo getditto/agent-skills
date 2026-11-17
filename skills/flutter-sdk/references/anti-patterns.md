@@ -42,27 +42,27 @@ measured factor.
 ```dart
 // Anti-pattern: the widget tree subscribes directly to an observer's
 // single-subscription `changes` stream.
-class LeakyRepository {
-  LeakyRepository(Ditto ditto)
-    : observer = ditto.store.registerObserver('SELECT * FROM probes');
+class LeakyCarsRepository {
+  LeakyCarsRepository(Ditto ditto)
+    : observer = ditto.store.registerObserver('SELECT * FROM cars');
 
   final StoreObserver observer;
 
   Stream<QueryResult> get changes => observer.changes;
 }
 
-class LeakyScreen extends StatelessWidget {
-  const LeakyScreen({super.key, required this.repository});
+class LeakyCarsScreen extends StatelessWidget {
+  const LeakyCarsScreen({super.key, required this.repository});
 
-  final LeakyRepository repository;
+  final LeakyCarsRepository repository;
 
   @override
   Widget build(BuildContext context) => StreamBuilder<QueryResult>(
     // Disposing this StreamBuilder cancels its listener but not the observer;
     // building the screen again listens a second time and throws StateError.
     stream: repository.changes,
-    builder:
-        (context, snapshot) => Text('${snapshot.data?.items.length ?? 0} docs'),
+    builder: (context, snapshot) =>
+        Text('${snapshot.data?.items.length ?? 0} cars'),
   );
 }
 ```

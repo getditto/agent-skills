@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // integration_test defaults to no timeout; a hang must fail the run.
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized().defaultTestTimeout =
+      const Timeout(Duration(minutes: 2));
 
   testWidgets('DittoLogger getter before init', (t) async {
     expect(

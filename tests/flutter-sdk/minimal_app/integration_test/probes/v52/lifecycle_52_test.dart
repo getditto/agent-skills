@@ -1,12 +1,11 @@
 // DittoEncryptionException and DittoEncryptionErrorReason: 5.2.0+.
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import '../harness.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureProbeBinding();
 
   testWidgets('DittoEncryptionException type exists', (t) async {
     await withDitto(t, (ditto) async {

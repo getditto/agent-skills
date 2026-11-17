@@ -2,12 +2,11 @@ import 'dart:io';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import '../harness.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureProbeBinding();
 
   testWidgets('exportLogs writes file and existing path throws DittoError', (
     t,

@@ -1,66 +1,107 @@
 // Two Ditto instances in one process, each in its own temporary directory,
-// with every peer-to-peer transport off. A listens on TCP 127.0.0.1:<port>;
-// B connects to it. Nothing else can reach either peer.
+// with every peer-to-peer transport off. The listener accepts TCP on
+// 127.0.0.1:<port>; the other instance connects to it. Nothing else can reach
+// either peer.
 import 'dart:async';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import '../harness.dart';
+
+// snippet:start flutter-presence-3
+/// Accepts TCP connections from other peers on [port]. The default
+/// [interfaceIP], `[::]`, is the SDK's: every interface.
+void listenForPeers(Ditto ditto, int port, {String interfaceIP = '[::]'}) {
+  ditto.updateTransportConfig((config) {
+    config.listen.tcp
+      ..isEnabled = true
+      ..interfaceIP = interfaceIP
+      ..port = port;
+  });
+}
+
+/// Connects to a peer that listens at [hostAndPort], e.g. `10.0.0.5:4040`.
+void connectToPeer(Ditto ditto, String hostAndPort) {
+  ditto.updateTransportConfig((config) {
+    config.connect.tcpServers.add(hostAndPort);
+  });
+}
+// snippet:end flutter-presence-3
+
+// snippet:start flutter-presence-1
+/// Completes with the remote peer [peerKey] once presence reports it. Stop
+/// the returned observer when you no longer need it.
+(PresenceObserver, Future<Peer>) waitForPeer(Ditto ditto, String peerKey) {
+  final seen = Completer<Peer>();
+  final observer = ditto.presence.observe((graph) {
+    for (final peer in graph.remotePeers) {
+      if (peer.peerKey == peerKey && !seen.isCompleted) seen.complete(peer);
+    }
+  });
+  return (observer, seen.future);
+}
+// snippet:end flutter-presence-1
+
+// snippet:start flutter-presence-2
+/// Refuses connections from [blockedPeerKey] and accepts every other peer.
+/// Install with `ditto.presence.connectionRequestHandler = blockPeer(key)`.
+/// A handler that throws refuses the connection too.
+ConnectionRequestHandler blockPeer(String blockedPeerKey) =>
+    (request) async => request.peerKey == blockedPeerKey
+    ? ConnectionRequestAuthorization.deny
+    : ConnectionRequestAuthorization.allow;
+// snippet:end flutter-presence-2
 
 const _peerTimeout = Duration(seconds: 20);
 const _quietWindow = Duration(seconds: 5);
 
+/// Opens a listening peer and a connecting peer on loopback; [body] gets
+/// both and the listener's peer key.
 Future<void> _withTwoPeers(
   WidgetTester t,
-  Future<void> Function(Ditto a, Ditto b, String aKey) body, {
-  ConnectionRequestHandler Function(String aKey)? bHandler,
+  Future<void> Function(Ditto listener, Ditto connector, String listenerKey)
+  body, {
+  ConnectionRequestHandler Function(String listenerKey)? connectorHandler,
 }) async {
   final port = await freeLoopbackPort();
-  await withDitto(t, (a) async {
-    await withDitto(t, (b) async {
-      // snippet:start flutter-presence-3
-      a.updateTransportConfig((config) {
-        config.listen.tcp
-          ..isEnabled = true
-          ..interfaceIP = '127.0.0.1'
-          ..port = port;
-      });
-      b.updateTransportConfig((config) {
-        config.connect.tcpServers.add('127.0.0.1:$port');
-      });
-      // snippet:end flutter-presence-3
-      final aKey = a.presence.graph.localPeer.peerKey;
-      if (bHandler != null) {
-        b.presence.connectionRequestHandler = bHandler(aKey);
+  await withDitto(t, (listener) async {
+    await withDitto(t, (connector) async {
+      listenForPeers(listener, port, interfaceIP: '127.0.0.1');
+      connectToPeer(connector, '127.0.0.1:$port');
+      final listenerKey = listener.presence.graph.localPeer.peerKey;
+      if (connectorHandler != null) {
+        connector.presence.connectionRequestHandler = connectorHandler(
+          listenerKey,
+        );
       }
-      a.sync.start();
-      b.sync.start();
-      await body(a, b, aKey);
+      listener.sync.start();
+      connector.sync.start();
+      await body(listener, connector, listenerKey);
     });
   });
 }
 
-/// Inserts a document on [a] and reports whether [b] has it, through a
-/// subscription and an observer on [b].
-Future<void Function()> _replicate(
-  Ditto a,
-  Ditto b,
-  void Function(bool arrived) onState,
+/// Inserts a car on [from] and reports the car IDs [to] holds, through a
+/// subscription and an observer on [to].
+Future<Future<void> Function()> _replicate(
+  Ditto from,
+  Ditto to,
+  void Function(List<String> ids) onIds,
 ) async {
-  final subscription = b.sync.registerSubscription('SELECT * FROM probes');
-  final observer = b.store.registerObserver(
-    'SELECT * FROM probes',
-    onChange: (result) => onState(result.items.isNotEmpty),
-  );
-  await a.store.execute(
-    'INSERT INTO probes DOCUMENTS (:doc)',
+  final subscription = to.sync.registerSubscription('SELECT * FROM cars');
+  final observer = to.store.registerObserver('SELECT * FROM cars');
+  final changes = observer.changes.listen((result) {
+    onIds([for (final item in result.items) item.value['_id'] as String]);
+  });
+  await from.store.execute(
+    'INSERT INTO cars DOCUMENTS (:car)',
     arguments: {
-      'doc': {'_id': 'from-a'},
+      'car': {'_id': 'car-from-listener'},
     },
   );
-  return () {
+  return () async {
+    await changes.cancel();
     observer.cancel();
     subscription.cancel();
   };
@@ -78,21 +119,14 @@ String _label(ConnectionType type) => switch (type) {
 };
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  ensureProbeBinding();
 
   testWidgets('B sees A within 20 s', (t) async {
-    await _withTwoPeers(t, (a, b, aKey) async {
-      // snippet:start flutter-presence-1
-      final seen = Completer<Peer>();
-      final observer = b.presence.observe((graph) {
-        for (final peer in graph.remotePeers) {
-          if (peer.peerKey == aKey && !seen.isCompleted) seen.complete(peer);
-        }
-      });
-      // snippet:end flutter-presence-1
+    await _withTwoPeers(t, (listener, connector, listenerKey) async {
+      final (observer, seen) = waitForPeer(connector, listenerKey);
       try {
-        final peer = await seen.future.timeout(_peerTimeout);
-        expect(peer.peerKey, aKey);
+        final peer = await seen.timeout(_peerTimeout);
+        expect(peer.peerKey, listenerKey);
       } finally {
         observer.stop();
       }
@@ -100,62 +134,60 @@ void main() {
   });
 
   testWidgets('doc written on A syncs to B', (t) async {
-    await _withTwoPeers(t, (a, b, aKey) async {
-      var arrived = false;
-      final stop = await _replicate(a, b, (state) => arrived = state);
+    await _withTwoPeers(t, (listener, connector, listenerKey) async {
+      var ids = <String>[];
+      final stop = await _replicate(listener, connector, (now) => ids = now);
       try {
-        await waitUntil(() => arrived, timeout: _peerTimeout);
+        await waitUntil(() => ids.isNotEmpty, timeout: _peerTimeout);
+        expect(ids, ['car-from-listener']);
       } finally {
-        stop();
+        await stop();
       }
     });
   });
 
   testWidgets('handler deny blocks', (t) async {
-    final askedByA = Completer<void>();
+    final asked = <String>[];
     await _withTwoPeers(
       t,
-      bHandler:
-          (aKey) => (request) async {
-            if (request.peerKey == aKey && !askedByA.isCompleted) {
-              askedByA.complete();
-            }
-            // snippet:start flutter-presence-2
-            return request.peerKey == aKey
-                ? ConnectionRequestAuthorization.deny
-                : ConnectionRequestAuthorization.allow;
-            // snippet:end flutter-presence-2
-          },
-      (a, b, aKey) async {
-        await askedByA.future.timeout(_peerTimeout);
-        var arrived = false;
-        final stop = await _replicate(a, b, (state) => arrived = state);
+      connectorHandler: (listenerKey) {
+        final block = blockPeer(listenerKey);
+        return (request) {
+          asked.add(request.peerKey);
+          return block(request);
+        };
+      },
+      (listener, connector, listenerKey) async {
+        await waitUntil(() => asked.isNotEmpty, timeout: _peerTimeout);
+        expect(asked.first, listenerKey);
+        var ids = <String>[];
+        final stop = await _replicate(listener, connector, (now) => ids = now);
         try {
-          await holdsFor(() => !arrived, _quietWindow, reason: 'denied');
+          await holdsFor(() => ids.isEmpty, _quietWindow, reason: 'denied');
         } finally {
-          stop();
+          await stop();
         }
       },
     );
   });
 
   testWidgets('handler throw denies', (t) async {
-    final asked = Completer<void>();
+    final asked = <String>[];
     await _withTwoPeers(
       t,
-      bHandler:
-          (_) => (request) async {
-            if (!asked.isCompleted) asked.complete();
-            throw StateError('handler failed');
-          },
-      (a, b, aKey) async {
-        await asked.future.timeout(_peerTimeout);
-        var arrived = false;
-        final stop = await _replicate(a, b, (state) => arrived = state);
+      connectorHandler: (_) => (request) async {
+        asked.add(request.peerKey);
+        throw StateError('handler failed');
+      },
+      (listener, connector, listenerKey) async {
+        await waitUntil(() => asked.isNotEmpty, timeout: _peerTimeout);
+        expect(asked.first, listenerKey);
+        var ids = <String>[];
+        final stop = await _replicate(listener, connector, (now) => ids = now);
         try {
-          await holdsFor(() => !arrived, _quietWindow, reason: 'denied');
+          await holdsFor(() => ids.isEmpty, _quietWindow, reason: 'denied');
         } finally {
-          stop();
+          await stop();
         }
       },
     );
