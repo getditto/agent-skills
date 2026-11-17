@@ -24,9 +24,9 @@ Read only the reference sections a task needs; do not preload references or READ
 
 ## What this skill does
 
-Writes and reviews Rust code for the `dittolive-ditto` crate, including Tokio
-integration, support bundles and testing. Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0** on **Linux** (x86_64, aarch64) and
-**macOS** (aarch64; 4.14.x also x86_64).
+Writes and reviews `dittolive-ditto` code, including Tokio integration and testing, for
+**4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0** on **Linux** (x86_64, aarch64) and **macOS**
+(aarch64; 4.14.x also x86_64).
 
 ## When to use this skill
 
@@ -128,7 +128,8 @@ fetchers keep running when dropped. Handle table: [lifetimes.md](references/life
 Read [anti-patterns.md](references/anti-patterns.md) for wrong/right forms.
 
 - rustc 1.98+: `error[E0690]: transparent struct needs at most one non-trivial field` in
-  `dittolive-ditto-sys`. Pin `rust-toolchain.toml` to 1.91.0 (1.91–1.97 work).
+  `dittolive-ditto-sys`. Pin `rust-toolchain.toml` to 1.91.0
+  ([setup.md](references/setup.md#the-toolchain-pin)).
 - Linux without `-C link-arg=-Wl,--allow-multiple-definition` in `.cargo/config.toml`:
   `duplicate symbol: __rustc::rust_panic` (rust-lld) or `multiple definition of
   std::io::error::Error::new` (GNU ld) — no binary links.
@@ -147,7 +148,6 @@ Also there: `NotActivated`, non-`SELECT` observers, undeclared `ATTACHMENT` fiel
 
 | Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.0 |
 |---|---|---|
-| Open | `DittoConfig` + `Ditto::open` (builder deprecated) | `DittoConfig` + `Ditto::open` only |
 | DQL | `execute_v2`, `register_observer_v2`, `register_subscription_v2` | `execute`, `register_observer`, `register_subscription` |
 | Mutating DQL | needs `disable_sync_with_v3()` first (executed error) | works by default |
 | Auth module | `identity` | `identity` (5.0.x); `auth` from 5.1.0 |
@@ -158,30 +158,23 @@ directory. Full delta and on-disk migration: [`references/versions.md`](referenc
 
 ## References
 
-Load a reference only when its topic is in play; preview a long file's contents and read
-the matching section.
+Load a reference only when its topic is in play; preview a long file and read the
+matching section.
 
-- [tokio.md](references/tokio.md): tested patterns — cancel-on-drop guard, observer →
-  `mpsc` bridge that acks `signal_next` on drop, `spawn_blocking`, `Arc<Ditto>` state.
-- [concurrency.md](references/concurrency.md): callback threads, cancellation, auth handler.
-- [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md)
-  (`ErrorKind::CoreApi(..)` matching): diagnose a symptom.
-- [setup.md](references/setup.md): toolchain pin, the Linux link flag, native-library
-  download (`DITTOFFI_SEARCH_PATH`, offline CI), supported targets.
+- [tokio.md](references/tokio.md): cancel-on-drop guard, observer → `mpsc` bridge,
+  `spawn_blocking`, shared state, graceful shutdown.
+- [concurrency.md](references/concurrency.md), [lifetimes.md](references/lifetimes.md):
+  the full tables behind the two sections above.
+- [anti-patterns.md](references/anti-patterns.md), then [errors.md](references/errors.md):
+  diagnose a symptom.
+- [setup.md](references/setup.md): toolchain, link flag, offline native library, targets.
 - [connect.md](references/connect.md): config, license, Server auth handler, shutdown.
-- [observers.md](references/observers.md): `signal_next` back-pressure, `Differ`.
-- [store.md](references/store.md): arguments, deserializing, transactions (`Any`
-  downcast: `Ok(&Rollback)` commits), indexes, `EVICT`.
-- [sync.md](references/sync.md): subscriptions, `system:data_sync_info`, commit IDs.
-- [testing.md](references/testing.md): a failing `assert!` aborts the whole test binary
-  once Ditto is open; one temp dir per test; run under `cargo nextest`.
-- [transports.md](references/transports.md), [attachments.md](references/attachments.md),
-  [presence.md](references/presence.md).
-- [observability.md](references/observability.md): logs into `tracing`; **support bundles**
-  (5.2.0: `EXECUTE FUNCTION system_request_support_bundle()`, fetch `file` as an
-  attachment, 3 per 10 min); dial9 is set by `DITTO_DIAL9_OBSERVABILITY_LEVEL` in the
-  process environment and traces only appear after 60 s of uptime.
-- [lifetimes.md](references/lifetimes.md), [versions.md](references/versions.md),
-  [preview.md](references/preview.md) (Data Streams, multicast).
-- [best-practices.md](best-practices.md): instance placement, observer shape, panics.
-- [minimal-app.md](examples/minimal-app.md): the complete, CI-executed program.
+- [store.md](references/store.md): arguments, decoding, transactions (`Ok(&Rollback)`
+  commits), indexes, `EVICT`.
+- [observers.md](references/observers.md), [sync.md](references/sync.md),
+  [attachments.md](references/attachments.md), [presence.md](references/presence.md),
+  [transports.md](references/transports.md), [testing.md](references/testing.md).
+- [observability.md](references/observability.md): logs into `tracing`; support bundles
+  and dial9 traces (5.2.0; traces need 60 s of uptime).
+- [versions.md](references/versions.md), [preview.md](references/preview.md),
+  [best-practices.md](best-practices.md), [minimal-app.md](examples/minimal-app.md).
