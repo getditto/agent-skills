@@ -83,6 +83,22 @@ jobs:
       - name: Check the snippet generator
         run: python3 tests/skill-context/test_snippets.py
 
+      - name: Check Dart and platform-config snippet sync
+        run: python3 tests/flutter-sdk/scripts/test_sync_dart.py
+
+      - name: Read the pinned Flutter version
+        id: flutter-pin
+        run: echo "version=$(python3 -c "import json; print(json.load(open('tests/flutter-sdk/versions.json'))['flutter'])")" >> "$GITHUB_OUTPUT"
+
+      - name: Set up the pinned Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ steps.flutter-pin.outputs.version }}
+
+      - name: Check the Dart fence analyzer
+        run: python3 tests/flutter-sdk/scripts/test_analyze_skill_snippets.py
+
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
 

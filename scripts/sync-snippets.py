@@ -47,7 +47,8 @@ from pathlib import Path
 
 SKILLS_DIR = "skills"
 SOURCE_DIRS = ("tests",)
-SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv"}
+SKIP_DIRS = {"node_modules", "build", "dist", ".gradle", ".generated", ".build", "__pycache__", ".venv",
+             ".dart_tool", "Pods", "ephemeral"}
 SOURCE_SUFFIXES = {
     ".kt": "kotlin",
     ".kts": "kotlin",
@@ -67,6 +68,10 @@ SOURCE_SUFFIXES = {
     ".yml": "yaml",
     ".yaml": "yaml",
     ".dql": "sql",
+    ".dart": "dart",
+    ".plist": "xml",
+    ".entitlements": "xml",
+    ".gradle": "groovy",
 }
 
 NAME = r"[a-z0-9][a-z0-9-]*"
@@ -78,7 +83,7 @@ STRICT_ARG_RE = re.compile(rf"^\s+({NAME})\s*(?:-->|\*/)?\s*$")
 OPEN_RE = re.compile(r"<!-- */?snippet\b")
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 CONTINUES = (")", "]", "}", "?:", "?.", ".", "&&", "||", "+")
-CODE_LANGUAGES = {"kotlin", "swift", "ts", "tsx", "javascript", "jsx"}
+CODE_LANGUAGES = {"kotlin", "swift", "ts", "tsx", "javascript", "jsx", "dart"}
 
 
 class SnippetError(Exception):
