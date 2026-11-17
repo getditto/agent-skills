@@ -111,6 +111,73 @@ def gradle_check(path, cutoff):
         raise ValueError(f"{path}: wrapper JAR differs from the official {version} checksum")
 
 
+def parse_pubspec_lock(path):
+    """Parse the packages section of a pubspec.lock without a YAML dependency."""
+    packages, current, in_description = {}, None, False
+    in_packages = False
+    for line in path.read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if not line.startswith(" "):
+            in_packages = line.rstrip() == "packages:"
+            continue
+        if not in_packages:
+            continue
+        indent = len(line) - len(line.lstrip())
+        key, _, value = line.strip().partition(":")
+        value = value.strip().strip('"')
+        if indent == 2:
+            current = packages.setdefault(key, {"description": {}})
+            in_description = False
+        elif indent == 4 and current is not None:
+            in_description = key == "description" and not value
+            if not in_description:
+                current[key] = value
+        elif indent == 6 and in_description:
+            current["description"][key] = value
+    return packages
+
+
+def pub_check(lockfile, cutoff):
+    """Check every hosted package in a pubspec.lock: age and archive checksum."""
+    jobs, errors = [], []
+    for name, package in parse_pubspec_lock(lockfile).items():
+        source = package.get("source")
+        if source == "sdk":
+            continue
+        description = package["description"]
+        if source != "hosted" or description.get("url") != "https://pub.dev":
+            errors.append(f"{lockfile}: pub {name}: unsupported source {source} {description.get('url', '')}".rstrip())
+            continue
+        jobs.append((name, package["version"], description.get("sha256")))
+
+    def one(name, version, sha256):
+        data = fetch_json(f"https://pub.dev/api/packages/{urllib.parse.quote(name, safe='')}/versions/{version}")
+        if sha256 != data.get("archive_sha256"):
+            raise ValueError(f"pub {name}@{version}: lockfile sha256 differs from pub.dev archive_sha256")
+        require_mature(f"pub {name}@{version}", timestamp(data["published"]), cutoff)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(one, *job) for job in jobs]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as error:
+                errors.append(str(error))
+    if errors:
+        raise ValueError("\n".join(sorted(errors)))
+
+
+def flutter_check(versions_json, cutoff):
+    version = json.loads(versions_json.read_text())["flutter"]
+    data = fetch_json("https://storage.googleapis.com/flutter_infra_release/releases/releases_macos.json")
+    release = next((item for item in data["releases"]
+                    if item["version"] == version and item["channel"] == "stable"), None)
+    if release is None:
+        raise ValueError(f"Flutter {version}: no stable release in releases_macos.json")
+    require_mature(f"Flutter {version}", timestamp(release["release_date"]), cutoff)
+
+
 def collect(root, cutoff):
     """Only version-controlled files count; local tool-generated caches are excluded."""
     files = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
@@ -166,12 +233,18 @@ def main():
             if not module["group"] or module["version"] == "unspecified":
                 raise ValueError(f"{inventory}: contains project IDs; regenerate with dependency-inventory.gradle")
             maven.add((module["group"], module["name"], module["version"]))
+    pub_locks = sorted(ROOT.glob("tests/flutter-sdk/**/pubspec.lock"))
+    pub_locks = sorted(ROOT.glob("tests/flutter-sdk/**/pubspec.lock"))
     failures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         checks = [pool.submit(npm_check, name, versions, cutoff) for name, versions in npm.items()]
         checks += [pool.submit(action_check, *action, cutoff) for action in actions]
         checks += [pool.submit(maven_check, *module, cutoff) for module in maven]
         checks += [pool.submit(gradle_check, path, cutoff) for path in ROOT.glob("tests/kotlin-sdk/*/gradle/wrapper/gradle-wrapper.properties")]
+        checks += [pool.submit(pub_check, path, cutoff) for path in pub_locks]
+        flutter_versions = ROOT / "tests/flutter-sdk/versions.json"
+        if flutter_versions.exists():
+            checks.append(pool.submit(flutter_check, flutter_versions, cutoff))
         for check in concurrent.futures.as_completed(checks):
             try:
                 check.result()
@@ -193,7 +266,7 @@ def main():
         for failure in sorted(failures):
             print("FAIL:", failure)
         return 1
-    print(f"Dependency age OK: {sum(map(len, npm.values()))} npm versions, {len(actions)} actions, {len(maven)} Maven pins; cutoff {cutoff.isoformat()}")
+    print(f"Dependency age OK: {sum(map(len, npm.values()))} npm versions, {len(actions)} actions, {len(maven)} Maven pins, {len(pub_locks)} pubspec.lock files, Flutter pin; cutoff {cutoff.isoformat()}")
     return 0
 
 

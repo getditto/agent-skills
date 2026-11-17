@@ -98,6 +98,77 @@ class DependencyAgeTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "wrapper JAR differs"):
                         AGE.gradle_check(properties, self.cutoff)
 
+    LOCK = """packages:
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      sha256: "abc123"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.5"
+  flutter:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
+"""
+
+    def pub_stub(self, published="2026-10-01T00:00:00Z", sha="abc123"):
+        url = "https://pub.dev/api/packages/provider/versions/6.1.5"
+        return lambda requested: {"published": published, "archive_sha256": sha} if requested == url else self.fail(requested)
+
+    def write_lock(self, directory, text=None):
+        path = Path(directory) / "pubspec.lock"
+        path.write_text(self.LOCK if text is None else text)
+        return path
+
+    def test_pub_ok_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub()):
+                AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_too_new_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub(published="2026-11-03T00:00:00Z")):
+                with self.assertRaisesRegex(ValueError, "pub provider@6.1.5.*after"):
+                    AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_sha_mismatch_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub(sha="other")):
+                with self.assertRaisesRegex(ValueError, "sha256 differs"):
+                    AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_unexpected_registry_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, self.LOCK.replace("https://pub.dev", "https://pub.example.com"))
+            with patch.object(AGE, "fetch_json", side_effect=AssertionError("no network for bad source")):
+                with self.assertRaisesRegex(ValueError, "unsupported source"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_flutter_pin_too_new_flagged(self):
+        releases = {"releases": [
+            {"version": "3.50.0", "channel": "beta", "release_date": "2026-10-01T00:00:00Z"},
+            {"version": "3.50.0", "channel": "stable", "release_date": "2026-11-03T00:00:00Z"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            pin = Path(directory) / "versions.json"
+            pin.write_text('{"flutter": "3.50.0"}')
+            with patch.object(AGE, "fetch_json", return_value=releases):
+                with self.assertRaisesRegex(ValueError, "Flutter 3.50.0.*after"):
+                    AGE.flutter_check(pin, self.cutoff)
+                pin.write_text('{"flutter": "9.9.9"}')
+                with self.assertRaisesRegex(ValueError, "no stable release"):
+                    AGE.flutter_check(pin, self.cutoff)
+
+    def test_flutter_pin_old_stable_passes(self):
+        releases = {"releases": [{"version": "3.50.0", "channel": "stable", "release_date": "2026-10-01T00:00:00Z"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            pin = Path(directory) / "versions.json"
+            pin.write_text('{"flutter": "3.50.0"}')
+            with patch.object(AGE, "fetch_json", return_value=releases):
+                AGE.flutter_check(pin, self.cutoff)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -43,3 +43,21 @@ updates:
       gradle-security:
         applies-to: security-updates
         patterns: ["*"]
+  - package-ecosystem: "pub"
+    directories:
+      - "/tests/flutter-sdk/minimal_app"
+      - "/tests/flutter-sdk/v4_app"
+    # tests/flutter-sdk/versions.json owns the ditto_live pin per SDK line.
+    ignore:
+      - dependency-name: "ditto_live"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    groups:
+      pub-version-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+      pub-security:
+        applies-to: security-updates
+        patterns: ["*"]
