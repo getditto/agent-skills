@@ -73,6 +73,10 @@ SOURCE_SUFFIXES = {
     ".entitlements": "xml",
     ".gradle": "groovy",
 }
+# Source files identified by their whole name, because they have no suffix.
+SOURCE_NAMES = {
+    "Podfile": "ruby",
+}
 
 NAME = r"[a-z0-9][a-z0-9-]*"
 COMMENT = r"^\s*(?://|#|<!--|/\*|--)\s*"
@@ -88,6 +92,10 @@ CODE_LANGUAGES = {"kotlin", "swift", "ts", "tsx", "javascript", "jsx", "dart"}
 
 class SnippetError(Exception):
     pass
+
+
+def source_language(path: Path) -> str | None:
+    return SOURCE_NAMES.get(path.name) or SOURCE_SUFFIXES.get(path.suffix)
 
 
 def candidate_files(root: Path):
@@ -110,10 +118,10 @@ def collect_snippets(root: Path) -> dict[str, tuple[str, str, str]]:
         if not MARKER_BYTES_RE.search(raw):
             continue
         rel = path.relative_to(root)
-        if path.suffix not in SOURCE_SUFFIXES:
+        if source_language(path) is None:
             raise SnippetError(
                 f"{rel}: has snippet markers but its type ({path.suffix or 'no suffix'}) is not "
-                "supported; add it to SOURCE_SUFFIXES in scripts/sync-snippets.py"
+                "supported; add it to SOURCE_SUFFIXES or SOURCE_NAMES in scripts/sync-snippets.py"
             )
         try:
             text = raw.decode("utf-8")
@@ -154,7 +162,7 @@ def collect_snippets(root: Path) -> dict[str, tuple[str, str, str]]:
 
     snippets = {}
     for name, (regions, rel) in found.items():
-        language = SOURCE_SUFFIXES[rel.suffix]
+        language = source_language(rel)
         code = ""
         for region in regions:
             part = "\n".join(region).strip("\n")

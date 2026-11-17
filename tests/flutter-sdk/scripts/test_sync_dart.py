@@ -66,6 +66,12 @@ class SyncDart(unittest.TestCase):
         self.assertIn("```groovy\nplugins {}\n```", text)
         self.assertIn("NSBluetoothAlwaysUsageDescription", text)
 
+    def test_podfile_region_syncs_as_ruby(self):
+        self.write("tests/flutter-sdk/ios/Podfile", marked("flutter-podfile", "platform :ios, '15.0'", "# "))
+        doc = self.doc("flutter-podfile")
+        snippets.sync(self.root, check=False)
+        self.assertIn("```ruby\nplatform :ios, '15.0'\n```", doc.read_text())
+
     def test_tool_output_directories_are_skipped(self):
         self.write("tests/flutter-sdk/.dart_tool/x.dart", marked("stray", "void a() {}"))
         self.write("tests/flutter-sdk/ios/Pods/y.plist", marked("stray2", "<a/>", "<!-- ", " -->"))

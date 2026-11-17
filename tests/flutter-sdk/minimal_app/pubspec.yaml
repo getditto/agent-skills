@@ -1,0 +1,23 @@
+name: minimal_app
+description: Minimal Ditto Flutter app; the program published in skills/flutter-sdk/examples/minimal-app.md.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.7.0 <4.0.0"
+
+# snippet:start flutter-minimal-pubspec
+dependencies:
+  flutter:
+    sdk: flutter
+  ditto_live: 5.2.0
+# snippet:end flutter-minimal-pubspec
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
