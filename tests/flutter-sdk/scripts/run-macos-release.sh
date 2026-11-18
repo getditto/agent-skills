@@ -14,7 +14,8 @@
 # deleted on exit, and the release build embeds it: the build output is deleted on
 # exit too. Never upload or cache the .app. The log
 # (tests/flutter-sdk/run-minimal_app-macos-release-<line>.log, gitignored) is checked
-# for the license before the script exits.
+# for the license before any of it is printed. The check reads the license from the
+# environment, never from an argument list.
 #
 # Environment: as run-fixture.sh (DITTO_OFFLINE_LICENSE or the repo-root .env, FLUTTER,
 # PYTHON, FIXTURE_LOG_DIR); RELEASE_APP_TIMEOUT (seconds, default 120).
@@ -64,12 +65,30 @@ with open(sys.argv[1], "w", encoding="utf-8") as output:
                "DITTO_VERSION": os.environ["DITTO_VERSION"], "DITTO_PLATFORM": "macos"}, output)
 EOF
 
+# Deletes the log and fails when it contains the license. grep reads the license
+# as its pattern file from a pipe, so the value never reaches an argument list.
+refuse_license_in_log() {
+  if grep -qF -f <(printenv DITTO_OFFLINE_LICENSE) "$LOG"; then
+    rm -f "$LOG"
+    echo "the license appeared in the $1 output; log deleted" >&2
+    exit 1
+  fi
+}
+
+# Written to the log only; printed after the license check.
+build_status=0
 {
   echo "== minimal_app macOS release, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
   echo "== $(cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p)"
   echo "== defines: DITTO_VERSION=$PIN DITTO_PLATFORM=macos DITTO_LICENSE=<redacted>"
   (cd "$WORKDIR" && "${FLUTTER_CMD[@]}" build macos --release --dart-define-from-file="$DEFINES_FILE")
-} 2>&1 | tee "$LOG"
+} >"$LOG" 2>&1 || build_status=$?
+refuse_license_in_log build
+cat "$LOG"
+if (( build_status != 0 )); then
+  echo "== build failed (exit $build_status)" >&2
+  exit "$build_status"
+fi
 
 APP="$(find "$WORKDIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' | head -1)"
 BINARY="$APP/Contents/MacOS/$(defaults read "$APP/Contents/Info" CFBundleExecutable)"
@@ -92,11 +111,7 @@ APP_PID=""
 cat "$APP_OUT" >>"$LOG"
 rm -f "$APP_OUT"
 
-if grep -qF -- "$DITTO_OFFLINE_LICENSE" "$LOG"; then
-  rm -f "$LOG"
-  echo "the license appeared in the app output; log deleted" >&2
-  exit 1
-fi
+refuse_license_in_log app
 # The engine prefixes Dart's print output with "flutter: ".
 TRANSCRIPT="$(sed -n 's/^\(flutter: \)\{0,1\}transcript: /transcript: /p' "$LOG")"
 printf '%s\n' "$TRANSCRIPT" | sed 's/^/  /'

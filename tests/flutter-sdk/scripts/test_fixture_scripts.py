@@ -296,5 +296,97 @@ class RunFixture(unittest.TestCase):
         self.assertTrue((workdir / "build" / "web").exists())
 
 
+# `flutter build macos`: writes a stand-in .app whose binary prints the transcript.
+# FAKE_LEAK=build prints the defines (the license) in the build output; FAKE_LEAK=app
+# embeds the license in the binary's output, as a real release build embeds the define.
+FAKE_RELEASE_FLUTTER = r"""#!/bin/bash
+[[ "${1:-}" == "--version" ]] && { echo "Flutter 0.0.0-fake"; exit 0; }
+[[ "${1:-}" == "build" ]] || exit 0
+defines=""
+for arg in "$@"; do
+  case "$arg" in --dart-define-from-file=*) defines="$(cat "${arg#--dart-define-from-file=}")" ;; esac
+done
+[[ "${FAKE_LEAK:-}" == "build" ]] && echo "$defines"
+app="build/macos/Build/Products/Release/minimal_app.app/Contents"
+mkdir -p "$app/MacOS"
+cat > "$app/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>minimal_app</string></dict></plist>
+PLIST
+leak=""
+[[ "${FAKE_LEAK:-}" == "app" ]] && leak="$defines"
+{
+  echo '#!/bin/bash'
+  printf 'echo %q\n' "$leak"
+  for line in 'observer: 1 car(s)' 'read-back make: Toyota' "SDK version: 5.2.0" 'platform: macos' 'closed: true'; do
+    printf 'echo %q\n' "flutter: transcript: $line"
+  done
+} > "$app/MacOS/minimal_app"
+chmod +x "$app/MacOS/minimal_app"
+"""
+
+# A grep that records its argument list, then runs the real grep.
+RECORDING_GREP = """#!/bin/bash
+printf 'grep-argv:' >> "$FAKE_RECORD"; printf ' [%s]' "$@" >> "$FAKE_RECORD"; printf '\\n' >> "$FAKE_RECORD"
+exec {grep} "$@"
+"""
+
+
+@unittest.skipUnless(sys.platform == "darwin" and shutil.which("defaults"),
+                     "run-macos-release.sh reads the bundle with defaults(1); macOS only")
+class RunMacosRelease(unittest.TestCase):
+    def setUp(self):
+        self.temp = Path(tempfile.mkdtemp(prefix="run-macos-release-test-"))
+        self.addCleanup(shutil.rmtree, self.temp, True)
+        self.record = self.temp / "record.txt"
+        tools = self.temp / "bin"
+        tools.mkdir()
+        flutter = tools / "flutter"
+        flutter.write_text(FAKE_RELEASE_FLUTTER)
+        grep = tools / "grep"
+        grep.write_text(RECORDING_GREP.format(grep=shutil.which("grep")))
+        for script in (flutter, grep):
+            script.chmod(0o755)
+        (self.temp / "tmp").mkdir()
+        self.logs = self.temp / "logs"
+        self.logs.mkdir()
+        self.environment = {
+            **os.environ, "PATH": f"{tools}{os.pathsep}{os.environ['PATH']}", "FLUTTER": str(flutter),
+            "FAKE_RECORD": str(self.record), "TMPDIR": str(self.temp / "tmp"), "FIXTURE_LOG_DIR": str(self.logs),
+            "DITTO_OFFLINE_LICENSE": FAKE_LICENSE, "RELEASE_APP_TIMEOUT": "20",
+        }
+
+    def run_release(self, leak=""):
+        return subprocess.run(["bash", str(HARNESS / "scripts/run-macos-release.sh"), "5.2"],
+                              env={**self.environment, "FAKE_LEAK": leak}, capture_output=True, text=True,
+                              timeout=300)
+
+    def grep_argv_lines(self):
+        return [line for line in self.record.read_text().splitlines() if line.startswith("grep-argv:")]
+
+    def test_clean_run_passes_and_never_puts_the_license_on_grep_argv(self):
+        result = self.run_release()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("transcript: closed: true", result.stdout)
+        argv = self.grep_argv_lines()
+        self.assertEqual(sum("[-qF] [-f]" in line for line in argv), 2, argv)
+        self.assertFalse(any(FAKE_LICENSE in line for line in argv), "license in grep's argument list")
+        log = (self.logs / "run-minimal_app-macos-release-5.2.log").read_text()
+        self.assertIn("DITTO_LICENSE=<redacted>", log)
+        self.assertNotIn(FAKE_LICENSE, log + result.stdout + result.stderr)
+
+    def test_a_license_in_the_output_is_never_printed_and_the_log_is_deleted(self):
+        for leak in ("build", "app"):
+            with self.subTest(leak=leak):
+                self.record.unlink(missing_ok=True)
+                result = self.run_release(leak)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(f"the license appeared in the {leak} output; log deleted", result.stderr)
+                self.assertNotIn(FAKE_LICENSE, result.stdout + result.stderr)
+                self.assertFalse((self.logs / "run-minimal_app-macos-release-5.2.log").exists())
+                self.assertFalse(any(FAKE_LICENSE in line for line in self.grep_argv_lines()))
+
+
 if __name__ == "__main__":
     unittest.main()
