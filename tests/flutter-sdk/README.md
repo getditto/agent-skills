@@ -372,7 +372,9 @@ harness (see Finding 1):
   Reproduced locally twice (macOS, a warm Gradle daemon) by deleting the downloaded
   files. On a fresh CI runner (ubuntu-24.04, `android-release` 4.14) the first build
   downloaded the same files and passed, so the failure is not unconditional. The CI leg
-  still retries once on 4.14 only, and says so with a warning.
+  retries once, on 4.14 only and only when the build output has that `Transform's
+  input file does not exist: ...ditto_live-4.14.7/android/libs/ditto.jar` error, and
+  emits a `::warning::` when it does.
 
 ### Native builds, 2026-11-17
 
@@ -462,7 +464,9 @@ debug builds.
 | 5.1.0 then 5.2.0 | `migrate_default_dir`, iOS Simulator | pass with `--no-uninstall`; fail without it |
 | 5.2.0 | `run-macos-release.sh` (release build, `.app` run directly) | pass |
 
-- **5.2.0 reads a 5.1.0 default directory in place.** The 5.1.0 write put the store in
+- **5.2.0 reads a 5.1.0 default directory in place** (the read phase asserts it:
+  `absolutePersistenceDirectory` is `{Documents}/ditto-<id>` and no
+  `{Application Support}/ditto-<id>` exists). The 5.1.0 write put the store in
   `{Documents}/ditto-00000000-0000-0000-0000-000000000000` (Application Support had
   none). The 5.2.0 read, with no `persistenceDirectory`, reported
   `absolutePersistenceDirectory` = that same Documents path and returned the car;
@@ -481,8 +485,11 @@ debug builds.
 - **Ditto reads `DITTO_*` variables from the process environment.** Running the
   release `.app` from a shell that exported `DITTO_OFFLINE_LICENSE` logged `The Ditto
   environment variable offline_license is set, but it is not a known system parameter,
-  so it is being ignored`. `run-macos-release.sh` therefore unsets every `DITTO_*`
-  variable for the app; the license is a define.
+  so it is being ignored`. So no harness script lets a `DITTO_*` variable reach
+  flutter or the app it launches: `run-fixture.sh` (`env -u` for every `DITTO_*`,
+  including `.env` keys such as `DITTO_TOKEN`, after writing the defines file),
+  `run-macos-release.sh`, `use-version.py`, `web-probe.py` and `hot-restart.py`. The
+  license is a define only.
 
 ### Windows desktop, 2026-11-17
 
@@ -532,9 +539,12 @@ debug builds unless stated:
   (`minimal_app_test.dart`) ended with `Error waiting for a debug connection: The log
   reader failed unexpectedly` (exit 124) and the next two targets passed in under a
   minute each. `scripts/boot-simulator.sh` now launches a stock app and reads the log
-  once after boot, and the iOS legs set `FIXTURE_RETRIES=1`: a target stopped by the
-  timeout (never one that fails) runs once more. On the third run every iOS target
-  passed on its first attempt, so the retry has not been exercised in CI.
+  once after boot, and the iOS legs set `FIXTURE_RETRIES=1`: `run-fixture.sh` re-runs a
+  target once, with a `::warning::`, only when the timeout stopped it (exit 124) after
+  `The log reader failed unexpectedly` or after a hang following `Xcode build done`
+  with no test output. Any other failure or timeout is never retried. On the third
+  and fourth runs every iOS target passed on its first attempt, so the retry has not
+  been exercised in CI.
 
 ## Findings that changed a research lead
 

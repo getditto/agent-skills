@@ -148,6 +148,16 @@ def redact(text: str, secret: str) -> str:
 # --- builds -------------------------------------------------------------------------
 
 
+def child_environment(environ: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment for flutter and the fixture scripts, without any DITTO_* variable.
+
+    Ditto reads DITTO_* variables from its process environment as system parameters,
+    and the apps get everything they need (the license included) from the defines file.
+    """
+    environ = os.environ if environ is None else environ
+    return {key: value for key, value in environ.items() if not key.startswith("DITTO_")}
+
+
 def flutter_command() -> list[str]:
     flutter = os.environ.get("FLUTTER")
     if flutter:
@@ -158,7 +168,7 @@ def flutter_command() -> list[str]:
 def prepare_workdir(line: str) -> Path:
     python = os.environ.get("PYTHON", sys.executable)
     result = subprocess.run([python, str(HARNESS / "scripts/use-version.py"), "minimal_app", line],
-                            stdout=subprocess.PIPE, text=True, check=True)
+                            stdout=subprocess.PIPE, text=True, check=True, env=child_environment())
     return Path(result.stdout.strip().splitlines()[-1])
 
 
@@ -200,7 +210,7 @@ class Builds:
             print(f"== flutter build web ({variant})", flush=True)
             subprocess.run(flutter_command() + build_args(variant, out, self.defines),
                            cwd=self.workdir, check=True, timeout=timeout,
-                           stdout=sys.stderr)
+                           stdout=sys.stderr, env=child_environment())
             self.built[variant] = out
         return self.built[variant]
 

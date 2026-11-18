@@ -31,8 +31,8 @@
 #
 # Environment: FLUTTER (a flutter executable; default `fvm flutter`), PYTHON (default
 # python3), CHROMEDRIVER, DITTO_PLATFORM (required for phone and simulator device IDs),
-# FIXTURE_TIMEOUT, FIXTURE_RETRIES (default 0: re-runs of a target stopped by the
-# timeout, exit 124; failures are never retried), FIXTURE_LOG_DIR (default
+# FIXTURE_TIMEOUT, FIXTURE_RETRIES (default 0: re-runs of a target the timeout stopped
+# (exit 124) with the known iOS Simulator debug-connection failure; nothing else), FIXTURE_LOG_DIR (default
 # tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
 # MIGRATION_PHASE (wipe, write or read; integration_test/migration/, and added to the
 # log name).
@@ -154,6 +154,14 @@ if command -v cygpath >/dev/null 2>&1; then
   DEFINES_ARG="$(cygpath -m "$DEFINES_FILE")"
 fi
 DEFINES=(--dart-define-from-file="$DEFINES_ARG")
+
+# The defines file now holds everything the app needs. Ditto reads DITTO_* variables
+# from its process environment as system parameters, so flutter and the app it
+# launches run without any of them (the license, and .env keys such as DITTO_TOKEN).
+CLEAN_ENV=(env)
+while read -r name; do
+  CLEAN_ENV+=(-u "$name")
+done < <(env | sed -n 's/^\(DITTO_[A-Za-z0-9_]*\)=.*/\1/p')
 PUBLIC_DEFINES="DITTO_VERSION=$PIN DITTO_PLATFORM=$DITTO_PLATFORM PROBE_DEFAULT_LOGGING=${PROBE_DEFAULT_LOGGING:-unset}"
 PHASE_SUFFIX=""
 TEST_FLAGS=()
@@ -205,7 +213,7 @@ if [[ "$DEVICE" == "chrome" ]]; then
   fi
 fi
 
-FLUTTER_VERSION="$(cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p | tr -d '\r')"
+FLUTTER_VERSION="$(cd "$WORKDIR" && "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p | tr -d '\r')"
 SAFE_DEVICE="$(printf '%s' "$DEVICE" | tr -c 'A-Za-z0-9._-' '_')"
 
 status=0
@@ -213,6 +221,7 @@ for target in "$@"; do
   slug="$(printf '%s' "${target#integration_test/}" | sed 's/\.dart$//' | tr -c 'A-Za-z0-9._-' '_')"
   log="${FIXTURE_LOG_DIR:-$HARNESS}/run-$FIXTURE-$SAFE_DEVICE-$LINE-$slug$PHASE_SUFFIX.log"
   attempt=0
+  attempt_log="$(mktemp "${TMPDIR:-/tmp}/run-fixture-attempt.XXXXXX")"
   : >"$log"
   while :; do
     attempt=$((attempt + 1))
@@ -223,20 +232,33 @@ for target in "$@"; do
       echo "== defines: $PUBLIC_DEFINES DITTO_LICENSE=<redacted>"
       echo "== $target (attempt $attempt)"
       if [[ "$DEVICE" == "chrome" ]]; then
-        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
-          --target="$target" -d chrome --headless "${DEFINES[@]}")
+        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" drive \
+          --driver=test_driver/integration_test.dart --target="$target" -d chrome --headless "${DEFINES[@]}")
       else
-        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
+        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
           ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} "${DEFINES[@]}")
       fi
-    } 2>&1 | tee -a "$log" || target_status=$?
-    # FIXTURE_RETRIES re-runs a target only when `timeout` stopped it (exit 124).
-    if [[ "$target_status" -eq 124 && "$attempt" -le "${FIXTURE_RETRIES:-0}" ]]; then
-      echo "== $target: timed out (exit 124); retrying (FIXTURE_RETRIES=${FIXTURE_RETRIES})" | tee -a "$log"
+    } 2>&1 | tee "$attempt_log" || target_status=$?
+    cat "$attempt_log" >>"$log"
+    # FIXTURE_RETRIES re-runs a target only for the known iOS Simulator debug-connection
+    # failure: stopped by the timeout (exit 124) after either "The log reader failed
+    # unexpectedly", or a hang after "Xcode build done" before any test output. Any
+    # other failure or timeout is never retried.
+    known=""
+    if grep -q 'The log reader failed unexpectedly' "$attempt_log"; then
+      known="The log reader failed unexpectedly"
+    elif grep -q 'Xcode build done' "$attempt_log" && ! grep -Eq '^[0-9]{2}:[0-9]{2} \+[0-9]' "$attempt_log"; then
+      known="hang after Xcode build done, no test output"
+    fi
+    if [[ "$target_status" -eq 124 && -n "$known" && "$attempt" -le "${FIXTURE_RETRIES:-0}" ]]; then
+      message="$target: timed out (exit 124) with the known iOS Simulator failure ($known); retrying (FIXTURE_RETRIES=${FIXTURE_RETRIES})"
+      echo "== $message" | tee -a "$log"
+      [[ -n "${GITHUB_ACTIONS:-}" ]] && echo "::warning::$message"
       continue
     fi
     break
   done
+  rm -f "$attempt_log"
   echo "== $target: exit $target_status" | tee -a "$log"
   if [[ "$target_status" -ne 0 ]]; then
     status="$target_status"

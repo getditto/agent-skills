@@ -78,9 +78,11 @@ void main() {
           const DittoConfig(persistenceDirectory: null),
         );
         final List<String> makes;
+        final String directory;
         try {
           ditto.setOfflineOnlyLicenseToken(license);
-          transcript('5.2 directory: ${ditto.absolutePersistenceDirectory}');
+          directory = ditto.absolutePersistenceDirectory;
+          transcript('5.2 directory: $directory');
           final result = await ditto.store.execute(
             'SELECT * FROM cars WHERE _id = :id',
             arguments: {'id': 'blue-toyota'},
@@ -93,6 +95,34 @@ void main() {
         transcript('documents default exists: ${documents.existsSync()}');
         transcript('support default exists: ${support.existsSync()}');
         expect(makes, ['Toyota']);
+        // Recorded finding (README): 5.2.0 opens the 5.1 store in place under
+        // Documents and creates nothing under Application Support. Fail loudly
+        // if a later SDK moves or copies it.
+        expect(
+          _samePath(directory, documents.path),
+          isTrue,
+          reason: '5.2 opened $directory, not ${documents.path}',
+        );
+        expect(
+          support.existsSync(),
+          isFalse,
+          reason: 'a store appeared under Application Support: ${support.path}',
+        );
     }
   });
+}
+
+/// Whether [a] and [b] name the same directory, ignoring a trailing separator
+/// and symlinked prefixes (macOS `/private/var` vs `/var`).
+bool _samePath(String a, String b) {
+  String normalize(String path) {
+    final resolved = Directory(path).existsSync()
+        ? Directory(path).resolveSymbolicLinksSync()
+        : path;
+    return resolved.endsWith(Platform.pathSeparator)
+        ? resolved.substring(0, resolved.length - 1)
+        : resolved;
+  }
+
+  return normalize(a) == normalize(b);
 }

@@ -130,7 +130,9 @@ def main(argv: list[str]) -> int:
     except ValueError as error:
         print(error, file=sys.stderr)
         return 1
-    result = subprocess.run(command + ["pub", "get"], cwd=target, stdout=sys.stderr)
+    # No DITTO_* variables reach flutter (Ditto reads them as system parameters).
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("DITTO_")}
+    result = subprocess.run(command + ["pub", "get"], cwd=target, stdout=sys.stderr, env=environment)
     if result.returncode != 0:
         return result.returncode
     print(target)

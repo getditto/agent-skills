@@ -82,7 +82,8 @@ def main(argv: list[str]) -> int:
                   f"flutter run -d {args.device} --debug -t {TARGET}", flush=True)
             process = subprocess.Popen(command, cwd=workdir, stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                       text=True, bufsize=1, start_new_session=True)
+                                       text=True, bufsize=1, start_new_session=True,
+                                       env=WEB_PROBE.child_environment())
 
             def pump() -> None:
                 assert process.stdout is not None

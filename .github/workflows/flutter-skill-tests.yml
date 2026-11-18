@@ -142,8 +142,9 @@ jobs:
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          # A first run on a fresh simulator can hang waiting for the debug
-          # connection; a target the timeout stops is run once more.
+          # A first run on a fresh simulator can fail to get its debug connection;
+          # run-fixture.sh re-runs a timed-out target once for that error only,
+          # with a ::warning::.
           FIXTURE_TIMEOUT: '600'
           FIXTURE_RETRIES: '1'
         run: tests/flutter-sdk/scripts/run-migration.sh "${{ steps.sim.outputs.udid }}"
@@ -185,8 +186,9 @@ jobs:
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          # A first run on a fresh simulator can hang waiting for the debug
-          # connection; a target the timeout stops is run once more.
+          # A first run on a fresh simulator can fail to get its debug connection;
+          # run-fixture.sh re-runs a timed-out target once for that error only,
+          # with a ::warning::.
           FIXTURE_TIMEOUT: '600'
           FIXTURE_RETRIES: '1'
         run: |
@@ -280,16 +282,20 @@ jobs:
           FIXTURE: ${{ matrix.fixture }}
           LINE: ${{ matrix.line }}
         run: |
+          set -o pipefail
           workdir="$(python3 tests/flutter-sdk/scripts/use-version.py "$FIXTURE" "$LINE" | tail -1)"
           echo "workdir=$workdir" >> "$GITHUB_OUTPUT"
           cd "$workdir"
-          if ! flutter build apk --release; then
-            # ditto_live 4.14.7 downloads ditto.jar while Gradle configures, so the
-            # first build after `pub get` fails: "Transform's input file does not
-            # exist: .../ditto_live-4.14.7/android/libs/ditto.jar" (README, SDK
-            # defects). Only that line gets one retry.
-            [[ "$LINE" == "4.14" ]] || exit 1
-            echo '::warning::ditto_live 4.14.7 first-build failure; retrying once (SDK defect in tests/flutter-sdk/README.md)'
+          if ! flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/apk-build.log"; then
+            # ditto_live 4.14.7 downloads ditto.jar while Gradle configures, so a
+            # first build after `pub get` can fail with "Transform's input file does
+            # not exist: .../ditto_live-4.14.7/android/libs/ditto.jar" (README, SDK
+            # defects). Only that error, on that line, gets one retry.
+            if [[ "$LINE" != "4.14" ]] \
+              || ! grep -q "Transform's input file does not exist: .*ditto_live-4.14.7/android/libs/ditto.jar" "$RUNNER_TEMP/apk-build.log"; then
+              exit 1
+            fi
+            echo '::warning::ditto_live 4.14.7 first-build Jetify failure on ditto.jar; retrying once (SDK defect in tests/flutter-sdk/README.md)'
             flutter build apk --release
           fi
       # ditto_live's own library manifest declares these on every line, so assert

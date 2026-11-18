@@ -25,6 +25,12 @@ FAKE_LICENSE = "synthetic-license-value=="
 POSIX = os.name == "posix"
 
 
+class ChildEnvironment(unittest.TestCase):
+    def test_drops_every_ditto_variable(self):
+        environ = {"DITTO_OFFLINE_LICENSE": "x", "DITTO_TOKEN": "y", "PATH": "/bin", "FLUTTER": "flutter"}
+        self.assertEqual(WEB_PROBE.child_environment(environ), {"PATH": "/bin", "FLUTTER": "flutter"})
+
+
 class License(unittest.TestCase):
     def test_env_file_parser_matches_run_fixture(self):
         text = ("# comment\nDITTO_OFFLINE_LICENSE=  \"abc==\"\r\nlower=ignored\n"

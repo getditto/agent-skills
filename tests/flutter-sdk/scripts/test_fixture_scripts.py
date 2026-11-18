@@ -99,6 +99,7 @@ FAKE_FLUTTER = r"""#!/bin/bash
 log="$FAKE_RECORD"
 printf 'argv:' >> "$log"; printf ' [%s]' "$@" >> "$log"; printf '\n' >> "$log"
 printf 'pwd: [%s]\n' "$PWD" >> "$log"
+printf 'env-ditto: [%s]\n' "$(env | grep -o '^DITTO_[A-Za-z0-9_]*' | sort | tr '\n' ' ')" >> "$log"
 for arg in "$@"; do
   case "$arg" in
     --dart-define-from-file=*)
@@ -118,9 +119,11 @@ if [[ "${1:-}" == "pub" ]]; then
   echo "synthetic" > build/web/main.dart.js
   echo "synthetic" > build/0123abcd.cache.dill.track.dill
 fi
-# FAKE_TIMEOUT_ONCE=<marker>: the first `test` run exits 124, as `timeout` would.
+# FAKE_TIMEOUT_ONCE=<marker>: the first `test` run prints $FAKE_TIMEOUT_OUTPUT and
+# exits 124, as `timeout` would.
 if [[ "${1:-}" == "test" && -n "${FAKE_TIMEOUT_ONCE:-}" && ! -e "$FAKE_TIMEOUT_ONCE" ]]; then
   : > "$FAKE_TIMEOUT_ONCE"
+  printf '%s\n' "${FAKE_TIMEOUT_OUTPUT:-}"
   exit 124
 fi
 exit 0
@@ -209,19 +212,49 @@ class RunFixture(unittest.TestCase):
         self.assertEqual(len(logs), 1, list((self.temp / "logs").iterdir()))
         self.assertIn("MIGRATION_PHASE=write", logs[0].read_text())
 
-    def test_retries_only_a_timed_out_target_and_only_when_asked(self):
-        target = "integration_test/minimal_app_test.dart"
+    def run_timing_out_once(self, output, retries):
         marker = self.temp / "timed-out-once"
-        once = {**self.environment, "FAKE_TIMEOUT_ONCE": str(marker)}
-        result = self.run_fixture("minimal_app", "macos", "5.2", target, environment=once)
-        self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
-        marker.unlink()
-        self.record.unlink()
-        result = self.run_fixture("minimal_app", "macos", "5.2", target,
-                                  environment={**once, "FIXTURE_RETRIES": "1"})
+        marker.unlink(missing_ok=True)
+        self.record.unlink(missing_ok=True)
+        environment = {**self.environment, "FAKE_TIMEOUT_ONCE": str(marker), "FAKE_TIMEOUT_OUTPUT": output,
+                       "GITHUB_ACTIONS": "true"}
+        if retries:
+            environment["FIXTURE_RETRIES"] = retries
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart",
+                                  environment=environment)
+        runs = sum("[test]" in line for line in self.record.read_text().splitlines())
+        return result, runs
+
+    def test_retries_only_the_known_ios_simulator_timeouts(self):
+        for output in ("Error waiting for a debug connection: The log reader failed unexpectedly",
+                       "Running Xcode build...\nXcode build done.                    114.2s"):
+            with self.subTest(output=output):
+                result, runs = self.run_timing_out_once(output, "")
+                self.assertEqual((result.returncode, runs), (124, 1), result.stdout + result.stderr)
+                result, runs = self.run_timing_out_once(output, "1")
+                self.assertEqual((result.returncode, runs), (0, 2), result.stdout + result.stderr)
+                self.assertIn("::warning::", result.stdout)
+                self.assertIn("with the known iOS Simulator failure", result.stdout)
+        # A timeout after tests started, or with any other output, is never retried.
+        for output in ("Xcode build done.\n00:01 +1: some test", "some other hang"):
+            with self.subTest(output=output):
+                result, runs = self.run_timing_out_once(output, "1")
+                self.assertEqual((result.returncode, runs), (124, 1), result.stdout + result.stderr)
+                self.assertNotIn("retrying", result.stdout)
+
+    def test_flutter_sees_no_ditto_variables(self):
+        environment = {**self.environment, "DITTO_TOKEN": "synthetic-token", "DITTO_URL": "https://example.invalid",
+                       "DITTO_DATABASE_ID": "REPLACE_ME", "DITTO_PLATFORM": "macos"}
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart",
+                                  environment=environment)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(sum("[test]" in line for line in self.record.read_text().splitlines()), 2)
-        self.assertIn("timed out (exit 124); retrying", result.stdout)
+        seen = [line for line in self.record.read_text().splitlines() if line.startswith("env-ditto:")]
+        self.assertTrue(seen)
+        # Every flutter invocation (pub get, --version, test) ran without DITTO_*.
+        self.assertTrue(all(line == "env-ditto: []" for line in seen), seen)
+        defines = json.loads(next(line for line in self.record.read_text().splitlines()
+                                  if line.startswith("defines: "))[9:])
+        self.assertEqual(defines["DITTO_LICENSE"], FAKE_LICENSE)
 
     def test_v4_app_runs_on_the_4_14_line_only(self):
         result = self.run_fixture("v4_app", "macos", "5.2", "integration_test/v4_test.dart")
