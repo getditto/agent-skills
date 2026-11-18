@@ -16,8 +16,8 @@ Prints every `HR: ` line the app writes plus the flutter tool's restart, crash a
 lines, each with seconds since launch; the full output goes to
 tests/flutter-sdk/hot-restart-<device>-<line>-<mode>.log (gitignored). The license
 reaches Flutter only through web-probe.py's mode-600 --dart-define-from-file file and
-is redacted from the output; the build output that embeds it (.dart_tool/flutter_build,
-build/web) is deleted at the end. Bounded: 900 s for the first launch, then --observe.
+is redacted from the output; the fixture copy, whose builds embed it, is deleted at the
+end. Bounded: 900 s for the first launch, then --observe.
 """
 
 from __future__ import annotations
@@ -62,6 +62,7 @@ def main(argv: list[str]) -> int:
 
     pin = json.loads((HARNESS / "versions.json").read_text())["lines"][args.line]
     secret = WEB_PROBE.offline_license()
+    WEB_PROBE.exit_on_sigterm()
     workdir = WEB_PROBE.prepare_workdir(args.line)
     try:
         if args.peer and args.device != "macos":
@@ -149,9 +150,10 @@ def main(argv: list[str]) -> int:
                                    check=False)
                 emit(f"(script) {status}; flutter run exit {process.wait()}")
     finally:
-        # The debug build embeds the defines, the license included; remove it
-        # even when the run above raised.
-        WEB_PROBE.remove_web_build_output(workdir)
+        # Every build in the copy (build/macos or build/web, .dart_tool, the
+        # generated platform config) embeds the defines, the license included;
+        # delete the whole copy even when the run above raised.
+        WEB_PROBE.remove_fixture_copy(workdir)
     print(f"== full output: {log_path}")
     return 0
 

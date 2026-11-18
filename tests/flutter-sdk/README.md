@@ -85,9 +85,19 @@ committed `minimal_app/pubspec.yaml` stays at the 5.2 pin; `use-version.py` refu
 `4.14` for `minimal_app`.
 
 **Never cache or upload the fixture copies or any `build/` directory.** Compiled
-builds embed every define, the license included. `use-version.py` creates the per-user
-directory mode 0700 and refuses one that is a symlink, owned by another user, or
-accessible to others.
+builds embed every define, the license included: in `build/`, in `.dart_tool/`, and in
+the generated platform config (`DART_DEFINES` in `macos/Flutter/ephemeral/*.xcconfig`
+and `ios/Flutter/Generated.xcconfig`). So every script that builds with the license
+(`run-fixture.sh`, and through it `run-probes.sh` and `run-migration.sh`;
+`run-macos-release.sh`; `web-probe.py`; `hot-restart.py`) **deletes its whole fixture
+copy when it ends**: on success, on failure, and on an interrupt (an EXIT trap in the
+shell scripts; `finally`, with SIGTERM turned into an exit, in the Python ones). Every
+run therefore copies the fixture, runs `pub get` and builds from scratch. A copy left
+by a run killed with SIGKILL is replaced whole, never reused, by the next
+`use-version.py`. `use-version.py` creates the per-user directory mode 0700 and refuses
+one that is a symlink, owned by another user, or accessible to others. CI caches and
+uploads none of it; its build-only legs (release APKs, iOS Simulator builds,
+`from-skill`) pass no license define.
 
 Time bounds: every probe file sets a 2-minute per-test timeout (`integration_test`
 otherwise has none), and `run-fixture.sh` wraps each `flutter` invocation in
@@ -124,9 +134,8 @@ target cannot import files above `integration_test/web/`; the web probes therefo
 have their own harness, `web/web_harness.dart`, with no `dart:io`, no temporary
 directory (`persistenceDirectory: null`) and Ditto logging at its default.
 The drive targets are `web_all_test.dart` (5.0+), `web_51_test.dart` (5.1+) and
-`web_license_test.dart` (5.0+; one probe that needs a fresh page). The chrome leg's
-EXIT trap deletes the debug web build output (`.dart_tool/flutter_build`, `build/web`)
-from the fixture copy, since it embeds the license:
+`web_license_test.dart` (5.0+; one probe that needs a fresh page). As on every
+device, the EXIT trap deletes the fixture copy, debug web build output included:
 
 ```bash
 tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome 5.2 integration_test/web/web_all_test.dart \
@@ -138,8 +147,8 @@ release mode (dart2js, `--wasm`, `--base-href /app/`), serves each bundle with t
 headers a probe needs, loads it in headless Chrome through ChromeDriver (an existing
 one on :4444, else `$CHROMEDRIVER` on a free port), and asserts the transcript the app
 publishes. The license reaches Flutter only through a mode-600
-`--dart-define-from-file` file; every bundle, and the intermediate output under
-`.dart_tool/flutter_build` and `build/web`, is deleted before the script exits.
+`--dart-define-from-file` file; every bundle, and then the whole fixture copy, is
+deleted before the script exits.
 `--skip-manual` skips the timing probe `web_large_result_jank`.
 `scripts/test_web_probe.py` checks its secret handling, server and timing helpers.
 Results per probe ID, with versions and build modes, are in `web-results/5.2.0.md`.
@@ -176,7 +185,7 @@ DITTO_PLATFORM=ios tests/flutter-sdk/scripts/run-migration.sh <simulator-udid>
 `flutter build macos --release` (so `Release.entitlements` applies), runs the built
 app's executable without the shell's `DITTO_*` variables, and checks the transcript
 `lib/main.dart` prints on stdout (`flutter: transcript: ...`). The release build embeds
-the license; the script deletes the build output on exit.
+the license; the script deletes the whole fixture copy on exit.
 
 `build-from-skill.py <out-dir>` builds a project from `flutter create` plus only what
 `skills/flutter-sdk` publishes: the program and dependencies from

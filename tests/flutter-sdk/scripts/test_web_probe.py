@@ -5,7 +5,9 @@ HTTP server and the timing arithmetic. No Flutter, Chrome or license needed.
 Run: python3 tests/flutter-sdk/scripts/test_web_probe.py
 """
 
+import contextlib
 import importlib.util
+import io
 import os
 from pathlib import Path
 import stat
@@ -187,6 +189,28 @@ class Probes(unittest.TestCase):
             "web_reload_persistence", "web_default_build", "web_wasm_build", "web_no_coop_coep",
             "web_csp", "web_base_href", "web_large_result_jank"]))
         self.assertTrue(WEB_PROBE.MANUAL <= set(WEB_PROBE.PROBES))
+
+
+
+class FixtureCopy(unittest.TestCase):
+    def test_a_fixture_copy_is_deleted_whole(self):
+        with tempfile.TemporaryDirectory() as temp:
+            workdir = Path(temp) / "flutter-fixture-someone" / "5.2" / "minimal_app"
+            (workdir / "macos" / "Flutter" / "ephemeral").mkdir(parents=True)
+            (workdir / "build" / "web").mkdir(parents=True)
+            WEB_PROBE.remove_fixture_copy(workdir)
+            self.assertFalse(workdir.exists())
+            self.assertTrue(workdir.parent.is_dir())
+            WEB_PROBE.remove_fixture_copy(workdir)  # already gone: no error
+
+    def test_any_other_directory_is_left_alone(self):
+        with tempfile.TemporaryDirectory() as temp:
+            other = Path(temp) / "projects" / "5.2" / "minimal_app"
+            other.mkdir(parents=True)
+            with contextlib.redirect_stderr(io.StringIO()) as errors:
+                WEB_PROBE.remove_fixture_copy(other)
+            self.assertTrue(other.is_dir())
+            self.assertIn("not a use-version.py fixture copy", errors.getvalue())
 
 
 if __name__ == "__main__":

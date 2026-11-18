@@ -27,8 +27,9 @@ hand (web-results/), not an assertion that holds on every runner.
 The license comes from DITTO_OFFLINE_LICENSE (environment, else the gitignored repo-root
 .env, parsed like run-fixture.sh). It reaches Flutter only through
 --dart-define-from-file: a mode-600 temporary file deleted on exit, never a command-line
-argument. The compiled bundles embed it, so every build/ directory this script creates
-is deleted before it exits, and printed browser logs have the license redacted.
+argument. The compiled bundles embed it, so the whole fixture copy (every build/
+directory, .dart_tool) is deleted before it exits, and printed browser logs have the
+license redacted.
 
 ChromeDriver: a ChromeDriver already answering /status on 127.0.0.1:4444 is reused;
 otherwise $CHROMEDRIVER (default `chromedriver` on PATH) is started on a free port and
@@ -46,6 +47,7 @@ import http.server
 import json
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -192,6 +194,34 @@ def remove_web_build_output(workdir: Path) -> None:
     shutil.rmtree(workdir / "build" / "web", ignore_errors=True)
     for cache in (workdir / "build").glob("*.cache.dill.track.dill"):
         cache.unlink(missing_ok=True)
+
+
+def remove_fixture_copy(workdir: Path) -> None:
+    """Deletes a use-version.py fixture copy whole. Every build in it embeds the
+    defines, the license included (build/, .dart_tool/, generated platform config),
+    so the scripts that build with the license delete it when they end; the next
+    run rebuilds from scratch. Refuses a path that is not <root>/<line>/<fixture>
+    under a flutter-fixture-<user> root."""
+    if not workdir.parent.parent.name.startswith("flutter-fixture-"):
+        print(f"not deleting {workdir}: not a use-version.py fixture copy", file=sys.stderr)
+        return
+    for attempt in range(2):
+        try:
+            shutil.rmtree(workdir)
+            return
+        except FileNotFoundError:
+            return
+        except OSError as error:
+            if attempt:
+                print(f"::warning::could not delete the fixture copy {workdir}, which embeds the license: {error}",
+                      file=sys.stderr)
+            else:
+                time.sleep(5)  # Windows can hold a just-exited app's files open.
+
+
+def exit_on_sigterm() -> None:
+    """SIGTERM raises SystemExit, so `finally` blocks (and the copy's deletion) run."""
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
 
 
 class Builds:
@@ -568,7 +598,15 @@ def main(argv: list[str]) -> int:
         selected = [name for name in selected if name not in MANUAL]
 
     secret = offline_license()
+    exit_on_sigterm()
     workdir = prepare_workdir(args.line)
+    try:
+        return run_probes(workdir, selected, pin, secret)
+    finally:
+        remove_fixture_copy(workdir)
+
+
+def run_probes(workdir: Path, selected: list[str], pin: str, secret: str) -> int:
     defines = {"DITTO_LICENSE": secret, "DITTO_VERSION": pin, "DITTO_PLATFORM": "web"}
     failures = 0
     with defines_file(defines) as path, chromedriver() as base:

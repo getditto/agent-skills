@@ -14,11 +14,13 @@ import os
 import re
 from pathlib import Path
 import shutil
+import signal
 import socket
 import stat
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -78,6 +80,23 @@ class UseVersion(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlink"):
                 USE_VERSION.private_root(Path(base))
 
+    @unittest.skipUnless(POSIX, "the fake flutter is a bash script")
+    def test_a_leftover_copy_is_replaced_whole(self):
+        temp = Path(tempfile.mkdtemp(prefix="use-version-test-"))
+        self.addCleanup(shutil.rmtree, temp, True)
+        (temp / "tmp").mkdir()
+        fake = temp / "flutter"
+        fake.write_text("#!/bin/bash\nexit 0\n")
+        fake.chmod(0o755)
+        environment = {**os.environ, "TMPDIR": str(temp / "tmp"), "FLUTTER": str(fake)}
+        run = lambda: subprocess.run([sys.executable, str(HARNESS / "scripts/use-version.py"), "minimal_app", "5.2"],
+                                     env=environment, capture_output=True, text=True, check=True)
+        workdir = Path(run().stdout.strip().splitlines()[-1])
+        (workdir / "build" / "macos").mkdir(parents=True)
+        (workdir / "build" / "macos" / "left.dill").write_text("synthetic")
+        self.assertEqual(Path(run().stdout.strip().splitlines()[-1]), workdir)
+        self.assertFalse((workdir / "build").exists(), "a leftover build/ was reused")
+
     def test_flutter_command_resolves_through_path(self):
         windows_flutter = r"C:\flutter\bin\flutter.bat"
         with patch.dict(os.environ, {"FLUTTER": "flutter"}), \
@@ -118,6 +137,18 @@ if [[ "${1:-}" == "pub" ]]; then
   echo "synthetic" > .dart_tool/flutter_build/0123abcd/main.dart.js
   echo "synthetic" > build/web/main.dart.js
   echo "synthetic" > build/0123abcd.cache.dill.track.dill
+fi
+# Stand-ins for the license-bearing native output a real build leaves.
+if [[ "${1:-}" == "test" ]]; then
+  mkdir -p build/macos macos/Flutter/ephemeral .dart_tool/flutter_build/0123abcd
+  echo "synthetic" > build/macos/app.dill
+  echo "DART_DEFINES=synthetic" > macos/Flutter/ephemeral/Flutter-Generated.xcconfig
+fi
+# FAKE_TEST_EXIT=<n>: `test` exits n. FAKE_TEST_HANG=1: `test` hangs until killed.
+[[ "${1:-}" == "test" && -n "${FAKE_TEST_EXIT:-}" ]] && exit "$FAKE_TEST_EXIT"
+if [[ "${1:-}" == "test" && -n "${FAKE_TEST_HANG:-}" ]]; then
+  echo "hanging" >> "$log"
+  sleep 120
 fi
 # FAKE_TIMEOUT_ONCE=<marker>: the first `test` run prints $FAKE_TIMEOUT_OUTPUT and
 # exits 124, as `timeout` would.
@@ -281,25 +312,63 @@ class RunFixture(unittest.TestCase):
         self.assertIn("ChromeDriver did not come up on 127.0.0.1:4444", result.stderr)
         record = self.record.read_text()
         self.assertNotIn("[drive]", record)
-        # The EXIT trap deletes the chrome leg's web build output in the fixture copy.
-        workdir = Path(next(line for line in record.splitlines() if line.startswith("pwd: "))[6:-1])
-        self.assertTrue(workdir.is_dir(), workdir)
-        self.assertFalse((workdir / ".dart_tool" / "flutter_build").exists())
-        self.assertFalse((workdir / "build" / "web").exists())
-        self.assertEqual(list((workdir / "build").glob("*.cache.dill.track.dill")), [])
+        # The EXIT trap deletes the whole fixture copy, web build output included.
+        self.assertFalse(self.workdir().exists(), self.workdir())
 
-    def test_native_runs_leave_the_fixture_build_alone(self):
+    def workdir(self):
+        return Path(next(line for line in self.record.read_text().splitlines()
+                         if line.startswith("pwd: "))[6:-1])
+
+    def test_a_native_run_deletes_the_fixture_copy(self):
         result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        workdir = Path(next(line for line in self.record.read_text().splitlines()
-                            if line.startswith("pwd: "))[6:-1])
-        self.assertTrue((workdir / "build" / "web").exists())
+        workdir = self.workdir()
+        self.assertTrue(workdir.name == "minimal_app" and workdir.parent.name == "5.2", workdir)
+        self.assertFalse(workdir.exists(), "license-bearing build output left behind")
+        self.assertTrue(workdir.parent.is_dir())
+        # A rerun copies and builds again from scratch.
+        self.record.unlink()
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("[test]", self.record.read_text())
+        self.assertFalse(self.workdir().exists())
+
+    def test_a_failed_run_deletes_the_fixture_copy(self):
+        result = self.run_fixture("minimal_app", "macos", "5.2", "integration_test/minimal_app_test.dart",
+                                  environment={**self.environment, "FAKE_TEST_EXIT": "1"})
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertFalse(self.workdir().exists())
+
+    def test_an_interrupted_run_deletes_the_fixture_copy(self):
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            with self.subTest(signal=signum.name):
+                self.record.unlink(missing_ok=True)
+                process = subprocess.Popen(
+                    ["bash", str(HARNESS / "scripts/run-fixture.sh"), "minimal_app", "macos", "5.2",
+                     "integration_test/minimal_app_test.dart"],
+                    env={**self.environment, "FAKE_TEST_HANG": "1"}, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, start_new_session=True)
+                deadline = time.monotonic() + 120
+                while time.monotonic() < deadline:
+                    if self.record.exists() and "hanging" in self.record.read_text():
+                        break
+                    time.sleep(0.2)
+                else:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    self.fail("the fake flutter test never started")
+                workdir = self.workdir()
+                self.assertTrue((workdir / "macos" / "Flutter" / "ephemeral").is_dir())
+                # As Ctrl-C would: the whole process group gets the signal.
+                os.killpg(process.pid, signum)
+                process.wait(timeout=60)
+                self.assertFalse(workdir.exists(), f"{signum.name}: fixture copy left behind")
 
 
 # `flutter build macos`: writes a stand-in .app whose binary prints the transcript.
 # FAKE_LEAK=build prints the defines (the license) in the build output; FAKE_LEAK=app
 # embeds the license in the binary's output, as a real release build embeds the define.
 FAKE_RELEASE_FLUTTER = r"""#!/bin/bash
+printf 'pwd: [%s]\n' "$PWD" >> "$FAKE_RECORD"
 [[ "${1:-}" == "--version" ]] && { echo "Flutter 0.0.0-fake"; exit 0; }
 [[ "${1:-}" == "build" ]] || exit 0
 defines=""
@@ -326,6 +395,12 @@ leak=""
 chmod +x "$app/MacOS/minimal_app"
 """
 
+# defaults(1) is macOS-only; the script only reads CFBundleExecutable with it.
+FAKE_DEFAULTS = r"""#!/bin/bash
+[[ "${1:-}" == "read" && "${3:-}" == "CFBundleExecutable" && -f "$2.plist" ]] || exit 1
+sed -n 's:.*<key>CFBundleExecutable</key><string>\([^<]*\)</string>.*:\1:p' "$2.plist"
+"""
+
 # A grep that records its argument list, then runs the real grep.
 RECORDING_GREP = """#!/bin/bash
 printf 'grep-argv:' >> "$FAKE_RECORD"; printf ' [%s]' "$@" >> "$FAKE_RECORD"; printf '\\n' >> "$FAKE_RECORD"
@@ -333,9 +408,10 @@ exec {grep} "$@"
 """
 
 
-@unittest.skipUnless(sys.platform == "darwin" and shutil.which("defaults"),
-                     "run-macos-release.sh reads the bundle with defaults(1); macOS only")
+@unittest.skipUnless(POSIX and shutil.which("bash"), "run-macos-release.sh needs bash; Windows is not exercised here")
 class RunMacosRelease(unittest.TestCase):
+    """Runs on Linux too (the required CI job): a fake defaults(1) reads the bundle."""
+
     def setUp(self):
         self.temp = Path(tempfile.mkdtemp(prefix="run-macos-release-test-"))
         self.addCleanup(shutil.rmtree, self.temp, True)
@@ -346,7 +422,9 @@ class RunMacosRelease(unittest.TestCase):
         flutter.write_text(FAKE_RELEASE_FLUTTER)
         grep = tools / "grep"
         grep.write_text(RECORDING_GREP.format(grep=shutil.which("grep")))
-        for script in (flutter, grep):
+        defaults = tools / "defaults"
+        defaults.write_text(FAKE_DEFAULTS)
+        for script in (flutter, grep, defaults):
             script.chmod(0o755)
         (self.temp / "tmp").mkdir()
         self.logs = self.temp / "logs"
@@ -362,6 +440,10 @@ class RunMacosRelease(unittest.TestCase):
                               env={**self.environment, "FAKE_LEAK": leak}, capture_output=True, text=True,
                               timeout=300)
 
+    def workdir(self):
+        return Path(next(line for line in self.record.read_text().splitlines()
+                         if line.startswith("pwd: "))[6:-1])
+
     def grep_argv_lines(self):
         return [line for line in self.record.read_text().splitlines() if line.startswith("grep-argv:")]
 
@@ -375,6 +457,7 @@ class RunMacosRelease(unittest.TestCase):
         log = (self.logs / "run-minimal_app-macos-release-5.2.log").read_text()
         self.assertIn("DITTO_LICENSE=<redacted>", log)
         self.assertNotIn(FAKE_LICENSE, log + result.stdout + result.stderr)
+        self.assertFalse(self.workdir().exists(), "the release build was left behind")
 
     def test_a_license_in_the_output_is_never_printed_and_the_log_is_deleted(self):
         for leak in ("build", "app"):
@@ -386,6 +469,7 @@ class RunMacosRelease(unittest.TestCase):
                 self.assertNotIn(FAKE_LICENSE, result.stdout + result.stderr)
                 self.assertFalse((self.logs / "run-minimal_app-macos-release-5.2.log").exists())
                 self.assertFalse(any(FAKE_LICENSE in line for line in self.grep_argv_lines()))
+                self.assertFalse(self.workdir().exists(), "the release build was left behind")
 
 
 if __name__ == "__main__":

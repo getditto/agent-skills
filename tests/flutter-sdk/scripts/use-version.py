@@ -15,7 +15,9 @@ The copy's path is the last line printed on stdout.
 
 Builds of the copy embed the license passed as a define, so the per-user directory is
 created mode 0700, and an existing one that is a symlink, is not owned by the current
-user, or is readable by others is refused. Never cache or upload it.
+user, or is readable by others is refused. Never cache or upload it. An existing copy
+is replaced whole, and the scripts that build with the license (run-fixture.sh,
+run-macos-release.sh, web-probe.py, hot-restart.py) delete theirs when they end.
 
 minimal_app compiles against 5.0+ only; the 4.14 line uses tests/flutter-sdk/v4_app,
 which runs on 4.14 only.
@@ -103,15 +105,10 @@ def main(argv: list[str]) -> int:
         return 1
     target = target_root / fixture
     if target.exists():
-        # Keep build/ between runs of the same line (it is slow to rebuild); replace
-        # everything else so the copy matches the fixture.
-        for child in target.iterdir():
-            if child.name == "build":
-                continue
-            if child.is_dir() and not child.is_symlink():
-                shutil.rmtree(child)
-            else:
-                child.unlink()
+        # The run scripts delete the copy when they end; one left by a killed run
+        # (or a script that does not delete it) may embed the license, so nothing
+        # of it is reused.
+        shutil.rmtree(target)
     target.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target, ignore=IGNORE, dirs_exist_ok=True, symlinks=True)
 

@@ -11,8 +11,8 @@
 # persistence directory and prints each transcript line as `transcript: <line>`.
 #
 # The license reaches Flutter only through a mode-600 --dart-define-from-file file,
-# deleted on exit, and the release build embeds it: the build output is deleted on
-# exit too. Never upload or cache the .app. The log
+# deleted on exit, and the release build embeds it: the whole fixture copy (build
+# output, .dart_tool and generated config) is deleted on exit too. Never upload or cache the .app. The log
 # (tests/flutter-sdk/run-minimal_app-macos-release-<line>.log, gitignored) is checked
 # for the license before any of it is printed. The check reads the license from the
 # environment, never from an argument list.
@@ -49,11 +49,32 @@ LOG="${FIXTURE_LOG_DIR:-$HARNESS}/run-minimal_app-macos-release-$LINE.log"
 
 DEFINES_FILE=""
 APP_PID=""
+FIXTURE=minimal_app
+# Every build of the fixture copy embeds the defines, the license included: build/,
+# .dart_tool/, and the generated platform config (DART_DEFINES in
+# macos/Flutter/ephemeral/*.xcconfig and ios/Flutter/Generated.xcconfig). So the
+# whole copy is deleted when the run ends, on success, failure or interrupt; the
+# next run copies and builds it from scratch.
+remove_fixture_copy() {
+  [[ -n "$WORKDIR" ]] || return 0
+  local normalized="${WORKDIR//\\//}"
+  case "$normalized" in
+    */flutter-fixture-*/"$LINE"/"$FIXTURE") ;;
+    *)
+      echo "not deleting $WORKDIR: not a use-version.py fixture copy" >&2
+      return 0
+      ;;
+  esac
+  if ! rm -rf "$WORKDIR" 2>/dev/null; then
+    # Windows can hold a just-exited app's files open for a moment.
+    sleep 5
+    rm -rf "$WORKDIR" || echo "::warning::could not delete the fixture copy $WORKDIR, which embeds the license" >&2
+  fi
+}
 cleanup() {
   [[ -n "$APP_PID" ]] && kill "$APP_PID" 2>/dev/null || true
   [[ -n "$DEFINES_FILE" ]] && rm -f "$DEFINES_FILE"
-  # The release build embeds the license.
-  rm -rf "$WORKDIR/build/macos" "$WORKDIR/.dart_tool/flutter_build"
+  remove_fixture_copy
 }
 trap cleanup EXIT
 

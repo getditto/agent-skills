@@ -23,7 +23,8 @@
 # when those variables are set) go to Flutter through --dart-define-from-file: a mode-600 temporary file that
 # is deleted on exit, so the license never appears in a process argument list.
 # Compiled builds embed every define, so never cache or upload the fixture copy or its
-# build/ directory.
+# build/ directory. The whole copy is deleted when this script exits (success, failure or
+# interrupt), so every run rebuilds from scratch.
 #
 # Each flutter invocation is bounded by FIXTURE_TIMEOUT seconds (default 1800) when a
 # GNU `timeout` (or Homebrew's `gtimeout`) is available. Each target's output is copied to
@@ -113,6 +114,27 @@ WORKDIR="$("$PYTHON" "$HARNESS/scripts/use-version.py" "$FIXTURE" "$LINE" | tail
 
 CHROMEDRIVER_PID=""
 DEFINES_FILE=""
+# Every build of the fixture copy embeds the defines, the license included: build/,
+# .dart_tool/, and the generated platform config (DART_DEFINES in
+# macos/Flutter/ephemeral/*.xcconfig and ios/Flutter/Generated.xcconfig). So the
+# whole copy is deleted when the run ends, on success, failure or interrupt; the
+# next run copies and builds it from scratch.
+remove_fixture_copy() {
+  [[ -n "$WORKDIR" ]] || return 0
+  local normalized="${WORKDIR//\\//}"
+  case "$normalized" in
+    */flutter-fixture-*/"$LINE"/"$FIXTURE") ;;
+    *)
+      echo "not deleting $WORKDIR: not a use-version.py fixture copy" >&2
+      return 0
+      ;;
+  esac
+  if ! rm -rf "$WORKDIR" 2>/dev/null; then
+    # Windows can hold a just-exited app's files open for a moment.
+    sleep 5
+    rm -rf "$WORKDIR" || echo "::warning::could not delete the fixture copy $WORKDIR, which embeds the license" >&2
+  fi
+}
 cleanup() {
   if [[ -n "$DEFINES_FILE" ]]; then
     rm -f "$DEFINES_FILE"
@@ -120,13 +142,7 @@ cleanup() {
   if [[ -n "$CHROMEDRIVER_PID" ]]; then
     kill "$CHROMEDRIVER_PID" 2>/dev/null || true
   fi
-  # The chrome leg's debug web build leaves compiled JavaScript with every define
-  # (the license included) in the fixture copy; delete it.
-  # Flutter's incremental-compile caches (build/*.cache.dill.track.dill) embed it too.
-  if [[ "$DEVICE" == "chrome" && -n "$WORKDIR" ]]; then
-    rm -rf "$WORKDIR/.dart_tool/flutter_build" "$WORKDIR/build/web"
-    rm -f "$WORKDIR"/build/*.cache.dill.track.dill
-  fi
+  remove_fixture_copy
 }
 trap cleanup EXIT
 
