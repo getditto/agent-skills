@@ -64,9 +64,31 @@ PACKAGE = HARNESS / "snippet_check"
 DEFAULT_LINE = "5.2"
 FRAGMENT_REASONS = {"pseudo-diff", "v4-rename-table", "partial-class-member"}
 # A fragment that names a member of a Ditto value (`ditto.store`, `Ditto.open`,
-# `_ditto.sync`, `myDitto.store`) must compile instead. Any identifier ending in
-# ditto/Ditto counts; a sentence ending in "Ditto." does not.
-DITTO_CALL_RE = re.compile(r"[Dd]itto\.[A-Za-z_]")
+# `_ditto.sync`, `myDitto.store`, `widget.ditto.sync`) must compile instead. Any
+# identifier ending in ditto/Ditto counts; a sentence ending in "Ditto." does not,
+# and neither does a URL or file path (`docs.ditto.live`, `lib/src/ditto.dart`).
+DITTO_CALL_RE = re.compile(r"[Dd]itto\.([A-Za-z_]\w*)")
+# What follows "ditto." in a host name or file name, never a Ditto member.
+_NOT_A_MEMBER = {"dart", "live", "com"}
+# Characters that end a URL or path token in a comment or string.
+_TOKEN_END = set(" \t\n'\"`()<>[]{},;")
+
+
+def calls_ditto(code: str) -> bool:
+    """True when the code names a member of a Ditto value outside a URL or path."""
+    for match in DITTO_CALL_RE.finditer(code):
+        if match.group(1) in _NOT_A_MEMBER:
+            continue
+        start, end = match.start(), match.end()
+        while start > 0 and code[start - 1] not in _TOKEN_END:
+            start -= 1
+        while end < len(code) and code[end] not in _TOKEN_END:
+            end += 1
+        token = code[start:end]
+        if "://" in token or "/" in token:
+            continue
+        return True
+    return False
 _WRAPPER = "Future<void> snippet(Ditto ditto) async {\n"
 PRELUDES = {
     # The body of `snippet(Ditto ditto)`, with ditto_live imported.
@@ -174,7 +196,7 @@ def classify(fence: Fence, lines: dict[str, str], errors: list[str]) -> str | No
                 f"{where}: unknown dart-fragment reason '{fragment}'; accepted: "
                 + ", ".join(sorted(FRAGMENT_REASONS))
             )
-        elif DITTO_CALL_RE.search(fence.code):
+        elif calls_ditto(fence.code):
             errors.append(f"{where}: a dart-fragment fence calls Ditto, so it must compile; remove the marker")
         return None
     prelude = fence.markers.get("dart-prelude")

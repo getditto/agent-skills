@@ -323,6 +323,10 @@ Criteria passed out of the total, with partials or fails in brackets:
   retried once; the retry read only the skill and is the final record. No other Codex run
   read outside its workspace, apart from baseline runs listing their own fresh
   `CODEX_HOME` skills.
+  The cause is a limit of the method: Codex's `--sandbox read-only` blocks writes, not
+  reads, so a model can read any file the user can, inside the workspace or not. A fresh
+  `HOME` and `CODEX_HOME` hide the usual locations but not other paths on disk, such as
+  temp directories. Each Codex trace was checked for reads outside its workspace.
 - Claude Code ran with `--setting-sources project` and only the Read, Grep, Glob and Skill
   tools. That this excluded user-level guidance files (`CLAUDE.md` and its includes) is
   not proven. No Claude trace shows any sign of them: none mentions or follows the user's

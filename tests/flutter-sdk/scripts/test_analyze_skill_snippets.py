@@ -144,6 +144,14 @@ class Helpers(unittest.TestCase):
         self.assertTrue(errors_for("  final ditto2 = otherditto.store;"))
         self.assertEqual(errors_for("// The old shape, removed in Ditto."), [])
         self.assertEqual(errors_for("// Ditto. Then a new sentence, ditto ."), [])
+        self.assertTrue(errors_for("+ widget.ditto.sync.start();"))
+        # URLs and file paths name ditto without calling it.
+        self.assertEqual(errors_for("// See https://docs.ditto.live/sdk/latest/install-guides/flutter"), [])
+        self.assertEqual(errors_for("// See docs.ditto.live and ditto.com."), [])
+        self.assertEqual(errors_for("// lib/src/ditto.dart @ sdk-release-5.2.0; also ditto.dart"), [])
+        self.assertEqual(errors_for("import 'package:ditto_live/src/ditto.store.dart';"), [])
+        # A real call next to a URL is still a call.
+        self.assertTrue(errors_for("// https://docs.ditto.live\n- ditto.sync.start();"))
 
 if __name__ == "__main__":
     unittest.main()

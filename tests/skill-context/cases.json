@@ -70,7 +70,7 @@
       "id": "kotlin_observer",
       "prompt": "Our Android app uses com.ditto:ditto-kotlin 5.1.0. A ViewModel exposes ditto.store.observe(\"SELECT * FROM cars\") { r -> r.items.map { json.decodeFromString<Car>(it.jsonString()) } }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()), yet the list still janks during sync bursts. A second screen uses registerObserver, keeps result.items in a field for a detail view, and after one malformed document it never updated again. Explain what is wrong and give the corrected Kotlin.",
       "review_criteria": [
-        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform \u2014 hop with withContext(Dispatchers.IO) inside the transform or handler",
+        "On Android the handler and the observe() transform start on the SDK's MainScope (main thread); flowOn does not move the transform — hop with withContext(Dispatchers.IO) inside the transform or handler",
         "Never retain result.items beyond the handler; extract plain data inside the lambda (closed-item IllegalStateException)",
         "An exception escaping a registerObserver handler closes the observer silently; catch inside, do not rethrow",
         "Flow collected in viewModelScope/stateIn needs no manual close; a registerObserver handle must be closed explicitly",
@@ -130,7 +130,7 @@
     },
     {
       "id": "dql_destructive_delete",
-      "prompt": "Ditto SDK 5.2.0. Give me the DQL to get rid of all orders with status 'cancelled' \u2014 we just want them gone from this tablet's database.",
+      "prompt": "Ditto SDK 5.2.0. Give me the DQL to get rid of all orders with status 'cancelled' — we just want them gone from this tablet's database.",
       "review_criteria": [
         "Routing: the write-dql skill is used",
         "Distinguishes EVICT (local, other peers can re-sync it) from DELETE (mesh-wide tombstone) and maps 'gone from this tablet' to EVICT",
@@ -181,7 +181,7 @@
       "prompt": "Ditto 5.1 iOS app: two iPhones on the same Wi-Fi never see each other over LAN, though Bluetooth works. The tester tapped 'Don't Allow' on a network prompt at first launch. What should we check and fix?",
       "review_criteria": [
         "Routing: the ditto-mesh-networking skill (and/or native-app-config) is used",
-        "Identifies the sticky Local Network permission denial and re-enabling it in Settings \u2192 Privacy \u2192 Local Network",
+        "Identifies the sticky Local Network permission denial and re-enabling it in Settings → Privacy → Local Network",
         "Requires NSLocalNetworkUsageDescription and NSBonjourServices including _http-alt._tcp. in Info.plist; a missing entry fails silently",
         "Does not recommend the restricted multicast entitlement for ordinary Bonjour discovery"
       ]
@@ -199,9 +199,9 @@
       "prompt": "We're trying Ditto Data Streams (preview, 5.2.0) between two peers. connect() always fails with 'Failed to connect stream: Rejected(HandshakeTimedOut)'. Presence shows the other peer. What are the likely causes, in what order should we check them?",
       "review_criteria": [
         "Routing: the data-streams skill is used",
-        "Causes: the remote never opened a candidate \u2014 topic not bound yet, the bind callback threw before open, or NGN off on one side",
+        "Causes: the remote never opened a candidate — topic not bound yet, the bind callback threw before open, or NGN off on one side",
         "Fixes: bind before connecting with retry/backoff, make the bind callback exception-free, enable NGN on both peers before creating Ditto",
-        "Gives an ordered check: NGN on both \u2192 sync started \u2192 presence \u2192 topic bound \u2192 reliability matches \u2192 candidate opened in the callback \u2192 payload under maxSendSize"
+        "Gives an ordered check: NGN on both → sync started → presence → topic bound → reliability matches → candidate opened in the callback → payload under maxSendSize"
       ]
     },
     {
