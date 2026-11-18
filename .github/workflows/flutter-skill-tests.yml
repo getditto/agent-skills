@@ -4,13 +4,19 @@ on:
   pull_request:
     paths:
       - 'skills/flutter-sdk/**'
+      - 'skills/native-app-config/**'
       - 'tests/flutter-sdk/**'
+      - 'scripts/sync-snippets.py'
+      - 'scripts/check-dependency-age.py'
       - '.github/workflows/flutter-skill-tests.yml'
   push:
     branches: [main]
     paths:
       - 'skills/flutter-sdk/**'
+      - 'skills/native-app-config/**'
       - 'tests/flutter-sdk/**'
+      - 'scripts/sync-snippets.py'
+      - 'scripts/check-dependency-age.py'
       - '.github/workflows/flutter-skill-tests.yml'
   workflow_dispatch:
 
@@ -19,7 +25,8 @@ permissions:
 
 concurrency:
   group: flutter-skill-tests-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded pull-request runs are cancelled; runs on main always finish.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # License hygiene, for every job below:
 # - The license reaches Flutter only through run-fixture.sh's (or web-probe.py's, or

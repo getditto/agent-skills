@@ -48,9 +48,12 @@ updates:
       - "/tests/flutter-sdk/minimal_app"
       - "/tests/flutter-sdk/snippet_check"
       - "/tests/flutter-sdk/v4_app"
-    # tests/flutter-sdk/versions.json owns the ditto_live pin per SDK line.
+    # tests/flutter-sdk/versions.json owns the ditto_live pin per SDK line and the
+    # flutter_lints pin every fixture must match (test_fixture_scripts.py), so bump
+    # those there and in the pubspecs together, not through Dependabot.
     ignore:
       - dependency-name: "ditto_live"
+      - dependency-name: "flutter_lints"
     schedule:
       interval: "weekly"
     cooldown:
