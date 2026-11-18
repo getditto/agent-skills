@@ -26,8 +26,9 @@ isolate (`lib/src/logger.dart` @ `sdk-release-5.2.0`; the same members on 5.1.0 
 | `isEmojiLogLevelHeadingsEnabled` | `bool` get/set | Cosmetic |
 | `exportLogs(String filePath)` | `Future<int>` | Writes the locally kept logs, returns bytes written |
 
-- **Every member throws before `Ditto.init()`.** Executed (macOS, 5.0.4, 5.1.0, 5.2.0):
-  `DittoLogger.isEnabled` threw synchronously
+- **Every member throws before `Ditto.init()`** (source: each getter and setter calls
+  `privateCheckDittoInit()`, `logger.dart` @ `sdk-release-5.2.0` and in 5.0.4). Executed
+  for `isEnabled` only (macOS, 5.0.4, 5.1.0, 5.2.0): `DittoLogger.isEnabled` threw synchronously
   ``DittoError(Ditto not initialized. Call `Ditto.init()` and await the `Future` before using any Ditto functionality)``.
   Configure logging after `await Ditto.init()`, before `Ditto.open`.
 - **`close()` resets `customLogCallback` to `null` on 5.1.0 and 5.2.0; on 5.0.4 it
@@ -47,6 +48,8 @@ Executed (macOS, 5.0.4 to 5.2.0): it wrote a non-empty file and returned its siz
 second call to the same path failed with `DittoError`. On web it throws
 `UnsupportedError: Not supported on the web platform` synchronously, at the call, so
 `.catchError` misses it (executed, Chrome): skip it under `kIsWeb`.
+
+Analyzed by the skill's Dart gate, not executed:
 
 ```dart
 import 'dart:developer';

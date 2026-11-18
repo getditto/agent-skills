@@ -100,9 +100,10 @@ compile error text is the analyzer's (Flutter 3.50.0 against 5.0.4: `undefined_m
 
 The authoritative guide is
 <https://docs.ditto.live/sdk/latest/migration-guides/flutter-v4>, with the query side in
-<https://docs.ditto.live/sdk/latest/migration-guides/flutter-dql>. Two of its statements
-are wrong for current releases: that `Ditto.init()` is mandatory (optional from 5.1.0)
-and that Flutter has no `signalNext` (it does from 5.1.0).
+<https://docs.ditto.live/sdk/latest/migration-guides/flutter-dql>. Three of its statements
+do not match the released source: that `Ditto.init()` is mandatory (optional from
+5.1.0), that Flutter has no `signalNext` (it does from 5.1.0), and that
+`HttpListenConfig.websocketSync` defaulted to `true` in v4 (`false` in 4.14.7).
 
 ### Package and namespace
 
@@ -175,7 +176,7 @@ Details and the executed handler: [connect.md](connect.md#cap-04-authentication-
 | `ditto.startSync()`, `ditto.stopSync()`, `ditto.isSyncActive` | `ditto.sync.start()`, `ditto.sync.stop()`, `ditto.sync.isActive` |
 | `smallPeerInfo.syncScope` | DQL `ALTER SYSTEM` ([sync.md](sync.md#sync-scopes)) |
 | Mutable `TransportConfig` | Immutable; change it with `updateTransportConfig((builder) { … })` |
-| `HttpListenConfig.websocketSync` default `true` | default `false` |
+| `HttpListenConfig.websocketSync` | `false` by default on both (`transport/transport_config.dart:558`, `transport_config.g.dart:156` @ `sdk-release-4.14.7`); the migration guide's "was `true`" does not match 4.14.7 |
 | `TransportConfig.withBigPeer(…)` | a server `connect` mode |
 
 4.14.x `Ditto.open` enabled every peer-to-peer transport the platform has

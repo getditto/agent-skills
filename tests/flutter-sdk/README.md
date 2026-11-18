@@ -267,15 +267,15 @@ default logging.
 
 | Line | Directories | Outcome |
 |---|---|---|
-| 5.0.4 | `init_once` (1 test), `v50` (43) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.1.0 | `init_once` (1), `v50` (43), `v51` (7) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.2.0 | `init_once` (1), `v50` (43), `v51` (7), `v52` (4) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.0.4 | `init_once` (1 test), `v50` (43) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
+| 5.1.0 | `init_once` (1), `v50` (43), `v51` (7) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
+| 5.2.0 | `init_once` (1), `v50` (43), `v51` (7), `v52` (4) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
 | all | iOS, Android, Chrome, Windows, Linux | not run |
 
 The counts are from the 2026-11-18 `run-probes.sh` run on each line, in which 42 of the
 43 `v50` tests passed: the first version of `system_info_test.dart` failed on every
-line, and its corrected version then passed alone (Manual records, "Disk usage in
-system:system_info").
+line, and its corrected version then passed alone on each line and in the CI `macos`,
+`linux` and `windows` legs (Manual records, "Disk usage in system:system_info").
 
 Recorded outcomes. Each is asserted exactly, so a change breaks the probe; where a
 line differs, the probe asserts each line's value. Except for
@@ -675,6 +675,11 @@ debug builds unless stated:
   [Native behavior probes](#native-behavior-probes-2026-11-17)). The skill still says
   the Flutter SDK has no supported encryption at rest: the 5.0/5.1 dartdoc calls the
   passphrase undocumented and internal-only.
+- **The migration guide's v4 `websocketSync` default is wrong.** It says
+  `HttpListenConfig.websocketSync` changed from `true` (v4) to `false`; 4.14.7 already
+  defaults to `false` (`flutter/ditto_live/lib/src/transport/transport_config.dart:558`
+  and `transport_config.g.dart:156` @ `sdk-release-4.14.7`). A docs defect;
+  `skills/flutter-sdk/references/versions.md` states the source value. Not executed.
 - **Sync status is more than `commitID`.** The local `system:data_sync_info`
   collection, queried through `store.execute`, reports each peer's
   `synced_up_to_local_commit_id`; see Manual records, "system:data_sync_info while peers
@@ -957,3 +962,7 @@ per line, after 1 or 2 s. Keys seen:
 documented keys (`fs_device_available`, `fs_device_total`, `fs_usage_attachment`,
 `fs_usage_auth`, `fs_usage_replication`, `fs_usage_store`, `fs_usage_total`) and a
 positive `fs_usage_total`.
+Rerun 2026-11-18 after the probe logs the first result instead of asserting its type
+(`run-fixture.sh minimal_app macos <line> integration_test/probes/v50/system_info_test.dart`,
+5.0, 5.1, 5.2 once each): pass on each; the first query returned `{}` and the keys were
+all present after 1 s.

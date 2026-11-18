@@ -69,6 +69,8 @@ exposes a `ValueNotifier`; screens use `ListenableBuilder`. The code is
 
 Wrong: `setState(() => _cars = result.items);` with `List<QueryResultItem> _cars`.
 
+Right (analyzed by the skill's Dart gate, not executed):
+
 ```dart
 import 'package:ditto_live/ditto_live.dart';
 
@@ -83,7 +85,9 @@ Future<List<Map<String, dynamic>>> loadCars(Ditto ditto) async {
 `A value of type 'Iterable<QueryResultItem>' can't be assigned to a variable of type 'List<QueryResultItem>'`
 (`invalid_assignment`). `items` is an `Iterable` that reads from the native result each
 time it is iterated (executed: it is not a `List`); declaring the field `Iterable`
-silences the error and keeps the native result alive inside widget state.
+silences the error, keeps the native result alive inside widget state, and decodes
+every document again on each rebuild (source, `store/execute.dart` @
+`sdk-release-5.2.0`; [lifetimes.md](lifetimes.md#what-to-retain-and-the-symptom-if-you-dont)).
 
 ## onChange on a long-lived observer
 

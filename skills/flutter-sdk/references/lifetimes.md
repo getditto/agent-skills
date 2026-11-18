@@ -52,7 +52,7 @@ handle so you can cancel it.
 | `PresenceObserver` | Whoever shows presence; call `stop()` | Dropped: the callback keeps firing until `stop()` or `close()` (5.2.0 source) |
 | `AttachmentFetcher` | The screen waiting for the bytes, to `stop()` an abandoned fetch | Dropped: the fetch runs to completion; the store tracks it in `attachmentFetchers` (source) |
 | `TransportConditionsObserver` (5.1.0+) | Whoever logs conditions; `stop()` | Dropping it was not tested; `close()` ends it (source) |
-| `QueryResult` / `QueryResultItem` | Safe to keep: `value` is decoded once and cached | None; `mutatedDocumentIDs()` is recomputed on each call |
+| `QueryResult` / `QueryResultItem` | Do not keep them in widget or view-model state: map `items` once to plain maps (or your model) and keep that | Keeping one keeps its native result alive, and every pass over `items` builds new items and decodes again (`value` is cached per item object only; `store/execute.dart` @ `sdk-release-5.2.0`). `mutatedDocumentIDs()` is recomputed on each call |
 | `Transaction` | Never: only inside the `transaction` callback | Using it after the callback returns is unsupported (dartdoc) |
 
 On 5.2.0, `ditto.store.observers` lists the V1 observers still alive, which finds

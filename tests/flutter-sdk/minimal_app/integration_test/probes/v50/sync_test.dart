@@ -15,8 +15,9 @@ SyncSubscription subscribeToCars(Ditto ditto, String color) =>
 // snippet:end flutter-sync-1
 
 // snippet:start flutter-sync-2
-/// Inserts [car] and returns the ID of the local commit that holds it, the
-/// only sync-progress value the Flutter SDK exposes.
+/// Inserts [car] and returns the ID of the local commit that holds it.
+/// Compare it with a peer's `synced_up_to_local_commit_id` in the
+/// `system:data_sync_info` collection to see whether that peer has it.
 Future<int?> insertCarCommit(Ditto ditto, Map<String, dynamic> car) async {
   final result = await ditto.store.execute(
     'INSERT INTO cars DOCUMENTS (:car)',

@@ -20,7 +20,8 @@ event loop, one at a time, between frames.
 
 | API | Where its work or callback runs |
 |---|---|
-| `store.execute`, `Transaction.execute` | 5.1.0+ native: a long-lived worker isolate per `Ditto`, spawned on the first call and ended by `close()`; concurrent calls queue on it. 5.0.x native: a new isolate per call (`compute`). 4.14.x and **web**: the calling isolate, so a large result blocks frames ([web.md](web.md#execute-on-the-main-thread)). The `Future` completes on the calling isolate on every line |
+| `store.execute` | 5.1.0+ native: a long-lived worker isolate per `Ditto`, spawned on the first call and ended by `close()`; concurrent calls queue on it. 5.0.x native: a new isolate per call (`compute`). 4.14.x and **web**: the calling isolate, so a large result blocks frames ([web.md](web.md#execute-on-the-main-thread)). The `Future` completes on the calling isolate on every line |
+| `Transaction.execute` | Native, every line: an asynchronous core call (`dittoffi_transaction_execute_async_throws`) whose completion is a `NativeCallable.listener` on the calling isolate; not the execute worker and not `compute`, so it does not queue behind `store.execute` calls. Web: the calling isolate |
 | `Ditto.open` | 5.2.0 native: the open runs in a `compute` isolate; the `Future` completes on the caller |
 | `registerObserver` `onChange` and `changes` | The registering isolate, in the zone that registered it: through a port on 5.0.4 and 5.2.0, a `NativeCallable.listener` on 5.1.0 |
 | `registerObserverV2`, `registerObserverWithSignalNext` (5.1.0+) | The registering isolate (`NativeCallable.listener`) |
@@ -31,9 +32,9 @@ event loop, one at a time, between frames.
 | `observeTransportConditions` (5.1.0+) | The isolate that called it |
 | `DittoLogger.customLogCallback` | The isolate that first initialized Ditto's logger (on `Ditto.init()` / `Ditto.open`) |
 
-Sources: `lib/src/bridge/native/store.dart`, `open.dart`, `presence.dart`, `auth.dart`,
+Sources: `lib/src/bridge/native/store.dart` (`dittoffiTransactionExecute`, lines 1031-1071 @ `sdk-release-5.2.0`; `store/transaction.dart:79`), `open.dart`, `presence.dart`, `auth.dart`,
 `logger.dart` @ `sdk-release-5.2.0` and `sdk-release-5.1.0`; `lib/src/core/native/store.dart`
-in ditto_live 5.0.4 (`compute` per `execute`); `flutter/ditto_live/lib/src/core/native/store.dart`
+in ditto_live 5.0.4 (`compute` per `execute`, line 26; the transaction call at line 571 is the async FFI form); `flutter/ditto_live/lib/src/core/native/store.dart`
 @ `sdk-release-4.14.7` (inline call); `lib/src/bridge/wasm/store.dart` @
 `sdk-release-5.2.0` (web: no worker). A `NativeCallable.listener` delivers on the
 isolate that created it (Dart's `dart:ffi` documentation).

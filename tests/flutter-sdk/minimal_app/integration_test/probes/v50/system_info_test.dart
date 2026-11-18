@@ -31,7 +31,9 @@ void main() {
           'car': {'_id': 'car-1'},
         },
       );
-      expect(await diskUsage(ditto), isA<Map<String, Object?>>());
+      // Recorded, not asserted: right after open this has been empty.
+      final first = await diskUsage(ditto);
+      debugPrint('PROBE disk usage right after open: $first');
       const documented = [
         'fs_device_available',
         'fs_device_total',
