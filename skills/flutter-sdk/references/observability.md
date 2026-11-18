@@ -1,71 +1,143 @@
-# Logging, diagnostics and stats — TODO_LANGUAGE
+# Logging, diagnostics and stats — Flutter
 
-> **Sources for this file.** `sdk/latest/deployment/logging.mdx`,
-> `sdk/latest/deployment/device-observability-and-ditto-logs.mdx`,
-> `sdk/latest/deployment/getting-system-information.mdx`,
-> `sdk/latest/deployment/integrate-ditto-tools-for-kotlin-swift-and-c-net-in-15-minutes.mdx`,
-> and the `LOGGING` / `DISK USAGE` blocks in `sdk/latest/migration-guides/<lang>-v4.mdx`
-> — which exist in **4 of 10** guides only (`c-sharp`, `cpp`, `kotlin`, `swift`).
->
-> **Known gap — the worst in the contract.** `logging.mdx` documents rotation policy and
-> contains **no code samples in any language**; `device-observability-and-ditto-logs.mdx`
-> and `integrate-ditto-tools-…-15-minutes.mdx` have **zero code fences**;
-> `getting-system-information.mdx` has only JSON and SQL. Disk usage has no standalone
-> page — it appears in `logging.mdx`, `vsc-es.mdx`, and 4 of 10 migration guides.
->
-> Almost everything in this file will be `Evidence: api-dump` or `source`. That is
-> expected — cite the path and ref inline. `Support` stays `yes`: the APIs ship.
+## Contents
+
+- [CAP-15 Logging, diagnostics and stats](#cap-15-logging-diagnostics-and-stats)
+  - [Logging](#logging)
+  - [Disk usage](#disk-usage)
+  - [Small peer info / telemetry](#small-peer-info--telemetry)
+  - [System information](#system-information)
+  - [Ditto Tools](#ditto-tools)
 
 ## CAP-15 Logging, diagnostics and stats
 
 ### Logging
 
-<!--
-  - Enabling/disabling the logger and setting the minimum level.
-  - The available levels and what each actually emits.
-  - Routing logs to a file, and exporting them for support.
-  - Subscribing to log events programmatically to forward into an app logger.
-  - Whether logger configuration is global/static or per-instance. If static, say so --
-    it surprises people who create more than one instance in tests.
-  - Rotation defaults and the configuration knobs, from logging.mdx.
--->
+`DittoLogger` is a class of statics: one configuration for every instance in the
+isolate (`lib/src/logger.dart` @ `sdk-release-5.2.0`; the same members on 5.1.0 and
+5.0.4).
 
-TODO
+| Member | Type | Notes |
+|---|---|---|
+| `isEnabled` | `bool` get/set | Console and callback logging; on by default |
+| `minimumLogLevel` | `LogLevel` get/set | `error`, `warning`, `info`, `debug`, `verbose` |
+| `customLogCallback` | `void Function(LogLevel, String)?` get/set | Forward Ditto's log lines into your own logger |
+| `isDevtoolsLoggingEnabled` | `bool` get/set | Sends each line to `dart:developer` `log` with `name: 'ditto_live'`, for Flutter DevTools |
+| `isEmojiLogLevelHeadingsEnabled` | `bool` get/set | Cosmetic |
+| `exportLogs(String filePath)` | `Future<int>` | Writes the locally kept logs, returns bytes written |
+
+- **Every member throws before `Ditto.init()`.** Executed (macOS, 5.0.4, 5.1.0, 5.2.0):
+  `DittoLogger.isEnabled` threw synchronously
+  ``DittoError(Ditto not initialized. Call `Ditto.init()` and await the `Future` before using any Ditto functionality)``.
+  Configure logging after `await Ditto.init()`, before `Ditto.open`.
+- **`close()` resets `customLogCallback` to `null` on 5.1.0 and 5.2.0; on 5.0.4 it
+  stays set** (executed). Set it again after opening a new instance.
+- 4.14.x `DittoLogger.setLogFile` is gone in v5; there is no file logging other than
+  `exportLogs` ([versions.md](versions.md#removed-apis)).
+- **Do not turn logging off to work around a crash or hang.** The one hazard tied to
+  logging, re-opening Ditto in one process
+  ([connect.md](connect.md#shutdown-and-ownership)), is avoided by keeping one
+  instance; tests are the exception ([testing.md](testing.md#ditto-in-the-loop-integration_test)).
+
+**`exportLogs`.** Ditto keeps a limited log at `debug` and above whatever `isEnabled` and
+`minimumLogLevel` say, up to 15 MB and 15 days by default, for the most recently
+opened instance; `exportLogs` writes it gzip-compressed, one JSON value per line, to a
+file that must not exist yet in an existing directory; use `.jsonl.gz` (dartdoc).
+Executed (macOS, 5.0.4 to 5.2.0): it wrote a non-empty file and returned its size; a
+second call to the same path failed with `DittoError`. On web it throws
+`UnsupportedError: Not supported on the web platform` synchronously, at the call, so
+`.catchError` misses it (executed, Chrome): skip it under `kIsWeb`.
+
+```dart
+import 'dart:developer';
+
+import 'package:ditto_live/ditto_live.dart';
+import 'package:flutter/foundation.dart';
+
+/// Routes Ditto's warnings and errors into the app's log. Call after
+/// `await Ditto.init()`, and again after re-opening on 5.1.0+.
+void forwardDittoLogs() {
+  DittoLogger.minimumLogLevel = LogLevel.warning;
+  DittoLogger.customLogCallback = (level, message) =>
+      log(message, name: 'ditto', level: level == LogLevel.error ? 1000 : 900);
+}
+
+/// Writes Ditto's kept logs to [path] (a new `.jsonl.gz` file) for support.
+/// Returns the bytes written, or null on web, which has no files.
+Future<int?> exportDittoLogs(String path) async {
+  if (kIsWeb) return null;
+  return DittoLogger.exportLogs(path);
+}
+```
+
+**`DITTO_*` environment variables.** Ditto reads `DITTO_*` variables of the process
+environment as system parameters. Executed (macOS, release build, 5.2.0): launched from a
+shell that exported `DITTO_OFFLINE_LICENSE`, the app logged
+`The Ditto environment variable offline_license is set, but it is not a known system parameter, so it is being ignored`.
+Do not export `DITTO_*` variables for your own scripts in the shell that runs the app.
 
 ### Disk usage
 
-<!--
-  - Reading current disk usage, and observing it over time.
-  - What the reported items mean and which are the ones worth alerting on.
--->
+The Flutter SDK has no disk-usage API (no type or method in `lib/` @
+`sdk-release-5.2.0`). The local `system:system_info` collection reports it through DQL
+(<https://docs.ditto.live/sdk/latest/deployment/getting-system-information>), filled in
+by a periodic background observer:
 
-TODO
+<!-- snippet: flutter-observability-1 -->
+<!-- Generated by scripts/sync-snippets.py from code CI runs. Edit the marked source, not this block. -->
+```dart
+/// Reads how many bytes Ditto uses on disk, per component (`fs_usage_store`,
+/// `fs_usage_attachment`, `fs_usage_total`, ...). The Flutter SDK has no
+/// disk-usage API; the local `system:system_info` collection reports it once
+/// Ditto's periodic disk observer has run, so the map can be empty at first.
+Future<Map<String, Object?>> diskUsage(Ditto ditto) async {
+  final result = await ditto.store.execute(
+    "SELECT * FROM system:system_info WHERE key LIKE 'fs_%'",
+  );
+  return {
+    for (final item in result.items)
+      item.value['key'] as String: item.value['value'],
+  };
+}
+```
+<!-- /snippet -->
+
+Executed (macOS, debug, 5.0.4, 5.1.0, 5.2.0): right after `Ditto.open` the query
+returned nothing; polled once a second, it returned `fs_device_available`,
+`fs_device_total`, `fs_usage_attachment`, `fs_usage_auth`, `fs_usage_replication`,
+`fs_usage_store` (and its `_db_sql`, `_db_sql_wal`, `_db_sql_shm` parts) and
+`fs_usage_total`, in bytes, within 1 to 2 s on every line, and not all at once (one
+5.1.0 run had only the `fs_usage_*` keys after 1 s). Treat a missing key as "not
+measured yet". The docs say an observer on `system:system_info` fires every 500 ms
+whether or not anything changed, so poll it instead, e.g. once a minute.
 
 ### Small peer info / telemetry
 
-<!--
-  - Enabling it, attaching custom metadata, and its size limits.
-  - Where the data goes and what consumes it.
--->
-
-TODO
+`ditto.smallPeerInfo` has `isEnabled` (get/set), `metadata` (`Map<String, dynamic>`
+get/set) and `metadataJsonString` (`lib/src/small_peer_info.dart` @ `sdk-release-5.2.0`,
+also 5.0.4; not executed). Small peer info is on by default since 4.8.0 and is shown on
+the portal's device dashboard; `metadata` adds your own columns there
+(<https://docs.ditto.live/sdk/latest/deployment/device-observability-and-ditto-logs>).
+The 4.14.x `syncScope` property is replaced by DQL `ALTER SYSTEM`
+([sync.md](sync.md#sync-scopes)).
 
 ### System information
 
-<!--
-  - Retrieving SDK version and system info from this language.
-  - The DQL/SHOW route where there is no host-language API.
--->
-
-TODO
+- `Ditto.version` is the core SDK string, not the pub version: `iOSF5.2.0_f6bdf023fa` on
+  macOS with ditto_live 5.2.0 (executed). Extract the version with
+  `RegExp(r'\d+\.\d+\.\d+')` if you need it.
+- `Ditto.currentPlatform` (`SupportedPlatform`: `ios`, `android`, `macos`, `linux`,
+  `windows`, `web`), `Ditto.defaultRootDirectory`, `ditto.absolutePersistenceDirectory`,
+  `ditto.config` and `ditto.deviceName` (5.0.4+; source).
+- Everything else Ditto reports about itself is in `system:system_info`, queried as
+  above.
 
 ### Ditto Tools
 
-<!--
-  - Whether a Ditto Tools package exists for this language, how to add it, and which
-    tools it provides. Mark Support `no` where there is none.
-  - Edge Studio for VS Code (sdk/latest/deployment/vsc-es.mdx) if relevant.
-  - Any OpenTelemetry / instrumentation hook the SDK exposes.
--->
-
-TODO
+- **`ditto_flutter_tools`** on pub.dev: version 3.0.0 needs `ditto_live` 5.0.1 or a
+  later 5.x, and dropped its `SyncStatus` helpers
+  (<https://docs.ditto.live/sdk/latest/migration-guides/flutter-v4>; source:
+  <https://github.com/getditto/ditto_flutter_tools>). Not executed here.
+- **A Flutter DevTools extension** ships inside `ditto_live` (`extension/devtools/config.yaml`
+  @ `sdk-release-5.2.0`, `requiresConnection: true`): DevTools offers it for a running
+  app that depends on `ditto_live`. Not executed here.

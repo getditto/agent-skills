@@ -267,10 +267,15 @@ default logging.
 
 | Line | Directories | Outcome |
 |---|---|---|
-| 5.0.4 | `init_once` (1 test), `v50` (26) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.1.0 | `init_once` (1), `v50` (26), `v51` (7) | pass; Ditto logging disabled in the harness (see Finding 1) |
-| 5.2.0 | `init_once` (1), `v50` (26), `v51` (7), `v52` (2) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.0.4 | `init_once` (1 test), `v50` (43) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.1.0 | `init_once` (1), `v50` (43), `v51` (7) | pass; Ditto logging disabled in the harness (see Finding 1) |
+| 5.2.0 | `init_once` (1), `v50` (43), `v51` (7), `v52` (4) | pass; Ditto logging disabled in the harness (see Finding 1) |
 | all | iOS, Android, Chrome, Windows, Linux | not run |
+
+The counts are from the 2026-11-18 `run-probes.sh` run on each line, in which 42 of the
+43 `v50` tests passed: the first version of `system_info_test.dart` failed on every
+line, and its corrected version then passed alone (Manual records, "Disk usage in
+system:system_info").
 
 Recorded outcomes. Each is asserted exactly, so a change breaks the probe; where a
 line differs, the probe asserts each line's value. Except for
@@ -322,6 +327,35 @@ harness (see Finding 1):
   `resumed` restarts it; `handleRequestAppExit()` returns `AppExitResponse.exit` with
   Ditto closed; on-device lifecycle delivery not exercised); `CarCountScreen:
   re-entering works, dispose cancels`.
+- Errors (`v50/errors_test.dart`, the same text on all three lines): `store.execute('SELEC * FROM')`
+  fails its Future with ``DittoException(<dql> Invalid query: `DQL parser error: Unexpected token SELEC at line 1 column 1 near "SELEC * FROM"; expected a DQL statement`. For more information on Ditto's query language see: https://ditto.com/link/dql-guide)``
+  (region `flutter-errors-1` returns `null` for it); an `INSERT` in
+  `transaction(isReadOnly: true, ...)` fails with
+  `DittoException(<store> A mutating DQL query was attempted using a read-only transaction.)`
+  and writes nothing; `registerObserver('DELETE FROM cars')` throws at the call
+  `DittoException(<dql> Unsupported feature: non-SELECT statement in store observer)`.
+- `experimental passphrase, per line`: `Ditto.open` with
+  `DittoConfigExperimental(passphrase: 'secret')` succeeds on 5.0.4 and 5.1.0 (whether
+  the store is encrypted is not checked) and fails on 5.2.0 with
+  ``DittoException(Invalid DittoConfig: Passphrase-based encryption is no longer supported. Remove the `experimental.passphrase` entry from the Ditto config and use an encryption key instead.)``.
+- Subscriptions (`v50/sync_test.dart`, regions `flutter-sync-1`, `flutter-sync-2`): a
+  subscription is listed in `ditto.sync.subscriptions` with its `queryString` and
+  `queryArguments` until `cancel()`; one whose handle was discarded is still listed
+  until cancelled through that set; `LIMIT 10` and `ORDER BY color` both throw at the
+  call `DittoException(<dql> Unsupported feature: Limit or Order by)` and register
+  nothing; an `INSERT` has a non-null `commitID`, larger than the previous write's, and
+  a `SELECT` has `null`; after `close()` `SyncSubscription.isCancelled` is `false` on
+  5.0.4 and `true` on 5.1.0 and 5.2.0.
+- `withTestDitto opens a fresh store, run 1` / `run 2` (`v50/testing_test.dart`, region
+  `flutter-testing-2`): two tests in one process each open a new temporary directory and
+  see an empty store, then their own write.
+- `system:system_info reports disk usage` (`v50/system_info_test.dart`, region
+  `flutter-observability-1`): see [Manual records](#manual-records), "Disk usage in
+  system:system_info".
+- 5.2.0 `systemParameters` (`v52/system_parameters_test.dart`): `{'x': double.infinity}`
+  makes `Ditto.open` fail with `ArgumentError`
+  (`Invalid argument(s): System parameter doubles must be finite`); an unknown name with
+  `DittoException(Invalid DittoConfig: unknown parameter 'not_a_real_parameter')`.
 - `observer without onChange: eager on 5.0, on first listen 5.1+`: an observer
   registered without `onChange`, with one insert before the first `changes.listen`,
   delivers item counts `[0, 1]` on 5.0.4 (the live query started at registration and
@@ -636,6 +670,16 @@ debug builds unless stated:
   holder (statics are reset by the restart) nor a retry for 20 s recovers; only a full
   restart does. Details: [Manual records](#manual-records).
 
+- **`experimental.passphrase` is rejected only on 5.2.0.** The lead said every line
+  rejects it; 5.0.4 and 5.1.0 open with it (`experimental passphrase, per line` in
+  [Native behavior probes](#native-behavior-probes-2026-11-17)). The skill still says
+  the Flutter SDK has no supported encryption at rest: the 5.0/5.1 dartdoc calls the
+  passphrase undocumented and internal-only.
+- **Sync status is more than `commitID`.** The local `system:data_sync_info`
+  collection, queried through `store.execute`, reports each peer's
+  `synced_up_to_local_commit_id`; see Manual records, "system:data_sync_info while peers
+  connect", for the runs and the hang they showed.
+
 ## Manual records
 
 ### Finding 1 reproduction, 2026-11-17
@@ -841,3 +885,75 @@ ls -t ~/Library/Logs/DiagnosticReports/<app>-*.ips | head -1
 | 5.1.0 | V2 | 4/4 | SIGSEGV, SIGSEGV, SIGBUS, SIGBUS; address `...01a0` |
 | 5.1.0 | V1 | 3/3 | SIGBUS, SIGSEGV, SIGSEGV; address `...01a0` |
 | 5.0.4 | V1 (no V2 API) | 0/3 | (B connects and inserts) |
+
+### Host flutter test, 2026-11-18
+
+macOS 27.2.1 arm64, Flutter 3.50.0 (FVM), ditto_live 5.2.0. A throwaway package (outside
+the repository) with `ditto_live: 5.2.0` and one plain `test()` that calls
+`await Ditto.init()` and then `Ditto.open(DittoConfig(persistenceDirectory: <temp dir>))`,
+run on the host with `fvm flutter test test/host_open_test.dart`:
+
+| Run | Outcome |
+|---|---|
+| as is | fails in `Ditto.init()`: `DittoException(Failed to get application documents directory)` (from `utilApplicationDocumentsDir`, `lib/src/bridge/native/native.dart`) |
+| with `XDG_DOCUMENTS_DIR` set to a directory | fails in `Ditto.init()`: `Invalid argument(s): Failed to lookup symbol 'ditto_logger_set_custom_log_cb': dlsym(RTLD_DEFAULT, ditto_logger_set_custom_log_cb): symbol not found` |
+
+The committed `minimal_app/test/fake_cars_test.dart` (region `flutter-testing-1`) has no
+Ditto import and passes on the host: `fvm flutter test test/fake_cars_test.dart` from
+`minimal_app/`, `+1: All tests passed!`. CI does not run `minimal_app/test/`; it is
+analyzed with the rest of the fixture.
+
+### system:data_sync_info while peers connect, 2026-11-18
+
+macOS 27.2.1 arm64, Flutter 3.50.0, debug, Ditto logging disabled in the harness (see
+Finding 1). `minimal_app/integration_test/manual/sync_status_test.dart` (region
+`flutter-sync-3`; not in `run-probes.sh` or CI): two instances in one process, the
+writer listening on TCP `127.0.0.1:<free port>`, the reader connecting and subscribed to
+`cars`, every peer-to-peer transport off. The writer inserts one car and then polls
+`SELECT * FROM system:data_sync_info` every 100 ms until a peer's
+`documents.synced_up_to_local_commit_id` is at least the insert's `commitID`, for up
+to 20 s; the probe's per-test timeout is 2 minutes. Run alone, one process per run:
+
+```bash
+for line in 5.0 5.1 5.2; do for i in 1 2 3; do
+  timeout 900 tests/flutter-sdk/scripts/run-fixture.sh minimal_app macos "$line" \
+    integration_test/manual/sync_status_test.dart
+done; done
+```
+
+| Line | Runs | Outcome |
+|---|---|---|
+| 5.0.4 | 3 | 3 pass: synced on the 3rd poll; then one document, `_id` the reader's peer key, `is_ditto_server` `false`, `sync_session_status` `Connected` |
+| 5.1.0 | 3 | 3 pass, the same |
+| 5.2.0 | 3 | 1 pass, the same; **2 hang**: the 4th `execute` never completed, and the test hit its 2-minute timeout |
+
+The same test as the 7th test of a file whose earlier tests had opened and closed five
+instances in the same process (an earlier draft of `v50/sync_test.dart`) hung the same
+way on the 3rd poll: 5.0.4 1 of 1 run, 5.1.0 2 of 3, 5.2.0 3 of 5. A variant that also
+ran an extra `execute(...).timeout(5 s)` before each poll passed 4 of 4 on 5.1.0, and no
+`TimeoutException` was raised; in it the polls before the sync completed returned no
+documents, then one with `synced_up_to_local_commit_id: -1`, then the commit ID. The
+cause was not determined. `execute` runs the native query on a worker isolate on 5.1.0+
+and in a `compute` isolate on 5.0.x (source), so the hang is probably in the native
+call (inference).
+
+### Disk usage in system:system_info, 2026-11-18
+
+macOS 27.2.1 arm64, Flutter 3.50.0, debug, `v50/system_info_test.dart` (region
+`flutter-observability-1`), run with `run-probes.sh macos <line>` and alone with
+`run-fixture.sh minimal_app macos <line> integration_test/probes/v50/system_info_test.dart`.
+Right after `Ditto.open` and one insert, `SELECT * FROM system:system_info WHERE key LIKE 'fs_%'`
+returned no rows on 5.0.4, 5.1.0 and 5.2.0 (the first version of the probe asserted a
+non-empty result and failed on all three lines; the full collection then held
+`ditto_sdk_*`, `database_id`, `peer_key`, `transport_config`, logging, subscription and
+sync-scope keys). Polling once a second, the `fs_` keys appeared within 1 s on every
+line, but not all at once: one 5.1.0 run had only the five `fs_usage_*` keys after
+1 s. The probe now polls until the seven documented keys are present; it passed twice
+per line, after 1 or 2 s. Keys seen:
+`fs_device_available`, `fs_device_total`, `fs_usage_attachment`, `fs_usage_auth`,
+`fs_usage_replication`, `fs_usage_store`, `fs_usage_store_db_sql`,
+`fs_usage_store_db_sql_shm`, `fs_usage_store_db_sql_wal`, `fs_usage_total` (bytes;
+`fs_usage_total` 885,031 for one document on 5.2.0). The probe asserts the seven
+documented keys (`fs_device_available`, `fs_device_total`, `fs_usage_attachment`,
+`fs_usage_auth`, `fs_usage_replication`, `fs_usage_store`, `fs_usage_total`) and a
+positive `fs_usage_total`.
