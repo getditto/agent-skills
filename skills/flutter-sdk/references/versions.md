@@ -93,7 +93,7 @@ compile error text is the analyzer's (Flutter 3.50.0 against 5.0.4: `undefined_m
 | Hot restart, orphaned V1 observer on a remote change | no crash | crashes | no crash | executed (macOS) |
 | `ConnectionType` values | 4 | 5 (`multicast`) | 5 | executed |
 | Android build with AGP 9 | builds | fails at `:ditto_live:checkDebugAarMetadata` without the compileSdk override | same | executed ([setup.md](setup.md#android-gradle)) |
-| iOS Simulator x86_64 link | builds | `Framework 'DittoCore' not found` without the Podfile fix (from the podspec; 5.1.0 not built) | same (executed) | [setup.md](setup.md#ios-and-macos-cocoapods) |
+| iOS Simulator x86_64 link | builds | `Framework 'DittoCore' not found` without the Podfile fix (5.1.0: inferred from the podspec; its simulator builds used the fix) | same (executed) | [setup.md](setup.md#ios-and-macos-cocoapods) |
 | macOS podspec minimum | 10.11 | 11.0, arm64 | 11.0, arm64 | source |
 
 ## CAP-19 v4 to v5 migration
@@ -229,16 +229,19 @@ otherwise <https://docs.ditto.live/dql/strict-mode>.
   `absolutePersistenceDirectory` = `{Documents}/ditto-<databaseID>`, returned the
   document, and created nothing under Application Support. With logging on it logs
   `Conflicting pre-existing default persistence directories found. Since the v5 default contains no ditto data, defaulting to legacy v4.`
-  **Conditions, from source, not executed:** 5.2.0 looks for the 5.1.0 directory only
-  when `databaseID` is non-null; with `databaseID: null` it checks only the v4 path. It
-  builds the old name from the ID with characters outside `[A-Za-z0-9_-]` replaced but
-  not lowercased, while the default directory uses the lowercase ID (`DittoConfig`
-  dartdoc, `ditto_config.dart:46-49`). So a mixed-case ID on a case-sensitive file
-  system (Android, Linux) would miss the old store (`resolveLegacyPersistenceDirectory`
-  and `_sanitizeDatabaseId`, `lib/src/persistence_directory.dart:40-70`, called at
-  `lib/src/ditto.dart:392-401`, @ `sdk-release-5.2.0`). The executed runs used the
-  default all-zero ID on macOS's case-insensitive APFS. With a mixed-case or null ID,
-  pass the old path as `persistenceDirectory` or test the upgrade first.
+  **Condition, from source, not executed:** 5.2.0 looks for the 5.1.0 directory only
+  when `databaseID` is non-null; with `databaseID: null` it checks only the v4 path
+  (`resolveLegacyPersistenceDirectory`, `lib/src/persistence_directory.dart:40-57`,
+  called at `lib/src/ditto.dart:392-401`, @ `sdk-release-5.2.0`). With a null ID, pass
+  the old path as `persistenceDirectory` or test the upgrade first. The ID's case is
+  kept: the `DittoConfig` dartdoc says the default name uses the lowercase ID, but core
+  names the directory from the ID as given, replacing each character that is not
+  alphanumeric, `_` or `-` (`crates/ditto-core/src/lib.rs`, `DatabaseId(String)` and the
+  `ditto-{}` path, @ `sdk-release-5.1.0` and `sdk-release-5.2.0`). For an ASCII ID the
+  5.2.0 lookup builds the same name (`_sanitizeDatabaseId`,
+  `persistence_directory.dart:64-70`, which keeps only `[A-Za-z0-9_-]`; core's Rust
+  `is_alphanumeric` also keeps non-ASCII letters). The executed runs used the default
+  all-zero ID; a mixed-case or non-ASCII ID was not run.
 - **Not verified:** whether a store opened by 5.x can be opened again by 4.14.x
   (treat the upgrade as one-way), how long a large store takes to open the first time,
   and what an interrupted first open leaves behind. The wipe-and-resync path is to
