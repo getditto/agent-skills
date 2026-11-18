@@ -37,6 +37,20 @@ Future<void> startServerSync(
 }
 // snippet:end flutter-connect-1
 
+/// `sync.start()` with [_server] and no expiration handler, per pinned line.
+/// Asserted exactly.
+const _noHandler = {
+  '5.0':
+      'DittoException(<authentication> The operation failed because an '
+      'authentication expiration handler has not yet been set.)',
+  '5.1':
+      'DittoException(<authentication> The operation failed because an '
+      'authentication expiration handler has not yet been set.)',
+  '5.2':
+      'DittoException(<authentication> The operation failed because an '
+      'authentication expiration handler has not yet been set.)',
+};
+
 /// `auth.login` against [_server], per pinned line. Asserted exactly.
 const _loginFailure = {
   '5.0': 'DittoException(Error logging in. Status code 1. Client info: null)',
@@ -51,7 +65,17 @@ void main() {
     'server connect without expiration handler: sync.start throws DittoException',
     (t) async {
       await withDitto(t, connect: _server, (ditto) async {
-        expect(() => ditto.sync.start(), throwsA(isA<DittoException>()));
+        expect(_noHandler, contains(pinnedLine));
+        expect(
+          () => ditto.sync.start(),
+          throwsA(
+            isA<DittoException>().having(
+              (e) => e.toString(),
+              'toString()',
+              _noHandler[pinnedLine],
+            ),
+          ),
+        );
         expect(ditto.sync.isActive, isFalse);
       });
     },

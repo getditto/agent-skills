@@ -221,6 +221,9 @@ non-obvious traps, not how the framework works.
 - [`references/store.md`](references/store.md): DQL execution, transactions, indexing, eviction.
 - [`references/sync.md`](references/sync.md): subscriptions, sync scopes, sync status.
 - [`references/transports.md`](references/transports.md): changing transports safely.
+- [`references/web.md`](references/web.md): Flutter Web differences; never `--wasm`.
+- [`references/widget-integration.md`](references/widget-integration.md): service,
+  repository, view model; lifecycle; hot restart.
 - [`references/attachments.md`](references/attachments.md): TODO.
 - [`references/presence.md`](references/presence.md): who is on the mesh right now.
 - [`references/observability.md`](references/observability.md): logging and disk usage.

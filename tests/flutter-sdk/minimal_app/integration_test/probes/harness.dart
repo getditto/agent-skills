@@ -81,6 +81,21 @@ Future<void> withDitto(
   }
 }
 
+/// Runs [body] with a fresh temporary directory path for code that opens
+/// Ditto itself, with the same init, logging and cleanup as [withDitto].
+/// [body] must close every instance it opens.
+Future<void> withProbeDirectory(Future<void> Function(String path) body) async {
+  expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+  await Ditto.init();
+  if (!probeDefaultLogging) DittoLogger.isEnabled = false;
+  final directory = await Directory.systemTemp.createTemp('ditto_probe_');
+  try {
+    await body(directory.path);
+  } finally {
+    await _deleteDirectory(directory);
+  }
+}
+
 /// Deletes [directory], retrying for a few seconds: on Windows, files the
 /// closed instance held can stay locked briefly. On Windows a directory still
 /// locked after the retries is left behind and reported on the
@@ -105,10 +120,12 @@ Future<void> _deleteDirectory(Directory directory) async {
   }
 }
 
+// snippet:start flutter-transports-1
 /// Turns off every peer-to-peer transport the 5.0 API can name, one by one:
 /// on 5.0.x, `setAllPeerToPeerEnabled(false)` leaves AWDL and Wi-Fi Aware on.
 /// Multicast (5.1+) is off by default.
 void disablePeerToPeer(Ditto ditto) {
+  // updateTransportConfig returns void: there is nothing to await.
   ditto.updateTransportConfig((config) {
     config.peerToPeer.bluetoothLE.isEnabled = false;
     config.peerToPeer.lan.isEnabled = false;
@@ -116,6 +133,7 @@ void disablePeerToPeer(Ditto ditto) {
     config.peerToPeer.wifiAware.isEnabled = false;
   });
 }
+// snippet:end flutter-transports-1
 
 /// Completes when [condition] holds, polling every 50 ms; fails after
 /// [timeout].

@@ -309,6 +309,19 @@ harness (see Finding 1):
 - `close and customLogCallback, per line`: `close()` leaves
   `DittoLogger.customLogCallback` set on 5.0.4 and resets it to `null` on 5.1.0 and
   5.2.0.
+- `server connect without expiration handler: sync.start throws DittoException`
+  (rerun alone, `v50/auth_test.dart`, 5.0.4, 5.1.0, 5.2.0, after the exact string was
+  added): `DittoException(<authentication> The operation failed because an
+  authentication expiration handler has not yet been set.)`, the same on all three lines.
+- Widget integration (`v50/widgets_test.dart`, rerun alone on 5.0.4, 5.1.0 and 5.2.0
+  after these were added; regions `flutter-widgets-1` to `-3`, `flutter-transports-1`):
+  `DittoService closes the instance when configure throws` (the failed open rethrows and
+  the same directory opens again; all four peer-to-peer flags read back `false` after
+  `disablePeerToPeer`); `CarsApp: lifecycle stops and restarts sync, exit closes`
+  (lifecycle states driven through the test binding: `paused` stops sync, back to
+  `resumed` restarts it; `handleRequestAppExit()` returns `AppExitResponse.exit` with
+  Ditto closed; on-device lifecycle delivery not exercised); `CarCountScreen:
+  re-entering works, dispose cancels`.
 - `observer without onChange: eager on 5.0, on first listen 5.1+`: an observer
   registered without `onChange`, with one insert before the first `changes.listen`,
   delivers item counts `[0, 1]` on 5.0.4 (the live query started at registration and
