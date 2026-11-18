@@ -23,9 +23,11 @@
     "ab7a26e9a120255456a8d56bfff8687f8601e80eb99336594daa93b4c9e263c7",
     "dcfc88bf206bd4176fecc2d4dcc2501a9ee794d257b86180149079e0e69a0eac",
     "7c251f2e9f7185824f952d2c6913e5618ad330c405078476907169e46cc5318a",
-    "5216014dffaf0a4eff8aab72d3315dc1d05dde4bf7daac20f481df8c8f37cde3"
+    "5216014dffaf0a4eff8aab72d3315dc1d05dde4bf7daac20f481df8c8f37cde3",
+    "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+    "62db713ea62d1b3b6a3edd09a38b718f14abda652254e1dfcdcf65d3b2512203"
   ],
-  "latest_evaluated_digest": "f1e46b7a0ef95a6499c196e40c26345fa67ee706471aecb06fd66d201beee26b",
+  "latest_evaluated_digest": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
   "post_evaluation_changes": [
     "Conditional movies/reviews schema lead-wording clarification after final copies was not behaviorally rerun.",
     "Final traces identified conflicting data-modeling reference examples for unscoped child joins and unchanged blob transmission, for static correction after the bounded evaluation iteration. No subsequent model result is claimed.",
@@ -34,7 +36,8 @@
     "2026-10-27 (later): with the kotlin-sdk skill added to the tree, the new kotlin_observer and kotlin_no_ditto cases and the existing swift_observer case were run on Claude Code and Codex. All passed; both SDK skills route correctly when installed together.",
     "2026-10-27 (later still): the Kotlin skill moved from 5.2.0-rc.2 to the 5.2.0 GA release (version pins, default-version guidance, 5.2.0 transcripts). kotlin_observer and kotlin_no_ditto were rerun on Claude Code and Codex against that tree; all passed with the same routing. The GA sources are identical to rc.2's, so no API claim changed.",
     "2026-10-28: the data-streams concept skill and the Kotlin/Swift data-streams references were added; kotlin_data_streams and swift_data_streams were run on Claude Code and Codex and passed on both. After the run, wording-only edits followed (description trimmed under 500 characters; the Swift use-after-close error type and Swift-specific observations added to the references); no routing or guidance claim changed.",
-    "2026-11-18: twelve flutter_* cases were added and run once per host (Claude Code 2.1.327, Codex 0.169.1), plus three no-skill baselines. After the initial run the flutter-sdk skill gained: a setup.md paragraph listing the Android permissions the ditto_live plugin manifest already declares (with their API limits) and saying the app's work is the runtime request; a SKILL.md pointer to it; `unawaited` for the listener cancel in State.dispose() in the SKILL.md anti-pattern; and a web.md row saying setOfflineOnlyLicenseToken is not a no-op on web despite its log line. All twelve cases were rerun on both hosts against that final tree (flutter-final records). Each record's review keeps setup/discovery, reference use, task correctness, timeout and generated-Dart validity separate; Dart blocks were analyzed with the skill's analyzer setup (Flutter 3.50.0, ditto_live 5.2.0, flutter_lints 6.0.0), not executed."
+    "2026-11-18: twelve flutter_* cases were added and run once per host (Claude Code 2.1.327, Codex 0.169.1), plus three no-skill baselines. After the initial run the flutter-sdk skill gained: a setup.md paragraph listing the Android permissions the ditto_live plugin manifest already declares (with their API limits) and saying the app's work is the runtime request; a SKILL.md pointer to it; `unawaited` for the listener cancel in State.dispose() in the SKILL.md anti-pattern; and a web.md row saying setOfflineOnlyLicenseToken is not a no-op on web despite its log line. All twelve cases were rerun on both hosts against that tree (flutter-intermediate records). Each record's review keeps setup/discovery, reference use, task correctness, timeout and generated-Dart validity separate; Dart blocks were analyzed with the skill's analyzer setup (Flutter 3.50.0, ditto_live 5.2.0, flutter_lints 6.0.0), not executed.",
+    "2026-11-18, fix round 1: the flutter-sdk SKILL.md body was trimmed to 8,977 characters (the task budget is 9,000), and web.md gained a note that a main() calling WidgetsFlutterBinding.ensureInitialized() and runApp needs package:flutter/widgets.dart. Two review criteria were corrected to match the skill after the first scoring: flutter_web_attachments criterion 5 now also accepts awaiting fetcher.attachment, and flutter_hot_restart_observer criterion 6 states the presence-observer crash as an inference. Hot-restart criteria 2, 4 and 6 and Codex's Android-permissions criterion 2 were rescored literally (partial) in the initial and intermediate records. All 24 skill runs were repeated on the final tree (flutter-final records, digest 388fc349, plugin-only 62db713e) and scored literally against every clause. One final Codex run (flutter_presence_peers) read ditto_live source from a temp directory outside its workspace; it is kept as flutter-final-excluded and the case was retried once."
   ],
   "limitations": [
     "No before/after model experiment.",
@@ -46,7 +49,10 @@
     "Initial matrix: Codex host could not read guidance under managed approvals. The 2026-10-27 rerun used a fresh HOME and CODEX_HOME and read guidance normally.",
     "The 2026-10-27 rerun has one attempt per host and case; OpenCode/Kimi K3 was not available for it.",
     "Tree digests from the 2026-10-27 rerun hash sorted relative paths and per-file SHA-256 of the copied skill tree; the earlier private script's digest method is not recorded, so digests are comparable within a run only.",
-    "Flutter cases (2026-11-18): one attempt per host and case per tree; Codex does not report the model ID it used; Dart blocks were analyzed, not run, after recorded normalization (missing imports for fragments, stubs for names the app supplies, statement wrappers), and file_picker blocks against file_picker 8.3.7, since 13.4.0 has no FilePicker.platform."
+    "Flutter cases (2026-11-18): one attempt per host and case per tree; Codex does not report the model ID it used; Dart blocks were analyzed, not run, after recorded normalization (missing imports for fragments, stubs for names the app supplies, statement wrappers), and file_picker blocks against file_picker 8.3.7, since 13.4.0 has no FilePicker.platform.",
+    "Claude Code ran with --setting-sources project and only Read/Grep/Glob/Skill tools; that user-level guidance files (CLAUDE.md and what it includes) were excluded is not proven. No Claude trace shows them: none mentions or follows the user's shell-command convention.",
+    "Codex ran with a read-only sandbox that can read outside the workspace. One final run read a file outside it (recorded as flutter-final-excluded, path redacted) whose location nothing in the workspace gave; the other Codex runs read only workspace files, apart from baseline runs listing their own fresh CODEX_HOME skills.",
+    "Initial and intermediate Flutter records were scored before fix round 1; only the criteria the review named were rescored there. Final records were scored literally against every clause."
   ],
   "pilot_provenance": {
     "claude": "Filesystem-only restricted pilot omitted canonical catalog skills; retry registered a local plugin. Both traces retained privately.",
@@ -193,7 +199,7 @@
         "Read",
         "Skill"
       ],
-      "final_answer": "## What's wrong\n\n1. **`deliverOn: .main` has no effect on 5.0.3.** That pin ignores it for `registerObserver`, and combining it with Swift concurrency is a known crash (SDKS-3856). Don't count on callbacks arriving on the main thread. Leave the parameter out and hop to the main actor yourself.\n2. **A new `Task` per callback is why updates arrive out of order.** Unstructured Tasks have no ordering guarantee. When callbacks come in a burst, an older result can be applied after a newer one, and the screen ends up showing stale data.\n3. **Leaving the screen doesn't stop callbacks because dropping the handle doesn't cancel it.** Releasing a `DittoStoreObserver` (or `DittoSyncSubscription`) does not stop it. The observer keeps firing and keeps its closure's captures alive for as long as `Ditto` lives, which for you is the whole app. You have to call `cancel()` explicitly. Combine's `AnyCancellable` works the other way: releasing it does cancel.\n4. **Likely also: crossing the actor boundary with non-Sendable data.** `item.value` is `[String: Any?]`. Convert it to a Sendable value type inside the callback, and do the decoding and sorting there too. Only the final assignment should run on the main actor.\n\n## Corrected architecture\n\n- **Ownership:**\n  - App root: the single strong `Ditto` reference, which you already have.\n  - Screen: a `@MainActor` model that owns the observer, its subscription (if the screen needs one) and one consumer task.\n  - Callback: builds a Sendable snapshot and yields it into a buffered stream (`AsyncStream` with `.bufferingNewest(1)`), which keeps only the latest snapshot.\n  - Consumer: one long-lived main-actor task reads the stream and applies snapshots in order.\n- **Cancellation:**\n  - Do it in `.onDisappear`. `deinit` can't touch the stored properties of a `@MainActor` class.\n  - Order: consumer, then observer, then subscription.\n  - Don't call `sync.stop()`, because `Ditto` belongs to the app, not the screen.\n\n```swift\nimport DittoSwift\nimport Foundation   // v5 doesn't re-export Foundation\n\nstruct Car: Sendable, Identifiable { let id: String; let make: String }\n\n@MainActor @Observable\nfinal class CarsModel {\n    private(set) var cars: [Car] = []\n    private let ditto: Ditto                    // injected app-lived instance; don't create one here\n    private var observer: DittoStoreObserver?\n    private var subscription: DittoSyncSubscription?\n    private var consumer: Task<Void, Never>?\n\n    init(ditto: Ditto) { self.ditto = ditto }\n\n    func start() throws {\n        guard observer == nil else { return }   // idempotent across re-appear\n        let q = \"SELECT * FROM cars WHERE mileage > :min\"\n        let args: [String: Any?] = [\"min\": 100]\n\n        let (updates, continuation) = AsyncStream<[Car]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))   // coalesce to the latest snapshot\n\n        subscription = try ditto.sync.registerSubscription(query: q, arguments: args)\n        let observer = try ditto.store.registerObserver(query: q, arguments: args) { result in\n            // Off-main: convert to Sendable values here, not after the hop.\n            let cars = result.items.compactMap { item -> Car? in\n                defer { item.dematerialize() }\n                guard let id = (item.value[\"_id\"] ?? nil) as? String,\n                      let make = (item.value[\"make\"] ?? nil) as? String else { return nil }\n                return Car(id: id, make: make)\n            }\n            continuation.yield(cars)\n        }\n        // handler -> continuation -> onTermination -> observer: capture weakly to avoid a cycle\n        continuation.onTermination = { [weak observer] _ in observer?.cancel() }\n        self.observer = observer\n\n        consumer = Task { [weak self] in        // inherits @MainActor; single ordered consumer\n            for await cars in updates { self?.cars = cars }\n        }\n    }\n\n    func stop() {\n        consumer?.cancel();      consumer = nil\n        observer?.cancel();      observer = nil\n        subscription?.cancel();  subscription = nil\n        // No ditto.sync.stop(): Ditto is app-lived.\n    }\n}\n\nstruct CarsScreen: View {\n    @State private var model: CarsModel\n    init(ditto: Ditto) { _model = State(initialValue: CarsModel(ditto: ditto)) }\n\n    var body: some View {\n        List(model.cars) { Text($0.make) }\n            .onAppear { try? model.start() }    // handle/log the error in real code\n            .onDisappear { model.stop() }\n    }\n}\n```\n\nNotes:\n- **Subscription ownership:** if another part of the app needs the same data to keep syncing, put the subscription at the app root and keep only the observer on the screen.\n- **`handlerWithSignalNext`:** use this variant if you need back-pressure rather than coalescing to the latest result. Call `signalNext()` exactly once per delivery (`defer { signalNext() }` first in the handler), or delivery stops for good without any error.\n- **Upgrading:** this code also works on 5.1.x, where `deliverOn` is honoured again. The explicit hop is still the right pattern there.\n\nThis comes from the installed Ditto Swift SDK guidance (`references/concurrency.md` and `references/lifetimes.md`). I didn't compile or run it.",
+      "final_answer": "## What's wrong\n\n1. **`deliverOn: .main` has no effect on 5.0.3.** That pin ignores it for `registerObserver`, and combining it with Swift concurrency is a known crash (an internal ticket). Don't count on callbacks arriving on the main thread. Leave the parameter out and hop to the main actor yourself.\n2. **A new `Task` per callback is why updates arrive out of order.** Unstructured Tasks have no ordering guarantee. When callbacks come in a burst, an older result can be applied after a newer one, and the screen ends up showing stale data.\n3. **Leaving the screen doesn't stop callbacks because dropping the handle doesn't cancel it.** Releasing a `DittoStoreObserver` (or `DittoSyncSubscription`) does not stop it. The observer keeps firing and keeps its closure's captures alive for as long as `Ditto` lives, which for you is the whole app. You have to call `cancel()` explicitly. Combine's `AnyCancellable` works the other way: releasing it does cancel.\n4. **Likely also: crossing the actor boundary with non-Sendable data.** `item.value` is `[String: Any?]`. Convert it to a Sendable value type inside the callback, and do the decoding and sorting there too. Only the final assignment should run on the main actor.\n\n## Corrected architecture\n\n- **Ownership:**\n  - App root: the single strong `Ditto` reference, which you already have.\n  - Screen: a `@MainActor` model that owns the observer, its subscription (if the screen needs one) and one consumer task.\n  - Callback: builds a Sendable snapshot and yields it into a buffered stream (`AsyncStream` with `.bufferingNewest(1)`), which keeps only the latest snapshot.\n  - Consumer: one long-lived main-actor task reads the stream and applies snapshots in order.\n- **Cancellation:**\n  - Do it in `.onDisappear`. `deinit` can't touch the stored properties of a `@MainActor` class.\n  - Order: consumer, then observer, then subscription.\n  - Don't call `sync.stop()`, because `Ditto` belongs to the app, not the screen.\n\n```swift\nimport DittoSwift\nimport Foundation   // v5 doesn't re-export Foundation\n\nstruct Car: Sendable, Identifiable { let id: String; let make: String }\n\n@MainActor @Observable\nfinal class CarsModel {\n    private(set) var cars: [Car] = []\n    private let ditto: Ditto                    // injected app-lived instance; don't create one here\n    private var observer: DittoStoreObserver?\n    private var subscription: DittoSyncSubscription?\n    private var consumer: Task<Void, Never>?\n\n    init(ditto: Ditto) { self.ditto = ditto }\n\n    func start() throws {\n        guard observer == nil else { return }   // idempotent across re-appear\n        let q = \"SELECT * FROM cars WHERE mileage > :min\"\n        let args: [String: Any?] = [\"min\": 100]\n\n        let (updates, continuation) = AsyncStream<[Car]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))   // coalesce to the latest snapshot\n\n        subscription = try ditto.sync.registerSubscription(query: q, arguments: args)\n        let observer = try ditto.store.registerObserver(query: q, arguments: args) { result in\n            // Off-main: convert to Sendable values here, not after the hop.\n            let cars = result.items.compactMap { item -> Car? in\n                defer { item.dematerialize() }\n                guard let id = (item.value[\"_id\"] ?? nil) as? String,\n                      let make = (item.value[\"make\"] ?? nil) as? String else { return nil }\n                return Car(id: id, make: make)\n            }\n            continuation.yield(cars)\n        }\n        // handler -> continuation -> onTermination -> observer: capture weakly to avoid a cycle\n        continuation.onTermination = { [weak observer] _ in observer?.cancel() }\n        self.observer = observer\n\n        consumer = Task { [weak self] in        // inherits @MainActor; single ordered consumer\n            for await cars in updates { self?.cars = cars }\n        }\n    }\n\n    func stop() {\n        consumer?.cancel();      consumer = nil\n        observer?.cancel();      observer = nil\n        subscription?.cancel();  subscription = nil\n        // No ditto.sync.stop(): Ditto is app-lived.\n    }\n}\n\nstruct CarsScreen: View {\n    @State private var model: CarsModel\n    init(ditto: Ditto) { _model = State(initialValue: CarsModel(ditto: ditto)) }\n\n    var body: some View {\n        List(model.cars) { Text($0.make) }\n            .onAppear { try? model.start() }    // handle/log the error in real code\n            .onDisappear { model.stop() }\n    }\n}\n```\n\nNotes:\n- **Subscription ownership:** if another part of the app needs the same data to keep syncing, put the subscription at the app root and keep only the observer on the screen.\n- **`handlerWithSignalNext`:** use this variant if you need back-pressure rather than coalescing to the latest result. Call `signalNext()` exactly once per delivery (`defer { signalNext() }` first in the handler), or delivery stops for good without any error.\n- **Upgrading:** this code also works on 5.1.x, where `deliverOn` is honoured again. The explicit hop is still the right pattern there.\n\nThis comes from the installed Ditto Swift SDK guidance (`references/concurrency.md` and `references/lifetimes.md`). I didn't compile or run it.",
       "turns": 5,
       "cumulative_prompt_tokens": 37237,
       "attempt": "primary_after_host_pilot_setup",
@@ -666,7 +672,7 @@
       "catalog": null,
       "mcp": null,
       "tools": null,
-      "final_answer": "## What's wrong\n\nThree distinct bugs, matching your two symptoms:\n\n1. **`deliverOn: .main` is a no-op on your pin.** On 5.0.3, `store.registerObserver(\u2026, deliverOn:)` silently ignores the queue (honored on 4.14.6 and 5.1.0; on 5.0.3 it's a documented crash with Swift concurrency, #SDKS-3856). Your handler actually runs on an SDK background queue, so every callback is doing the implicit hop anyway \u2014 you're just doing it unsafely.\n\n2. **One unstructured `Task` per delivery has no ordering guarantee.** A burst of deliveries can be applied out of order, so the UI settles on a stale snapshot. That's your out-of-order symptom. Ordering requires *one* consumer draining deliveries serially, not N concurrent tasks.\n\n3. **Dropping the `DittoStoreObserver` handle does not cancel it.** The observer keeps firing and keeps its closure's captures alive for the entire `Ditto` lifetime \u2014 since your `Ditto` is app-lived, that's forever. Leaving the screen only lost your ability to cancel. That's the \"callbacks never stop\" symptom. (Note the asymmetry: `AnyCancellable` *does* cancel on release; Ditto observer/subscription handles do not.)\n\n## Corrected architecture\n\nOne bridge per screen: observer \u2192 `AsyncStream` (Sendable values only) \u2192 single `@MainActor` consumer task, with explicit teardown at the view's boundary.\n\n```swift\n@MainActor @Observable\nfinal class CarsScreenModel {\n    var makes: [String] = []\n    private var observer: DittoStoreObserver?\n    private var consumer: Task<Void, Never>?\n\n    func start(ditto: Ditto) {                     // app-lived instance injected\n        let (updates, continuation) = AsyncStream<[String]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))  // coalesce bursts; order preserved\n\n        // No deliverOn: \u2014 ignored on 5.0.3. Hop explicitly instead.\n        let obs = try! ditto.store.registerObserver(query: q, arguments: a) { result in\n            let snapshot = result.items.compactMap { item -> String? in\n                defer { item.dematerialize() }\n                return item.value[\"make\"] as? String   // extract Sendable values HERE,\n            }                                          // [String: Any?] is not Sendable\n            continuation.yield(snapshot)\n        }\n        observer = obs\n\n        // handler -> continuation -> onTermination -> observer is a retain cycle\n        continuation.onTermination = { [weak obs] _ in obs?.cancel() }\n\n        consumer = Task { @MainActor [weak self] in  // ONE consumer, not one Task per delivery\n            for await snapshot in updates { self?.makes = snapshot }\n        }\n    }\n\n    func stop() {\n        consumer?.cancel()     // cancel consumer FIRST\n        observer?.cancel()     // then observer; then subscription if screen-scoped\n        consumer = nil; observer = nil\n    }\n}\n```\n\n```swift\n.task  { model.start(ditto: appModel.ditto) }\n.onDisappear { model.stop() }\n```\n\nKey points:\n\n- **Ownership:** the app keeps the one strong `Ditto` reference (composition root \u2014 you have this). The screen's model strongly holds the observer handle and the consumer `Task` *specifically so it can cancel them*. Never cache `ditto.store.observers` / `sync.subscriptions` snapshots \u2014 they're computed and go stale silently.\n- **Ordering:** the single `for await` consumer applies snapshots serially; `.bufferingNewest(1)` drops intermediates under burst load instead of reordering them.\n- **Work placement:** dematerialize, decode, diff, and sort *inside* the callback (off main); only the final property assignment crosses to the main actor.\n- **Cancellation site:** `.onDisappear` (or `.task(id:)`), not `deinit` \u2014 a `@MainActor @Observable` type's `deinit` is nonisolated and can't touch the isolated handles. Teardown order is consumer \u2192 observer \u2192 subscription; reversing can deliver into a cancelled consumer.\n\nIf you ever switch to `handlerWithSignalNext`, the rules change: call `signalNext()` exactly once per delivery (`defer` first), and back-pressure serializes deliveries for you \u2014 but the stream bridge above is the right default for SwiftUI.",
+      "final_answer": "## What's wrong\n\nThree distinct bugs, matching your two symptoms:\n\n1. **`deliverOn: .main` is a no-op on your pin.** On 5.0.3, `store.registerObserver(\u2026, deliverOn:)` silently ignores the queue (honored on 4.14.6 and 5.1.0; on 5.0.3 it's a documented crash with Swift concurrency, an internal ticket). Your handler actually runs on an SDK background queue, so every callback is doing the implicit hop anyway \u2014 you're just doing it unsafely.\n\n2. **One unstructured `Task` per delivery has no ordering guarantee.** A burst of deliveries can be applied out of order, so the UI settles on a stale snapshot. That's your out-of-order symptom. Ordering requires *one* consumer draining deliveries serially, not N concurrent tasks.\n\n3. **Dropping the `DittoStoreObserver` handle does not cancel it.** The observer keeps firing and keeps its closure's captures alive for the entire `Ditto` lifetime \u2014 since your `Ditto` is app-lived, that's forever. Leaving the screen only lost your ability to cancel. That's the \"callbacks never stop\" symptom. (Note the asymmetry: `AnyCancellable` *does* cancel on release; Ditto observer/subscription handles do not.)\n\n## Corrected architecture\n\nOne bridge per screen: observer \u2192 `AsyncStream` (Sendable values only) \u2192 single `@MainActor` consumer task, with explicit teardown at the view's boundary.\n\n```swift\n@MainActor @Observable\nfinal class CarsScreenModel {\n    var makes: [String] = []\n    private var observer: DittoStoreObserver?\n    private var consumer: Task<Void, Never>?\n\n    func start(ditto: Ditto) {                     // app-lived instance injected\n        let (updates, continuation) = AsyncStream<[String]>.makeStream(\n            bufferingPolicy: .bufferingNewest(1))  // coalesce bursts; order preserved\n\n        // No deliverOn: \u2014 ignored on 5.0.3. Hop explicitly instead.\n        let obs = try! ditto.store.registerObserver(query: q, arguments: a) { result in\n            let snapshot = result.items.compactMap { item -> String? in\n                defer { item.dematerialize() }\n                return item.value[\"make\"] as? String   // extract Sendable values HERE,\n            }                                          // [String: Any?] is not Sendable\n            continuation.yield(snapshot)\n        }\n        observer = obs\n\n        // handler -> continuation -> onTermination -> observer is a retain cycle\n        continuation.onTermination = { [weak obs] _ in obs?.cancel() }\n\n        consumer = Task { @MainActor [weak self] in  // ONE consumer, not one Task per delivery\n            for await snapshot in updates { self?.makes = snapshot }\n        }\n    }\n\n    func stop() {\n        consumer?.cancel()     // cancel consumer FIRST\n        observer?.cancel()     // then observer; then subscription if screen-scoped\n        consumer = nil; observer = nil\n    }\n}\n```\n\n```swift\n.task  { model.start(ditto: appModel.ditto) }\n.onDisappear { model.stop() }\n```\n\nKey points:\n\n- **Ownership:** the app keeps the one strong `Ditto` reference (composition root \u2014 you have this). The screen's model strongly holds the observer handle and the consumer `Task` *specifically so it can cancel them*. Never cache `ditto.store.observers` / `sync.subscriptions` snapshots \u2014 they're computed and go stale silently.\n- **Ordering:** the single `for await` consumer applies snapshots serially; `.bufferingNewest(1)` drops intermediates under burst load instead of reordering them.\n- **Work placement:** dematerialize, decode, diff, and sort *inside* the callback (off main); only the final property assignment crosses to the main actor.\n- **Cancellation site:** `.onDisappear` (or `.task(id:)`), not `deinit` \u2014 a `@MainActor @Observable` type's `deinit` is nonisolated and can't touch the isolated handles. Teardown order is consumer \u2192 observer \u2192 subscription; reversing can deliver into a cancelled consumer.\n\nIf you ever switch to `handlerWithSignalNext`, the rules change: call `signalNext()` exactly once per delivery (`defer` first), and back-pressure serializes deliveries for you \u2014 but the stream bridge above is the right default for SwiftUI.",
       "cumulative_prompt_tokens": 22905,
       "attempt": "primary_after_host_pilot_setup",
       "time_limit_seconds": 120,
@@ -6833,15 +6839,15 @@
         "task_correctness": {
           "criteria": [
             "pass",
+            "partial",
             "pass",
+            "partial",
             "pass",
-            "pass",
-            "pass",
-            "pass",
+            "partial",
             "pass"
           ],
-          "pass": 7,
-          "partial": 0,
+          "pass": 4,
+          "partial": 3,
           "fail": 0,
           "of": 7
         },
@@ -6853,7 +6859,7 @@
           "lints": [],
           "result": "pass"
         },
-        "notes": ""
+        "notes": "Rescored literally in fix round 1: no 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
       },
       "run": "flutter-initial"
     },
@@ -7491,15 +7497,15 @@
         "task_correctness": {
           "criteria": [
             "pass",
+            "partial",
             "pass",
+            "partial",
             "pass",
-            "pass",
-            "pass",
-            "pass",
+            "partial",
             "pass"
           ],
-          "pass": 7,
-          "partial": 0,
+          "pass": 4,
+          "partial": 3,
           "fail": 0,
           "of": 7
         },
@@ -7508,7 +7514,7 @@
           "blocks": 0,
           "result": "no Dart in answer"
         },
-        "notes": ""
+        "notes": "Rescored literally in fix round 1: no 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
       },
       "run": "flutter-initial"
     },
@@ -7933,12 +7939,12 @@
             "pass",
             "pass",
             "pass",
-            "partial",
+            "pass",
             "pass",
             "pass"
           ],
-          "pass": 6,
-          "partial": 1,
+          "pass": 7,
+          "partial": 0,
           "fail": 0,
           "of": 7
         },
@@ -7953,7 +7959,7 @@
           ],
           "result": "pass"
         },
-        "notes": "Awaits `fetcher.attachment` with a no-op event callback instead of handling the events (a documented alternative).",
+        "notes": "Awaits `fetcher.attachment` with a no-op event callback; criterion 5 was corrected to accept this documented form and rescored.",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
       "run": "flutter-initial"
@@ -8440,7 +8446,7 @@
         },
         "notes": "Lists the plugin's declarations and limits; adds nothing."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8490,7 +8496,7 @@
         },
         "notes": "Says the Iterable must be copied but not that the assignment does not compile."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8521,15 +8527,15 @@
         "task_correctness": {
           "criteria": [
             "pass",
+            "partial",
             "pass",
+            "partial",
             "pass",
-            "pass",
-            "pass",
-            "pass",
+            "partial",
             "pass"
           ],
-          "pass": 7,
-          "partial": 0,
+          "pass": 4,
+          "partial": 3,
           "fail": 0,
           "of": 7
         },
@@ -8541,9 +8547,9 @@
           "lints": [],
           "result": "pass"
         },
-        "notes": ""
+        "notes": "Rescored literally in fix round 1: no 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8599,7 +8605,7 @@
         },
         "notes": "Drops the subscription handle (ancillary)."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8641,7 +8647,7 @@
         },
         "notes": "Used kotlin-sdk."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8696,7 +8702,7 @@
         },
         "notes": "Read native-app-config/references/apple.md inside the installed plugin."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8748,7 +8754,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8799,7 +8805,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8854,7 +8860,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8908,7 +8914,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -8962,7 +8968,7 @@
         },
         "notes": "Its main() block imports only ditto_live and foundation, so WidgetsFlutterBinding is undefined (Dart validity)."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "claude",
@@ -9013,7 +9019,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9054,13 +9060,13 @@
         "task_correctness": {
           "criteria": [
             "pass",
-            "pass",
+            "partial",
             "pass",
             "pass",
             "fail"
           ],
-          "pass": 4,
-          "partial": 0,
+          "pass": 3,
+          "partial": 1,
           "fail": 1,
           "of": 5
         },
@@ -9069,9 +9075,9 @@
           "blocks": 0,
           "result": "no Dart in answer"
         },
-        "notes": "Adds nothing to the manifest and requests with DittoSyncPermissions before sync.start(); no stop/start or device note."
+        "notes": "Adds nothing to the manifest and requests with DittoSyncPermissions before sync.start(); criterion 2 rescored partial in fix round 1 (no merged-manifest check or every-build-type note); no stop/start or device note."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9137,7 +9143,7 @@
         "notes": "Does not say not to re-open Ditto; does not say the Iterable assignment fails to compile.",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9177,15 +9183,15 @@
         "task_correctness": {
           "criteria": [
             "pass",
+            "partial",
             "pass",
+            "partial",
             "pass",
-            "pass",
-            "pass",
-            "pass",
+            "partial",
             "pass"
           ],
-          "pass": 7,
-          "partial": 0,
+          "pass": 4,
+          "partial": 3,
           "fail": 0,
           "of": 7
         },
@@ -9194,9 +9200,9 @@
           "blocks": 0,
           "result": "no Dart in answer"
         },
-        "notes": ""
+        "notes": "Rescored literally in fix round 1: no 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9263,7 +9269,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9316,7 +9322,7 @@
         },
         "notes": "Used kotlin-sdk."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9374,7 +9380,7 @@
         },
         "notes": "Read native-app-config/references/apple.md inside the installed plugin."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9438,7 +9444,7 @@
         "notes": "Stops the observer but does not say dropping it does not stop it.",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9506,7 +9512,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9577,7 +9583,7 @@
         "notes": "Uses print in the login handler (avoid_print).",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9621,12 +9627,12 @@
             "pass",
             "pass",
             "pass",
-            "partial",
+            "pass",
             "pass",
             "pass"
           ],
-          "pass": 6,
-          "partial": 1,
+          "pass": 7,
+          "partial": 0,
           "fail": 0,
           "of": 7
         },
@@ -9640,10 +9646,10 @@
           ],
           "result": "pass"
         },
-        "notes": "Awaits `fetcher.attachment` with a no-op event callback instead of handling the events (a documented alternative).",
+        "notes": "Awaits `fetcher.attachment` with a no-op event callback; criterion 5 was corrected to accept this documented form and rescored.",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9704,7 +9710,7 @@
         },
         "notes": ""
       },
-      "run": "flutter-final"
+      "run": "flutter-intermediate"
     },
     {
       "host": "codex",
@@ -9769,7 +9775,1454 @@
         "notes": "Enables only Bluetooth LE and LAN, as asked; no AWDL/Wi-Fi Aware note.",
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
       },
+      "run": "flutter-intermediate"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_android_permissions",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 16.9,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.1547794,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [],
+      "commands": [
+        "Glob {\"pattern\": \"android/**/AndroidManifest.xml\"}",
+        "Grep {\"pattern\": \"(?i)android|permission|manifest\", \"path\": \"plugin/skills/flutter-sdk/references/setup.md\", \"output_mode\": \"content\", \"-C\": 3}"
+      ],
+      "tool_errors": [],
+      "final_answer": "You don't need to add anything under `android/`. I didn't change any files, and I found no `AndroidManifest.xml` in this workspace, so this answer comes from the Ditto Flutter skill's setup reference.\n\n**Why nothing is needed:** the `ditto_live` plugin already lists the Bluetooth permissions in its own manifest. Android adds them to your app automatically in debug and release builds. The plugin declares:\n- `BLUETOOTH_SCAN` (marked `neverForLocation`), `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE`\n- `BLUETOOTH` and `BLUETOOTH_ADMIN`, up to API 30\n- `ACCESS_FINE_LOCATION` up to API 32, and `ACCESS_COARSE_LOCATION` up to API 30\n- `NEARBY_WIFI_DEVICES` (marked `neverForLocation`) and `INTERNET`\n\nDon't declare these again in `android/app/src/main/AndroidManifest.xml` with different `maxSdkVersion` or flag values, because that can override the plugin's settings. If you edit the manifest anyway, check the final merged manifest afterwards.\n\n**What you do need:** Ditto never asks the user for permissions, so your app has to request them at runtime before calling `ditto.sync.start()`. On `ditto_live` 5.1.0 or later, with `permission_handler`:\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:permission_handler/permission_handler.dart';\n\nconst _runtimePermissions = <String, Permission>{\n  'android.permission.BLUETOOTH_SCAN': Permission.bluetoothScan,\n  'android.permission.BLUETOOTH_CONNECT': Permission.bluetoothConnect,\n  'android.permission.BLUETOOTH_ADVERTISE': Permission.bluetoothAdvertise,\n  'android.permission.NEARBY_WIFI_DEVICES': Permission.nearbyWifiDevices,\n  'android.permission.ACCESS_FINE_LOCATION': Permission.locationWhenInUse,\n  'android.permission.ACCESS_COARSE_LOCATION': Permission.locationWhenInUse,\n  'android.permission.POST_NOTIFICATIONS': Permission.notification,\n};\n\nFuture<List<String>> requestDittoPermissions() async {\n  final permissions = DittoSyncPermissions();\n  final missing = await permissions.missingPermissions();\n  final requests = missing.map((n) => _runtimePermissions[n]).nonNulls;\n  if (requests.isNotEmpty) await requests.toSet().toList().request();\n  return permissions.missingPermissions(); // still missing\n}\n\n// await requestDittoPermissions();\n// ditto.sync.start();\n```\n\n- **5.0.x:** `DittoSyncPermissions` doesn't exist there. Request the Bluetooth and location permissions directly with `permission_handler`.\n- **Permission granted after sync started:** it only takes effect after you call `ditto.sync.stop()` and then `ditto.sync.start()`.\n- **Untested:** the skill says this code compiles against 5.1.0 and 5.2.0, but the request itself hasn't been run on a physical Android device.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "SKILL.md only",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 0,
+          "fail": 0,
+          "of": 5
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Lists the plugin's declarations and limits; adds nothing."
+      },
       "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_dispose_cleanup",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 20.3,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.12963059999999998,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [],
+      "commands": [
+        "Grep {\"pattern\": \"LIMIT|ORDER BY|onChange|mounted\", \"path\": \"plugin/skills/flutter-sdk/references\", \"glob\": \"{sync,observers,anti-patterns}.md\", \"output_mode\": \"content\", \"head_limit\": 40}"
+      ],
+      "tool_errors": [],
+      "final_answer": "There are four bugs in this screen.\n\n1. **`ditto.close()` in `dispose()` breaks every other screen.** Your app should have one `Ditto` instance per process, and it stays open until the app exits. Closing it when one screen goes away kills it for the whole app, so every other screen's store or sync call throws. Reopening it in the same process has also been seen to hang or abort the app. Only cancel this screen's own handles in `dispose()`.\n2. **Memory grows because of `onChange` and because nothing is cancelled.**\n   - On 5.0.x through 5.2.0, an observer registered with `onChange` also buffers every result in its `changes` stream. Nobody listens to that stream, so the buffer grows without limit.\n   - Letting go of a subscription or observer does not cancel it. Both kept running after the screen was gone.\n3. **The subscription query throws.** Subscriptions reject `LIMIT` and `ORDER BY`, so `registerSubscription` throws at the call. Subscribe with a plain `SELECT`, and do the sorting and limiting in the local observer query.\n4. **`setState` gets a live `Iterable`.** Copy `result.items` into a plain list first. Also check `mounted` so a late callback doesn't call `setState` on a disposed widget.\n\nFixed code:\n\n```dart\nimport 'dart:async';\n\nclass _InventoryState extends State<InventoryScreen> {\n  List<Map<String, dynamic>> _items = [];\n  late final SyncSubscription _subscription;\n  late final StoreObserver _observer;\n  late final StreamSubscription<QueryResult> _changes;\n\n  @override\n  void initState() {\n    super.initState();\n    // No LIMIT/ORDER BY in a subscription: it only says what to sync.\n    _subscription =\n        widget.ditto.sync.registerSubscription('SELECT * FROM items');\n    // No onChange: listen to `changes` exactly once, right away.\n    _observer = widget.ditto.store\n        .registerObserver('SELECT * FROM items ORDER BY name LIMIT 100');\n    _changes = _observer.changes.listen((result) {\n      final items = result.items.map((i) => i.value).toList(); // copy\n      if (!mounted) return;\n      setState(() => _items = items);\n    });\n  }\n\n  @override\n  void dispose() {\n    // Cancel while Ditto is still open: listener, observer, subscription.\n    unawaited(_changes.cancel());\n    _observer.cancel();\n    _subscription.cancel();\n    // Do NOT close Ditto here; the app-level service owns it.\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) => Text('${_items.length} items');\n}\n```\n\nIn a bigger app, put the observer in a repository or service that exposes a `ValueNotifier`, and open and close `Ditto` there before `runApp`. Avoid wrapping `changes` in a `StreamBuilder`: on a rebuild it throws `Stream has already been listened to`.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "SKILL.md only",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "partial",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 2,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Does not name DittoClosedException or close-after-cancel; does not say the Iterable assignment fails to compile."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_hot_restart_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 24.7,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.13614880000000001,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/widget-integration.md (offset 286, limit 70)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"(?i)hot restart\", \"path\": \"plugin/skills/flutter-sdk/references/widget-integration.md\", \"output_mode\": \"content\", \"-n\": true}"
+      ],
+      "tool_errors": [],
+      "final_answer": "Skip the static holder. It can't work. A hot restart resets every Dart static, so the new `main()` never sees the old instance. That old instance is never closed and keeps running, syncing and holding the directory lock. Retrying `Ditto.open` every 500 ms for 20 s also never succeeded on 5.2.0. (This comes from the installed `flutter-sdk` skill guidance, `references/widget-integration.md` \u00a7 Hot restart. I didn't run anything.)\n\n**1. `File already locked`: use a new directory per debug launch.** This is the install guide's fix:\n\n```dart\nDittoConfig appConfig() => DittoConfig(\n  databaseID: 'REPLACE_ME_WITH_YOUR_DATABASE_ID',\n  connect: const DittoConfigConnectServer(url: 'REPLACE_ME_WITH_YOUR_URL'),\n  persistenceDirectory: kDebugMode\n      ? 'ditto-debug-${DateTime.now().microsecondsSinceEpoch}'\n      : null, // release/profile: SDK default ditto-{databaseID}\n);\n```\n\n- **Release builds:** pass `null`. Don't copy the guide's `'ditto'` value for production. It points at a different directory than the v5 default `ditto-{databaseID}`, so a shipped app would open a different store and not see its data.\n- **Directory name:** use the clock, not the guide's `Random().nextInt(1 << 32)`, which throws a `RangeError` on web.\n- **Trade-off:** each debug launch starts with an empty store, and old `ditto-debug-*` directories pile up until you clear the app's data. If you need your data to survive, stop the app and run it again instead of pressing `R`. That reopens the original directory with its data intact.\n\n**2. `EXC_BAD_ACCESS` after a remote change: a new directory won't fix this.** The orphaned instance is still running. When a peer syncs a change, it fires its observer callbacks into the restarted Dart VM. On 5.2.0 this crashed every time with V2 observers (the `@experimental` 5.1.0+ API) and never with V1 observers. In sessions where you hot-restart while peers sync:\n- Use V1 `registerObserver` with a single `changes` listener, not V2 observers.\n- Treat presence observers as suspect too. On 5.2.0 they deliver callbacks the same way V2 observers do, but nobody tested whether they crash.\n- Or do full restarts in those sessions.\n\n**3. Keep the normal lifetime rules.**\n- Open one `Ditto` before `runApp`, in a service.\n- Close it only when the app exits, never in `State.dispose()`.\n- Cancel listeners, observers and subscriptions while Ditto is still open.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: widget-integration.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "partial",
+            "pass",
+            "partial",
+            "pass"
+          ],
+          "pass": 4,
+          "partial": 3,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "No 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_init_first_query",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 32.7,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.2508892,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/examples/minimal-app.md",
+        "plugin/skills/flutter-sdk/references/setup.md",
+        "plugin/skills/flutter-sdk/references/connect.md (offset None, limit 45)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"smallPeersOnly|SmallPeersOnly|small.peers\", \"path\": \"plugin/skills/flutter-sdk\", \"output_mode\": \"content\", \"-n\": true}"
+      ],
+      "tool_errors": [],
+      "final_answer": "Here's the setup for `ditto_live` 5.x, the newest line the local Flutter skill covers (it was checked against 5.2.0). Small-peers-only is what `DittoConfig()` uses by default, so you don't need any server settings. I haven't run or built any of this; it follows the skill's tested minimal app.\n\n## 1. Install\n\n```bash\nflutter pub add ditto_live\nflutter pub add permission_handler   # Android runtime permissions\n```\n\nUse Flutter 3.24.5 or later.\n\n**iOS:** in `ios/Podfile` set `platform :ios, '15.0'`. On ditto_live 5.1.0+, iOS Simulator builds fail with `Framework 'DittoCore' not found` unless you add the `EXCLUDED_ARCHS` `post_install` hook from the skill's `references/setup.md`. Add these keys to `ios/Runner/Info.plist`:\n\n```xml\n<key>NSBluetoothAlwaysUsageDescription</key>\n<string>Uses Bluetooth to sync with nearby devices.</string>\n<key>NSLocalNetworkUsageDescription</key>\n<string>Uses the local network to sync with nearby devices.</string>\n<key>NSBonjourServices</key>\n<array><string>_http-alt._tcp.</string></array>\n```\n\n**Android:** in `android/app/build.gradle.kts` set `minSdk = 24`. On 5.1.0/5.2.0, also add this to the root `android/build.gradle.kts`, above `evaluationDependsOn(\":app\")`. Without it the APK build fails at `checkDebugAarMetadata`:\n\n```kotlin\nsubprojects {\n    afterEvaluate {\n        if (name == \"ditto_live\") {\n            extensions.configure<com.android.build.api.dsl.LibraryExtension>(\"android\") {\n                compileSdk = 36\n            }\n        }\n    }\n}\n```\n\nThe plugin already declares the Bluetooth, Wi-Fi and location permissions, so don't add them again. Your app only has to ask for them at runtime.\n\n## 2. `lib/main.dart`\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\nimport 'package:permission_handler/permission_handler.dart';\n\nconst _license = String.fromEnvironment('DITTO_LICENSE');\n\nconst _runtimePermissions = <String, Permission>{\n  'android.permission.BLUETOOTH_SCAN': Permission.bluetoothScan,\n  'android.permission.BLUETOOTH_CONNECT': Permission.bluetoothConnect,\n  'android.permission.BLUETOOTH_ADVERTISE': Permission.bluetoothAdvertise,\n  'android.permission.NEARBY_WIFI_DEVICES': Permission.nearbyWifiDevices,\n  'android.permission.ACCESS_FINE_LOCATION': Permission.locationWhenInUse,\n  'android.permission.ACCESS_COARSE_LOCATION': Permission.locationWhenInUse,\n};\n\n// Opened once, before runApp. Keep this reference for the app's lifetime.\nlate final Ditto ditto;\n\nFuture<void> main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n\n  await Ditto.init(); // required on 5.0.x, harmless later\n  ditto = await Ditto.open(\n    const DittoConfig(connect: DittoConfigConnectSmallPeersOnly()),\n  );\n  try {\n    ditto.setOfflineOnlyLicenseToken(_license); // throws if invalid\n\n    // Android: request what Ditto reports missing BEFORE sync.start (5.1.0+).\n    // Empty on iOS (the OS prompts from Info.plist).\n    final missing = await DittoSyncPermissions().missingPermissions();\n    final requests = missing.map((p) => _runtimePermissions[p]).nonNulls.toSet();\n    if (requests.isNotEmpty) await requests.toList().request();\n\n    ditto.sync.start(); // P2P transports are on by default on iOS/Android\n  } catch (_) {\n    await ditto.close();\n    rethrow;\n  }\n\n  // What this peer asks nearby peers for.\n  ditto.sync.registerSubscription('SELECT * FROM tasks');\n\n  // Insert a document.\n  await ditto.store.execute(\n    'INSERT INTO tasks DOCUMENTS (:task) ON ID CONFLICT DO UPDATE',\n    arguments: {\n      'task': {'_id': 'task-1', 'title': 'Buy milk', 'done': false},\n    },\n  );\n\n  // First query: titles as a List<String>.\n  final result = await ditto.store.execute('SELECT * FROM tasks');\n  final titles = result.items\n      .map((item) => item.value['title'] as String)\n      .toList(); // copy the Iterable\n  debugPrint('titles: $titles');\n\n  runApp(MaterialApp(home: Scaffold(body: Text(titles.join('\\n')))));\n}\n```\n\nPass the license from a file so it stays off the command line. Put `{\"DITTO_LICENSE\": \"...\"}` in `secrets.json` and run:\n\n```bash\nflutter run --dart-define-from-file=secrets.json\n```\n\n## Notes\n\n- **One instance:** open Ditto once and keep the reference. Never close it in a widget's `dispose()`; close it only when the app exits. Cancel observers and subscriptions while Ditto is still open, because dropping a handle doesn't cancel it.\n- **Hot restart:** in debug, pressing `R` can fail with `File already locked`. The fix is a separate persistence directory per debug launch; release builds should pass none.\n- **Live updates:** when you move from a one-off query to live updates, use `ditto.store.registerObserver(...)` with a single `observer.changes.listen(...)`. Don't put a `StreamBuilder` over `changes`, because a rebuild throws `Stream has already been listened to`.\n- **Older versions:** on 5.0.x there is no `DittoSyncPermissions`, so request the permissions with `permission_handler` directly. On 4.14.x the API is different (`Ditto.open(identity:)`, `startSync()`).",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, examples/minimal-app.md, setup.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 6,
+          "partial": 0,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_negative_kotlin",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 24.5,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.17849099999999998,
+      "skills_invoked": [
+        "kotlin-sdk"
+      ],
+      "reads": [
+        "plugin/skills/kotlin-sdk/references/observers.md (offset 255, limit 35)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"(?i)compose|DisposableEffect|LaunchedEffect|collectAsStateWithLifecycle|viewModelScope\", \"path\": \"plugin/skills/kotlin-sdk\", \"output_mode\": \"content\", \"-C\": 3}"
+      ],
+      "tool_errors": [],
+      "final_answer": "Don't register the observer in the composable. Register it in the screen's ViewModel as a Flow, and collect that Flow from Compose with `collectAsStateWithLifecycle()`. The local Ditto Kotlin guidance says: \"never create observers inside a composable body\" (`references/lifetimes.md:59`).\n\n```kotlin\n// ViewModel: the observer lives here, not in the composable\nclass CarsViewModel(private val ditto: Ditto) : ViewModel() {\n    val cars: StateFlow<List<Car>> = ditto.store\n        .observe(\"SELECT * FROM cars ORDER BY make\") { result ->\n            // Pull values out inside the lambda: result/items close when it returns\n            withContext(Dispatchers.IO) {\n                result.items.map { carJson.decodeFromString<Car>(it.jsonString()) }\n            }\n        }\n        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())\n}\n\n// Composable: only collects\n@Composable\nfun CarsScreen(vm: CarsViewModel = viewModel()) {\n    val cars by vm.cars.collectAsStateWithLifecycle()\n    // render cars\n}\n```\n\n**Why it stops when the screen goes away:**\n- `observe()` creates a cold Flow. When its collector is cancelled, the SDK closes the native observer for you (`references/observers.md:257-283`).\n- When the screen leaves composition, or the app goes to the background, `collectAsStateWithLifecycle()` stops collecting. `WhileSubscribed(5_000)` then waits 5 seconds and cancels the upstream Flow, which closes the observer. The 5 seconds keeps it alive through configuration changes like rotation. Use `WhileSubscribed()` with no timeout if you want it to stop immediately.\n- When the ViewModel is cleared, `viewModelScope` is cancelled, so the observer is closed then too.\n\n**Things to avoid:**\n- Don't call `registerObserver` from Compose. It has no automatic cleanup. If you really need it, keep the handle in the ViewModel and call `close()` on it in `onCleared()`.\n- Don't collect in `GlobalScope`. The observer would then stay alive for the whole process.\n- Don't store `result.items` or the result itself outside the lambda. Doing so fails with `Query result item has already been closed.`\n- `flowOn(Dispatchers.IO)` won't move the transform off the main thread. Use `withContext` inside the lambda, as shown above.\n\nYou'll need `androidx.lifecycle:lifecycle-runtime-compose`, which provides `collectAsStateWithLifecycle()`. The code assumes the v5 API (`com.ditto:ditto-kotlin:5.2.0`). I haven't compiled or run it, as you asked.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "no flutter-sdk file",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass"
+          ],
+          "pass": 2,
+          "partial": 0,
+          "fail": 0,
+          "of": 2
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 0,
+          "result": "no Dart in answer"
+        },
+        "notes": "Used kotlin-sdk."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_only_plugin",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 32.8,
+      "tree_sha256": "62db713ea62d1b3b6a3edd09a38b718f14abda652254e1dfcdcf65d3b2512203",
+      "install": "ditto-flutter plugin only (flutter-sdk, native-app-config), symlinks materialized",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.21372379999999996,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/setup.md (offset 180, limit 150)",
+        "plugin/skills/native-app-config/references/apple.md",
+        "plugin/skills/flutter-sdk/references/presence.md (offset None, limit 50)",
+        "plugin/skills/flutter-sdk/references/transports.md (offset 80, limit 40)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"Info.plist|NSBluetooth|NSLocalNetwork|NSBonjour|UIBackgroundModes\", \"path\": \"plugin/skills\", \"output_mode\": \"content\", \"-n\": true}",
+        "Grep {\"pattern\": \"observePeers|presence\\\\.graph|TransportCondition|transportConditions\", \"path\": \"plugin/skills/flutter-sdk/references\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 20}"
+      ],
+      "tool_errors": [],
+      "final_answer": "On iOS you need three keys in `ios/Runner/Info.plist`. Missing local network and Bonjour entries are the usual reason peers never find each other.\n\n## Info.plist (`ios/Runner/Info.plist`)\n\n```xml\n<key>NSBluetoothAlwaysUsageDescription</key>\n<string>Uses Bluetooth to sync with nearby devices.</string>\n<key>NSLocalNetworkUsageDescription</key>\n<string>Uses the local network to sync with nearby devices.</string>\n<key>NSBonjourServices</key>\n<array>\n\t<string>_http-alt._tcp.</string>\n</array>\n```\n\n- **Bonjour entry:** it must be exactly `_http-alt._tcp.`, including the trailing dot. It is not `_ditto._tcp`. If you already list other services, keep them.\n- **Message text:** write wording specific to your app. Don't describe local networking as location access.\n- **Background (optional):** for Bluetooth sync in the background, add `bluetooth-central` and `bluetooth-peripheral` to `UIBackgroundModes`. iOS still decides when the app gets to run, so this doesn't give continuous sync.\n- **Multicast entitlement:** don't add `com.apple.developer.networking.multicast` for ordinary discovery.\n- **No Dart permission code:** on iOS, Ditto never asks for permissions itself. iOS shows its prompts, using these strings, when Ditto first uses a radio. `DittoSyncPermissions` returns empty lists on iOS, so it can't check this for you.\n\n## Check the code too\n\n- **Transports:** P2P is on by default. Make sure no `updateTransportConfig` call turns off `bluetoothLE`, `lan` or `awdl`. The minimal sample app disables all of them.\n- **Sync and subscription:** call `ditto.sync.start()`, and register a subscription on both devices.\n- **Same app:** both devices need the same app and database ID, with a valid license or auth.\n\n## How to verify\n\n1. **Build check:** confirm the built `Runner.app/Info.plist` contains all three keys and the Bonjour service.\n2. **Physical devices:** use two real iPhones or iPads, because the Simulator can't test Bluetooth. Turn off internet so only P2P can connect.\n3. **Fresh install:** delete the app first. On first launch you should get both the Bluetooth prompt and the \"find devices on your local network\" prompt. Accept both.\n4. **Watch for peers in code (5.2.0):**\n   ```dart\n   final presence = ditto.presence.observe((graph) {\n     for (final p in graph.remotePeers) {\n       debugPrint('${p.deviceName}: ${p.connections.map((c) => c.connectionType)}');\n     }\n   });\n   final conditions = ditto.observeTransportConditions((e) {\n     if (e.condition != TransportCondition.ok) debugPrint('${e.source}: ${e.condition}');\n   });\n   // later: presence.stop(); conditions.stop();\n   ```\n   `sync.isActive` being true doesn't prove access was granted. The proof is a non-empty `remotePeers` with Bluetooth or LAN connections. Don't wait for a first transport-condition event, because none may arrive.\n5. **Denied case:** turn Bluetooth and Local Network off for the app in Settings, confirm the peers drop, then turn them back on. After granting a permission, call `ditto.sync.stop()` and then `ditto.sync.start()` so it takes effect.\n6. **Lock test:** lock and unlock a device and confirm sync resumes. Note what actually happens rather than assuming it works from the plist entries.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: native-app-config/references/apple.md, presence.md, setup.md, transports.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 0,
+          "fail": 0,
+          "of": 5
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Read native-app-config/references/apple.md inside the installed plugin."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_presence_peers",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 32.4,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.1851092,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/presence.md",
+        "plugin/skills/flutter-sdk/references/widget-integration.md (offset 1, limit 40)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"deviceName|ditto_live\", \"path\": \".\", \"glob\": \"!plugin/**\", \"output_mode\": \"content\", \"head_limit\": 20}"
+      ],
+      "tool_errors": [],
+      "final_answer": "Here's the screen. It's a `StatefulWidget` that starts a presence observer in `initState`, copies each graph update into a plain list, and calls `observer.stop()` in `dispose()`. It uses the shared `Ditto` instance and never closes it.\n\n```dart\n// lib/nearby_peers_screen.dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\n\n/// Plain snapshot of one remote peer, so the UI never holds SDK objects.\nclass PeerRow {\n  const PeerRow({\n    required this.peerKey,\n    required this.deviceName,\n    required this.transports,\n  });\n  final String peerKey;\n  final String deviceName;\n  final List<String> transports;\n}\n\nString transportLabel(ConnectionType type) => switch (type) {\n      ConnectionType.bluetooth => 'Bluetooth',\n      ConnectionType.accessPoint => 'LAN',\n      ConnectionType.p2pWifi => 'Wi-Fi P2P',\n      ConnectionType.webSocket => 'WebSocket',\n      ConnectionType.multicast => 'Multicast', // 5.1.0+\n    };\n\nclass NearbyPeersScreen extends StatefulWidget {\n  const NearbyPeersScreen({super.key, required this.ditto});\n\n  /// The app's single, already-open Ditto instance (owned elsewhere).\n  final Ditto ditto;\n\n  @override\n  State<NearbyPeersScreen> createState() => _NearbyPeersScreenState();\n}\n\nclass _NearbyPeersScreenState extends State<NearbyPeersScreen> {\n  PresenceObserver? _observer;\n  List<PeerRow> _peers = const [];\n\n  @override\n  void initState() {\n    super.initState();\n    // Fires once with the current graph, then on every peer/connection change.\n    _observer = widget.ditto.presence.observe(_onGraph);\n  }\n\n  void _onGraph(PresenceGraph graph) {\n    final rows = graph.remotePeers.map((peer) {\n      // One Connection per transport is possible; dedupe and sort the labels.\n      final transports = peer.connections\n          .map((c) => transportLabel(c.connectionType))\n          .toSet()\n          .toList()\n        ..sort();\n      return PeerRow(\n        peerKey: peer.peerKey,\n        deviceName: peer.deviceName,\n        transports: transports,\n      );\n    }).toList()\n      ..sort((a, b) => a.deviceName.compareTo(b.deviceName));\n\n    if (!mounted) return;\n    setState(() => _peers = rows);\n  }\n\n  @override\n  void dispose() {\n    // Dropping the handle does NOT stop it; stop while Ditto is still open.\n    _observer?.stop();\n    _observer = null;\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: Text('Nearby peers (${_peers.length})')),\n      body: _peers.isEmpty\n          ? const Center(child: Text('No peers nearby'))\n          : ListView.separated(\n              itemCount: _peers.length,\n              separatorBuilder: (_, __) => const Divider(height: 1),\n              itemBuilder: (context, i) {\n                final p = _peers[i];\n                return ListTile(\n                  key: ValueKey(p.peerKey),\n                  leading: const Icon(Icons.devices),\n                  title: Text(p.deviceName),\n                  subtitle: Text(p.transports.isEmpty\n                      ? 'Discovered, not connected'\n                      : p.transports.join(' \u00b7 ')),\n                );\n              },\n            ),\n    );\n  }\n}\n```\n\nTo open it: `Navigator.push(context, MaterialPageRoute(builder: (_) => NearbyPeersScreen(ditto: dittoService.ditto)));`\n\n**How it works:**\n- **API:** It uses `ditto.presence.observe(...)`, and the result is stopped with `stop()`, not `cancel()`. Each `Peer` gives `deviceName`, `peerKey` and `connections`, and each connection has a `connectionType`.\n- **Five connection types:** The `switch` covers five values, which is correct for 5.1.0 and later, so 5.2.0 is fine. On 5.0.x it wouldn't compile, because `multicast` doesn't exist there.\n- **Copying the data:** The callback runs on the UI isolate. It copies the `Set<Peer>` into plain `PeerRow`s before calling `setState`, and checks `mounted` first in case an update arrives after the screen closes.\n- **\"Discovered, not connected\":** A peer can show up with an empty `connections` list, so the screen shows this text for it.\n- **Not checked:** I couldn't confirm against your installed package whether `deviceName` can be null. If it's `String?`, use `peer.deviceName ?? 'Unknown device'`.\n- **Not for web or hot restart:** This shows nothing on Flutter Web, which has no peer-to-peer. Presence observers use the same callback mechanism as observers that crashed after a hot restart. Whether presence observers crash too hasn't been tested, so do a full restart after `R` if this screen is open.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: presence.md, widget-integration.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 6,
+          "partial": 0,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use",
+            "unnecessary_underscores"
+          ],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_statefulwidget_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 22.4,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.1868378,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [],
+      "commands": [
+        "Grep {\"pattern\": \"didUpdateWidget|dispose|mounted|StatefulWidget\", \"path\": \"plugin/skills/flutter-sdk/references\", \"output_mode\": \"content\", \"-C\": 3}"
+      ],
+      "tool_errors": [],
+      "final_answer": "This version has the screen own its observer, sync subscription and listener, and cancel all three in `dispose()`. If the color passed in changes, it re-registers them for the new color. I haven't compiled or run it.\n\n```dart\nimport 'dart:async';\n\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\n\nclass CarsByColorScreen extends StatefulWidget {\n  const CarsByColorScreen({super.key, required this.ditto, required this.color});\n\n  final Ditto ditto; // opened at startup; never closed by this screen\n  final String color;\n\n  @override\n  State<CarsByColorScreen> createState() => _CarsByColorScreenState();\n}\n\nclass _CarsByColorScreenState extends State<CarsByColorScreen> {\n  static const _query = 'SELECT * FROM cars WHERE color = :color';\n\n  SyncSubscription? _subscription;\n  StoreObserver? _observer;\n  StreamSubscription<QueryResult>? _changes;\n  List<Map<String, dynamic>> _cars = const [];\n\n  @override\n  void initState() {\n    super.initState();\n    _start(widget.color);\n  }\n\n  @override\n  void didUpdateWidget(CarsByColorScreen oldWidget) {\n    super.didUpdateWidget(oldWidget);\n    if (oldWidget.color != widget.color || oldWidget.ditto != widget.ditto) {\n      _stop();\n      _cars = const [];\n      _start(widget.color);\n    }\n  }\n\n  void _start(String color) {\n    final args = {'color': color};\n    // Pulls matching docs from peers (no LIMIT/ORDER BY in subscriptions).\n    _subscription = widget.ditto.sync.registerSubscription(_query, arguments: args);\n    // No onChange: this State holds the single `changes` listener.\n    final observer = widget.ditto.store.registerObserver(_query, arguments: args);\n    _observer = observer;\n    _changes = observer.changes.listen((result) {\n      if (!mounted) return;\n      // Copy the Iterable into a List; never keep result.items itself.\n      final cars = result.items.map((item) => item.value).toList();\n      setState(() => _cars = cars);\n    });\n  }\n\n  void _stop() {\n    // dispose() can't await. Cancel the listener first, then the observer and\n    // the subscription, while Ditto is still open.\n    final changes = _changes;\n    if (changes != null) unawaited(changes.cancel());\n    _observer?.cancel();\n    _subscription?.cancel();\n    _changes = null;\n    _observer = null;\n    _subscription = null;\n  }\n\n  @override\n  void dispose() {\n    _stop(); // never ditto.close() here: Ditto belongs to the app\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: Text('${widget.color} cars')),\n      body: _cars.isEmpty\n          ? const Center(child: Text('No cars'))\n          : ListView.builder(\n              itemCount: _cars.length,\n              itemBuilder: (context, i) {\n                final car = _cars[i];\n                return ListTile(\n                  title: Text('${car['make'] ?? car['_id']}'),\n                  subtitle: Text('${car['color']}'),\n                );\n              },\n            ),\n    );\n  }\n}\n```\n\nWhy it's written this way:\n- **No `StreamBuilder` over `observer.changes`.** That stream can only be listened to once, so a rebuild throws `Stream has already been listened to.` Instead there is one listener, created in `initState`.\n- **No `onChange` callback.** On 5.0.x\u20135.2.0, results also pile up in the unused `changes` stream, so memory keeps growing.\n- **The result is copied to a `List` before `setState`.**\n- **`mounted` is checked before `setState`.** A result can arrive after the screen has closed.\n- **Everything is cancelled explicitly.** Dropping a reference to the observer or subscription doesn't stop it; it keeps running. `dispose()` can't await, so the listener's cancel is fire-and-forget.\n- **`ditto.close()` is never called in `dispose()`.** Close Ditto only when the app exits, after observers are cancelled.\n\nThe type names (`SyncSubscription`, `StoreObserver`, `QueryResult`) are what I expect in 5.2.0. Check them against the installed `ditto_live` before relying on them. If you don't want this screen to pull data from peers itself (for example, if a subscription already exists elsewhere), drop the `registerSubscription` line and its cancel.\n\nIf more than one screen needs this data, move the observer into a repository object that exposes a `ValueNotifier`, and have the screen just listen to it.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "SKILL.md only",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_v4_migration",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 31.0,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.2290436,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/versions.md (offset 99, limit 175)",
+        "plugin/skills/flutter-sdk/references/connect.md (offset 140, limit 60)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"(?i)playground|isConnectedToDittoCloud|connect|migrat|LIMIT|ORDER BY\", \"path\": \"plugin/skills/flutter-sdk/references/versions.md\", \"output_mode\": \"content\"}",
+        "Grep {\"pattern\": \"(?i)playground|server|websocket|url|expiration\", \"path\": \"plugin/skills/flutter-sdk/references/connect.md\", \"output_mode\": \"content\"}",
+        "Grep {\"pattern\": \"developmentProvider\", \"path\": \"plugin/skills/flutter-sdk\", \"output_mode\": \"content\", \"-C\": 3}"
+      ],
+      "tool_errors": [],
+      "final_answer": "## What has to change\n\n1. **Opening Ditto.** In v5 there are no identity classes. `OnlinePlaygroundIdentity(appID:, token:)` becomes `Ditto.open(DittoConfig(databaseID: appId, connect: DittoConfigConnectServer(url: \u2026)))`. The config is passed positionally, and `databaseID` is spelled with a capital `ID`. `url` is the URL shown in the portal, copied exactly. Keep `await Ditto.init()` before the open call, because 5.0.x requires it.\n2. **The playground token.** It is no longer passed when you open. With a server config, call `await ditto.auth.setExpirationHandler(...)` first, and have it call `ditto.auth.login(token:, provider: Authenticator.developmentProvider)`. This must happen **before** `sync.start()`. If you skip it, `sync.start()` throws `DittoException(<authentication> \u2026 expiration handler has not yet been set.)`.\n3. **Starting sync.** `ditto.startSync()` becomes `ditto.sync.start()`.\n4. **The subscription.** v5 rejects `LIMIT` and `ORDER BY` in subscriptions, so subscribe with `SELECT * FROM orders`. Do the ordering and limiting in your local `store.execute` or `registerObserver` query instead.\n5. **Presence.** `isConnectedToDittoCloud` becomes `isConnectedToDittoServer`. `remotePeers` is now a `Set`, but `.any` still works on it.\n6. **Login result.** A rejected login doesn't throw. It comes back in `response.exception`, so check it there.\n\n## 5.2.0 version\n\n```dart\nawait Ditto.init();\nfinal ditto = await Ditto.open(DittoConfig(\n  databaseID: appId,\n  connect: DittoConfigConnectServer(url: serverUrl), // portal URL\n));\n\nawait ditto.auth.setExpirationHandler((ditto, timeUntilExpiration) async {\n  if (ditto.isClosed) return;\n  try {\n    final response = await ditto.auth.login(\n      token: playgroundToken,\n      provider: Authenticator.developmentProvider,\n    );\n    if (response.exception != null) {\n      log('Ditto login failed: ${response.exception}', name: 'auth');\n    }\n  } catch (e) {\n    log('Ditto login threw: $e', name: 'auth');\n  }\n});\nditto.sync.start();\n\nfinal subscription = ditto.sync.registerSubscription('SELECT * FROM orders');\n// Apply ORDER BY/LIMIT locally:\n// ditto.store.registerObserver('SELECT * FROM orders ORDER BY createdAt LIMIT 50')\n\nfinal online = ditto.presence.graph.remotePeers\n    .any((p) => p.isConnectedToDittoServer);\n```\n\n## Other upgrade checks\n\n- **Transports.** v4 turned on every peer-to-peer transport by default. v5's defaults depend on the platform, so set each transport you want explicitly with `updateTransportConfig`.\n- **Existing data.** v4 stored data in `{Documents}/ditto`; v5's default directory is `ditto-{databaseID}`. 5.x is supposed to open the old v4 store in place, but the guidance says this path wasn't actually run for 4.14 \u2192 5.x. Until you've tested the upgrade on a copy of a real store, pass the v4 path as `persistenceDirectory`, or check the documents after upgrading. Treat the upgrade as one-way.\n- **Nested-object writes.** v5 runs DQL with strict mode off, so nested objects now merge field by field instead of being replaced whole. Re-check any queries that write nested objects.\n- **Build settings.** Android needs `minSdk` 24 plus the compileSdk override (required from 5.1.0). On iOS and macOS, check the Podfile platform lines.\n- **Cleanup.** Cancel `subscription` and any observers while Ditto is still open, before `ditto.close()`.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, versions.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_web_attachments",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 20.6,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.1523738,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/attachments.md"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"(?i)attachment\", \"path\": \"plugin/skills/flutter-sdk/references/web.md\", \"output_mode\": \"content\", \"-C\": 3}"
+      ],
+      "tool_errors": [],
+      "final_answer": "Flutter Web has no file system, so on web `newAttachment(String path)` can't work. In ditto_live 5.2.0 its Future fails with `DittoException(Creating attachments from files is not supported on Flutter Web.)`. Also, `file_picker` doesn't give you a path on web, so `file.path!` breaks before Ditto is even called.\n\nThe fix is to pass the photo's bytes (`Uint8List`) instead. `newAttachment` accepts either a path or bytes.\n\n### 1. Pick the file as bytes and create the attachment\n\n```dart\nimport 'dart:typed_data';\nimport 'package:file_picker/file_picker.dart';\nimport 'package:ditto_live/ditto_live.dart';\n\nFuture<void> pickAndSavePhoto(Ditto ditto, String carId) async {\n  final picked = await FilePicker.platform.pickFiles(\n    type: FileType.image,\n    withData: true, // web: fills file.bytes (path is unavailable)\n  );\n  final file = picked?.files.single;\n  final Uint8List? bytes = file?.bytes;\n  if (bytes == null) return;\n\n  // Metadata is positional and wrapped in AttachmentMetadata (not a raw Map).\n  final attachment = await ditto.store.newAttachment(\n    bytes,\n    AttachmentMetadata({'name': file!.name}),\n  );\n\n  // Put the Attachment object in the document and declare the field as ATTACHMENT.\n  await ditto.store.execute(\n    'INSERT INTO COLLECTION cars (photo ATTACHMENT) DOCUMENTS (:car) '\n    'ON ID CONFLICT DO UPDATE',\n    arguments: {\n      'car': {'_id': carId, 'photo': attachment},\n    },\n  );\n}\n```\n\nOn native you can keep using `newAttachment(path)`. Using bytes everywhere means one code path for all platforms.\n\n### 2. Read the token back and fetch the bytes\n\n```dart\nFuture<Uint8List> loadPhoto(Ditto ditto, String carId) async {\n  final result = await ditto.store.execute(\n    'SELECT * FROM COLLECTION cars (photo ATTACHMENT) WHERE _id = :id',\n    arguments: {'id': carId},\n  );\n  final token = result.items.first.value['photo'] as Map<String, dynamic>;\n\n  final done = Completer<Attachment>();\n  final fetcher = ditto.store.fetchAttachment(token, (event) {\n    switch (event) {\n      case AttachmentFetchEventCompleted(:final attachment):\n        done.complete(attachment);\n      case AttachmentFetchEventProgress():\n        break; // downloadedBytes / totalBytes, for a progress bar\n      case AttachmentFetchEventDeleted():\n        done.completeError(StateError('attachment deleted'));\n    }\n  });\n  fetcher.attachment.ignore(); // stops a deletion being reported as an unhandled error\n\n  final attachment = await done.future;\n  return attachment.data; // works on web; copyToPath does not\n}\n```\n\n### 3. Show it\n\n```dart\n// Load once (e.g. in a view model or initState), not inside build().\nImage.memory(photoBytes, fit: BoxFit.cover)\n```\n\n### Web caveats\n- **Don't use `copyToPath`** or `Image.file`. On web, `copyToPath` fails with `Retrieving a filesystem path for attachments is not supported on the Web.` Use `attachment.data` with `Image.memory`.\n- **Nothing survives a page reload.** The web store is in memory, so documents and attachments are lost on reload unless they sync to a server peer over WebSocket.\n- **Keep the fetcher handle** if the widget can go away mid-download. Dropping the handle doesn't stop the fetch, so call `fetcher.stop()` in `dispose()`. A finished fetcher stops by itself.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: attachments.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 3,
+          "normalized_blocks": 2,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_web_base_href",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 22.6,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.22059260000000003,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/web.md",
+        "plugin/skills/flutter-sdk/references/connect.md"
+      ],
+      "commands": [],
+      "tool_errors": [],
+      "final_answer": "For ditto_live 5.2.0 on web, served under `/app/`, you need to configure these things.\n\n### 1. Point Ditto at its JS shim (most important for `/app/`)\nBy default Ditto loads its shim from the absolute path `/assets/packages/ditto_live/lib/assets/ditto.wasm.js`. Under `/app/` that URL 404s, and `Ditto.init()` fails with `Failed to fetch dynamically imported module`.\n\n- Pass a relative URL that starts with `./`. A bare `assets/\u2026` fails with `Failed to resolve module specifier`.\n- You don't need `wasmUrl`. The `.wasm` file loads through Flutter's asset bundle, which already follows the base href.\n- Make this the first Ditto call in `main()`. `Ditto.init` is memoized, so the first call's URLs win, and `Ditto.open` calls `init()` without URLs.\n\n```dart\nawait Ditto.init(\n  wasmShimUrl: kIsWeb ? './assets/packages/ditto_live/lib/assets/ditto.wasm.js' : null,\n);\n```\n\n### 2. Connect to your server and authenticate\n```dart\nfinal ditto = await Ditto.open(const DittoConfig(\n  databaseID: 'YOUR_DATABASE_ID',               // Portal \u2192 Connect via SDK\n  connect: DittoConfigConnectServer(url: 'YOUR_SERVER_URL'),\n));\nawait ditto.auth.setExpirationHandler((ditto, _) async {\n  if (ditto.isClosed) return;\n  final r = await ditto.auth.login(token: await fetchToken(), provider: 'YOUR_PROVIDER');\n  if (r.exception != null) log('Ditto login failed: ${r.exception}');\n});\nditto.sync.start();\n```\n- Set the expiration handler before `sync.start()`. Without it, `sync.start()` throws an `<authentication> \u2026 expiration handler has not yet been set` error.\n- A rejected login comes back in `response.exception`. It is not thrown.\n- Leave out `persistenceDirectory`, and you don't need `setOfflineOnlyLicenseToken` with a server config.\n- Open Ditto once in `main()` before `runApp`, and keep that one instance.\n\n### 3. Don't enable any peer-to-peer transport\nOn web, Ditto syncs only with the server, over WebSocket. In 5.2.0, enabling LAN or Bluetooth LE makes `sync.start()` throw `Expected valid TransportConfig`. If you share code with native builds, check `kIsWeb` first. Don't use `defaultTargetPlatform`, because on web it reports the browser's host OS.\n\n### 4. Build mode\nUse the default `flutter build web --base-href /app/`, which compiles with dart2js. **Don't use `--wasm`.** It has an SDK defect where every query result after the first repeats the first one.\n\n### 5. Hosting\n- You don't need COOP/COEP headers.\n- If you set a Content Security Policy, it must allow `'wasm-unsafe-eval'`, for example `script-src 'self' 'wasm-unsafe-eval'`. Without it the app never starts. If you rely on `'self'`, build with `--no-web-resources-cdn` so `'self'` also covers Flutter's renderer.\n- Make sure `/app/assets/packages/ditto_live/lib/assets/` is deployed. The build puts it there automatically, and it's best served compressed.\n\n### Things to expect on web\n- The store is in memory only, so it's empty after every page load. Treat the server as the source of truth.\n- `execute` runs on the UI thread, so add `LIMIT` to the queries each screen runs.\n- File-path attachments and `DittoLogger.exportLogs` aren't supported.\n- During development, hot restart (`R`) leaves the store locked. Restart `flutter run` instead.\n\nI took this from the installed Ditto Flutter guidance and didn't run or build anything. That guidance says the base-href fix, the `--wasm` defect and the CSP rule were tested in Chrome, but web sync against a real server was not.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, web.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 2,
+          "normalized_blocks": 2,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "No main() block this time."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_web_p2p_config",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 24.7,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.16231720000000002,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/web.md (offset 160, limit 50)",
+        "plugin/skills/flutter-sdk/references/setup.md (offset 314, limit 20)"
+      ],
+      "commands": [
+        "Grep {\"pattern\": \"currentPlatform|defaultTargetPlatform|Expected valid|websocket|connect\\\\.\", \"path\": \"plugin/skills/flutter-sdk/references\", \"output_mode\": \"content\", \"-i\": true}"
+      ],
+      "tool_errors": [],
+      "final_answer": "The bug is the platform check. In a web build, `defaultTargetPlatform` reports the browser's host OS, not \"web\". So on a Mac or phone browser your gate matches, Bluetooth and LAN get enabled, and in 5.2.0 `sync.start()` rejects the config. Web has no peer-to-peer transports at all.\n\nThe fix is to check `kIsWeb` first, then use `Ditto.currentPlatform` (not `defaultTargetPlatform`) for the native choices:\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/foundation.dart';\n\n/// Web has no peer-to-peer transports; enabling one makes sync.start() throw on 5.2.0.\nvoid enablePeerToPeer(Ditto ditto) {\n  if (kIsWeb) return; // compile-time constant, so web builds drop the native branch\n  ditto.updateTransportConfig((config) {\n    config.peerToPeer.bluetoothLE.isEnabled = true;\n    config.peerToPeer.lan.isEnabled = true;\n    switch (Ditto.currentPlatform) {\n      case SupportedPlatform.ios || SupportedPlatform.macos:\n        config.peerToPeer.awdl.isEnabled = true;\n      case SupportedPlatform.android:\n        config.peerToPeer.wifiAware.isEnabled = true;\n      case SupportedPlatform.linux ||\n          SupportedPlatform.windows ||\n          SupportedPlatform.web:\n        break;\n    }\n  });\n}\n\n// Startup:\nfinal ditto = await Ditto.open(config);\nenablePeerToPeer(ditto);\nditto.sync.start();\n```\n\nI haven't run this. It's the gate from the installed Ditto Flutter skill guidance (`references/web.md`, `references/setup.md`). Per that guidance, Chrome and macOS were tested, but the Android branch wasn't.\n\n- **Remove the old gate:** delete the `defaultTargetPlatform == iOS/Android/macOS` check entirely.\n- **AWDL and Wi-Fi Aware:** the snippet also turns on AWDL (iOS/macOS) and Wi-Fi Aware (Android). If you only want Bluetooth and LAN, delete the `switch`. The `kIsWeb` check is the part that fixes the error.\n- **Platform checks:** don't use `dart:io` `Platform` instead, because importing `dart:io` breaks the web compile.\n- **Web sync:** with this fix the web build starts with no transports. It can only sync through a server over WebSocket, so a web client needs a server `DittoConfig` to sync with anyone.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: setup.md, web.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 1,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Says enabling throws from sync.start() on 5.2.0 but not from updateTransportConfig on 5.0.x/5.1.x."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_android_permissions",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 10.7,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 52187,
+        "cached_input_tokens": 32384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 237,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk",
+        "native-app-config"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/native-app-config/SKILL.md",
+        ".agents/skills/flutter-sdk/references/setup.md",
+        ".agents/skills/native-app-config/references/android.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md .agents/skills/native-app-config/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/setup.md .agents/skills/native-app-config/references/android.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "The installed Ditto Flutter guidance says **no additions to `android/` are needed**: `ditto_live` already declares Bluetooth permissions, which merge into your app\u2019s manifest.\n\nYour app must request permissions at runtime before starting sync:\n\n- Android 12+: Bluetooth scan, connect, and advertise.\n- Older Android: location permission for Bluetooth discovery.\n\nUse `permission_handler`; on Ditto 5.1+, `DittoSyncPermissions().missingPermissions()` identifies missing permissions.\n\nNo files changed.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: native-app-config/references/android.md, setup.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "partial",
+            "fail"
+          ],
+          "pass": 2,
+          "partial": 2,
+          "fail": 1,
+          "of": 5
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 0,
+          "result": "no Dart in answer"
+        },
+        "notes": "Says the plugin's declarations merge, but not every build type or to check the merged manifest; does not say Ditto never requests permissions; no stop/start or device note."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_dispose_cleanup",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 20.5,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 58071,
+        "cached_input_tokens": 39424,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 599,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/observers.md",
+        ".agents/skills/flutter-sdk/references/lifetimes.md",
+        ".agents/skills/flutter-sdk/references/widget-integration.md",
+        ".agents/skills/flutter-sdk/references/sync.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/observers.md .agents/skills/flutter-sdk/references/lifetimes.md .agents/skills/flutter-sdk/references/widget-integration.md .agents/skills/flutter-sdk/references/sync.md; rg --files -g pubspec.lock -g package_config.json -g '*query*observer*' -g '*subscription*' .\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/observers.md .agents/skills/flutter-sdk/references/lifetimes.md .agents/skills/flutter-sdk/references/widget-integration.md .agents/skills/flutter-sdk/references/sync.md; rg --files -g pubspec.lock -g package_config.json -g '*query*obse"
+      ],
+      "final_answer": "There are four problems:\n\n- On 5.2.0, `onChange` also buffers results in the unlistened `changes` stream, causing memory growth. Use one immediate stream listener.\n- Discarding observer/subscription handles does not cancel them. Retain and cancel both.\n- Closing the shared Ditto in `dispose()` makes other screens throw `DittoClosedException`. Its app-level owner should close it at shutdown.\n- Sync subscriptions reject `ORDER BY` and `LIMIT` synchronously. Put these in the local observer query. Also, `result.items` is an `Iterable`, so copy it into a list.\n\nAs written, the subscription throws before the observer is registered; the memory symptom applies once that subscription query is corrected.\n\n```dart\nimport 'dart:async';\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/widgets.dart';\n\nclass _InventoryState extends State<InventoryScreen> {\n  late final SyncSubscription _syncSubscription;\n  late final StoreObserver _observer;\n  late final StreamSubscription<QueryResult> _changes;\n\n  List<Map<String, dynamic>> _items = [];\n\n  @override\n  void initState() {\n    super.initState();\n\n    _syncSubscription = widget.ditto.sync.registerSubscription(\n      'SELECT * FROM items',\n    );\n\n    _observer = widget.ditto.store.registerObserver(\n      'SELECT * FROM items ORDER BY name LIMIT 100',\n    );\n\n    _changes = _observer.changes.listen((result) {\n      if (!mounted) return;\n      final items = result.items.map((item) => item.value).toList();\n      setState(() => _items = items);\n    });\n  }\n\n  @override\n  void dispose() {\n    // Cancel screen-owned resources while the shared Ditto stays open.\n    unawaited(_changes.cancel());\n    _observer.cancel();\n    _syncSubscription.cancel();\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) => Text('${_items.length} items');\n}\n```\n\nThe limit bounds the displayed local results; it does not limit documents synced.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: lifetimes.md, observers.md, sync.md, widget-integration.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "partial",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 2,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Does not warn against re-opening or say close after cancelling; does not say the Iterable assignment fails to compile.",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_hot_restart_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 17.1,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 57008,
+        "cached_input_tokens": 39168,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 499,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/widget-integration.md",
+        ".agents/skills/flutter-sdk/references/lifetimes.md",
+        ".agents/skills/flutter-sdk/references/observers.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/widget-integration.md .agents/skills/flutter-sdk/references/lifetimes.md .agents/skills/flutter-sdk/references/observers.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "**A static holder won\u2019t survive hot restart.** `R` resets Dart statics, while the old native Ditto instance keeps running, syncing, and locking its directory. Retrying `Ditto.open` won\u2019t release that lock.\n\nFor `ditto_live 5.2.0`:\n\n- **Prefer hot reload (`r`) or a full stop and relaunch.** Fully restart now to clear the orphaned instance. Use full restarts when you need to preserve local data.\n- **For hot restart development, use a unique `persistenceDirectory` per debug launch**, such as `ditto-debug-${DateTime.now().microsecondsSinceEpoch}`. In release/profile, leave it unset to preserve the SDK\u2019s default store location. Each debug launch starts empty; old directories accumulate.\n- **That directory workaround does not fix the crash.** Local guidance reproduced `EXC_BAD_ACCESS` on macOS 5.2.0 when remote changes reached orphaned V2 observers after `R`. Avoid `registerObserverV2` and `registerObserverWithSignalNext` in hot-restarted sessions; prefer V1 `registerObserver`. V1 did not crash in the documented probes, which is not a safety guarantee. Presence observers pose a similar inferred risk; iOS reproduction wasn\u2019t documented.\n- **During normal operation**, keep one Ditto in an app service, opened before `runApp`. Retain observer handles, attach one immediate `changes` listener without `onChange`, and cancel the listener followed by the V1 observer while Ditto remains open. Close at app shutdown, never in widget `dispose()`, pause, or detach; avoid closing and reopening within the same process.\n\nSource: installed [Flutter SDK guidance](.agents/skills/flutter-sdk/references/widget-integration.md#hot-restart).",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: lifetimes.md, observers.md, widget-integration.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "partial",
+            "pass",
+            "partial",
+            "pass"
+          ],
+          "pass": 4,
+          "partial": 3,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 0,
+          "result": "no Dart in answer"
+        },
+        "notes": "No File already locked text or 5.1.0 hang (criterion 2), no web dev-server restart (4), no V1 crash on 5.1.0 (6)."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_init_first_query",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 38.0,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 89752,
+        "cached_input_tokens": 50560,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1442,
+        "reasoning_output_tokens": 56
+      },
+      "skills_invoked": [
+        "flutter-sdk",
+        "native-app-config",
+        "write-dql"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk",
+        ".agents/skills/flutter-sdk/references/setup.md",
+        ".agents/skills/flutter-sdk/references/connect.md",
+        ".agents/skills/flutter-sdk/references/store.md",
+        ".agents/skills/native-app-config/SKILL.md",
+        ".agents/skills/write-dql/SKILL.md",
+        ".agents/skills/flutter-sdk/examples/minimal-app.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"rg --files -g 'pubspec*' -g 'package_config.json' -g 'AGENTS.md' -g '*ditto*' -g '*config*' .agents/skills/flutter-sdk | head -50; cat .agents/skills/flutter-sdk/references/setup.md .agents/skills/flutter-sdk/references/connect.md .agents/skills/flutter-sdk/references/store.md .agents/skills/native-app-config/SKILL.md\"",
+        "/bin/zsh -lc 'ls -a; cat .agents/skills/write-dql/SKILL.md; cat .agents/skills/flutter-sdk/examples/minimal-app.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "Install with:\n\n```sh\nflutter pub add ditto_live\nflutter pub add permission_handler\n```\n\nThis example follows the installed guidance for Ditto **5.1/5.2**. Use Flutter 3.24.5+.\n\nBefore running:\n\n- **iOS:** use CocoaPods, set the deployment target and `ios/Podfile` platform to iOS 15.\n- **Android:** set `minSdk = 24`. Ditto 5.1/5.2 needs `compileSdk = 36` in the plugin module as well as your app; the local [setup guidance](.agents/skills/flutter-sdk/references/setup.md) provides the Gradle override.\n\nAdd these entries inside the dictionary in `ios/Runner/Info.plist`:\n\n```xml\n<key>NSBluetoothAlwaysUsageDescription</key>\n<string>Sync tasks with nearby devices over Bluetooth.</string>\n<key>NSLocalNetworkUsageDescription</key>\n<string>Sync tasks with nearby devices on the local network.</string>\n<key>NSBonjourServices</key>\n<array>\n    <string>_http-alt._tcp.</string>\n</array>\n```\n\nThe Ditto plugin declares Android\u2019s transport permissions. Your app must request runtime access.\n\nUse this as `lib/main.dart`, replacing the database ID and supplying your offline license:\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\nimport 'package:permission_handler/permission_handler.dart';\n\n// Retain these for the app's lifetime.\nlate final Ditto ditto;\nlate final SyncSubscription tasksSubscription;\n\nconst runtimePermissions = <String, Permission>{\n  'android.permission.BLUETOOTH_SCAN': Permission.bluetoothScan,\n  'android.permission.BLUETOOTH_CONNECT': Permission.bluetoothConnect,\n  'android.permission.BLUETOOTH_ADVERTISE': Permission.bluetoothAdvertise,\n  'android.permission.NEARBY_WIFI_DEVICES': Permission.nearbyWifiDevices,\n  'android.permission.ACCESS_FINE_LOCATION': Permission.locationWhenInUse,\n  'android.permission.ACCESS_COARSE_LOCATION': Permission.locationWhenInUse,\n  'android.permission.POST_NOTIFICATIONS': Permission.notification,\n};\n\nFuture<void> requestSyncPermissions() async {\n  // These lists are empty on iOS.\n  final permissions = DittoSyncPermissions();\n  final missing = await permissions.missingPermissions();\n  final requests = missing\n      .map((name) => runtimePermissions[name])\n      .whereType<Permission>()\n      .toSet()\n      .toList();\n\n  if (requests.isNotEmpty) await requests.request();\n\n  final remaining = await permissions.missingPermissions();\n  if (remaining.isNotEmpty) {\n    throw StateError('Sync permissions denied: $remaining');\n  }\n}\n\nFuture<List<String>> taskTitles(Ditto ditto) async {\n  final result = await ditto.store.execute('SELECT title FROM tasks');\n\n  // items is an Iterable; materialize the titles as List<String>.\n  return result.items\n      .map((item) => item.value['title'] as String)\n      .toList();\n}\n\nFuture<void> main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n\n  const license = String.fromEnvironment('DITTO_OFFLINE_LICENSE');\n  if (license.isEmpty) {\n    throw StateError('Supply DITTO_OFFLINE_LICENSE');\n  }\n\n  await Ditto.init();\n  ditto = await Ditto.open(\n    const DittoConfig(\n      databaseID: 'REPLACE_WITH_YOUR_DATABASE_ID',\n      connect: DittoConfigConnectSmallPeersOnly(),\n    ),\n  );\n\n  SyncSubscription? subscription;\n  late final List<String> titles;\n  try {\n    ditto.setOfflineOnlyLicenseToken(license);\n    await requestSyncPermissions();\n\n    // Native peer-to-peer transports are enabled by default.\n    ditto.sync.start();\n    subscription =\n        ditto.sync.registerSubscription('SELECT * FROM tasks');\n\n    await ditto.store.execute(\n      'INSERT INTO tasks DOCUMENTS (:task) ON ID CONFLICT DO UPDATE',\n      arguments: {\n        'task': {\n          '_id': 'first-task',\n          'title': 'Try Ditto',\n          'done': false,\n        },\n      },\n    );\n\n    titles = await taskTitles(ditto); // ['Try Ditto'] on a fresh store\n    tasksSubscription = subscription;\n  } catch (_) {\n    subscription?.cancel();\n    await ditto.close();\n    rethrow;\n  }\n\n  runApp(MaterialApp(\n    home: Scaffold(\n      appBar: AppBar(title: const Text('Tasks')),\n      body: ListView(\n        children: [\n          for (final title in titles) ListTile(title: Text(title)),\n        ],\n      ),\n    ),\n  ));\n}\n```\n\nPut the license in a local, uncommitted JSON file:\n\n```json\n{\"DITTO_OFFLINE_LICENSE\": \"YOUR_OFFLINE_LICENSE\"}\n```\n\nThen run:\n\n```sh\nflutter run --dart-define-from-file=ditto.local.json\n```\n\nUse the same database ID on collaborating peers. Small-peers-only mode syncs directly between devices without a Ditto server. The subscription receives matching peer documents; `taskTitles()` returns a **local snapshot**, without waiting for peers.\n\nKeep Ditto open across widget rebuilds and app pauses. Cancel subscriptions before closing it during controlled shutdown.\n\nNo files were changed, dependencies installed, or tests run.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, examples/minimal-app.md, setup.md, store.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 6,
+          "partial": 0,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_negative_kotlin",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 14.3,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 53054,
+        "cached_input_tokens": 25088,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 301,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "kotlin-sdk"
+      ],
+      "reads": [
+        ".agents/skills/kotlin-sdk/SKILL.md",
+        ".agents/skills/kotlin-sdk/references/lifetimes.md",
+        ".agents/skills/kotlin-sdk/references/observers.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/kotlin-sdk/references/lifetimes.md .agents/skills/kotlin-sdk/references/observers.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "Register it inside **`DisposableEffect`**, and close the returned handle in `onDispose`. This ties the Ditto 5.2.0 observer to the screen\u2019s composition lifetime:\n\n```kotlin\n@Composable\nfun CarsScreen(ditto: Ditto) {\n    val query = \"SELECT * FROM cars\"\n\n    DisposableEffect(ditto, query) {\n        val observer = ditto.store.registerObserver(query) { result ->\n            // Extract plain Kotlin data here.\n            // Do not retain result or its items.\n        }\n\n        onDispose {\n            observer.close()\n        }\n    }\n\n    // Screen UI\n}\n```\n\nRecomposition with unchanged keys preserves the observer. Leaving composition closes it; changing a key closes it and registers a replacement.\n\nKeep `Ditto` itself in an application or DI singleton. Cancelling a coroutine alone does **not** close a `registerObserver` handle.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "no flutter-sdk file",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass"
+          ],
+          "pass": 2,
+          "partial": 0,
+          "fail": 0,
+          "of": 2
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 0,
+          "result": "no Dart in answer"
+        },
+        "notes": "Used kotlin-sdk."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_only_plugin",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 18.7,
+      "tree_sha256": "62db713ea62d1b3b6a3edd09a38b718f14abda652254e1dfcdcf65d3b2512203",
+      "install": "ditto-flutter plugin only (flutter-sdk, native-app-config), symlinks materialized",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 45640,
+        "cached_input_tokens": 25856,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 563,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk",
+        "native-app-config"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/native-app-config/SKILL.md",
+        ".agents/skills/native-app-config/references/apple.md",
+        ".agents/skills/flutter-sdk/references/transports.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md .agents/skills/native-app-config/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/native-app-config/references/apple.md .agents/skills/flutter-sdk/references/transports.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "Merge these entries into your Flutter app\u2019s **`ios/Runner/Info.plist`**, preserving existing keys and Bonjour services:\n\n```xml\n<key>NSBluetoothAlwaysUsageDescription</key>\n<string>Sync data with nearby devices using Bluetooth.</string>\n\n<key>NSLocalNetworkUsageDescription</key>\n<string>Discover and sync with devices on your local network.</string>\n\n<key>NSBonjourServices</key>\n<array>\n    <string>_http-alt._tcp.</string>\n</array>\n```\n\nCustomize the descriptions for your app. Keep the trailing dot in `_http-alt._tcp.`. `NSBluetoothPeripheralUsageDescription` is a legacy key needed only for applicable older iOS targets; it does not replace the Always key.\n\nIf you need background Bluetooth, enable **Background Modes \u2192 Uses Bluetooth LE accessories / Acts as a Bluetooth LE accessory**, adding `bluetooth-central` and `bluetooth-peripheral` to `UIBackgroundModes`. Background execution remains controlled by iOS. Ordinary Bonjour discovery does **not** need the restricted multicast entitlement.\n\nTo verify:\n\n1. Inspect the **built application\u2019s Info.plist** to confirm the Runner target actually includes these values.\n2. On **two physical iPhones**, test a fresh install, start Ditto synchronization, and accept the Bluetooth and Local Network prompts. Confirm both permissions in Settings.\n3. With internet unavailable, verify nearby discovery and actual data synchronization. Test Bluetooth and LAN separately so one working transport cannot hide the other\u2019s failure; for LAN, use the same network without client isolation.\n4. Deny, restore, and revoke each permission in Settings, checking behavior each time. Also test lock/unlock and foreground/background transitions.\n5. Confirm Bluetooth LE, LAN, and LAN mDNS discovery are enabled in your transport configuration.\n\n`sync.isActive` does **not** prove permission was granted. Simulator success does not establish radio discovery works. Ditto 5.2.0 also supports transport-condition observation for diagnosing transport failures.\n\nThese steps follow the installed `flutter-sdk` and `native-app-config` guidance; no files were changed or tests run.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: native-app-config/references/apple.md, transports.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 5,
+          "partial": 0,
+          "fail": 0,
+          "of": 5
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 0,
+          "result": "no Dart in answer"
+        },
+        "notes": "Read native-app-config/references/apple.md inside the installed plugin."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_presence_peers",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 24.2,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 48590,
+        "cached_input_tokens": 39168,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 859,
+        "reasoning_output_tokens": 44
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/presence.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/presence.md; cat .dart_tool/package_config.json; cat pubspec.lock'"
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/presence.md; cat .dart_tool/package_config.json; cat pubspec.lock'"
+      ],
+      "final_answer": "Pass your existing, open `Ditto` instance with sync running. Presence lists known mesh peers, not every nearby device; peers without a direct connection are labeled accordingly.\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\n\nclass NearbyPeersScreen extends StatefulWidget {\n  const NearbyPeersScreen({super.key, required this.ditto});\n\n  final Ditto ditto;\n\n  @override\n  State<NearbyPeersScreen> createState() => _NearbyPeersScreenState();\n}\n\nclass _NearbyPeersScreenState extends State<NearbyPeersScreen> {\n  PresenceObserver? _observer;\n  late PresenceGraph _graph;\n\n  @override\n  void initState() {\n    super.initState();\n    _watch();\n  }\n\n  void _watch() {\n    _graph = widget.ditto.presence.graph;\n    _observer = widget.ditto.presence.observe((graph) {\n      if (!mounted) return;\n      setState(() => _graph = graph);\n    });\n  }\n\n  @override\n  void didUpdateWidget(covariant NearbyPeersScreen oldWidget) {\n    super.didUpdateWidget(oldWidget);\n    if (oldWidget.ditto != widget.ditto) {\n      _observer?.stop();\n      _watch();\n    }\n  }\n\n  @override\n  void dispose() {\n    _observer?.stop();\n    super.dispose();\n  }\n\n  String _connectionLabel(ConnectionType type) => switch (type) {\n    ConnectionType.bluetooth => 'Bluetooth',\n    ConnectionType.accessPoint => 'LAN',\n    ConnectionType.p2pWifi => 'Wi-Fi P2P',\n    ConnectionType.webSocket => 'WebSocket',\n    ConnectionType.multicast => 'Multicast',\n  };\n\n  String _connections(Peer peer) {\n    final localKey = _graph.localPeer.peerKey;\n    final labels = peer.connections\n        .where((c) =>\n            (c.peer1 == localKey && c.peer2 == peer.peerKey) ||\n            (c.peer2 == localKey && c.peer1 == peer.peerKey))\n        .map((c) => _connectionLabel(c.connectionType))\n        .toSet()\n        .toList()\n      ..sort();\n\n    return labels.isEmpty\n        ? 'No direct connection (via mesh)'\n        : labels.join(', ');\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    final peers = _graph.remotePeers.toList()\n      ..sort((a, b) => a.deviceName.compareTo(b.deviceName));\n\n    return Scaffold(\n      appBar: AppBar(title: const Text('Nearby peers')),\n      body: peers.isEmpty\n          ? const Center(child: Text('No peers found'))\n          : ListView.builder(\n              itemCount: peers.length,\n              itemBuilder: (context, index) {\n                final peer = peers[index];\n                return ListTile(\n                  key: ValueKey(peer.peerKey),\n                  leading: const Icon(Icons.devices),\n                  title: Text(\n                    peer.deviceName.isEmpty\n                        ? 'Unnamed device'\n                        : peer.deviceName,\n                  ),\n                  subtitle: Text(_connections(peer)),\n                );\n              },\n            ),\n    );\n  }\n}\n```\n\nThis uses the local 5.2.0 guidance: retain `PresenceObserver` and call `stop()` on disposal. The screen leaves the shared Ditto instance open.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: presence.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "partial",
+            "pass"
+          ],
+          "pass": 4,
+          "partial": 2,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": "Retry of an excluded run (see the flutter-final-excluded record). Stops the observer but does not say dropping it leaves it running; does not say the callback fires immediately with the current graph.",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_statefulwidget_observer",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 26.6,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 85486,
+        "cached_input_tokens": 66816,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 872,
+        "reasoning_output_tokens": 25
+      },
+      "skills_invoked": [
+        "flutter-sdk",
+        "write-dql"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/widget-integration.md",
+        ".agents/skills/flutter-sdk/references/observers.md",
+        ".agents/skills/write-dql/SKILL.md",
+        ".agents/skills/flutter-sdk/references/sync.md",
+        ".agents/skills/flutter-sdk/references/lifetimes.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/widget-integration.md .agents/skills/flutter-sdk/references/observers.md .agents/skills/write-dql/SKILL.md; rg --files -g pubspec.lock -g package_config.json -g '*observer*' -g '*subscription*'\"",
+        "/bin/zsh -lc \"rg -n 'SyncSubscription|registerSubscription' .agents/skills/flutter-sdk/references/sync.md .agents/skills/flutter-sdk/references/lifetimes.md; rg --files --hidden -g pubspec.lock -g package_config.json -g AGENTS.md\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/widget-integration.md .agents/skills/flutter-sdk/references/observers.md .agents/skills/write-dql/SKILL.md; rg --files -g pubspec.lock -g package_config.json -g '*observer*' -g '*subscription*'\"",
+        "exit 1: /bin/zsh -lc \"rg -n 'SyncSubscription|registerSubscription' .agents/skills/flutter-sdk/references/sync.md .agents/skills/flutter-sdk/references/lifetimes.md; rg --files --hidden -g pubspec.lock -g package_config.json -g AGENTS.md\""
+      ],
+      "final_answer": "This uses one `changes` listener, copies results into widget state, and cancels both the listener and observer. It also updates the query if the supplied color or Ditto instance changes.\n\n```dart\nimport 'dart:async';\n\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\n\nclass CarsScreen extends StatefulWidget {\n  const CarsScreen({\n    super.key,\n    required this.ditto,\n    required this.color,\n  });\n\n  final Ditto ditto;\n  final String color;\n\n  @override\n  State<CarsScreen> createState() => _CarsScreenState();\n}\n\nclass _CarsScreenState extends State<CarsScreen> {\n  late StoreObserver _observer;\n  late StreamSubscription<QueryResult> _changes;\n  List<Map<String, dynamic>> _cars = [];\n  int _generation = 0;\n\n  @override\n  void initState() {\n    super.initState();\n    _observe();\n  }\n\n  void _observe() {\n    final generation = ++_generation;\n    _observer = widget.ditto.store.registerObserver(\n      'SELECT * FROM cars WHERE color = :color',\n      arguments: {'color': widget.color},\n    );\n\n    // Listen immediately, once; do not also supply onChange.\n    _changes = _observer.changes.listen((result) {\n      if (!mounted || generation != _generation) return;\n\n      final cars = result.items.map((item) => item.value).toList();\n      setState(() => _cars = cars);\n    });\n  }\n\n  void _stopObserving() {\n    ++_generation; // Ignore any stale callbacks.\n    unawaited(_changes.cancel());\n    _observer.cancel();\n  }\n\n  @override\n  void didUpdateWidget(covariant CarsScreen oldWidget) {\n    super.didUpdateWidget(oldWidget);\n    if (!identical(oldWidget.ditto, widget.ditto) ||\n        oldWidget.color != widget.color) {\n      _stopObserving();\n      _cars = [];\n      _observe();\n    }\n  }\n\n  @override\n  void dispose() {\n    _stopObserving();\n    // The app owns Ditto; leave it open.\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: Text('${widget.color} cars')),\n      body: _cars.isEmpty\n          ? const Center(child: Text('No matching cars'))\n          : ListView.builder(\n              itemCount: _cars.length,\n              itemBuilder: (context, index) {\n                final car = _cars[index];\n                return ListTile(\n                  title: Text('${car['_id']}'),\n                  subtitle: Text('${car['color']}'),\n                );\n              },\n            ),\n    );\n  }\n}\n```\n\nThe observer watches local data. For remote updates, the app must also run sync and hold a sync subscription covering these cars. Keep the shared Ditto instance open until screen cleanup finishes.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: lifetimes.md, observers.md, sync.md, widget-integration.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": "",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_v4_migration",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 26.0,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 117834,
+        "cached_input_tokens": 89728,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 751,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/",
+        ".agents/skills/flutter-sdk/references/connect.md",
+        ".agents/skills/flutter-sdk/references/connect.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/{versions,connect,presence,sync}.md; cat pubspec.lock .dart_tool/package_config.json 2>/dev/null'",
+        "/bin/zsh -lc \"sed -n '95,155p' .agents/skills/flutter-sdk/references/connect.md; rg --files -g '*package_config*' -g 'pubspec*' -g '*ditto_config.dart' -g '*authenticator*' -g 'AGENTS.md'\"",
+        "/bin/zsh -lc \"sed -n '155,220p' .agents/skills/flutter-sdk/references/connect.md\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/{versions,connect,presence,sync}.md; cat pubspec.lock .dart_tool/package_config.json 2>/dev/null'",
+        "exit 1: /bin/zsh -lc \"sed -n '95,155p' .agents/skills/flutter-sdk/references/connect.md; rg --files -g '*package_config*' -g 'pubspec*' -g '*ditto_config.dart' -g '*authenticator*' -g 'AGENTS.md'\""
+      ],
+      "final_answer": "For `ditto_live: 5.2.0`, change these parts:\n\n- Replace the identity with positional `DittoConfig`; `appID` becomes `databaseID`. Supply the server URL from the portal\u2019s **Connect via SDK** details.\n- Install and await an authentication expiration handler before `sync.start()`. Use the development provider for your playground token.\n- Remove `ORDER BY` and `LIMIT` from the sync subscription; apply them to local queries.\n- Rename `isConnectedToDittoCloud` to `isConnectedToDittoServer`.\n- `Ditto.init()` is optional before async `open()` in 5.2.0; keeping it is valid.\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\n\nawait Ditto.init();\nfinal ditto = await Ditto.open(\n  DittoConfig(\n    databaseID: appId,\n    connect: DittoConfigConnectServer(url: serverUrl),\n  ),\n);\n\nawait ditto.auth.setExpirationHandler((ditto, timeUntilExpiration) async {\n  if (ditto.isClosed) return;\n\n  try {\n    final response = await ditto.auth.login(\n      token: playgroundToken,\n      provider: Authenticator.developmentProvider,\n    );\n    if (response.exception != null) {\n      print('Ditto login failed: ${response.exception}');\n    }\n  } catch (error) {\n    print('Ditto login failed: $error');\n  }\n});\n\nfinal subscription =\n    ditto.sync.registerSubscription('SELECT * FROM orders');\n\nditto.sync.start();\n\n// Sorting and limiting happen locally.\nfinal result = await ditto.store.execute(\n  'SELECT * FROM orders ORDER BY createdAt LIMIT 50',\n);\n\nfinal online = ditto.presence.graph.remotePeers\n    .any((p) => p.isConnectedToDittoServer);\n```\n\nThe local query returns currently available documents; use a store observer for ongoing updates. Retain `subscription` and cancel it when finished.\n\n`online` remains a snapshot of whether **any remote peer** reports a server connection; it does not establish this device\u2019s direct connection or sync completion.\n\nFor existing installs, explicitly preserve the old absolute `{Documents}/ditto` path through `DittoConfig.persistenceDirectory`, or verify store continuity during upgrade: the default directory/root changed.\n\nBased on installed Flutter SDK guidance; no project package sources were available to verify directly.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 6,
+          "partial": 1,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [
+            "avoid_print"
+          ],
+          "result": "pass"
+        },
+        "notes": "Sets the handler before sync.start() but does not say start() otherwise throws; uses print (avoid_print).",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_web_attachments",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 23.5,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 52144,
+        "cached_input_tokens": 35200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 739,
+        "reasoning_output_tokens": 24
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/attachments.md",
+        ".agents/skills/flutter-sdk/references/web.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/attachments.md .agents/skills/flutter-sdk/references/web.md; rg --files -g pubspec.lock -g package_config.json -g '*attachment*' -g AGENTS.md\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/attachments.md .agents/skills/flutter-sdk/references/web.md; rg --files -g pubspec.lock -g package_config.json -g '*attachment*' -g AGENTS.md\""
+      ],
+      "final_answer": "Flutter Web supports **bytes, not file paths**, for attachments. Use `file_picker` with `withData: true`, store the returned `Attachment` in an `ATTACHMENT` field, then fetch its token and render the bytes with `Image.memory`.\n\n```dart\nimport 'dart:typed_data';\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:file_picker/file_picker.dart';\nimport 'package:flutter/material.dart';\n\nFuture<void> pickAndSavePhoto(Ditto ditto, String id) async {\n  final picked = await FilePicker.platform.pickFiles(\n    type: FileType.image,\n    withData: true,\n  );\n  if (picked == null) return;\n\n  final file = picked.files.single;\n  final bytes = file.bytes;\n  if (bytes == null) throw StateError('No image bytes returned');\n\n  final attachment = await ditto.store.newAttachment(\n    bytes,\n    AttachmentMetadata({'name': file.name}), // Positional argument.\n  );\n\n  await ditto.store.execute(\n    'INSERT INTO COLLECTION photos (image ATTACHMENT) '\n    'DOCUMENTS (:doc) ON ID CONFLICT DO UPDATE',\n    arguments: {\n      'doc': {'_id': id, 'image': attachment},\n    },\n  );\n}\n\nFuture<Uint8List> loadPhoto(Ditto ditto, String id) async {\n  final result = await ditto.store.execute(\n    'SELECT * FROM COLLECTION photos (image ATTACHMENT) '\n    'WHERE _id = :id',\n    arguments: {'id': id},\n  );\n  if (result.items.isEmpty) throw StateError('Photo not found');\n\n  final token =\n      result.items.first.value['image'] as Map<String, dynamic>;\n  final fetcher = ditto.store.fetchAttachment(token, (_) {});\n  final attachment = await fetcher.attachment;\n  if (attachment == null) throw StateError('Photo unavailable');\n\n  return await attachment.data;\n}\n```\n\nCreate and retain `photoFuture = loadPhoto(ditto, id)` outside `build`, then display it:\n\n```dart\nFutureBuilder<Uint8List>(\n  future: photoFuture,\n  builder: (context, snapshot) {\n    if (snapshot.hasError) return const Text('Could not load photo');\n    if (!snapshot.hasData) return const CircularProgressIndicator();\n    return Image.memory(snapshot.data!);\n  },\n)\n```\n\nDocuments sync attachment **tokens**; `fetchAttachment` downloads the bytes on demand. Keep the fetcher handle and call `stop()` if abandoning an active fetch.\n\nThe local Flutter guidance confirms these APIs for 5.2.0. Web storage is in memory and clears on page reload, so lasting availability requires syncing to a server. `copyToPath` is also unsupported on web.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: attachments.md, web.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 2,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use",
+            "unused_import"
+          ],
+          "result": "pass"
+        },
+        "notes": "Awaits `fetcher.attachment` (accepted by the corrected criterion 5) and says to keep the fetcher to stop() it.",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_web_base_href",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 22.0,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 54587,
+        "cached_input_tokens": 34176,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 718,
+        "reasoning_output_tokens": 9
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/connect.md",
+        ".agents/skills/flutter-sdk/references/web.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/connect.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/web.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "For `ditto_live 5.2.0`, configure these pieces:\n\n1. **Initialize with a relative shim URL before opening Ditto.** `--base-href /app/` alone does not fix Ditto\u2019s default absolute shim path.\n\n   ```dart\n   WidgetsFlutterBinding.ensureInitialized();\n   await Ditto.init(\n     wasmShimUrl:\n         './assets/packages/ditto_live/lib/assets/ditto.wasm.js',\n   );\n\n   final ditto = await Ditto.open(\n     DittoConfig(\n       databaseID: 'YOUR_DATABASE_ID',\n       connect: DittoConfigConnectServer(url: 'YOUR_SERVER_URL'),\n     ),\n   );\n   ```\n\n   Keep the leading `./`. No `wasmUrl` override is needed: the binary loads through Flutter\u2019s asset bundle. Initialization is memoized, so this must be the first Ditto initialization.\n\n2. **Deploy the entire `build/web` output under `/app/`.** Ditto\u2019s bundled assets should be accessible under `/app/assets/packages/ditto_live/lib/assets/`. Serve actual assets rather than an HTML fallback, with appropriate JavaScript/WASM MIME types and compression.\n\n3. **Configure server authentication before starting sync.** Copy the Database ID and connection URL verbatim from your server\u2019s SDK connection details. Await `ditto.auth.setExpirationHandler(...)`; inside the handler, obtain a fresh production token and call `ditto.auth.login(token: ..., provider: ...)`. Handle both thrown errors and `response.exception`. Then call `ditto.sync.start()` and retain sync subscriptions for the collections you need.\n\n4. **Keep peer-to-peer transports disabled.** Web supports server WebSocket sync only. Defaults are already off; enabling a P2P transport causes `sync.start()` to throw in 5.2.0.\n\n5. **Check hosting policy.** If you use CSP, allow `'wasm-unsafe-eval'` in `script-src`, plus the required script sources and server WebSocket endpoint in `connect-src`. Use secure connections from your HTTPS app. COOP/COEP headers are not required.\n\n6. **Use your stated default web build; avoid `--wasm`.** The installed guidance reports incorrect query results with Flutter\u2019s `--wasm` builds on 5.2.0.\n\nThe web store is **in memory and clears on page reload**. Omit `persistenceDirectory` and plan to authenticate and resync each page load.\n\nThese recommendations come from the installed Flutter SDK guidance; no builds, tests, or external checks were run.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, web.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass"
+          ],
+          "pass": 7,
+          "partial": 0,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": ""
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_web_p2p_config",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 14.3,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 51923,
+        "cached_input_tokens": 39168,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 352,
+        "reasoning_output_tokens": 0
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/transports.md",
+        ".agents/skills/flutter-sdk/references/web.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/references/transports.md .agents/skills/flutter-sdk/references/web.md'"
+      ],
+      "tool_errors": [],
+      "final_answer": "`defaultTargetPlatform` reports the browser\u2019s host OS, so your web build enables unsupported P2P transports. The local Flutter SDK guidance specifies checking `kIsWeb` first, then `Ditto.currentPlatform`.\n\nReplace the existing transport setup with:\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/foundation.dart';\n\nvoid configureTransports(Ditto ditto) {\n  if (kIsWeb) return; // Keep web's default: all P2P transports off.\n\n  switch (Ditto.currentPlatform) {\n    case SupportedPlatform.ios ||\n        SupportedPlatform.android ||\n        SupportedPlatform.macos:\n      ditto.updateTransportConfig((config) {\n        config.peerToPeer.bluetoothLE.isEnabled = true;\n        config.peerToPeer.lan.isEnabled = true;\n      });\n    default:\n      break;\n  }\n}\n\n// After opening/configuring Ditto, before starting sync:\nconfigureTransports(ditto);\nditto.sync.start();\n```\n\n`updateTransportConfig` returns `void`; don\u2019t await it. Web sync requires a configured WebSocket server connection; Bluetooth and LAN P2P are unavailable in browsers.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: transports.md, web.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "pass",
+            "partial"
+          ],
+          "pass": 4,
+          "partial": 2,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 1,
+          "errors": [],
+          "lints": [],
+          "result": "pass"
+        },
+        "notes": "Does not say that enabling a P2P transport throws, or from which call per line; enables only Bluetooth LE and LAN, no AWDL/Wi-Fi Aware note."
+      },
+      "run": "flutter-final"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_presence_peers",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 44.9,
+      "tree_sha256": "388fc349a7472a04ffe43633d49a118b9506ed57fb8368e2cbf3677e66cc70f2",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 96618,
+        "cached_input_tokens": 75392,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1225,
+        "reasoning_output_tokens": 22
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/presence.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/presence.md; rg --files -g 'pubspec.lock' -g 'package_config.json' -g 'AGENTS.md' -g '*presence*' -g '*peer*' .\"",
+        "/bin/zsh -lc \"cat <outside-workspace>; rg -n 'observe\\\\(|void stop|class PresenceObserver' <outside-workspace>\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/presence.md; rg --files -g 'pubspec.lock' -g 'package_config.json' -g 'AGENTS.md' -g '*presence*' -g '*peer*' .\""
+      ],
+      "final_answer": "Using the local `flutter-sdk` guidance: pass an existing, syncing `Ditto` instance to this screen. Native transport permissions should already be granted.\n\nPresence includes indirectly known peers, so the screen labels only connections whose endpoints match this device and the listed peer.\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\nimport 'package:flutter/material.dart';\n\nclass NearbyPeersScreen extends StatefulWidget {\n  const NearbyPeersScreen({super.key, required this.ditto});\n\n  final Ditto ditto;\n\n  @override\n  State<NearbyPeersScreen> createState() => _NearbyPeersScreenState();\n}\n\nclass _NearbyPeersScreenState extends State<NearbyPeersScreen> {\n  late PresenceObserver _observer;\n  PresenceGraph? _graph;\n\n  @override\n  void initState() {\n    super.initState();\n    _startWatching();\n  }\n\n  void _startWatching() {\n    _graph = widget.ditto.presence.graph;\n    _observer = widget.ditto.presence.observe((graph) {\n      if (!mounted) return;\n      setState(() => _graph = graph);\n    });\n  }\n\n  @override\n  void didUpdateWidget(covariant NearbyPeersScreen oldWidget) {\n    super.didUpdateWidget(oldWidget);\n    if (!identical(oldWidget.ditto, widget.ditto)) {\n      _observer.stop();\n      _startWatching();\n    }\n  }\n\n  @override\n  void dispose() {\n    _observer.stop(); // Presence uses stop(), not cancel().\n    super.dispose();\n  }\n\n  static String _label(ConnectionType type) => switch (type) {\n        ConnectionType.bluetooth => 'Bluetooth',\n        ConnectionType.accessPoint => 'LAN',\n        ConnectionType.p2pWifi => 'Wi-Fi P2P',\n        ConnectionType.webSocket => 'WebSocket',\n        ConnectionType.multicast => 'Multicast',\n      };\n\n  String _connectionLabel(PresenceGraph graph, Peer peer) {\n    final localKey = graph.localPeer.peerKey;\n\n    // A peer's connections can include links to other remote peers.\n    final labels = [\n      ...graph.localPeer.connections,\n      ...peer.connections,\n    ]\n        .where((c) =>\n            (c.peer1 == localKey && c.peer2 == peer.peerKey) ||\n            (c.peer2 == localKey && c.peer1 == peer.peerKey))\n        .map((c) => _label(c.connectionType))\n        .toSet()\n        .toList()\n      ..sort();\n\n    return labels.isEmpty\n        ? 'No direct connection'\n        : labels.join(', ');\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    final graph = _graph!;\n    final peers = graph.remotePeers.toList()\n      ..sort((a, b) {\n        final byName = a.deviceName.compareTo(b.deviceName);\n        return byName != 0 ? byName : a.peerKey.compareTo(b.peerKey);\n      });\n\n    return Scaffold(\n      appBar: AppBar(title: const Text('Nearby peers')),\n      body: peers.isEmpty\n          ? const Center(child: Text('No peers found'))\n          : ListView.builder(\n              itemCount: peers.length,\n              itemBuilder: (context, index) {\n                final peer = peers[index];\n                return ListTile(\n                  key: ValueKey(peer.peerKey),\n                  leading: const Icon(Icons.devices),\n                  title: Text(\n                    peer.deviceName.trim().isEmpty\n                        ? 'Unnamed device'\n                        : peer.deviceName,\n                  ),\n                  subtitle: Text(_connectionLabel(graph, peer)),\n                );\n              },\n            ),\n    );\n  }\n}\n```\n\nOpen it with `NearbyPeersScreen(ditto: ditto)`. Removing the screen disposes its observer; the shared Ditto instance stays open. Flutter Web does not support nearby P2P discovery.",
+      "review": {
+        "setup_discovery": "fail: isolation (read a file outside the workspace)",
+        "reference_use": "references read: presence.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "partial",
+            "pass",
+            "pass",
+            "partial",
+            "pass"
+          ],
+          "pass": 4,
+          "partial": 2,
+          "fail": 0,
+          "of": 6
+        },
+        "timeout": false,
+        "dart_validity": {
+          "blocks": 1,
+          "normalized_blocks": 0,
+          "errors": [],
+          "lints": [
+            "deprecated_member_use"
+          ],
+          "result": "pass"
+        },
+        "notes": "Excluded: read ditto_live source from a temp directory outside the workspace, left by an earlier local session, which nothing in the workspace referenced; how the model found the path is not visible in the trace. Retried once; the retry is the final record.",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for a pubspec.lock or package_config.json the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-final-excluded"
     }
   ],
   "rerun_date": "2026-10-27",

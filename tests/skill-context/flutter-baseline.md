@@ -16,7 +16,7 @@ on the final tree:
 | Case | Claude, no skill | Codex, no skill | Claude, skill | Codex, skill |
 |---|---|---|---|---|
 | `flutter_statefulwidget_observer` | 4 (1 partial) | 4 (1 partial) | 6 | 6 |
-| `flutter_hot_restart_observer` | 4 (1 partial) | 3 (1 partial) | 6 | 6 |
+| `flutter_hot_restart_observer` | 4 (1 partial) | 3 (1 partial) | 3 (3 partial) | 3 (3 partial) |
 | `flutter_web_base_href` | 0 (1 partial) | 0 (2 partial) | 6 | 6 |
 
 ## StatefulWidget observer
@@ -54,5 +54,8 @@ or init parameters. Both did say that browsers sync only over WebSocket, and Cla
 On these tasks the models know Flutter well and Ditto's Flutter specifics poorly. They
 miss the `onChange` buffering defect, which line's observers crash after a hot restart,
 and every web deployment detail, and they reach for v4 APIs. With the skill, both hosts
-passed every core criterion of these three cases. This is one run per host, a smoke test
-rather than a benchmark.
+passed every criterion of the observer and web cases and failed none of the hot-restart
+case. Its partials are 5.1.0 and web clauses that the 5.2.0 macOS/iOS answers left out.
+This is one run per host, a smoke test rather than a benchmark. Scores are literal against
+the criteria; hot-restart criterion 6 was reworded after the first scoring to call the
+presence crash an inference, as the skill does, which changed no baseline score.
