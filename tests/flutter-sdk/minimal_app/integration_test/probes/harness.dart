@@ -10,7 +10,8 @@ import 'package:integration_test/integration_test.dart';
 const license = String.fromEnvironment('DITTO_LICENSE');
 const expectedVersion = String.fromEnvironment('DITTO_VERSION');
 
-/// `--dart-define=PROBE_DEFAULT_LOGGING=true` leaves Ditto logging at its
+/// `PROBE_DEFAULT_LOGGING=true` in the environment of scripts/run-fixture.sh
+/// (a define in its --dart-define-from-file file) leaves Ditto logging at its
 /// default (on) instead of turning it off in [withDitto].
 const probeDefaultLogging = bool.fromEnvironment('PROBE_DEFAULT_LOGGING');
 
@@ -29,7 +30,9 @@ IntegrationTestWidgetsFlutterBinding ensureProbeBinding() =>
 String get pinnedLine {
   final match = RegExp(r'^(\d+\.\d+)\.').firstMatch(expectedVersion);
   if (match == null) {
-    throw StateError('pass --dart-define=DITTO_VERSION=<x.y.z>');
+    throw StateError(
+      'DITTO_VERSION comes from scripts/run-fixture.sh, through --dart-define-from-file',
+    );
   }
   return match.group(1)!;
 }
@@ -48,7 +51,12 @@ Future<void> withDitto(
   bool p2pOff = true,
   DittoConfigConnect? connect,
 }) async {
-  expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+  expect(
+    license,
+    isNotEmpty,
+    reason:
+        'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+  );
   // Required on 5.0.x, automatic from 5.1.0; memoized.
   await Ditto.init();
   // Workaround, not a recommendation (README, Findings that changed a
@@ -56,8 +64,8 @@ Future<void> withDitto(
   // again, a native handle (an internal Transaction, a SyncSubscription)
   // finalized by the GC after close() logs from inside the GC finalizer and
   // aborts (5.0.4) or deadlocks (5.1.0, 5.2.0) the process on macOS debug.
-  // Logging off keeps the suite runnable. --dart-define=
-  // PROBE_DEFAULT_LOGGING=true keeps Ditto's default (logging on) instead.
+  // Logging off keeps the suite runnable. PROBE_DEFAULT_LOGGING=true
+  // (see above) keeps Ditto's default (logging on) instead.
   if (!probeDefaultLogging) DittoLogger.isEnabled = false;
   final directory = await Directory.systemTemp.createTemp('ditto_probe_');
   final Ditto ditto;
@@ -85,7 +93,12 @@ Future<void> withDitto(
 /// Ditto itself, with the same init, logging and cleanup as [withDitto].
 /// [body] must close every instance it opens.
 Future<void> withProbeDirectory(Future<void> Function(String path) body) async {
-  expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+  expect(
+    license,
+    isNotEmpty,
+    reason:
+        'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+  );
   await Ditto.init();
   if (!probeDefaultLogging) DittoLogger.isEnabled = false;
   final directory = await Directory.systemTemp.createTemp('ditto_probe_');

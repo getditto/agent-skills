@@ -33,11 +33,17 @@ void main() {
   binding.defaultTestTimeout = const Timeout(Duration(minutes: 2));
 
   testWidgets('migrate default directory: $phase', (tester) async {
-    expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+    expect(
+      license,
+      isNotEmpty,
+      reason:
+          'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+    );
     expect(
       phase,
       isIn(['wipe', 'write', 'read']),
-      reason: 'pass --dart-define=MIGRATION_PHASE=wipe|write|read',
+      reason:
+          'set MIGRATION_PHASE=wipe|write|read for scripts/run-migration.sh',
     );
     final documents = Directory(
       '${(await getApplicationDocumentsDirectory()).path}/$defaultDirectoryName',

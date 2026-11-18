@@ -10,7 +10,9 @@ import '../harness.dart';
 void main() {
   ensureProbeBinding();
 
-  testWidgets('observeTransportConditions emits within 5 s', (t) async {
+  testWidgets('observeTransportConditions: no event within 5 s with P2P off', (
+    t,
+  ) async {
     await withDitto(t, (ditto) async {
       final events = <TransportConditionEvent>[];
       final observer = ditto.observeTransportConditions(events.add);

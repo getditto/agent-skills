@@ -15,16 +15,23 @@ void main() {
   binding.defaultTestTimeout = const Timeout(Duration(minutes: 2));
 
   testWidgets('minimal app transcript', (tester) async {
-    expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+    expect(
+      license,
+      isNotEmpty,
+      reason:
+          'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+    );
     expect(
       expectedVersion,
       isNotEmpty,
-      reason: 'pass --dart-define=DITTO_VERSION',
+      reason:
+          'DITTO_VERSION comes from scripts/run-fixture.sh, through --dart-define-from-file',
     );
     expect(
       expectedPlatform,
       isNotEmpty,
-      reason: 'pass --dart-define=DITTO_PLATFORM',
+      reason:
+          'DITTO_PLATFORM comes from scripts/run-fixture.sh, through --dart-define-from-file',
     );
 
     // A fresh directory per run (native); the published program uses the

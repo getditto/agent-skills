@@ -14,11 +14,17 @@ void main() {
   binding.defaultTestTimeout = const Timeout(Duration(minutes: 2));
 
   testWidgets('v4 open, write and read back', (tester) async {
-    expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+    expect(
+      license,
+      isNotEmpty,
+      reason:
+          'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+    );
     expect(
       expectedVersion,
       isNotEmpty,
-      reason: 'pass --dart-define=DITTO_VERSION',
+      reason:
+          'DITTO_VERSION comes from scripts/run-fixture.sh, through --dart-define-from-file',
     );
 
     // An absolute, fresh directory per run; 4.14 resolves a relative one

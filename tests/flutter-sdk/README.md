@@ -303,7 +303,7 @@ harness (see Finding 1):
   counts `[0]`, nothing more for 2 s after three inserts while the first render is
   unfinished, then exactly `[0, 3]` once that render ends (by throwing; the feed logs
   it and still calls `signalNext()`): the three writes arrive in one callback.
-- `observeTransportConditions emits within 5 s` (5.1.0, 5.2.0): with every
+- `observeTransportConditions: no event within 5 s with P2P off` (5.1.0, 5.2.0): with every
   peer-to-peer transport off and `sync.start()`, no event arrives within 5 s, on the
   callback or the stream.
 - `doc written on A syncs to B`: the connecting peer's observer reports exactly the

@@ -29,7 +29,9 @@ IntegrationTestWidgetsFlutterBinding ensureProbeBinding() =>
 String get pinnedLine {
   final match = RegExp(r'^(\d+\.\d+)\.').firstMatch(expectedVersion);
   if (match == null) {
-    throw StateError('pass --dart-define=DITTO_VERSION=<x.y.z>');
+    throw StateError(
+      'DITTO_VERSION comes from scripts/run-fixture.sh, through --dart-define-from-file',
+    );
   }
   return match.group(1)!;
 }
@@ -139,7 +141,12 @@ Future<void> withWebDitto(
   Future<void> Function(Ditto ditto) body, {
   bool p2pOff = true,
 }) async {
-  expect(license, isNotEmpty, reason: 'pass --dart-define=DITTO_LICENSE');
+  expect(
+    license,
+    isNotEmpty,
+    reason:
+        'DITTO_LICENSE comes from scripts/run-fixture.sh, through --dart-define-from-file',
+  );
   // Required on 5.0.x, automatic from 5.1.0; memoized.
   await Ditto.init();
   final ditto = await Ditto.open(DittoConfig());
