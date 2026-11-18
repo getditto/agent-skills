@@ -142,7 +142,10 @@ jobs:
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          FIXTURE_TIMEOUT: '1200'
+          # A first run on a fresh simulator can hang waiting for the debug
+          # connection; a target the timeout stops is run once more.
+          FIXTURE_TIMEOUT: '600'
+          FIXTURE_RETRIES: '1'
         run: tests/flutter-sdk/scripts/run-migration.sh "${{ steps.sim.outputs.udid }}"
       - name: Show the simulator's Runner log
         if: failure()
@@ -182,7 +185,10 @@ jobs:
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          FIXTURE_TIMEOUT: '1200'
+          # A first run on a fresh simulator can hang waiting for the debug
+          # connection; a target the timeout stops is run once more.
+          FIXTURE_TIMEOUT: '600'
+          FIXTURE_RETRIES: '1'
         run: |
           tests/flutter-sdk/scripts/run-fixture.sh minimal_app "${{ steps.sim.outputs.udid }}" 5.2 \
             integration_test/minimal_app_test.dart \

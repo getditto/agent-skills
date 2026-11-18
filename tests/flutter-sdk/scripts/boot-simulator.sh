@@ -23,4 +23,12 @@ if [[ "$state" != "Booted" ]]; then
   xcrun simctl boot "$udid"
 fi
 xcrun simctl bootstatus "$udid" -b >&2
+# Warm up, best effort: on a freshly booted CI simulator the first `flutter test`
+# failed with "Error waiting for a debug connection: The log reader failed
+# unexpectedly" (README, iOS Simulator). Start and stop a stock app and read the
+# unified log once before Flutter does.
+xcrun simctl launch "$udid" com.apple.Preferences >&2 || true
+sleep 5
+xcrun simctl terminate "$udid" com.apple.Preferences >&2 || true
+xcrun simctl spawn "$udid" log show --last 1m --style compact >/dev/null 2>&1 || true
 echo "$udid"

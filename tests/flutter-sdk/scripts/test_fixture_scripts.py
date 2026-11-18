@@ -118,6 +118,11 @@ if [[ "${1:-}" == "pub" ]]; then
   echo "synthetic" > build/web/main.dart.js
   echo "synthetic" > build/0123abcd.cache.dill.track.dill
 fi
+# FAKE_TIMEOUT_ONCE=<marker>: the first `test` run exits 124, as `timeout` would.
+if [[ "${1:-}" == "test" && -n "${FAKE_TIMEOUT_ONCE:-}" && ! -e "$FAKE_TIMEOUT_ONCE" ]]; then
+  : > "$FAKE_TIMEOUT_ONCE"
+  exit 124
+fi
 exit 0
 """
 
@@ -203,6 +208,20 @@ class RunFixture(unittest.TestCase):
         logs = list((self.temp / "logs").glob("run-minimal_app-macos-5.1-migration_migrate_default_dir_test-write.log"))
         self.assertEqual(len(logs), 1, list((self.temp / "logs").iterdir()))
         self.assertIn("MIGRATION_PHASE=write", logs[0].read_text())
+
+    def test_retries_only_a_timed_out_target_and_only_when_asked(self):
+        target = "integration_test/minimal_app_test.dart"
+        marker = self.temp / "timed-out-once"
+        once = {**self.environment, "FAKE_TIMEOUT_ONCE": str(marker)}
+        result = self.run_fixture("minimal_app", "macos", "5.2", target, environment=once)
+        self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+        marker.unlink()
+        self.record.unlink()
+        result = self.run_fixture("minimal_app", "macos", "5.2", target,
+                                  environment={**once, "FIXTURE_RETRIES": "1"})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(sum("[test]" in line for line in self.record.read_text().splitlines()), 2)
+        self.assertIn("timed out (exit 124); retrying", result.stdout)
 
     def test_v4_app_runs_on_the_4_14_line_only(self):
         result = self.run_fixture("v4_app", "macos", "5.2", "integration_test/v4_test.dart")

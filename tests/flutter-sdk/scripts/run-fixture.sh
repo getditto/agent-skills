@@ -31,7 +31,9 @@
 #
 # Environment: FLUTTER (a flutter executable; default `fvm flutter`), PYTHON (default
 # python3), CHROMEDRIVER, DITTO_PLATFORM (required for phone and simulator device IDs),
-# FIXTURE_TIMEOUT, FIXTURE_LOG_DIR (default tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
+# FIXTURE_TIMEOUT, FIXTURE_RETRIES (default 0: re-runs of a target stopped by the
+# timeout, exit 124; failures are never retried), FIXTURE_LOG_DIR (default
+# tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
 # MIGRATION_PHASE (wipe, write or read; integration_test/migration/, and added to the
 # log name).
 #
@@ -210,20 +212,31 @@ status=0
 for target in "$@"; do
   slug="$(printf '%s' "${target#integration_test/}" | sed 's/\.dart$//' | tr -c 'A-Za-z0-9._-' '_')"
   log="${FIXTURE_LOG_DIR:-$HARNESS}/run-$FIXTURE-$SAFE_DEVICE-$LINE-$slug$PHASE_SUFFIX.log"
-  target_status=0
-  {
-    echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-    echo "== $FLUTTER_VERSION"
-    echo "== defines: $PUBLIC_DEFINES DITTO_LICENSE=<redacted>"
-    echo "== $target"
-    if [[ "$DEVICE" == "chrome" ]]; then
-      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
-        --target="$target" -d chrome --headless "${DEFINES[@]}")
-    else
-      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
-        ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} "${DEFINES[@]}")
+  attempt=0
+  : >"$log"
+  while :; do
+    attempt=$((attempt + 1))
+    target_status=0
+    {
+      echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+      echo "== $FLUTTER_VERSION"
+      echo "== defines: $PUBLIC_DEFINES DITTO_LICENSE=<redacted>"
+      echo "== $target (attempt $attempt)"
+      if [[ "$DEVICE" == "chrome" ]]; then
+        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
+          --target="$target" -d chrome --headless "${DEFINES[@]}")
+      else
+        (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
+          ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} "${DEFINES[@]}")
+      fi
+    } 2>&1 | tee -a "$log" || target_status=$?
+    # FIXTURE_RETRIES re-runs a target only when `timeout` stopped it (exit 124).
+    if [[ "$target_status" -eq 124 && "$attempt" -le "${FIXTURE_RETRIES:-0}" ]]; then
+      echo "== $target: timed out (exit 124); retrying (FIXTURE_RETRIES=${FIXTURE_RETRIES})" | tee -a "$log"
+      continue
     fi
-  } 2>&1 | tee "$log" || target_status=$?
+    break
+  done
   echo "== $target: exit $target_status" | tee -a "$log"
   if [[ "$target_status" -ne 0 ]]; then
     status="$target_status"

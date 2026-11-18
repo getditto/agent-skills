@@ -505,6 +505,32 @@ true`) yet failed, and `v50` passed 22 of 27; all 6 failures (1 + 5) were the te
   on Windows only, printing `cleanup: still locked after close: ...`, which the CI job
   repeats as warnings; on every other platform a failed delete still fails the test.
 
+### CI runners, 2026-11-17
+
+`flutter-skill-tests.yml` on GitHub-hosted runners, Flutter 3.50.0 (subosito/flutter-action),
+debug builds unless stated:
+
+| Job | Runner | ditto_live | Outcome |
+|---|---|---|---|
+| `linux` (`xvfb-run`, `flutter test -d linux`) | ubuntu-24.04 | 5.2.0 | pass: `init_once`, minimal app, `v50`, `v51`, `v52` |
+| `windows` (Git Bash, `flutter test -d windows`) | windows-latest | 5.2.0 | pass after the cleanup change in [Windows desktop](#windows-desktop-2026-11-17) |
+| `android-emulator` (API 34 x86_64 `google_apis`) | ubuntu-24.04 | 5.2.0 | pass: minimal app, `v50/store_test.dart`, `v50/observers_test.dart` |
+| `android-release` (`flutter build apk --release`, aapt2) | ubuntu-24.04 | 4.14.7, 5.0.4, 5.1.0, 5.2.0 | pass; the merged release manifests list INTERNET and the Bluetooth, location and Wi-Fi permissions |
+| `ios-build` (`--simulator --no-codesign`) | macos-26 arm64 | 4.14.7, 5.2.0 | pass |
+| `migration`, macOS then iPhone 17 Pro (iOS 26.5) | macos-26 arm64 | 5.1.0 → 5.2.0 | pass |
+| `macos-release` | macos-26 arm64 | 5.2.0 | pass |
+| `web` (`flutter drive` targets, `web-probe.py --skip-manual`) | ubuntu-24.04, the image's Chrome and ChromeDriver | 5.1.0, 5.2.0 | pass |
+
+- **iOS Simulator: the first `flutter test` after a fresh boot can hang.** On the first
+  CI run the leg picked the first iPhone in `simctl list` and hung after `Xcode build
+  done` until cancelled (no GNU `timeout` on the runner then). On the second, with the
+  newest runtime's iPhone 17 Pro (iOS 26.5) and a 20-minute bound, the first target
+  (`minimal_app_test.dart`) ended with `Error waiting for a debug connection: The log
+  reader failed unexpectedly` (exit 124) and the next two targets passed in under a
+  minute each. `scripts/boot-simulator.sh` now launches a stock app and reads the log
+  once after boot, and the iOS legs set `FIXTURE_RETRIES=1`: a target stopped by the
+  timeout (never one that fails) runs once more.
+
 ## Findings that changed a research lead
 
 - **Finding 1: re-opening Ditto in one process can abort or hang it when the GC
