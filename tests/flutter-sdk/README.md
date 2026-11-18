@@ -93,8 +93,9 @@ Time bounds: every probe file sets a 2-minute per-test timeout (`integration_tes
 otherwise has none), and `run-fixture.sh` wraps each `flutter` invocation in
 `timeout` (`FIXTURE_TIMEOUT`, default 1800 s) when the command exists. `PYTHON`
 (default `python3`) and `FLUTTER` (default `fvm flutter`) select the interpreters;
-Python output is stripped of `\r` for Git Bash on Windows. Windows and Linux runs of
-these scripts are untested.
+Python output is stripped of `\r` for Git Bash on Windows, and the defines file is
+passed as a `cygpath -m` path there. CI runs these scripts on macOS, Linux (under
+`xvfb-run`) and Windows (Git Bash).
 
 ```bash
 tests/flutter-sdk/scripts/run-fixture.sh minimal_app macos 5.2 integration_test/minimal_app_test.dart
@@ -368,8 +369,10 @@ harness (see Finding 1):
   configures, after the Jetifier transform has been set up on the missing file:
   `Execution failed for JetifyTransform: .../ditto_live-4.14.7/android/libs/ditto.jar.
   > Transform's input file does not exist`. The second build (files present) passes.
-  Reproduced by deleting the downloaded files. CI's `android-release` 4.14 leg retries
-  once; no other line retries.
+  Reproduced locally twice (macOS, a warm Gradle daemon) by deleting the downloaded
+  files. On a fresh CI runner (ubuntu-24.04, `android-release` 4.14) the first build
+  downloaded the same files and passed, so the failure is not unconditional. The CI leg
+  still retries once on 4.14 only, and says so with a warning.
 
 ### Native builds, 2026-11-17
 
@@ -454,7 +457,7 @@ debug builds.
 |---|---|---|
 | 4.14.7 | `v4_app` `v4_test.dart`, macOS | pass: `v4 read-back make: Toyota`, `v4 SDK version: 4.14.7`, `v4 closed: true` |
 | 4.14.7 | `v4_app` `flutter build ios --simulator --no-codesign` | pass |
-| 4.14.7 | `v4_app` `flutter build apk --release` | fail on the first build after `pub get`, pass on the second (SDK defect below) |
+| 4.14.7 | `v4_app` `flutter build apk --release` | locally: fail on the first build after `pub get`, pass on the second (SDK defect below) |
 | 5.1.0 then 5.2.0 | `migrate_default_dir`, macOS | pass |
 | 5.1.0 then 5.2.0 | `migrate_default_dir`, iOS Simulator | pass with `--no-uninstall`; fail without it |
 | 5.2.0 | `run-macos-release.sh` (release build, `.app` run directly) | pass |
@@ -480,6 +483,27 @@ debug builds.
   environment variable offline_license is set, but it is not a known system parameter,
   so it is being ignored`. `run-macos-release.sh` therefore unsets every `DITTO_*`
   variable for the app; the license is a define.
+
+### Windows desktop, 2026-11-17
+
+CI `windows` job, windows-latest, Flutter 3.50.0, ditto_live 5.2.0, debug,
+`run-fixture.sh` through Git Bash with `flutter test -d windows`. The first run
+(before the cleanup change below): `init_once`, `v51` and `v52` passed;
+`minimal_app_test.dart` printed the full transcript (`platform: windows`, `closed:
+true`) yet failed, and `v50` passed 22 of 27; all 6 failures (1 + 5) were the tests' own cleanup:
+
+- **After `await ditto.close()`, the persistence directory stays locked on Windows.**
+  Deleting it failed for 5 s of retries with `PathAccessException: Deletion failed ...
+  (OS Error: The process cannot access the file because it is being used by another
+  process, errno = 32)`, in `minimal_app_test.dart` and in `store_test.dart`
+  (`transaction throw rolls back`, `rollback action rolls back`, `store.execute inside
+  transaction throws`) and `presence_two_peer_test.dart` (`handler deny blocks`,
+  `handler throw denies`); every other probe's directory deleted. Which file stays
+  open was not determined. That the transaction probes are among them fits Finding 1's
+  observation that an internal `Transaction` is freed by a GC finalizer, but this is an
+  inference. The harness and `temp_dir_io.dart` therefore leave such a directory behind
+  on Windows only, printing `cleanup: still locked after close: ...`, which the CI job
+  repeats as warnings; on every other platform a failed delete still fails the test.
 
 ## Findings that changed a research lead
 

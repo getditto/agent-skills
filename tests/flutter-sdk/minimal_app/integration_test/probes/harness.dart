@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:ditto_live/ditto_live.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -81,14 +82,24 @@ Future<void> withDitto(
 }
 
 /// Deletes [directory], retrying for a few seconds: on Windows, files the
-/// closed instance held can stay locked briefly.
+/// closed instance held can stay locked briefly. On Windows a directory still
+/// locked after the retries is left behind and reported on the
+/// `cleanup:` line instead of failing the probe (README, Windows desktop
+/// findings): the probe's own assertions have already run.
 Future<void> _deleteDirectory(Directory directory) async {
   for (var attempt = 1; ; attempt++) {
     try {
       await directory.delete(recursive: true);
       return;
-    } on FileSystemException {
-      if (attempt == 10) rethrow;
+    } on FileSystemException catch (error) {
+      if (attempt == 10) {
+        if (!Platform.isWindows) rethrow;
+        debugPrint(
+          'cleanup: still locked after close: ${error.message}, '
+          'errno ${error.osError?.errorCode}: ${directory.path}',
+        );
+        return;
+      }
       await Future<void>.delayed(const Duration(milliseconds: 500));
     }
   }

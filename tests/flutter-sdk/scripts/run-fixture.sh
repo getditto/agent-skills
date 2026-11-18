@@ -26,7 +26,7 @@
 # build/ directory.
 #
 # Each flutter invocation is bounded by FIXTURE_TIMEOUT seconds (default 1800) when a
-# `timeout` command is available. Each target's output is copied to
+# GNU `timeout` (or Homebrew's `gtimeout`) is available. Each target's output is copied to
 # tests/flutter-sdk/run-<fixture>-<device>-<line>-<target>.log (gitignored).
 #
 # Environment: FLUTTER (a flutter executable; default `fvm flutter`), PYTHON (default
@@ -166,8 +166,11 @@ fi
 FIXTURE_TIMEOUT="${FIXTURE_TIMEOUT:-1800}"
 BOUND=()
 # GNU timeout only: on Windows, PATH can resolve `timeout` to System32's wait command.
+# Homebrew's coreutils installs it as gtimeout on macOS.
 if timeout --version >/dev/null 2>&1; then
   BOUND=(timeout -k 30 "$FIXTURE_TIMEOUT")
+elif gtimeout --version >/dev/null 2>&1; then
+  BOUND=(gtimeout -k 30 "$FIXTURE_TIMEOUT")
 else
   echo "warning: no \`timeout\` command; flutter runs are not time-bounded" >&2
 fi

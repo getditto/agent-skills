@@ -103,6 +103,9 @@ class Helpers(unittest.TestCase):
     def setUp(self):
         spec = importlib.util.spec_from_file_location("analyze_skill_snippets", SCRIPT)
         self.module = importlib.util.module_from_spec(spec)
+        # dataclasses resolves string annotations through sys.modules.
+        sys.modules[spec.name] = self.module
+        self.addCleanup(sys.modules.pop, spec.name, None)
         spec.loader.exec_module(self.module)
 
     def test_windows_candidates_include_bat(self):

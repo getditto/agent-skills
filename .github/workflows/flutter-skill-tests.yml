@@ -51,6 +51,9 @@ jobs:
         with:
           channel: stable
           flutter-version: ${{ steps.pins.outputs.flutter }}
+      # run-fixture.sh bounds each flutter run with GNU timeout (gtimeout here).
+      - name: Install GNU coreutils
+        run: brew install coreutils
       - name: Check the offline license is configured
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
@@ -115,6 +118,9 @@ jobs:
         with:
           channel: stable
           flutter-version: ${{ steps.pins.outputs.flutter }}
+      # run-fixture.sh bounds each flutter run with GNU timeout (gtimeout here).
+      - name: Install GNU coreutils
+        run: brew install coreutils
       - name: Check the offline license is configured
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
@@ -130,18 +136,19 @@ jobs:
         run: tests/flutter-sdk/scripts/run-migration.sh macos
       - name: Boot an iOS Simulator
         id: sim
-        run: |
-          udid="$(xcrun simctl list devices available -j \
-            | jq -er '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')"
-          xcrun simctl boot "$udid"
-          xcrun simctl bootstatus "$udid" -b
-          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+        run: echo "udid=$(tests/flutter-sdk/scripts/boot-simulator.sh)" >> "$GITHUB_OUTPUT"
       # Same bundle ID, and run-fixture.sh keeps the app installed between phases.
       - name: Migrate on the iOS Simulator (wipe, write on 5.1, read on 5.2)
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
+          FIXTURE_TIMEOUT: '1200'
         run: tests/flutter-sdk/scripts/run-migration.sh "${{ steps.sim.outputs.udid }}"
+      - name: Show the simulator's Runner log
+        if: failure()
+        run: |
+          xcrun simctl spawn "${{ steps.sim.outputs.udid }}" log show --last 30m --style compact \
+            --predicate 'process == "Runner"' | tail -300
 
   ios-sim:
     name: iOS Simulator against ditto_live 5.2
@@ -156,6 +163,9 @@ jobs:
         with:
           channel: stable
           flutter-version: ${{ steps.pins.outputs.flutter }}
+      # run-fixture.sh bounds each flutter run with GNU timeout (gtimeout here).
+      - name: Install GNU coreutils
+        run: brew install coreutils
       - name: Check the offline license is configured
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
@@ -166,22 +176,23 @@ jobs:
           fi
       - name: Boot an iOS Simulator
         id: sim
-        run: |
-          udid="$(xcrun simctl list devices available -j \
-            | jq -er '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')"
-          xcrun simctl boot "$udid"
-          xcrun simctl bootstatus "$udid" -b
-          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+        run: echo "udid=$(tests/flutter-sdk/scripts/boot-simulator.sh)" >> "$GITHUB_OUTPUT"
       # A simulator UDID carries no platform, so DITTO_PLATFORM is set.
       - name: Run the minimal app and the store and observer probes
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
+          FIXTURE_TIMEOUT: '1200'
         run: |
           tests/flutter-sdk/scripts/run-fixture.sh minimal_app "${{ steps.sim.outputs.udid }}" 5.2 \
             integration_test/minimal_app_test.dart \
             integration_test/probes/v50/store_test.dart \
             integration_test/probes/v50/observers_test.dart
+      - name: Show the simulator's Runner log
+        if: failure()
+        run: |
+          xcrun simctl spawn "${{ steps.sim.outputs.udid }}" log show --last 30m --style compact \
+            --predicate 'process == "Runner"' | tail -300
 
   android-emulator:
     name: Android emulator against ditto_live 5.2
@@ -388,6 +399,13 @@ jobs:
           tests/flutter-sdk/scripts/run-fixture.sh minimal_app windows 5.2 \
             integration_test/probes/init_once integration_test/minimal_app_test.dart \
             integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+      # On Windows the harness leaves a persistence directory that is still locked
+      # after close() and prints a `cleanup:` line (README, Windows desktop).
+      - name: Report persistence directories still locked after close
+        if: always()
+        run: |
+          grep -h 'cleanup: still locked after close' tests/flutter-sdk/run-minimal_app-windows-5.2-*.log \
+            | sed 's/^/::warning::/' || echo 'no locked directories reported'
 
   web:
     name: Flutter Web (Chrome) against ditto_live ${{ matrix.line }}
@@ -448,6 +466,9 @@ jobs:
         with:
           channel: stable
           flutter-version: ${{ steps.pins.outputs.flutter }}
+      # run-fixture.sh bounds each flutter run with GNU timeout (gtimeout here).
+      - name: Install GNU coreutils
+        run: brew install coreutils
       - name: Check the offline license is configured
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
@@ -497,11 +518,12 @@ jobs:
           python3 - "$RUNNER_TEMP/from-skill/pubspec.lock" <<'EOF'
           import importlib.util, sys
           from datetime import datetime, timedelta, timezone
+          from pathlib import Path
           sys.path.insert(0, "scripts")
           spec = importlib.util.spec_from_file_location("age", "scripts/check-dependency-age.py")
           age = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(age)
-          age.pub_check(sys.argv[1], datetime.now(timezone.utc) - timedelta(days=3))
+          age.pub_check(Path(sys.argv[1]), datetime.now(timezone.utc) - timedelta(days=3))
           print("pub lock age OK:", sys.argv[1])
           EOF
       - name: Analyze and build
