@@ -109,9 +109,14 @@ class DittoService {
 
 /// The app's entry point, e.g.
 /// `Future<void> main() => startCarsApp(configureDitto);`
-Future<void> startCarsApp(Future<void> Function(Ditto ditto) configure) async {
+/// Pass [config] only to change the connect mode or, in debug builds, the
+/// directory; an app keeps the SDK default persistence directory.
+Future<void> startCarsApp(
+  Future<void> Function(Ditto ditto) configure, {
+  DittoConfig config = const DittoConfig(),
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = await DittoService.open(configure: configure);
+  final service = await DittoService.open(config: config, configure: configure);
   runApp(CarsApp(service: service));
 }
 // snippet:end flutter-widgets-1
@@ -407,12 +412,21 @@ void main() {
         },
       );
       await _pumpUntilFound(t, find.text('1 cars'));
+      StoreObserver observerOf() =>
+          t.state<_CarCountScreenState>(find.byType(CarCountScreen))._observer;
+      final first = observerOf();
+      expect(first.isCancelled, isFalse);
       await t.pumpWidget(_app(const SizedBox()));
+      expect(first.isCancelled, isTrue);
+
       await t.pumpWidget(_app(CarCountScreen(ditto: ditto)));
       expect(t.takeException(), isNull);
       await _pumpUntilFound(t, find.text('1 cars'));
+      final second = observerOf();
+      expect(second, isNot(same(first)));
       await t.pumpWidget(_app(const SizedBox()));
       expect(t.takeException(), isNull);
+      expect(second.isCancelled, isTrue);
     });
   });
 }

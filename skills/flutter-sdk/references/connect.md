@@ -46,7 +46,12 @@ On web one invalid token did not throw: [web.md](web.md#web-differences).
 Open once, configure, and close the instance again if configuring fails, so a failed
 start does not leave the directory locked. This service is the one
 [widget-integration.md](widget-integration.md) builds on. Executed (macOS, debug, 5.0.4,
-5.1.0, 5.2.0): `configure` throwing rethrows, and the same directory then opens again.
+5.1.0, 5.2.0, **with Ditto logging disabled in the harness**): `configure` throwing
+rethrows, and a second open of the same directory then succeeds, so the failed instance
+was closed. That second open is the probe's check, not a recovery path: re-opening in one
+process is the hazard under [Shutdown and ownership](#shutdown-and-ownership). After a
+failed open or configure, let `close()` run, surface the error, and have the user
+relaunch the app; do not retry `DittoService.open` in-process.
 The block needs `package:ditto_live/ditto_live.dart` and `package:flutter/widgets.dart`;
 `CarsApp` is in widget-integration.md.
 
@@ -85,9 +90,14 @@ class DittoService {
 
 /// The app's entry point, e.g.
 /// `Future<void> main() => startCarsApp(configureDitto);`
-Future<void> startCarsApp(Future<void> Function(Ditto ditto) configure) async {
+/// Pass [config] only to change the connect mode or, in debug builds, the
+/// directory; an app keeps the SDK default persistence directory.
+Future<void> startCarsApp(
+  Future<void> Function(Ditto ditto) configure, {
+  DittoConfig config = const DittoConfig(),
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = await DittoService.open(configure: configure);
+  final service = await DittoService.open(config: config, configure: configure);
   runApp(CarsApp(service: service));
 }
 ```

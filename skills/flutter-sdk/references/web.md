@@ -27,7 +27,8 @@ are executed on Chrome unless marked.
 | `setAllPeerToPeerEnabled(true)`, `withAllPeerToPeerEnabled(true)` | No-op; `sync.start()` succeeds | 5.0.4 to 5.2.0 | [transports.md](transports.md#cap-06-customizing-transports) |
 | `defaultTargetPlatform` | The host OS (`macOS`), not web | all | [setup.md](setup.md#gate-platform-code-with-kisweb-then-dittocurrentplatform) |
 | Sync | Server (WebSocket) only, per the docs; not executed against a server | docs | [connect.md](connect.md#cap-03-connecting) |
-| Store | In memory: survives `close()` and re-open in the page, gone after a page load | 5.0.4 to 5.2.0 | [In-memory store and reload](#in-memory-store-and-reload) |
+| Store | In memory: survives `close()` and re-open in the page | 5.0.4 to 5.2.0 | [In-memory store and reload](#in-memory-store-and-reload) |
+| Store after a page load | Empty: the page load clears it | 5.1.0, 5.2.0 (release) | [In-memory store and reload](#in-memory-store-and-reload) |
 | `newAttachment(path)` | Its Future fails: `DittoException(Creating attachments from files is not supported on Flutter Web.)`. `newAttachment(Uint8List)` works | 5.0.4 to 5.2.0 | [attachments.md](attachments.md#cap-12-attachments) |
 | `Attachment.copyToPath` | Its Future fails: `DittoException(Retrieving a filesystem path for attachments is not supported on the Web.)`. `Attachment.data` works | 5.0.4 to 5.2.0 | [attachments.md](attachments.md#cap-12-attachments) |
 | `DittoLogger.exportLogs` | Throws `UnsupportedError: Not supported on the web platform` **synchronously** at the call: `.catchError` on its Future misses it | 5.0.4 to 5.2.0 | [observability.md](observability.md#logging) |
@@ -90,7 +91,7 @@ source. Not executed. Serve the assets compressed (same guide).
 ## Build modes
 
 - **Use the default `flutter build web` (dart2js).** Executed: open, insert and read
-  back on 5.1.0 and 5.2.0 release; `flutter run -d chrome` (DDC) on all three lines.
+  back on 5.1.0 and 5.2.0 release; `flutter drive -d chrome` debug (DDC) builds on all three lines.
 - **Never build with `--wasm`** (5.1.0, 5.2.0 release; 5.0.4 not run). Ditto initializes
   and opens, but every query result after the first is the first one again: a second
   `INSERT` reports the first `INSERT`'s mutated IDs, and `SELECT * FROM cars` returns 0
@@ -146,7 +147,7 @@ release, Chrome 157, 5,000 small documents, one machine, read as an order of mag
 | Query | Time | Longest main-thread task |
 |---|---|---|
 | `SELECT * FROM jank`, items counted | 20 ms (5.2.0), 13 ms (5.1.0) | none over 50 ms |
-| `SELECT * FROM jank`, every `item.value` read | 79 ms (5.2.0), 55 ms (5.1.0) | 79 ms; longest frame gap 67 ms |
+| `SELECT * FROM jank`, every `item.value` read | 79 ms (5.2.0), 55 ms (5.1.0) | 5.2.0: 79 ms, longest frame gap 67 ms; 5.1.0: 55 ms, frame gap 33 ms |
 | `SELECT * FROM jank LIMIT 50`, every `item.value` read | 2 ms | none over 50 ms |
 
 So on web, bound every query a screen runs: `LIMIT` a page and fetch the next page on

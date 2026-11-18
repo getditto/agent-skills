@@ -361,20 +361,19 @@ harness (see Finding 1):
   strings and numbers alike (`'a'.toJS`, `'b'.toJS`, `1.toJS` and `2.toJS` all report
   `hashCode` 0): every pointer of one type gets the same key, so the registry hands back
   the first wrapper. dart2js is unaffected (`web_default_build`).
-- **A hot restart with a V2 observer live crashed the app once (n=1)** (5.2.0, macOS
-  debug, `hot-restart.py --device macos --mode v2 --peer`). After `R`, a second
-  instance started connecting to the orphaned instance over TCP loopback and inserted
-  one document; 0.2 s later the app died, `Lost connection to device.`, with
-  `EXC_BAD_ACCESS (SIGBUS) KERN_PROTECTION_FAILURE` on the thread
-  `live query callback 2`, whose top frame is in a writable, non-executable region.
-  Presence still reported 0 connected peers at the insert, so the trigger may have been
-  the connection or sync activity rather than the document reaching the observer.
-  That the region is the freed `NativeCallable.listener` trampoline of the orphaned V2
-  observer is an inference: the 5.2.0 source says the V2 path still uses a
-  `NativeCallable.listener` and shares the hot-restart hazard, while V1 callbacks go
-  through a port (`lib/src/bridge/native/store.dart`). The single V1 run with the same
-  steps (`--mode v1 --peer`) did not crash. One run each; not yet repeated. Details:
-  [Manual records](#manual-records).
+- **After a hot restart, an orphaned observer crashes the app when a remote change
+  reaches it** (macOS debug, `flutter run`, one launch per run; standalone repro in
+  [Manual records](#manual-records), "Hot restart, repeated runs"). V2
+  (`registerObserverV2`): 5.1.0 4/4, 5.2.0 4/4. V1 (`registerObserver`): 5.1.0 3/3,
+  5.0.4 0/3, 5.2.0 0/3. Each crash is `EXC_BAD_ACCESS`, `SIGBUS KERN_PROTECTION_FAILURE`
+  or `SIGSEGV KERN_INVALID_ADDRESS`, on a `live query callback 1`–`3` thread whose top
+  frame is a non-code address, 0.1–0.2 s after the second instance's insert. On 5.2.0
+  V2, connecting without inserting crashed 0/3, so the trigger is the remote change, not
+  the connection. 5.1.0 V1 and every V2 path deliver through a `NativeCallable.listener`
+  (`sdks/flutter/ditto_live/lib/src/bridge/native/store.dart` @ `sdk-release-5.1.0`
+  and `@ sdk-release-5.2.0`); 5.0.4 and 5.2.0 V1 post to a `Dart_PostCObject` port.
+  That the faulting address is the freed trampoline is an inference. The fixture's own
+  `hot-restart.py --mode v2 --peer` run crashed once (n=1) the same way.
 
 - **ditto_live 4.14.7, Android: the first `flutter build apk` after `pub get` fails**
   (Flutter 3.50.0, AGP 9.3.1, `v4_app`, release). The plugin downloads `ditto.jar` and
@@ -403,6 +402,7 @@ Flutter 3.50.0 (AGP 9.3.1, Gradle 9.5.0 from its template), Xcode 27.2, CocoaPod
 | 5.2.0 | `flutter build ios --simulator --debug` | pass; `Runner.debug.dylib` is `arm64` |
 | 5.0.4 | `flutter build ios --simulator --debug` | pass; `Runner.debug.dylib` is `arm64` |
 | 5.2.0 | both, without the two workarounds below (negative control) | apk: fail at `:ditto_live:checkDebugAarMetadata`; iOS: fail, `Framework 'DittoCore' not found` |
+| 5.1.0, 5.2.0, 5.0.4 | fresh `flutter create --platforms=android` app plus `flutter pub add ditto_live:<version>`, nothing else, `flutter build apk --debug` / `--release` (separate negative control) | 5.1.0: fail at `:ditto_live:check{Debug,Release}AarMetadata` 3/3 (2 debug, 1 release); 5.2.0: same 4/4 (2 debug, 1 release, 1 debug on AGP 9.1.1); 5.0.4: builds 3/3 |
 
 - **Android, ditto_live 5.1.0 and 5.2.0: the plugin compiles with `compileSdk = 34`,
   but its `com.ditto` Android libraries require compileSdk 36**, and AGP 9 runs
@@ -628,9 +628,10 @@ debug builds unless stated:
 - **Web, `--wasm` is not usable with 5.1.0 or 5.2.0** (wrong query results). The lead
   only called the docs ambiguous; see
   [SDK defects](#sdk-defects-the-fixture-records-2026-11-17).
-- **Hot restart does not "work" on native, and re-opening fails on web too.** On macOS
-  and Chrome (5.2.0, debug), `Ditto.open` after `R` fails with
-  `DittoException(File already locked, ...)`: the restart orphans the open instance,
+- **Hot restart does not "work" on native, and re-opening fails on web too.** After `R`,
+  `Ditto.open` on the same directory fails with `DittoException(File already locked,
+  ...)` on 5.0.4 (macOS 3/3) and 5.2.0 (macOS 5/5, Chrome 2/2), and never completes on
+  5.1.0 (macOS 4/4): the restart orphans the open instance,
   which keeps its directory (web: its in-memory store) locked. Neither an app-scoped
   holder (statics are reset by the restart) nor a retry for 20 s recovers; only a full
   restart does. Details: [Manual records](#manual-records).
@@ -735,7 +736,7 @@ document, which reaches the orphaned instance as a remote change would.
 | macOS | `v2` | the same error | none in 40 s |
 | macOS | `holder` | attempt 1 fails with the same error; still failing at 20 s (`open failed`) | none in 40 s |
 | macOS | `v1 --peer` | the same error; the peer connects to the orphaned instance (1 remote peer) and inserts | none in 40 s |
-| macOS | `v2 --peer` | the same error; the peer inserts (presence: 0 connected peers yet), and 0.2 s later `Lost connection to device.` | **yes, once (n=1)**: `EXC_BAD_ACCESS (SIGBUS)`, `KERN_PROTECTION_FAILURE`, thread `live query callback 2`; trigger and cause not isolated |
+| macOS | `v2 --peer` | the same error; the peer inserts (presence: 0 connected peers yet), and 0.2 s later `Lost connection to device.` | **yes, once (n=1)**: `EXC_BAD_ACCESS (SIGBUS)`, `KERN_PROTECTION_FAILURE`, thread `live query callback 2`; trigger isolated in "Hot restart, repeated runs" below |
 | Chrome | `v1` | `Ditto.open` fails at once (error below) | none in 30 s |
 | Chrome | `v2` | the same error | none in 40 s |
 | Chrome | `holder` | attempt 1 fails; still failing at 20 s | none in 40 s |
@@ -774,3 +775,69 @@ opened the same directory at once and saw the documents of the earlier runs (the
 observer's first item count grows run to run: 0, 1, 2, 3, ...). The Finding 1
 GC-finalizer hazard did not show in these runs, which re-open nothing successfully in
 the same process.
+
+### Hot restart, repeated runs, 2026-11-17
+
+Standalone `flutter create` apps (macOS desktop, plus `--platforms=web` for Chrome),
+`ditto_live` pinned per line, Flutter 3.50.0, Xcode 27.2, macOS 27.2.1 arm64, Chrome 157
+headless, debug. Driven like `scripts/hot-restart.py`: a script runs
+`flutter run -d <device> --debug` with stdin attached (`--web-browser-flag=--headless=new`
+for Chrome), waits for the app's ready line, waits 5 s, sends `R`, prints output for the
+observe window, sends `q` and kills what is left. Each run is a new `flutter run` with a
+unique run ID, so each starts from fresh directories. The license comes from
+`--dart-define-from-file`. Between lines, `macos/Podfile.lock`, `macos/Pods` and `build/`
+were deleted.
+
+**Re-open app.** `main()` opens `{systemTemp}/<run-id>` (web: the store name `<run-id>`)
+with `DittoConfig(persistenceDirectory: ...)`, sets the license, turns each
+peer-to-peer transport off, inserts one document, prints the count, and never closes.
+After `R` the same `main()` runs again. Modes: `plain` (open once, print the result or
+the error), `retry` (retry `Ditto.open` every 500 ms for 20 s), `per-launch`
+(`kDebugMode` only: append `DateTime.now().microsecondsSinceEpoch` taken at the start
+of that `main()` to the directory):
+
+```bash
+python3 hot_restart.py <app> macos  --dart-define-from-file=license.json --dart-define=RUN=$(date +%s) --observe 15
+python3 hot_restart.py <app> chrome --dart-define-from-file=license.json --dart-define=RUN=$(date +%s) --observe 20
+python3 hot_restart.py <app> macos  --dart-define-from-file=license.json --dart-define=RUN=$(date +%s) --dart-define=MODE=retry --observe 30
+python3 hot_restart.py <app> macos  --dart-define-from-file=license.json --dart-define=RUN=$(date +%s) --dart-define=MODE=per-launch --observe 15
+```
+
+| Line | Device | Mode | After `R` | Runs |
+|---|---|---|---|---|
+| 5.0.4 | macOS | plain | `File already locked` | 3/3 |
+| 5.1.0 | macOS | plain | `Ditto.open` never completes or throws (one run watched for 60 s) | 4/4 |
+| 5.2.0 | macOS | plain | `File already locked`, about 1 s after `main()` restarts | 5/5 |
+| 5.2.0 | Chrome | plain | `File already locked ... retried 0 times`, at once | 2/2 |
+| 5.2.0 | macOS, Chrome | retry | still `File already locked` after 20 s (14 and 41 attempts) | 1/1 each |
+| 5.2.0 | macOS | per-launch | open succeeds in the new, empty directory | 2/2 |
+| 5.2.0 | Chrome | per-launch | open succeeds in the new, empty store | 1/1 |
+| 5.2.0 | macOS | full restart (`q`, then `flutter run` with the same run ID) | opens at once, both earlier documents present | 1/1 |
+| 5.0.4, 5.1.0 | Chrome | — | not run | — |
+
+The per-launch runs leave every earlier directory on disk: nothing in the pattern
+deletes them.
+
+**Observer-crash app.** First `main()`: open instance A in `{systemTemp}/<run-id>/a`,
+turn peer-to-peer off, listen on TCP `127.0.0.1:45700`, register a subscription on
+`restarts`, start sync, register an observer on `SELECT * FROM restarts` (`MODE=v2`:
+`registerObserverV2`; `v1`: `registerObserver`, no `onChange`), listen to its `changes`,
+write a marker file, print ready. After `R`, `main()` finds the marker, opens instance B
+in `{systemTemp}/<run-id>/b`, connects it to `127.0.0.1:45700`, subscribes, starts sync
+and inserts one document into `restarts`, which reaches A's orphaned observer as a
+remote change. "Crash" means `Lost connection to device.` plus a new `.ips` report:
+
+```bash
+python3 hot_restart.py <app> macos --dart-define-from-file=license.json --dart-define=MODE=v2 --dart-define=RUN=$(date +%s) --observe 25
+python3 hot_restart.py <app> macos --dart-define-from-file=license.json --dart-define=MODE=v1 --dart-define=RUN=$(date +%s) --observe 25
+ls -t ~/Library/Logs/DiagnosticReports/<app>-*.ips | head -1
+```
+
+| Line | Observer | Crash | Exception per run |
+|---|---|---|---|
+| 5.2.0 | V2 | 4/4 | SIGBUS, SIGSEGV, SIGSEGV, SIGBUS; fault address `...0198`, thread `live query callback 1`–`3` |
+| 5.2.0 | V2, B connects but does not insert | 0/3 | (B sees 1 remote peer; the app stays up for 25 s) |
+| 5.2.0 | V1 | 0/3 | (B sees 1 remote peer and inserts; the app stays up) |
+| 5.1.0 | V2 | 4/4 | SIGSEGV, SIGSEGV, SIGBUS, SIGBUS; address `...01a0` |
+| 5.1.0 | V1 | 3/3 | SIGBUS, SIGSEGV, SIGSEGV; address `...01a0` |
+| 5.0.4 | V1 (no V2 API) | 0/3 | (B connects and inserts) |
