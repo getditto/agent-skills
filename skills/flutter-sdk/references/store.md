@@ -1,7 +1,7 @@
 # Executing DQL — Flutter
 
 The Dart call, argument binding and result handling. DQL itself (statements, `INSERT`
-conflict policies, `EVICT`, indexes, `EXPLAIN`): the `dql` skill if installed,
+conflict policies, `EVICT`, indexes, `EXPLAIN`): the `write-dql` skill if installed,
 otherwise <https://docs.ditto.live/dql/dql>.
 
 ## Contents
@@ -207,7 +207,7 @@ Future<void> createColorIndex(Ditto ditto) => ditto.store.execute(
 Executed (macOS, 5.0.4, 5.1.0, 5.2.0): `CREATE INDEX IF NOT EXISTS` succeeds. Run it once
 at startup, after `Ditto.open` and before the screens that query. Which queries an index
 serves, composite indexes (5.1.0+), `DROP INDEX`, listing indexes, and `EXPLAIN`/`ADVISE`
-are DQL: the `dql` skill if installed, otherwise <https://docs.ditto.live/dql/indexing>.
+are DQL: the `write-dql` skill if installed, otherwise <https://docs.ditto.live/dql/indexing>.
 Their results come back as ordinary `QueryResult` items.
 
 ## CAP-17 Device storage management

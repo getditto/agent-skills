@@ -190,7 +190,7 @@ same call; v5 rejects `LIMIT`/`ORDER BY` in them ([sync.md](sync.md#limit-and-or
 Both lines are DQL-only in Flutter (4.14.7 has no legacy collection API) and
 `store.execute(query, arguments:)` keeps its shape. What changes is DQL's default: v5
 runs with `DQL_STRICT_MODE=false`, so nested objects merge field by field instead of
-being replaced whole (migration guide). Semantics: the `dql` skill if installed,
+being replaced whole (migration guide). Semantics: the `write-dql` skill if installed,
 otherwise <https://docs.ditto.live/dql/strict-mode>.
 
 ### Observers

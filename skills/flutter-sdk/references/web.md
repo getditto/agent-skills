@@ -152,7 +152,7 @@ release, Chrome 157, 5,000 small documents, one machine, read as an order of mag
 
 So on web, bound every query a screen runs: `LIMIT` a page and fetch the next page on
 demand, and decode only the items you render. Pagination syntax:
-the `dql` skill if installed, otherwise <https://docs.ditto.live/dql/dql>.
+the `write-dql` skill if installed, otherwise <https://docs.ditto.live/dql/dql>.
 
 ## Code that compiles on web
 

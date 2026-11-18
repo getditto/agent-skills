@@ -114,5 +114,17 @@ class Helpers(unittest.TestCase):
         self.assertEqual(names, ["flutter.bat", "flutter.exe", "flutter"])
         self.assertEqual(self.module.executable_candidates(flutter, windows=False), [str(flutter)])
 
+    def test_fragment_ditto_call_detection(self):
+        def errors_for(code):
+            errors = []
+            fence = self.module.Fence(Path("x.md"), 3, code, {"dart-fragment": "pseudo-diff"})
+            self.assertIsNone(self.module.classify(fence, {"5.2": "5.2.0"}, errors))
+            return errors
+
+        self.assertTrue(errors_for("- ditto.sync.start();"))
+        self.assertTrue(errors_for("+ await Ditto.open(config);"))
+        self.assertEqual(errors_for("// The old shape, removed in Ditto."), [])
+        self.assertEqual(errors_for("// myditto.x and editto.y are not Ditto calls"), [])
+
 if __name__ == "__main__":
     unittest.main()

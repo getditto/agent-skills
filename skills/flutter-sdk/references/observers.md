@@ -1,7 +1,7 @@
 # Observers and live queries — Flutter
 
 How to watch a query from Dart. Where the observer lives in a widget tree is
-[widget-integration.md](widget-integration.md); what DQL a query may use is the `dql`
+[widget-integration.md](widget-integration.md); what DQL a query may use is the `write-dql`
 skill if installed, otherwise <https://docs.ditto.live/dql/dql>.
 
 ## Contents

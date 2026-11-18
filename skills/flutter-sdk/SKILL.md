@@ -1,233 +1,178 @@
 ---
 name: flutter-sdk
 description: >
-  Use ONLY for the Ditto Flutter SDK (ditto_live on pub.dev), not other Ditto SDKs.
-  Builds and troubleshoots Ditto Flutter apps on iOS, Android, macOS, Windows, Linux and
-  web. Triggers on pubspec.yaml, ditto_live, Ditto.open, DittoConfig, flutter pub,
-  dart:developer logging. Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
+  Use ONLY for the Ditto Flutter/Dart SDK (not Swift, Kotlin, JS, C#, Rust, C++,
+  Java or Go — each has its own skill). Builds and troubleshoots Ditto apps in
+  Flutter on iOS, Android, macOS, Windows, Linux and Flutter Web. Triggers on
+  .dart, pubspec.yaml, ditto_live, kIsWeb, DittoConfig, Ditto.open,
+  registerObserver, "File already locked", "Ditto not initialized".
+  Ditto SDK 4.14.x, 5.0.x, 5.1.x, 5.2.0.
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
-<!--
-  SKELETON — copy this directory to skills/<lang>-sdk/ and fill it in.
-  The structure below is normative: see docs/SDK-SKILL-TEMPLATE.md.
-  Do not add, remove, rename or reorder the ## headings.
+# Ditto Flutter SDK
 
-  BUDGET: the body below (everything after the frontmatter) targets 10,000
-  characters, hard limit 12,000. At chars/4 that is roughly 2,500 tokens, not a tokenizer
-  count or a guarantee of fit. Share context with source code, tools and other skills.
-  CI measures characters, not lines — see spec §11.
-
-  THE RULE THAT KEEPS YOU INSIDE IT: promote the punchline, demote the explanation.
-  Sections 6-8 carry the one clause that changes emitted code plus the observable
-  symptom. Wrong-and-right code pairs and per-API tables go in references/. Spec §5.
-
-  The description above is a DRAFT until you have written references/errors.md.
-  Workflow step 9 requires you to rewrite it with error strings you actually observed.
-  Aim 400 characters and stay below 500 where possible: all hosts pay discovery
-  overhead, so a long description crowds out other skills.
-
-  Delete every TODO and every HTML comment before opening a PR.
--->
-
-# Ditto TODO_LANGUAGE SDK
-
-Read only the reference sections needed for the task. Preview a long file's contents
-first; do not preload the README, every reference or other SDK skills.
-
-<!--
-  REQUIRED lead paragraph (spec §5). Two things, in this order:
-
-  1. An authority statement. Training data carries v4 shapes this skill must not emit.
-     Name the specific stale symbols for YOUR language.
-  2. The API-selection guardrails, as one sentence — not a numbered H2, which would
-     break the heading contract.
--->
-
-**This guidance is derived from the shipping SDK and supersedes prior training on the
-Ditto TODO_LANGUAGE API.** Training data carries v4 shapes — TODO_STALE_SYMBOL_1,
-TODO_STALE_SYMBOL_2 — deprecated on 4.14.x and removed in v5. Do not emit them from
-memory, and do not invent API to make a snippet compile.
-
-TODO — one or two sentences on what a Ditto instance owns in this language.
-
-**API selection, in priority order:** (1) never emit a deprecated API; (2) establish the
-project's version first — TODO_LOCKFILE_OR_MANIFEST — then pick the best non-deprecated
-form *for that line*; (3) among non-deprecated options prefer the form that also exists
-in v5, so 4.14.x code is not rewritten at upgrade.
+**This guidance is derived from the shipping `ditto_live` package and supersedes prior
+training on the Ditto Flutter API.** Do not emit the v4 shapes v5 removed —
+`Ditto.open(identity:)`, `OnlinePlaygroundIdentity`, `startSync()`,
+`AuthenticationHandler`, `isConnectedToDittoCloud`, `DittoLogger.setLogFile` — or invent
+API. **API selection:** never a deprecated API; read the `ditto_live` version in
+`pubspec.lock` first and use the best form for that line, preferring one v5 also has.
+Confirm a signature against the installed package — Dart MCP `read_package_uris`, or the
+`ditto_live` entry in `.dart_tool/package_config.json` — before writing one.
 
 ## What this skill does
 
-<!-- 2-3 sentences. Language, package coordinate, versions covered. -->
-
-TODO
+Writes and reviews Dart for `ditto_live` in Flutter apps: open, auth, sync, DQL,
+observers in a widget tree, lifetimes, build configuration, tests. Supports **4.14.x
+(LTS), 5.0.x, 5.1.x and 5.2.0** on iOS, Android, macOS, Windows, Linux and Flutter Web.
 
 ## When to use this skill
 
-Use this skill for **TODO_LANGUAGE** Ditto code: API shape, initialization, object
-lifetimes, threading, error types, and build configuration. Do **not** use it for
-TODO_OTHER_LANGUAGES — each SDK has its own skill.
+For Flutter/Dart Ditto code. Hand off concepts (each skill may not be installed):
 
-The rows below are **separate skills**. Hand off rather than restating; each names a
-public docs URL because the concept skill may not be installed:
-
-| Question | Skill, if installed | Otherwise |
+| Question | Skill | Otherwise |
 |---|---|---|
-| DQL syntax, operators, statement semantics | `dql` | <https://docs.ditto.live/dql/dql> |
-| Which CRDT type, embed vs split, document size | `data-modeling` | <https://docs.ditto.live/key-concepts> |
-| What a subscription is, mesh propagation | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
-| Transport selection strategy, platform radios | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
-
-See `docs/SDK-SKILL-TEMPLATE.md` §1 for who owns contested topics such as platform
-permissions and transport-condition values.
+| DQL syntax and semantics | `write-dql` | <https://docs.ditto.live/dql/dql> |
+| CRDTs, document shape | `data-modeling` | <https://docs.ditto.live/key-concepts> |
+| What a subscription syncs | `sync-subscriptions` | <https://docs.ditto.live/sdk/latest/sync/syncing-data> |
+| Transport strategy, radios | `ditto-mesh-networking` | <https://docs.ditto.live/sdk/latest/sync/customizing-transport-configurations> |
+| OS permission keys | `native-app-config` | <https://docs.ditto.live/sdk/latest/install-guides/flutter> |
 
 ## Supported versions and packages
 
-Package: `TODO_PACKAGE_COORDINATE`. Published API reference: TODO_URL.
-
-**[`references/versions.md`](references/versions.md) owns every fact that differs across
-version lines**, including package coordinates per version and the minimum toolchain.
-This section is a pointer, not a claim.
-
-For a new app/POC, resolve the latest stable release through the package manager.
-**5.2.0 is the latest known baseline**, not a permanent dependency recommendation.
-Preserve existing pins; check release notes and validate code for newer releases.
-v4 and v5 are different APIs, not two versions of one.
+Package `ditto_live` (pub.dev), one for every platform; cross-line facts:
+[versions.md](references/versions.md). **5.2.0 is the newest line this skill knows**, not
+a pin: new apps run `flutter pub add ditto_live`; keep an existing pin. Flutter 3.24.5+
+(only 3.50.0 was executed).
 
 ## Capability exceptions
 
-<!--
-  ONLY the rows whose Support is not `yes`. The full twenty-row map with
-  Support / Evidence / Targets lives in README.md.
-  If there are no exceptions, write exactly: "None — all twenty capabilities are
-  `Support: yes`. See README.md for the full map."
-  Keep the Detail cell to the fact that changes what an agent does. README.md carries
-  the evidence; these cells are one line each but cost ~500 characters apiece.
--->
-
-Full twenty-row map with evidence: [`README.md`](README.md).
+Full map with evidence: [README.md](README.md).
 
 | ID | Capability | Support | What changes for you |
 |----|-----------|---------|--------|
-| TODO | TODO | TODO | TODO — §7 requires a reason for every non-`yes` row |
+| CAP-14 | Sync status and local commit tracking | partial | No status API: compare `commitID` with `system:data_sync_info`. That query can hang on every line while a peer syncs: `.timeout()` each poll, never await it on a UI path |
+| CAP-15 | Logging, diagnostics and stats | partial | No disk-usage API: `system:system_info` `fs_*` keys, empty at first |
+| CAP-20 | Preview and platform-specific APIs | partial | No Data Streams or encryption at rest; V2 observers (5.1.0+) are `@experimental` |
+
+**Flutter Web** ([web.md](references/web.md)): no P2P — `sync.start()` throws if one is
+enabled (5.0.x/5.1.x: `updateTransportConfig`), so gate with `kIsWeb`; an in-memory
+store; no file-path attachments or `exportLogs`.
 
 ## Minimum viable app
 
-<!--
-  The SHORTEST form that actually runs: open -> subscribe -> observe -> write.
-  Target ~25 lines. It must agree with examples/minimal-app.md, which is the
-  normative, compiled-and-run program. Do not duplicate the whole thing here.
--->
+<!-- dart-prelude: ditto -->
+```dart
+await Ditto.init(); // required on 5.0.x; memoized
+final ditto = await Ditto.open(const DittoConfig());
+ditto.setOfflineOnlyLicenseToken('REPLACE_ME_WITH_YOUR_LICENSE');
+ditto.sync.start();
 
-```TODO_LANG
-TODO
+final subscription = ditto.sync.registerSubscription('SELECT * FROM cars');
+// No onChange: one `changes` listener, attached right away.
+final observer = ditto.store.registerObserver(
+  'SELECT * FROM cars WHERE color = :color',
+  arguments: {'color': 'blue'},
+);
+final cars = <Map<String, dynamic>>[];
+final changes = observer.changes.listen((result) {
+  cars
+    ..clear()
+    ..addAll(result.items.map((item) => item.value)); // copy the Iterable
+});
+await ditto.store.execute(
+  'INSERT INTO cars DOCUMENTS (:car) ON ID CONFLICT DO UPDATE',
+  arguments: {
+    'car': {'_id': 'blue-toyota', 'make': 'Toyota', 'color': 'blue'},
+  },
+);
+
+await changes.cancel(); // while open: listener, observer, subscription
+observer.cancel();
+subscription.cancel();
+await ditto.close();
 ```
 
-Complete program, with dependency declaration and a real run transcript:
-[`examples/minimal-app.md`](examples/minimal-app.md).
+Complete program and transcripts: [minimal-app.md](examples/minimal-app.md).
 
 ## Concurrency and threading model
 
-<!--
-  The single most common source of language-specific bugs. The per-API table of WHICH
-  thread/executor/dispatcher each callback arrives on goes in references/concurrency.md.
-  Here: the numbered rules that follow from it, one to two lines each. Cover —
-  - which calls block and must not run on the UI thread
-  - which are suspend / async / return a future, and what awaits them
-  - how a callback is cancelled, and whether one can still fire after
-  - what is safe to call from inside a callback, and what deadlocks
--->
+Detail: [concurrency.md](references/concurrency.md).
 
-Per-API callback table and full reasoning:
-[`references/concurrency.md`](references/concurrency.md).
-
-1. TODO
-2. TODO
+1. Every callback runs on the registering (UI) isolate between frames: copy
+   `result.items` to a list and return; never `setState` the `Iterable`.
+2. `execute` runs on a worker isolate on native 5.x, on the caller on 4.14.x and web:
+   `LIMIT` web queries.
+3. `Ditto` and `Store` cannot cross isolates; pass plain maps to `Isolate.run`.
+4. `onChange` is not awaited: slow consumers use `registerObserverWithSignalNext`
+   (5.1.0+), `signalNext()` in `finally`, or delivery stops silently.
+5. `sync.start()` and `register*` throw at the call; `execute` and `open` fail their
+   `Future`. In `transaction`, use `tx.execute`.
 
 ## Object lifetimes and retention
 
-<!--
-  The second most common source of bugs. The per-handle table goes in
-  references/lifetimes.md. Here: the one rule about the instance, plus the single
-  most surprising retention fact in this language, with its observable symptom.
--->
-
-Per-handle table and teardown order: [`references/lifetimes.md`](references/lifetimes.md).
-
-TODO
+One `Ditto` per process, opened before `runApp` by a service; losing the reference leaves
+the directory locked, and closing then re-opening in one process aborted or hung the app.
+**Dropping a handle never cancels it**: cancel observers, subscriptions, presence
+observers and fetchers while Ditto is open. Close only on exit, never in
+`State.dispose()`. Table: [lifetimes.md](references/lifetimes.md).
 
 ## Anti-patterns
 
-<!--
-  Anything that changes the code an agent emits BY DEFAULT and has a nameable symptom:
-  a compiler error, an exception name, a profiler symbol, or a measured factor.
-  Performance footguns belong HERE, not in best-practices.md.
+Both forms and diagnosis: [anti-patterns.md](references/anti-patterns.md).
 
-  ONE BULLET EACH — name, symptom, fix. The wrong-and-right code pair goes in
-  references/anti-patterns.md. A code block per anti-pattern will blow the §11 budget.
-
-  Mine sdk/latest/migration-guides/<lang>-v4.mdx for real ones -- its "FORBIDDEN
-  patterns" blocks name constructs that genuinely fail. Check it exists for your
-  language first; the named blocks are unevenly distributed (spec Appendix B).
--->
-
-Wrong and right forms, with the diagnosis for each:
-[`references/anti-patterns.md`](references/anti-patterns.md).
-
-- **TODO_ANTIPATTERN_NAME.** TODO — the exact compiler error, exception name, profiler
-  symbol, or measured factor. Never the word "slow". Then the fix, in one clause.
+- **`StreamBuilder` over `changes`.** A rebuild throws `Stream has already been listened
+  to.`; the observer outlives it. A repository holds the listener, exposes a `ValueNotifier`.
+- **Cancelling only a V1 observer's listener.** It keeps running and firing `onChange`.
+  Cancel the subscription, then `observer.cancel()`.
+- **`onChange` on a long-lived observer.** Memory grows per change: results also buffer
+  in the unlistened `changes` (5.0.x–5.2.0).
+- **macOS keys only in `DebugProfile.entitlements`.** Release builds read
+  `Release.entitlements`, so the keys are missing (the install guide reports `Operation
+  not permitted (os error 1)`). Add them to both.
+- **A holder or retry to survive hot restart.** `Ditto.open` fails `File already locked`
+  (5.1.0 hangs). Debug only: a per-launch directory; release passes none.
+- **P2P gated on `defaultTargetPlatform`.** It is the host OS on web, so LAN turns on and
+  `Expected valid TransportConfig` throws. `kIsWeb`, then `Ditto.currentPlatform`.
 
 ## Version differences
 
-<!-- Short form only: rows that change emitted code. Full table in references/versions.md. -->
+Full delta: [versions.md](references/versions.md).
 
-Full delta, including on-disk store migration:
-[`references/versions.md`](references/versions.md).
-
-| Concern | 4.14.x | 5.0.x / 5.1.x / 5.2.0 |
+| Concern | 4.14.x | 5.x |
 |---|---|---|
-| Initialization | TODO | TODO |
-| Query model | TODO | TODO |
-| Concurrency | TODO | TODO |
+| Open | `Ditto.open(identity: …)` | `Ditto.open(DittoConfig(…))`, after `Ditto.init()` |
+| Sync, auth | `startSync()`, `AuthenticationHandler` | `sync.start()`; a server config sets `setExpirationHandler` first |
+| Default directory | `{Documents}/ditto` | `ditto-{databaseID}` |
+
+On 5.0.x `setAllPeerToPeerEnabled(false)` leaves AWDL and Wi-Fi Aware on.
 
 ## References
 
-<!--
-  ANNOTATED BULLETS, ordered by value — not a question->filename table. Each bullet
-  carries its file's trap inline, so an agent that does not open the file still emits
-  correct code. Annotate in proportion to trap density: a footgun-heavy reference earns
-  three lines, presence.md earns half of one. Spec §10.
--->
+Load a reference only when its topic is actually in play; these files teach the
+non-obvious traps, not how Flutter works. Preview a file's contents; read one section.
 
-Load a reference only when its topic is actually in play — these files teach the
-non-obvious traps, not how the framework works.
-
-- [`references/setup.md`](references/setup.md): install, platform minimums, permissions
-  and build config. TODO_THE_BUILD_TRAP.
-- [`references/connect.md`](references/connect.md): opening, authenticating, start/stop.
-  TODO_THE_ORDERING_TRAP.
-- [`references/concurrency.md`](references/concurrency.md): which thread or executor every
-  callback arrives on. TODO.
-- [`references/lifetimes.md`](references/lifetimes.md): what to retain and the symptom
-  when you don't; teardown order. TODO.
-- [`references/observers.md`](references/observers.md): TODO_THE_BACKPRESSURE_TRAP.
-- [`references/anti-patterns.md`](references/anti-patterns.md): the silent-failure shapes
-  above, with both forms and the diagnosis.
-- [`references/errors.md`](references/errors.md): what an error means and how to recover,
-  including the ones you cannot catch.
-- [`references/versions.md`](references/versions.md): every cross-version fact — package
-  shape, platform minimums, API renames.
-- [`references/testing.md`](references/testing.md): TODO_THE_TEST_HARNESS_TRAP.
-- [`references/store.md`](references/store.md): DQL execution, transactions, indexing, eviction.
-- [`references/sync.md`](references/sync.md): subscriptions, sync scopes, sync status.
-- [`references/transports.md`](references/transports.md): changing transports safely.
-- [`references/web.md`](references/web.md): Flutter Web differences; never `--wasm`.
-- [`references/widget-integration.md`](references/widget-integration.md): service,
-  repository, view model; lifecycle; hot restart.
-- [`references/attachments.md`](references/attachments.md): TODO.
-- [`references/presence.md`](references/presence.md): who is on the mesh right now.
-- [`references/observability.md`](references/observability.md): logging and disk usage.
-- [`references/preview.md`](references/preview.md): preview and platform-specific APIs.
-- [`best-practices.md`](best-practices.md): architectural judgement with no single right
-  answer — where the instance lives, one broad observer vs many narrow.
-- [`examples/minimal-app.md`](examples/minimal-app.md): the complete program, compiled and run.
+- [widget-integration.md](references/widget-integration.md): service, repository, view
+  model; lifecycle; hot restart (V2 observers crash after `R` on a remote change).
+- [web.md](references/web.md): never `--wasm` (every result repeats the first);
+  `wasmShimUrl` for a site below `/`; CSP `'wasm-unsafe-eval'`; `execute` blocks frames.
+- [observers.md](references/observers.md): the `onChange` buffering defect; one `changes`
+  listener per observer, ever; V1 vs V2 cancellation; signal-next.
+- [connect.md](references/connect.md): close on failed configure; expiration handler
+  before `sync.start()`; a rejected login is `AuthResponse.exception`.
+- [setup.md](references/setup.md): 5.1.0+ APKs need the compileSdk override, simulator
+  builds the Podfile fix; `DittoSyncPermissions`.
+- [lifetimes.md](references/lifetimes.md), [concurrency.md](references/concurrency.md),
+  [anti-patterns.md](references/anti-patterns.md): detail behind the sections above.
+- [errors.md](references/errors.md): catch `DittoException` and `DittoError`; unrelated.
+- [versions.md](references/versions.md): per-line APIs, behaviour, migration.
+- [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; status.
+- [store.md](references/store.md): `execute`, transactions, indexes, `EVICT`.
+- [transports.md](references/transports.md): `updateTransportConfig` returns `void`.
+- [testing.md](references/testing.md): Ditto does not load under host `flutter test`:
+  fakes there, `integration_test` for the real store; logging off in tests only.
+- [attachments.md](references/attachments.md), [presence.md](references/presence.md),
+  [observability.md](references/observability.md), [preview.md](references/preview.md).
+- [best-practices.md](best-practices.md): placement, observers, state, verification.
+- [examples/minimal-app.md](examples/minimal-app.md): the complete program.

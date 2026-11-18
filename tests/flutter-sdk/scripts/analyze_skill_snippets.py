@@ -12,7 +12,7 @@ blocks) are already compiled by the fixtures and are ignored here. Every other
                                    the default (5.2) line; combinable with the prelude
   <!-- dart-fragment: pseudo-diff|v4-rename-table|partial-class-member -->
                                    skipped; no other reason is accepted, and a fragment
-                                   that contains `ditto.` or `Ditto.` fails
+                                   that names a member of `ditto` or `Ditto` fails
 
 Fences are written one file per fence into a copy of tests/flutter-sdk/snippet_check
 (re-pinned per `dart-version:` from versions.json; the committed package is never
@@ -62,6 +62,9 @@ PACKAGE = HARNESS / "snippet_check"
 DEFAULT_LINE = "5.2"
 FRAGMENT_REASONS = {"pseudo-diff", "v4-rename-table", "partial-class-member"}
 PRELUDE_VALUES = {"ditto"}
+# A fragment that names a Ditto member (`ditto.store`, `Ditto.open`) must compile instead.
+# A sentence ending in "Ditto." or a word such as `myditto.x` does not count.
+DITTO_CALL_RE = re.compile(r"\b[Dd]itto\.[A-Za-z_]")
 PRELUDE_SOURCE = "import 'package:ditto_live/ditto_live.dart';\n\nFuture<void> snippet(Ditto ditto) async {\n"
 PRELUDE_BODY_LINE = 4  # 1-based line of the first fence line inside the wrapper
 
@@ -162,7 +165,7 @@ def classify(fence: Fence, lines: dict[str, str], errors: list[str]) -> str | No
                 f"{where}: unknown dart-fragment reason '{fragment}'; accepted: "
                 + ", ".join(sorted(FRAGMENT_REASONS))
             )
-        elif "ditto." in fence.code or "Ditto." in fence.code:
+        elif DITTO_CALL_RE.search(fence.code):
             errors.append(f"{where}: a dart-fragment fence calls Ditto, so it must compile; remove the marker")
         return None
     prelude = fence.markers.get("dart-prelude")

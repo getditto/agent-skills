@@ -494,6 +494,27 @@ jobs:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
         run: tests/flutter-sdk/scripts/run-fixture.sh v4_app macos 4.14 integration_test/v4_test.dart
 
+  # Every hand-written ```dart fence in the skill (SKILL.md's minimum viable app included)
+  # must format and analyze against the pinned ditto_live lines, and every generated copy
+  # must match its fixture region byte for byte. Needs no license.
+  skill-snippets:
+    name: Analyze the skill's Dart fences and check snippet sync
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Read the pins
+        id: pins
+        run: echo "flutter=$(jq -er .flutter tests/flutter-sdk/versions.json)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ steps.pins.outputs.flutter }}
+      - name: Format and analyze every Dart fence
+        run: FLUTTER="$(command -v flutter)" python3 tests/flutter-sdk/scripts/analyze_skill_snippets.py
+      - name: Check generated snippets match the fixtures
+        run: python3 scripts/sync-snippets.py --check
+
   # The skill ships generated copies of marked regions of the fixtures. Rebuild the
   # minimal app from the skill's Markdown alone, so a copy that matches its source
   # but does not build on its own fails. Builds only, no license define.
@@ -543,8 +564,10 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           cd "$RUNNER_TEMP/from-skill"
-          flutter analyze
+          flutter analyze --fatal-infos
           if [[ "$TARGET" == apk ]]; then
+            # No license define: the web bundle embeds none, and it is not uploaded.
+            flutter build web
             flutter build apk --debug
           else
             flutter build ios --simulator --debug --no-codesign

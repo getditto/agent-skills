@@ -5,7 +5,7 @@ The skill ships generated copies of marked regions of this harness (see
 scripts/sync-snippets.py). A region can be identical to its source and still not
 build on its own, for example if it relies on a fixture file outside the markers.
 This script builds a project from `flutter create` plus only the code and platform
-configuration an agent gets from skills/flutter-sdk, so CI can compile it.
+configuration an agent gets from skills/flutter-sdk, so CI can analyze it and build it for Android, the iOS Simulator and the web.
 
     python3 tests/flutter-sdk/build-from-skill.py <out-dir>
 
@@ -124,7 +124,7 @@ def main() -> None:
         sys.exit(f"{out} already exists")
     command = flutter_command()
     templates = flutter_root(command) / "packages/flutter_tools/templates/cocoapods"
-    subprocess.run(command + ["create", "--project-name", NAME, "--org", ORG, "--platforms", "android,ios,macos",
+    subprocess.run(command + ["create", "--project-name", NAME, "--org", ORG, "--platforms", "android,ios,macos,web",
                               "--no-pub", str(out)], cwd=HARNESS, check=True, stdout=subprocess.DEVNULL)
 
     example = SKILL / "examples/minimal-app.md"

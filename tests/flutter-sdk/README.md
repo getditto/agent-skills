@@ -181,8 +181,13 @@ the license; the script deletes the build output on exit.
 `build-from-skill.py <out-dir>` builds a project from `flutter create` plus only what
 `skills/flutter-sdk` publishes: the program and dependencies from
 `examples/minimal-app.md`, and the Podfile, Info.plist, entitlements, Gradle and
-manifest snippets from `references/setup.md`. CI's `from-skill` job analyzes it and
-builds an APK and an iOS Simulator app.
+manifest snippets from `references/setup.md`. CI's `from-skill` job analyzes it with
+`flutter analyze --fatal-infos` and builds a web bundle, a debug APK and an iOS
+Simulator app. Two inputs come from this harness, not the skill: `lib/main.dart` (the
+widget that runs the program) and `minimal_app/pubspec.lock`, which seeds the
+resolution so `pub get` starts from the age-checked fixture lock instead of resolving
+fresh; the job then age-checks the resulting lock. The seeded lock means the job does
+not show what a fresh `flutter pub add ditto_live` would resolve.
 
 `scripts/hot-restart.py --device macos|chrome --mode v1|v2|holder [--peer]` runs
 `integration_test/hot_restart/hot_restart_app.dart` with `flutter run` (debug), sends
@@ -259,8 +264,9 @@ runs are debug builds.
 ### Native behavior probes, 2026-11-17
 
 Same toolchain as above. macOS desktop, debug builds, `scripts/run-probes.sh macos <line>`
-with `PROBE_DEFAULT_LOGGING` unset. Every probe name below passed on every line listed;
-nothing else was run. **Ditto logging disabled in the harness (see Finding 1)**: every
+with `PROBE_DEFAULT_LOGGING` unset. Every probe name below passed on every line listed,
+except the first version of `system_info_test.dart`, which failed in the full run (see the
+table); nothing else was run. **Ditto logging disabled in the harness (see Finding 1)**: every
 probe except `init_once` (which does not use the harness) ran with
 `DittoLogger.isEnabled = false`, so these results do not describe an app with Ditto's
 default logging.
@@ -574,7 +580,7 @@ debug builds unless stated:
 | `ios-build` (`--simulator --no-codesign`) | macos-26 arm64 | 4.14.7, 5.2.0 | pass |
 | `macos` | macos-26 arm64 | 5.0.4, 5.1.0, 5.2.0 | pass: `init_once`, minimal app, every probe directory at or below the line |
 | `v4` | macos-26 arm64 | 4.14.7 | pass |
-| `from-skill` (analyze, `build apk --debug`, `build ios --simulator --debug`) | ubuntu-24.04, macos-26 arm64 | 5.2.0 | pass |
+| `from-skill` (analyze, `build apk --debug`, `build ios --simulator --debug`; `--fatal-infos` and `build web` added later) | ubuntu-24.04, macos-26 arm64 | 5.2.0 | pass |
 | `migration`, macOS then iPhone 17 Pro (iOS 26.5) | macos-26 arm64 | 5.1.0 → 5.2.0 | pass |
 | `macos-release` | macos-26 arm64 | 5.2.0 | pass |
 | `web` (`flutter drive` targets, `web-probe.py --skip-manual`) | ubuntu-24.04, the image's Chrome and ChromeDriver | 5.1.0, 5.2.0 | pass |
@@ -592,6 +598,15 @@ debug builds unless stated:
   with no test output. Any other failure or timeout is never retried. On the third
   and fourth runs every iOS target passed on its first attempt, so the retry has not
   been exercised in CI.
+- **Windows, one flaky `v50` run.** One `windows` run of `v50` exited 1 although its
+  output listed 30 tests, all passing, and its summary line counted 24; the rerun of the
+  same commit passed 30 of 30. No test failure was printed and the cause was not
+  determined; it has not recurred.
+- **Pull requests from forks go red on the license check.** GitHub does not pass the
+  `DITTO_OFFLINE_LICENSE` secret to workflows run for a fork, so every job that needs
+  the license fails at "Check the offline license is configured". The jobs that need no
+  license (`from-skill`, `skill-snippets`, the builds) still run; a maintainer reruns the
+  rest from a branch in this repository.
 
 ## Findings that changed a research lead
 
@@ -683,7 +698,8 @@ debug builds unless stated:
 - **Sync status is more than `commitID`.** The local `system:data_sync_info`
   collection, queried through `store.execute`, reports each peer's
   `synced_up_to_local_commit_id`; see Manual records, "system:data_sync_info while peers
-  connect", for the runs and the hang they showed.
+  connect", for the runs and the hang they showed, and "system:data_sync_info hang,
+  standalone app" for the counts on every released line, 4.14.7 included.
 
 ## Manual records
 
@@ -940,7 +956,47 @@ ran an extra `execute(...).timeout(5 s)` before each poll passed 4 of 4 on 5.1.0
 documents, then one with `synced_up_to_local_commit_id: -1`, then the commit ID. The
 cause was not determined. `execute` runs the native query on a worker isolate on 5.1.0+
 and in a `compute` isolate on 5.0.x (source), so the hang is probably in the native
-call (inference).
+call (inference; the samples in the next record confirm it).
+
+### system:data_sync_info hang, standalone app, 2026-11-18
+
+The hang above, reproduced outside the harness and verified by a second, independent
+rebuild. A standalone Flutter app (`flutter create --platforms=macos --empty`), macOS
+27.2.1 arm64, Flutter 3.50.0 (FVM), Xcode 27.2, debug builds, `ditto_live` pinned per
+line, the license through `--dart-define-from-file`. One process per run, fresh
+temporary directories: a writer instance listens on TCP `127.0.0.1:<free port>`, a reader
+instance in the same process connects and subscribes, every peer-to-peer transport off on
+both; the writer inserts one document, then polls
+`SELECT * FROM system:data_sync_info` every 100 ms (50 polls). Each `execute` is guarded
+by a 30 s timer that reports `HANG`; a runner bounds each run at 90 s, samples a hung
+process with `sample <pid> 5` and kills it. A passing run syncs at poll 2 to 4 and ends
+after about 5.5 s; a hang was always at poll 2, 3 or 4. On 4.14.7 (`execute` calls the
+core synchronously on the UI isolate, so the timer cannot fire) the runner flags 30 s
+without output instead. Ditto logging was off (`DittoLogger.isEnabled = false` before any
+open) or at its default, as noted. Hung runs out of runs:
+
+| Mode | 4.14.7 | 5.0.4 | 5.1.0 | 5.2.0 |
+|---|---|---|---|---|
+| Fresh process, no earlier `close()` (logging off and default combined) | 5/10 | 1/15 | 0/15 | 8/15 |
+| After five earlier open/insert/close cycles, logging off | 1/5 | 1/5 | 1/5 | 4/5 |
+| Independent re-run, fresh process | 4/10 | — | — | 6/10 |
+| Control: `SELECT * FROM cars`, same peer, logging off | 0/5 | 0/10 | 0/10 | 0/10, re-run 0/5 |
+| Control: `system:data_sync_info`, no reader instance, logging off | 0/5 | 0/5 | 0/5 | 0/5, re-run 0/5 |
+
+On 5.2.0 with `Store.experimentalSkipExecuteIsolateOffload = true` (the worker isolate
+bypassed) it hung 2 of 5 runs, freezing the UI isolate. Every sampled hang, on every
+line, was blocked in the native core's statement execution
+(`dittoffi_try_exec_statement`, parked in the runtime's `block_on`), not in the Dart
+dispatch layer, with no garbage-collector finalizer frame: it is not Finding 1. It hangs
+with logging disabled and in a fresh process with no earlier `close()`, and it needs both
+the `system:data_sync_info` collection and a syncing peer. The cause was not determined.
+Differences between modes on one line are within the noise at these counts. A test that
+bounds each poll with `.timeout(const Duration(seconds: 10))` failed on 5.2.0 in 2 of 5
+runs with `TimeoutException after 0:00:10.000000: Future not completed`: the timeout ends
+the wait, not the query.
+
+The harness's own manual probe (`integration_test/manual/sync_status_test.dart`, the
+table in the record above) was not re-run.
 
 ### Disk usage in system:system_info, 2026-11-18
 

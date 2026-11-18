@@ -21,7 +21,7 @@ event loop, one at a time, between frames.
 | API | Where its work or callback runs |
 |---|---|
 | `store.execute` | 5.1.0+ native: a long-lived worker isolate per `Ditto`, spawned on the first call and ended by `close()`; concurrent calls queue on it. 5.0.x native: a new isolate per call (`compute`). 4.14.x and **web**: the calling isolate, so a large result blocks frames ([web.md](web.md#execute-on-the-main-thread)). The `Future` completes on the calling isolate on every line |
-| `Transaction.execute` | Native, every line: an asynchronous core call (`dittoffi_transaction_execute_async_throws`) whose completion is a `NativeCallable.listener` on the calling isolate; not the execute worker and not `compute`, so it does not queue behind `store.execute` calls. Web: the calling isolate |
+| `Transaction.execute` | Native, every line: an asynchronous core call (`dittoffi_transaction_execute_async_throws`) whose completion is a `NativeCallable.listener` on the calling isolate; not the execute worker and not `compute`, so it does not queue behind `store.execute` calls. Web: the same asynchronous core call, whose JavaScript continuation completes the `Future` on the calling isolate, the only one a web app has (`lib/src/bridge/wasm/store.dart:471-491` @ `sdk-release-5.2.0`) |
 | `Ditto.open` | 5.2.0 native: the open runs in a `compute` isolate; the `Future` completes on the caller |
 | `registerObserver` `onChange` and `changes` | The registering isolate, in the zone that registered it: through a port on 5.0.4 and 5.2.0, a `NativeCallable.listener` on 5.1.0 |
 | `registerObserverV2`, `registerObserverWithSignalNext` (5.1.0+) | The registering isolate (`NativeCallable.listener`) |
