@@ -76,7 +76,9 @@ Future<void> initDittoForSubpath() => Ditto.init(
 ```
 <!-- /snippet -->
 
-Imports: `package:ditto_live/ditto_live.dart` and `package:flutter/foundation.dart`.
+Imports: `package:ditto_live/ditto_live.dart` and `package:flutter/foundation.dart`. A
+`main()` that also calls `WidgetsFlutterBinding.ensureInitialized()` and `runApp` needs
+`package:flutter/widgets.dart` (or `material.dart`) too.
 
 **Call it first.** `Ditto.init` is memoized: the first call's URLs win, and
 `Ditto.open` calls `init()` without URLs on 5.1.0+ (`ditto.dart:88-93, 186`). Await
