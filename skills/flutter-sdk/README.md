@@ -156,8 +156,9 @@ did not run, the note says so and gives the source that shows the API exists on 
   `system:data_sync_info` in manual runs on macOS only. Not run on web; the web bridge
   reads the commit ID (`dittoffiQueryResultCommitId`, `bridge/wasm/store.dart:80-84` @
   `sdk-release-5.2.0`), and the collection is a DQL query through the same `execute`.
-- **CAP-15 `executed`**: logging and `exportLogs` on macOS and web; the
-  `system:system_info` disk keys on macOS, Linux and Windows, not on web.
+- **CAP-15 `executed`**: logging on macOS and web; `exportLogs` on macOS (on web, its
+  synchronous `UnsupportedError`); the `system:system_info` disk keys on macOS, Linux
+  and Windows, not on web.
 - **CAP-17 `executed`** (`EVICT`) on the same native targets as CAP-09. Not run on web;
   a DQL statement through the same `execute` as CAP-10.
 - **CAP-18 `executed`** covers widget tests with fakes on the host and
@@ -165,8 +166,10 @@ did not run, the note says so and gives the source that shows the API exists on 
   and Chrome (`flutter drive`); Ditto itself does not load under a host `flutter test`.
 - **CAP-19 `executed`** covers the 4.14.7 API in the v4 fixture on macOS and the 5.1.0 →
   5.2.0 default-directory upgrade on macOS and the iOS Simulator. An on-disk 4.14 → 5.x
-  upgrade was not run, and 4.14.7 was not run on web (its pub.dev `pubspec.yaml` lists
-  `web` among its platforms).
+  upgrade was not run, and 4.14.7 was not run on web. Its `pubspec.yaml` lists `web`
+  among its platforms (`flutter/ditto_live/pubspec.yaml:74-80` @ `sdk-release-4.14.7`)
+  and it ships a web bridge (`flutter/ditto_live/lib/src/core/wasm/` @
+  `sdk-release-4.14.7`).
 
 ## Verification
 

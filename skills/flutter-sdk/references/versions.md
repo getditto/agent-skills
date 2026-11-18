@@ -52,7 +52,7 @@ The install guide asks for Flutter 3.24.5 or later
 |---|---|---|
 | 4.14.x | Required ("you *must* call") | dartdoc, `flutter/ditto_live/lib/src/ditto.dart` @ `sdk-release-4.14.7` |
 | 5.0.x | Required: `open` throws ``DittoError(Ditto not initialized. …)`` without it | source, `lib/src/ditto.dart:134,289`, ditto_live 5.0.4 |
-| 5.1.0, 5.2.0 | Optional: `open` calls it. Still required before `Ditto.openSync` and before any `DittoLogger` member | source, `ditto.dart` @ `sdk-release-5.2.0`; the logger case executed on all three 5.x lines |
+| 5.1.0, 5.2.0 | Optional: `open` calls it. Still required before `Ditto.openSync`, `Ditto.defaultRootDirectory` and any `DittoLogger` member | source, `ditto.dart` @ `sdk-release-5.2.0` (`defaultRootDirectory`: `ditto.dart:65-68` @ `sdk-release-5.1.0` and `sdk-release-5.2.0`, `lib/src/ditto.dart:63-66` in 5.0.4); the logger case executed on all three 5.x lines |
 
 `init` is memoized, so cross-line code calls it unconditionally.
 
@@ -141,6 +141,17 @@ Future<Ditto> openV4Ditto({
 ```
 <!-- /snippet -->
 
+**4.14.x has no non-deprecated way to open or start sync.** Every identity class,
+`SiteID` and `startSync()`/`stopSync()`/`isSyncActive` are `@Deprecated`
+(`src/identity.dart`, `src/shared/site_id.dart:17`, `src/ditto.dart:200-224` under
+`flutter/ditto_live/lib/` @ `sdk-release-4.14.7`). Their message names
+`ditto.sync.start()`, but `Sync` has no `start`, `stop` or `isActive` at that tag
+(`src/sync.dart`): that is the v5 API. So on 4.14.x, "never a deprecated API" means
+"nothing deprecated beyond these". Code like the block above reports
+`deprecated_member_use` infos and fails `flutter analyze --fatal-infos`; add
+`// ignore_for_file: deprecated_member_use` to the file that opens Ditto, as the tested
+fixture does, and keep `--fatal-infos` for everything else.
+
 The v5 form is `DittoService.open` in [connect.md](connect.md#open-configure-close-on-failure).
 The identity classes map to a `connect` mode (migration guide; 4.14.7 marks every
 identity class `@Deprecated`):
@@ -218,6 +229,16 @@ otherwise <https://docs.ditto.live/dql/strict-mode>.
   `absolutePersistenceDirectory` = `{Documents}/ditto-<databaseID>`, returned the
   document, and created nothing under Application Support. With logging on it logs
   `Conflicting pre-existing default persistence directories found. Since the v5 default contains no ditto data, defaulting to legacy v4.`
+  **Conditions, from source, not executed:** 5.2.0 looks for the 5.1.0 directory only
+  when `databaseID` is non-null; with `databaseID: null` it checks only the v4 path. It
+  builds the old name from the ID with characters outside `[A-Za-z0-9_-]` replaced but
+  not lowercased, while the default directory uses the lowercase ID (`DittoConfig`
+  dartdoc, `ditto_config.dart:46-49`). So a mixed-case ID on a case-sensitive file
+  system (Android, Linux) would miss the old store (`resolveLegacyPersistenceDirectory`
+  and `_sanitizeDatabaseId`, `lib/src/persistence_directory.dart:40-70`, called at
+  `lib/src/ditto.dart:392-401`, @ `sdk-release-5.2.0`). The executed runs used the
+  default all-zero ID on macOS's case-insensitive APFS. With a mixed-case or null ID,
+  pass the old path as `persistenceDirectory` or test the upgrade first.
 - **Not verified:** whether a store opened by 5.x can be opened again by 4.14.x
   (treat the upgrade as one-way), how long a large store takes to open the first time,
   and what an interrupted first open leaves behind. The wipe-and-resync path is to
@@ -246,9 +267,15 @@ otherwise <https://docs.ditto.live/dql/strict-mode>.
 | `HttpListenConfig.staticContentPath` | No replacement |
 | `DittoLogger.setLogFile` | No replacement; `DittoLogger.exportLogs` |
 | `ManualIdentity`, `SiteID`, `DocumentID` exports | No replacement |
+| `QueryResult.mutatedDocumentIDs`, a getter returning `Iterable<DocumentID>` | `mutatedDocumentIDs()`, a method returning `List<dynamic>`: the decoded `_id` values. Recomputed on each call, so call it once |
 
 From the migration guide's tables, each checked present in 4.14.7 source and absent from
-the 5.0.4 public API.
+the 5.0.4 public API. The `mutatedDocumentIDs` change is not in the guide's tables: a
+deprecated getter at `flutter/ditto_live/lib/src/store/execute.dart:65-70` @
+`sdk-release-4.14.7`, a method at `sdks/flutter/ditto_live/lib/src/store/execute.dart:71`
+@ `sdk-release-5.1.0` and `sdk-release-5.2.0` (`lib/src/store/execute.dart:71` in the
+5.0.4 pub archive). v4 code such as `result.mutatedDocumentIDs.map((id) => id.value)`
+does not compile on v5.
 
 ### New in v5
 
@@ -267,6 +294,7 @@ above.
 - [ ] `startSync()` → `ditto.sync.start()`; set transports explicitly, one by one.
 - [ ] Remove `LIMIT`/`ORDER BY` from subscriptions.
 - [ ] Apply the renames above (`peerKey`, `isConnectedToDittoServer`, `absolutePersistenceDirectory`, `remotePeers` as a `Set`).
+- [ ] `result.mutatedDocumentIDs` (`DocumentID`s) → `result.mutatedDocumentIDs()` (raw `_id` values; no `.value`).
 - [ ] Re-check DQL that writes nested objects against strict mode off.
 - [ ] Decide the persistence directory for upgraded installs; test the upgrade on a copy of a real v4 store.
 - [ ] Android: `minSdk` 24 and, for 5.1.0+, the compileSdk override; iOS/macOS: the Podfile platform lines ([setup.md](setup.md#cap-01-prerequisites-and-install)).

@@ -114,8 +114,9 @@ Give `configure` the identity step for the connect mode, then transports, then
 - **Pass no `persistenceDirectory` in an app.** The SDK default is `ditto-{databaseID}`
   (lowercase) under `Ditto.defaultRootDirectory`: Application Support on 5.2.0,
   Documents on 5.0.x and 5.1.x. 5.2.0 opens an existing 5.1.0 Documents store in place
-  (executed on macOS and the iOS Simulator: same path, same documents). Details:
-  [versions.md](versions.md).
+  (executed on macOS and the iOS Simulator with the default all-zero ID: same path, same
+  documents). From source, not executed: only with a non-null `databaseID`, and on a
+  case-sensitive file system (Android, Linux) only if it is lowercase. Details: [versions.md](versions.md#on-disk-store-migration).
 - A relative path resolves against `Ditto.defaultRootDirectory`; the absolute result is
   `ditto.absolutePersistenceDirectory` (dartdoc, `ditto_config.dart` @ `sdk-release-5.2.0`).
 - Two live instances on one directory fail. Executed (macOS, 5.2.0):

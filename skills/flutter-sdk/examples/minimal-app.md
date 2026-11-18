@@ -122,6 +122,8 @@ Future<List<String>> runMinimalApp({
 dependencies:
   flutter:
     sdk: flutter
+  # The version this example was tested with. In a new app, run
+  # `flutter pub add ditto_live` to get the latest stable release.
   ditto_live: 5.2.0
 ```
 <!-- /snippet -->

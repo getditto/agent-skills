@@ -16,7 +16,8 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 training on the Ditto Flutter API.** Do not emit the v4 shapes v5 removed —
 `Ditto.open(identity:)`, `OnlinePlaygroundIdentity`, `startSync()`,
 `AuthenticationHandler`, `isConnectedToDittoCloud`, `DittoLogger.setLogFile` — or invent
-API. **API selection:** never a deprecated API; read the `ditto_live` version in
+API. **API selection:** never a deprecated API (on 4.14.x the deprecated open and
+`startSync()` are the only ones); read the `ditto_live` version in
 `pubspec.lock` first and use the best form for that line, preferring one v5 also has.
 Confirm a signature against the installed package — Dart MCP `read_package_uris`, or the
 `ditto_live` entry in `.dart_tool/package_config.json` — before writing one.
@@ -30,7 +31,7 @@ and Flutter Web.
 
 ## When to use this skill
 
-For Flutter/Dart Ditto code. Hand off concepts (each skill may not be installed):
+Hand off concepts (each skill may not be installed):
 
 | Question | Skill | Otherwise |
 |---|---|---|
@@ -112,7 +113,8 @@ Detail: [concurrency.md](references/concurrency.md).
 
 1. Every callback runs on the registering (UI) isolate between frames: copy
    `result.items` to a list and return; never `setState` the `Iterable`.
-2. `execute` runs on a worker isolate on native 5.x, on the caller on 4.14.x and web:
+2. `execute` runs on a worker isolate on native 5.1+ (per call on 5.0.x), on the caller
+   on 4.14.x and web:
    `LIMIT` web queries.
 3. `Ditto` and `Store` cannot cross isolates; pass plain maps to `Isolate.run`.
 4. `onChange` is not awaited: slow consumers use `registerObserverWithSignalNext`
@@ -124,7 +126,7 @@ Detail: [concurrency.md](references/concurrency.md).
 
 One `Ditto` per process, opened before `runApp` by a service; losing the reference leaves
 the directory locked, and closing then re-opening in one process aborted or hung the app.
-**Dropping a handle never cancels it**: cancel observers, subscriptions, presence
+**Never rely on dropping a handle**: cancel observers, subscriptions, presence
 observers and fetchers while Ditto is open. Close only on exit, never in
 `State.dispose()`. Table: [lifetimes.md](references/lifetimes.md).
 
@@ -174,8 +176,6 @@ teach the non-obvious traps.
   before `sync.start()`; a rejected login is `response.exception`.
 - [setup.md](references/setup.md): compileSdk override (5.1.0+), simulator Podfile fix;
   the plugin declares Android permissions, the app requests them at runtime.
-- [lifetimes.md](references/lifetimes.md), [concurrency.md](references/concurrency.md),
-  [anti-patterns.md](references/anti-patterns.md): detail behind the sections above.
 - [errors.md](references/errors.md): catch both `DittoException` and `DittoError`.
 - [versions.md](references/versions.md): per-line APIs and migration.
 - [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; status.

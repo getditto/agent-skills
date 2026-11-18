@@ -39,9 +39,12 @@ resources: they are only usable while it is open.
 
 ## What to retain, and the symptom if you don't
 
-**Dropping a handle never cancels anything.** Every handle below keeps working after its
-last Dart reference is gone, because the native side or the `Store` owns it. Keep the
-handle so you can cancel it.
+**Never rely on dropping a handle to cancel it.** A dropped `SyncSubscription` stayed
+registered in `ditto.sync.subscriptions`, and a V1 observer whose listener was cancelled
+kept running (executed). For the observers, `PresenceObserver` and `AttachmentFetcher`,
+the native side or the `Store` owns the handle, so it keeps working after its last Dart
+reference is gone (source; no probe drops a reference and forces a GC). Dropping a
+`TransportConditionsObserver` was not tested. Keep every handle so you can cancel it.
 
 | Handle | Retain it | Symptom if you get it wrong |
 |---|---|---|
