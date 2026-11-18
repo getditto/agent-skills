@@ -146,6 +146,31 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Interrupts. GNU timeout moves itself and flutter into their own process group, so a
+# Ctrl-C (or a SIGTERM to this script's group) never reaches them, and bash defers a
+# trap while a foreground command runs. So each flutter run is a background job this
+# script waits for: a signal interrupts the wait, the handler stops the job's process
+# tree, and the EXIT trap above deletes the fixture copy.
+PIPELINE_PID=""
+kill_tree() {
+  local child
+  for child in $(pgrep -P "$1" 2>/dev/null); do
+    kill_tree "$child"
+  done
+  kill -TERM "$1" 2>/dev/null || true
+}
+on_signal() {
+  trap - INT TERM HUP
+  if [[ -n "$PIPELINE_PID" ]]; then
+    kill_tree "$PIPELINE_PID"
+    wait "$PIPELINE_PID" 2>/dev/null || true
+  fi
+  exit "$1"
+}
+trap 'on_signal 130' INT
+trap 'on_signal 143' TERM
+trap 'on_signal 129' HUP
+
 # The defines file: created mode 600 (umask 077) and written by Python from the
 # environment, so the license is never a command-line argument.
 DEFINES_FILE="$(umask 077 && mktemp "${TMPDIR:-/tmp}/ditto-defines.XXXXXX")"
@@ -242,6 +267,8 @@ for target in "$@"; do
   while :; do
     attempt=$((attempt + 1))
     target_status=0
+    (
+    set -o pipefail
     {
       echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
       echo "== $FLUTTER_VERSION"
@@ -254,7 +281,11 @@ for target in "$@"; do
         (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
           ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} "${DEFINES[@]}")
       fi
-    } 2>&1 | tee "$attempt_log" || target_status=$?
+    } 2>&1 | tee "$attempt_log"
+    ) &
+    PIPELINE_PID=$!
+    wait "$PIPELINE_PID" || target_status=$?
+    PIPELINE_PID=""
     cat "$attempt_log" >>"$log"
     # FIXTURE_RETRIES re-runs a target only for the known iOS Simulator debug-connection
     # failure: stopped by the timeout (exit 124) after either "The log reader failed

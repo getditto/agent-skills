@@ -160,6 +160,20 @@ fi
 exit 0
 """
 
+# A `timeout` that, like GNU timeout, moves itself into a new process group before
+# running the command: `timeout [-k N] DURATION COMMAND...`.
+GROUP_TIMEOUT = """#!{python}
+import os, sys
+args = sys.argv[1:]
+if args[:1] == ["--version"]:
+    print("timeout (GNU coreutils) stand-in")
+    sys.exit(0)
+if args[:1] == ["-k"]:
+    args = args[2:]
+os.setpgid(0, 0)
+os.execvp(args[1], args[1:])
+"""
+
 # Python that ends every output line with CRLF, as Windows Python does under Git Bash.
 CRLF_PYTHON = """#!/bin/bash
 set -o pipefail
@@ -340,13 +354,23 @@ class RunFixture(unittest.TestCase):
         self.assertFalse(self.workdir().exists())
 
     def test_an_interrupted_run_deletes_the_fixture_copy(self):
-        for signum in (signal.SIGINT, signal.SIGTERM):
-            with self.subTest(signal=signum.name):
+        # GNU timeout runs flutter in a process group of its own, which a signal to
+        # the script's group never reaches; this stand-in does the same everywhere.
+        group_timeout = self.temp / "group-timeout"
+        group_timeout.mkdir()
+        (group_timeout / "timeout").write_text(GROUP_TIMEOUT.format(python=sys.executable))
+        (group_timeout / "timeout").chmod(0o755)
+        cases = [(signum, isolated) for signum in (signal.SIGINT, signal.SIGTERM) for isolated in (False, True)]
+        for signum, isolated in cases:
+            with self.subTest(signal=signum.name, timeout_in_own_group=isolated):
                 self.record.unlink(missing_ok=True)
+                environment = {**self.environment, "FAKE_TEST_HANG": "1"}
+                if isolated:
+                    environment["PATH"] = f"{group_timeout}{os.pathsep}{environment['PATH']}"
                 process = subprocess.Popen(
                     ["bash", str(HARNESS / "scripts/run-fixture.sh"), "minimal_app", "macos", "5.2",
                      "integration_test/minimal_app_test.dart"],
-                    env={**self.environment, "FAKE_TEST_HANG": "1"}, stdout=subprocess.DEVNULL,
+                    env=environment, stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL, start_new_session=True)
                 deadline = time.monotonic() + 120
                 while time.monotonic() < deadline:
@@ -360,7 +384,11 @@ class RunFixture(unittest.TestCase):
                 self.assertTrue((workdir / "macos" / "Flutter" / "ephemeral").is_dir())
                 # As Ctrl-C would: the whole process group gets the signal.
                 os.killpg(process.pid, signum)
-                process.wait(timeout=60)
+                try:
+                    process.wait(timeout=60)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    self.fail(f"{signum.name}: run-fixture.sh did not exit within 60 s")
                 self.assertFalse(workdir.exists(), f"{signum.name}: fixture copy left behind")
 
 
