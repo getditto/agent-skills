@@ -244,6 +244,15 @@ permissions, and they merge into every build type (executed: the merged **releas
 APK manifests of 4.14.7, 5.0.4, 5.1.0 and 5.2.0 list them). The `src/main` entry above
 is therefore optional; it keeps the requirement visible in the app.
 
+**Asked to add Bluetooth permissions to `android/`?** There is nothing to add. The plugin
+declares `BLUETOOTH_SCAN` (`neverForLocation`), `BLUETOOTH_CONNECT` and
+`BLUETOOTH_ADVERTISE`; `BLUETOOTH` and `BLUETOOTH_ADMIN` up to API 30;
+`ACCESS_FINE_LOCATION` up to API 32 and `ACCESS_COARSE_LOCATION` up to API 30; and
+`NEARBY_WIFI_DEVICES` (`neverForLocation`) (`android/src/main/AndroidManifest.xml`,
+ditto_live 5.2.0 from pub.dev). Do not re-declare them with other limits, and check the
+merged manifest after any edit. What the app must do is
+[request them at runtime](#android-runtime-permissions), before `ditto.sync.start()`.
+
 **Windows** needs no declaration. Windows Defender Firewall may ask the user to allow
 the app the first time it listens for LAN or TCP connections; this was not observed
 with Ditto here (CI runners are headless).

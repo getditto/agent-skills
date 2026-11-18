@@ -32,7 +32,7 @@ are executed on Chrome unless marked.
 | `newAttachment(path)` | Its Future fails: `DittoException(Creating attachments from files is not supported on Flutter Web.)`. `newAttachment(Uint8List)` works | 5.0.4 to 5.2.0 | [attachments.md](attachments.md#cap-12-attachments) |
 | `Attachment.copyToPath` | Its Future fails: `DittoException(Retrieving a filesystem path for attachments is not supported on the Web.)`. `Attachment.data` works | 5.0.4 to 5.2.0 | [attachments.md](attachments.md#cap-12-attachments) |
 | `DittoLogger.exportLogs` | Throws `UnsupportedError: Not supported on the web platform` **synchronously** at the call: `.catchError` on its Future misses it | 5.0.4 to 5.2.0 | [observability.md](observability.md#logging) |
-| `setOfflineOnlyLicenseToken` | Logs `setOfflineOnlyLicenseToken is a no-op on the web platform.`, then still verifies; one invalid token did not throw | 5.0.4 to 5.2.0 | [connect.md](connect.md#cap-03-connecting) |
+| `setOfflineOnlyLicenseToken` | Not a no-op, although it logs `setOfflineOnlyLicenseToken is a no-op on the web platform.`: it still verifies the token and can throw; one invalid token did not | 5.0.4 to 5.2.0 | [connect.md](connect.md#cap-03-connecting) |
 | `DittoSyncPermissions` | `requiredPermissions()` is `[]` | 5.1.0, 5.2.0 | [setup.md](setup.md#android-runtime-permissions) |
 | `registerObserverWithSignalNext` | Works: item counts `[0]`, then `[0, 3]` after `signalNext()` | 5.1.0, 5.2.0 | [observers.md](observers.md#cap-11-observers-and-live-queries) |
 | `Ditto.defaultRootDirectory` | `""`; `absolutePersistenceDirectory` is a store name, `ditto-<databaseID>` | 5.2.0 | [In-memory store and reload](#in-memory-store-and-reload) |

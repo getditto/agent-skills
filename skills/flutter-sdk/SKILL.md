@@ -135,7 +135,8 @@ Both forms and diagnosis: [anti-patterns.md](references/anti-patterns.md).
 - **`StreamBuilder` over `changes`.** A rebuild throws `Stream has already been listened
   to.`; the observer outlives it. A repository holds the listener, exposes a `ValueNotifier`.
 - **Cancelling only a V1 observer's listener.** It keeps running and firing `onChange`.
-  Cancel the `changes` listener, then `observer.cancel()`.
+  Cancel the `changes` listener (`unawaited` in `State.dispose()`), then
+  `observer.cancel()`.
 - **`onChange` on a long-lived observer.** Memory grows per change: results also buffer
   in the unlistened `changes` (5.0.x–5.2.0).
 - **macOS keys only in `DebugProfile.entitlements`.** Release builds read
@@ -173,7 +174,8 @@ non-obvious traps, not how Flutter works. Preview a file's contents; read one se
 - [connect.md](references/connect.md): close on failed configure; expiration handler
   before `sync.start()`; a rejected login is `response.exception`.
 - [setup.md](references/setup.md): 5.1.0+ APKs need the compileSdk override, simulator
-  builds the Podfile fix; `DittoSyncPermissions`.
+  builds the Podfile fix; the plugin's manifest declares the Android permissions, the
+  app requests them at runtime (`DittoSyncPermissions`).
 - [lifetimes.md](references/lifetimes.md), [concurrency.md](references/concurrency.md),
   [anti-patterns.md](references/anti-patterns.md): detail behind the sections above.
 - [errors.md](references/errors.md): catch both `DittoException` and `DittoError`.
