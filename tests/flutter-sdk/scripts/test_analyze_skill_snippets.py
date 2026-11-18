@@ -18,6 +18,7 @@ SCRIPT = HERE / "analyze_skill_snippets.py"
 sys.dont_write_bytecode = True
 
 PRELUDE = "<!-- dart-prelude: " "ditto -->"
+PRELUDE_FLUTTER = "<!-- dart-prelude: " "ditto-flutter -->"
 V50 = "<!-- dart-version: " "5.0 -->"
 FRAGMENT = "<!-- dart-fragment: {} -->"
 BLOCK_OPEN = "<!-- snippet: " "demo -->"
@@ -65,6 +66,21 @@ class AnalyzeSkillSnippets(unittest.TestCase):
         body = body.replace("print(result);", "result.items.length;")
         result = self.run_script(body)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_flutter_prelude_imports_foundation(self):
+        code = "if (!kIsWeb) ditto.sync.start();"
+        result = self.run_script(fence(code, PRELUDE_FLUTTER))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # Without foundation, kIsWeb is undefined.
+        result = self.run_script(fence(code, PRELUDE))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("x.md:5", result.stdout + result.stderr)
+
+    def test_flutter_prelude_reports_fence_lines(self):
+        body = fence("ditto.sync.start();\nawait ditto.sync.start();", PRELUDE_FLUTTER)
+        result = self.run_script(body)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("x.md:6", result.stdout + result.stderr)
 
     def test_dart_version_marker_uses_that_pin(self):
         code = (
@@ -123,8 +139,11 @@ class Helpers(unittest.TestCase):
 
         self.assertTrue(errors_for("- ditto.sync.start();"))
         self.assertTrue(errors_for("+ await Ditto.open(config);"))
+        self.assertTrue(errors_for("- _ditto.store.execute(q);"))
+        self.assertTrue(errors_for("+ myDitto.sync.start();"))
+        self.assertTrue(errors_for("  final ditto2 = otherditto.store;"))
         self.assertEqual(errors_for("// The old shape, removed in Ditto."), [])
-        self.assertEqual(errors_for("// myditto.x and editto.y are not Ditto calls"), [])
+        self.assertEqual(errors_for("// Ditto. Then a new sentence, ditto ."), [])
 
 if __name__ == "__main__":
     unittest.main()

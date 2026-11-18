@@ -98,11 +98,12 @@ Rows that are not `Support: yes`
   complete and executed. Missing: a disk-usage API. The `fs_*` keys of the DQL
   collection `system:system_info` stand in for it (executed in CI on macOS, Linux and
   Windows; empty for the first second or two after `Ditto.open`).
-- **CAP-20 `partial`**: the preview APIs that exist are executed:
-  `registerObserverV2` and `registerObserverWithSignalNext` (5.1.0+, marked
+- **CAP-20 `partial`**: the preview APIs are `registerObserverV2` and
+  `registerObserverWithSignalNext` (5.1.0+, executed on macOS and, signal-next, Chrome; marked
   `@experimental` from `package:meta`, so each use needs
   `// ignore: experimental_member_use`; their shape may change in any release) and
-  `Store.experimentalSkipExecuteIsolateOffload` (5.1.0+). Multicast (5.1.0+) is a private
+  `Store.experimentalSkipExecuteIsolateOffload` (5.1.0+; run by hand on 5.2.0 only, in a
+  standalone app, not in the fixtures). Multicast (5.1.0+) is a private
   beta, off by default, not executed. Missing: Data Streams (not in `ditto_live` on any
   line) and supported encryption at rest (5.2.0 rejects `experimental.passphrase`; no key
   field exists).
@@ -122,21 +123,50 @@ Web degradations, which do not change Support ([web.md](references/web.md)):
 - **CAP-15:** `DittoLogger.exportLogs` throws `UnsupportedError` synchronously.
 - **CAP-19:** no on-disk store on web, so only the API migration applies there.
 
-Evidence notes:
+Evidence notes. `executed` means the capability's core ran and passed on at least macOS
+desktop (5.0.4, 5.1.0 and 5.2.0); where else it ran is in [Verification](#verification).
+In brief: Linux and Windows (CI, 5.2.0) ran every native probe directory; the Android
+emulator and the iOS Simulator (5.2.0) ran the minimal app and the store and observer
+probes; Chrome ran the minimal app (CAP-03, CAP-05, CAP-07, CAP-08, CAP-11) and the web
+probes (CAP-02, CAP-06, CAP-11, CAP-12, CAP-15, CAP-16, CAP-20). Where a row's web leg
+did not run, the note says so and gives the source that shows the API exists on web
+(`sdks/flutter/ditto_live/lib/src/bridge/wasm/`, the web bridge):
 
-- **CAP-04 `executed`** covers the offline license, the missing-handler failure and a
-  login refused by an unreachable server; a login round-trip against a Ditto server was
-  not run.
-- **CAP-07 `executed`** covers subscriptions; sync scopes (`ALTER SYSTEM` through
-  `execute`) were not run.
-- **CAP-13 `executed`** covers two instances in one process over TCP loopback on macOS:
-  presence, sync, and a connection-request handler that denies or throws.
+- **CAP-04 `executed`** covers the offline license (native and web), the
+  missing-handler failure and a login refused by an unreachable server (macOS); a login
+  round-trip against a Ditto server was not run. Web auth: not run;
+  `bridge/wasm/auth.dart:38-57` @ `sdk-release-5.2.0` (login, logout).
+- **CAP-07 `executed`** covers subscriptions (the minimal app on every target in the
+  table, the subscription probes on macOS, Linux and Windows); sync scopes (`ALTER
+  SYSTEM` through `execute`) were not run.
+- **CAP-09 `executed`** on macOS, Linux, Windows, the Android emulator and the iOS
+  Simulator (store probes). Not run on web; the web bridge implements it with
+  `dittoffiStoreBeginTransactionAsyncThrows` and `dittoffiTransactionExecute`
+  (`bridge/wasm/store.dart:441-491` @ `sdk-release-5.2.0`).
+- **CAP-10 `executed`** (`CREATE INDEX IF NOT EXISTS`) on the same native targets as
+  CAP-09. Not run on web; it is a DQL statement sent through the same `execute` call the
+  web runs executed (`dittoffiTryExecStatement`, `bridge/wasm/store.dart:13` @
+  `sdk-release-5.2.0`).
+- **CAP-13 `executed`** covers two instances in one process over TCP loopback: presence,
+  sync, and a connection-request handler that denies or throws (macOS on 5.0.4 to 5.2.0;
+  Linux and Windows on 5.2.0). Not run on web, iOS or Android; the web bridge has the
+  presence graph, observer and connection-request handler (`bridge/wasm/presence.dart:25-135`
+  @ `sdk-release-5.2.0`).
+- **CAP-14 `executed`**: `commitID` on macOS (5.0.4 to 5.2.0), Linux and Windows (5.2.0);
+  `system:data_sync_info` in manual runs on macOS only. Not run on web; the web bridge
+  reads the commit ID (`dittoffiQueryResultCommitId`, `bridge/wasm/store.dart:80-84` @
+  `sdk-release-5.2.0`), and the collection is a DQL query through the same `execute`.
+- **CAP-15 `executed`**: logging and `exportLogs` on macOS and web; the
+  `system:system_info` disk keys on macOS, Linux and Windows, not on web.
+- **CAP-17 `executed`** (`EVICT`) on the same native targets as CAP-09. Not run on web;
+  a DQL statement through the same `execute` as CAP-10.
 - **CAP-18 `executed`** covers widget tests with fakes on the host and
   `integration_test` on macOS, Linux, Windows, the Android emulator, the iOS Simulator
-  and Chrome; Ditto itself does not load under a host `flutter test`.
-- **CAP-19 `executed`** covers the 4.14.7 API in the v4 fixture and the 5.1.0 → 5.2.0
-  default-directory upgrade on macOS and the iOS Simulator. An on-disk 4.14 → 5.x
-  upgrade was not run.
+  and Chrome (`flutter drive`); Ditto itself does not load under a host `flutter test`.
+- **CAP-19 `executed`** covers the 4.14.7 API in the v4 fixture on macOS and the 5.1.0 →
+  5.2.0 default-directory upgrade on macOS and the iOS Simulator. An on-disk 4.14 → 5.x
+  upgrade was not run, and 4.14.7 was not run on web (its pub.dev `pubspec.yaml` lists
+  `web` among its platforms).
 
 ## Verification
 

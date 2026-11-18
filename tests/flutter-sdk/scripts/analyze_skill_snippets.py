@@ -8,6 +8,8 @@ blocks) are already compiled by the fixtures and are ignored here. Every other
   (none)                           written as a whole library; must compile alone
   <!-- dart-prelude: ditto -->     wrapped in `import 'package:ditto_live/ditto_live.dart';
                                    Future<void> snippet(Ditto ditto) async { ... }`
+  <!-- dart-prelude: ditto-flutter -->  the same, also importing
+                                   package:flutter/foundation.dart (kIsWeb, kDebugMode)
   <!-- dart-version: 4.14|5.0|5.1 -->  analyzed against that ditto_live line instead of
                                    the default (5.2) line; combinable with the prelude
   <!-- dart-fragment: pseudo-diff|v4-rename-table|partial-class-member -->
@@ -61,12 +63,19 @@ REPO_ROOT = HARNESS.parents[1]
 PACKAGE = HARNESS / "snippet_check"
 DEFAULT_LINE = "5.2"
 FRAGMENT_REASONS = {"pseudo-diff", "v4-rename-table", "partial-class-member"}
-PRELUDE_VALUES = {"ditto"}
-# A fragment that names a Ditto member (`ditto.store`, `Ditto.open`) must compile instead.
-# A sentence ending in "Ditto." or a word such as `myditto.x` does not count.
-DITTO_CALL_RE = re.compile(r"\b[Dd]itto\.[A-Za-z_]")
-PRELUDE_SOURCE = "import 'package:ditto_live/ditto_live.dart';\n\nFuture<void> snippet(Ditto ditto) async {\n"
-PRELUDE_BODY_LINE = 4  # 1-based line of the first fence line inside the wrapper
+# A fragment that names a member of a Ditto value (`ditto.store`, `Ditto.open`,
+# `_ditto.sync`, `myDitto.store`) must compile instead. Any identifier ending in
+# ditto/Ditto counts; a sentence ending in "Ditto." does not.
+DITTO_CALL_RE = re.compile(r"[Dd]itto\.[A-Za-z_]")
+_WRAPPER = "Future<void> snippet(Ditto ditto) async {\n"
+PRELUDES = {
+    # The body of `snippet(Ditto ditto)`, with ditto_live imported.
+    "ditto": "import 'package:ditto_live/ditto_live.dart';\n\n" + _WRAPPER,
+    # The same, plus package:flutter/foundation.dart (kIsWeb, kDebugMode, ...).
+    "ditto-flutter": "import 'package:ditto_live/ditto_live.dart';\n"
+    "import 'package:flutter/foundation.dart';\n\n" + _WRAPPER,
+}
+PRELUDE_VALUES = set(PRELUDES)
 
 MARKER_RE = re.compile(r"^\s*<!--\s*(dart-[a-z]+):\s*([^>]*?)\s*-->\s*$")
 OPEN_BLOCK_RE = re.compile(r"^<!-- snippet: [a-z0-9][a-z0-9-]* -->$")
@@ -290,11 +299,14 @@ def write_fence(project: Path, index: int, fence: Fence) -> tuple[str, int, bool
     name = f"lib/f{index}.dart"
     if wrapped:
         body = "\n".join(("  " + line) if line.strip() else "" for line in fence.code.split("\n"))
-        source = PRELUDE_SOURCE + body + "\n}\n"
+        prelude = PRELUDES[fence.markers["dart-prelude"]]
+        source = prelude + body + "\n}\n"
+        first = prelude.count("\n") + 1  # 1-based line of the first fence line
     else:
         source = fence.code + "\n"
+        first = 1
     (project / name).write_text(source, encoding="utf-8")
-    return name, PRELUDE_BODY_LINE if wrapped else 1, wrapped
+    return name, first, wrapped
 
 
 def check_group(project: Path, fences: list[Fence], flutter: str, errors: list[str]) -> None:

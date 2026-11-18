@@ -573,7 +573,7 @@ debug builds unless stated:
 | Job | Runner | ditto_live | Outcome |
 |---|---|---|---|
 | `linux` (`xvfb-run`, `flutter test -d linux`) | ubuntu-24.04 | 5.2.0 | pass: `init_once`, minimal app, `v50`, `v51`, `v52` |
-| `windows` (Git Bash, `flutter test -d windows`) | windows-latest | 5.2.0 | pass after the cleanup change in [Windows desktop](#windows-desktop-2026-11-17): `init_once`, minimal app, `v50` (27), `v51` (7), `v52` (2); 5 and 6 directories left locked on the two later runs |
+| `windows` (Git Bash, `flutter test -d windows`) | windows-latest | 5.2.0 | pass after the cleanup change in [Windows desktop](#windows-desktop-2026-11-17): `init_once`, minimal app, `v50` (27 tests then; 43 by 2026-11-18, `🎉 43 tests passed.`), `v51` (7), `v52` (2); 5 and 6 directories left locked on the two later runs |
 | `android-emulator` (API 34 x86_64 `google_apis`) | ubuntu-24.04 | 5.2.0 | pass: minimal app, `v50/store_test.dart`, `v50/observers_test.dart` |
 | `android-release` (`flutter build apk --release`, aapt2) | ubuntu-24.04 | 4.14.7, 5.0.4, 5.1.0, 5.2.0 | pass; the merged release manifests list INTERNET and the Bluetooth, location and Wi-Fi permissions |
 | `ios-sim` (iPhone 17 Pro, iOS 26.5) | macos-26 arm64 | 5.2.0 | pass on the third run (below): minimal app, `v50/store_test.dart`, `v50/observers_test.dart` |
@@ -598,8 +598,9 @@ debug builds unless stated:
   with no test output. Any other failure or timeout is never retried. On the third
   and fourth runs every iOS target passed on its first attempt, so the retry has not
   been exercised in CI.
-- **Windows, one flaky `v50` run.** One `windows` run of `v50` exited 1 although its
-  output listed 30 tests, all passing, and its summary line counted 24; the rerun of the
+- **Windows, one flaky `v50` run.** The `v50` test count grew as probes were added (27 in
+  the first Windows runs, 30 at the time of this run, 43 now). One `windows` run of
+  `v50` exited 1 although its output listed 30 tests, all passing, and its summary line counted 24; the rerun of the
   same commit passed 30 of 30. No test failure was printed and the cause was not
   determined; it has not recurred.
 - **Pull requests from forks go red on the license check.** GitHub does not pass the
@@ -961,7 +962,8 @@ call (inference; the samples in the next record confirm it).
 ### system:data_sync_info hang, standalone app, 2026-11-18
 
 The hang above, reproduced outside the harness and verified by a second, independent
-rebuild. A standalone Flutter app (`flutter create --platforms=macos --empty`), macOS
+rebuild. **The standalone app is not committed**, so this run cannot be repeated from
+this repository as is; the description below is enough to rebuild it. A standalone Flutter app (`flutter create --platforms=macos --empty`), macOS
 27.2.1 arm64, Flutter 3.50.0 (FVM), Xcode 27.2, debug builds, `ditto_live` pinned per
 line, the license through `--dart-define-from-file`. One process per run, fresh
 temporary directories: a writer instance listens on TCP `127.0.0.1:<free port>`, a reader
@@ -994,6 +996,39 @@ Differences between modes on one line are within the noise at these counts. A te
 bounds each poll with `.timeout(const Duration(seconds: 10))` failed on 5.2.0 in 2 of 5
 runs with `TimeoutException after 0:00:10.000000: Future not completed`: the timeout ends
 the wait, not the query.
+
+To rebuild it: `flutter create --platforms=macos --empty`, `ditto_live` pinned to the
+line, and `com.apple.security.network.client` and `network.server` in both
+`macos/Runner/*.entitlements`. One `lib/main.dart`, its variant chosen by environment
+variables read with `Platform.environment` (the query, peer on or off, logging off or
+default, the number of earlier cycles):
+
+1. `WidgetsFlutterBinding.ensureInitialized()`, `await Ditto.init()`, then
+   `DittoLogger.isEnabled = false` unless logging is default.
+2. Optionally N cycles: open in a new temporary directory, insert one document,
+   `close()`, delete the directory.
+3. Open the writer and the reader, each with
+   `DittoConfig(persistenceDirectory: <new temp dir>)`, `setOfflineOnlyLicenseToken`,
+   and all four peer-to-peer transports set to `false` one by one.
+4. Take a free port from `ServerSocket.bind(InternetAddress.loopbackIPv4, 0)`. The
+   writer listens with `config.listen.tcp` on `127.0.0.1:<port>`. The reader adds
+   `127.0.0.1:<port>` to `config.connect.tcpServers` and registers
+   `SELECT * FROM cars WHERE color = :color` with `{'color': 'blue'}`. Then
+   `sync.start()` on both (4.14.7: the identity API, `OfflinePlaygroundIdentity` with a
+   distinct `SiteID` per instance, and `startSync()`). The no-reader control skips the
+   reader.
+5. The writer inserts `{'_id': 'car-1', 'color': 'blue'}` and keeps its `commitID`.
+6. 50 times: `await writer.store.execute(<query>)`, with a 30 s `Timer` that prints a
+   `HANG` line naming the poll and the process ID; then a 100 ms delay. The query is
+   `SELECT * FROM system:data_sync_info`, or `SELECT * FROM cars` for the control.
+   Print the poll at which a peer's `documents.synced_up_to_local_commit_id` reaches the
+   commit.
+7. Cancel the subscription, close both instances, delete the directories, `exit(0)`.
+
+Build with `flutter build macos --debug --dart-define-from-file=<mode-600 license.json>`
+and run `build/macos/Build/Products/Debug/<app>.app/Contents/MacOS/<app>` directly, once
+per run, under a runner that samples and kills it as described above. The worker-bypass
+variant sets `Store.experimentalSkipExecuteIsolateOffload = true` after the logger line.
 
 The harness's own manual probe (`integration_test/manual/sync_status_test.dart`, the
 table in the record above) was not re-run.

@@ -24,8 +24,9 @@ Confirm a signature against the installed package — Dart MCP `read_package_uri
 ## What this skill does
 
 Writes and reviews Dart for `ditto_live` in Flutter apps: open, auth, sync, DQL,
-observers in a widget tree, lifetimes, build configuration, tests. Supports **4.14.x
-(LTS), 5.0.x, 5.1.x and 5.2.0** on iOS, Android, macOS, Windows, Linux and Flutter Web.
+observers in a widget tree, lifetimes, build configuration, tests.
+Supports **4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0** on iOS, Android, macOS, Windows, Linux
+and Flutter Web.
 
 ## When to use this skill
 
@@ -62,11 +63,20 @@ store; no file-path attachments or `exportLogs`.
 
 ## Minimum viable app
 
-<!-- dart-prelude: ditto -->
+<!-- dart-prelude: ditto-flutter -->
 ```dart
 await Ditto.init(); // required on 5.0.x; memoized
 final ditto = await Ditto.open(const DittoConfig());
 ditto.setOfflineOnlyLicenseToken('REPLACE_ME_WITH_YOUR_LICENSE');
+if (!kIsWeb) {
+  // P2P is on by default on native; web has none.
+  ditto.updateTransportConfig((config) {
+    config.peerToPeer.bluetoothLE.isEnabled = false;
+    config.peerToPeer.lan.isEnabled = false;
+    config.peerToPeer.awdl.isEnabled = false;
+    config.peerToPeer.wifiAware.isEnabled = false;
+  });
+}
 ditto.sync.start();
 
 final subscription = ditto.sync.registerSubscription('SELECT * FROM cars');
@@ -94,7 +104,7 @@ subscription.cancel();
 await ditto.close();
 ```
 
-Complete program and transcripts: [minimal-app.md](examples/minimal-app.md).
+Full program: [minimal-app.md](examples/minimal-app.md).
 
 ## Concurrency and threading model
 
@@ -125,7 +135,7 @@ Both forms and diagnosis: [anti-patterns.md](references/anti-patterns.md).
 - **`StreamBuilder` over `changes`.** A rebuild throws `Stream has already been listened
   to.`; the observer outlives it. A repository holds the listener, exposes a `ValueNotifier`.
 - **Cancelling only a V1 observer's listener.** It keeps running and firing `onChange`.
-  Cancel the subscription, then `observer.cancel()`.
+  Cancel the `changes` listener, then `observer.cancel()`.
 - **`onChange` on a long-lived observer.** Memory grows per change: results also buffer
   in the unlistened `changes` (5.0.x–5.2.0).
 - **macOS keys only in `DebugProfile.entitlements`.** Release builds read
@@ -154,25 +164,26 @@ Load a reference only when its topic is actually in play; these files teach the
 non-obvious traps, not how Flutter works. Preview a file's contents; read one section.
 
 - [widget-integration.md](references/widget-integration.md): service, repository, view
-  model; lifecycle; hot restart (V2 observers crash after `R` on a remote change).
+  model; lifecycle; hot restart (V2 observers, on 5.1.0 any, crash after `R` on a remote
+  change).
 - [web.md](references/web.md): never `--wasm` (every result repeats the first);
   `wasmShimUrl` for a site below `/`; CSP `'wasm-unsafe-eval'`; `execute` blocks frames.
 - [observers.md](references/observers.md): the `onChange` buffering defect; one `changes`
   listener per observer, ever; V1 vs V2 cancellation; signal-next.
 - [connect.md](references/connect.md): close on failed configure; expiration handler
-  before `sync.start()`; a rejected login is `AuthResponse.exception`.
+  before `sync.start()`; a rejected login is `response.exception`.
 - [setup.md](references/setup.md): 5.1.0+ APKs need the compileSdk override, simulator
   builds the Podfile fix; `DittoSyncPermissions`.
 - [lifetimes.md](references/lifetimes.md), [concurrency.md](references/concurrency.md),
   [anti-patterns.md](references/anti-patterns.md): detail behind the sections above.
-- [errors.md](references/errors.md): catch `DittoException` and `DittoError`; unrelated.
-- [versions.md](references/versions.md): per-line APIs, behaviour, migration.
+- [errors.md](references/errors.md): catch both `DittoException` and `DittoError`.
+- [versions.md](references/versions.md): per-line APIs and migration.
 - [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; status.
 - [store.md](references/store.md): `execute`, transactions, indexes, `EVICT`.
 - [transports.md](references/transports.md): `updateTransportConfig` returns `void`.
-- [testing.md](references/testing.md): Ditto does not load under host `flutter test`:
-  fakes there, `integration_test` for the real store; logging off in tests only.
+- [testing.md](references/testing.md): no Ditto under host `flutter test` (use fakes);
+  `integration_test` for the real store.
 - [attachments.md](references/attachments.md), [presence.md](references/presence.md),
   [observability.md](references/observability.md), [preview.md](references/preview.md).
-- [best-practices.md](best-practices.md): placement, observers, state, verification.
+- [best-practices.md](best-practices.md): placement, observers, state, checks.
 - [examples/minimal-app.md](examples/minimal-app.md): the complete program.
