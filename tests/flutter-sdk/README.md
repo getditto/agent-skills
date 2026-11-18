@@ -513,10 +513,14 @@ debug builds unless stated:
 | Job | Runner | ditto_live | Outcome |
 |---|---|---|---|
 | `linux` (`xvfb-run`, `flutter test -d linux`) | ubuntu-24.04 | 5.2.0 | pass: `init_once`, minimal app, `v50`, `v51`, `v52` |
-| `windows` (Git Bash, `flutter test -d windows`) | windows-latest | 5.2.0 | pass after the cleanup change in [Windows desktop](#windows-desktop-2026-11-17) |
+| `windows` (Git Bash, `flutter test -d windows`) | windows-latest | 5.2.0 | pass after the cleanup change in [Windows desktop](#windows-desktop-2026-11-17): `init_once`, minimal app, `v50` (27), `v51` (7), `v52` (2); 5 and 6 directories left locked on the two later runs |
 | `android-emulator` (API 34 x86_64 `google_apis`) | ubuntu-24.04 | 5.2.0 | pass: minimal app, `v50/store_test.dart`, `v50/observers_test.dart` |
 | `android-release` (`flutter build apk --release`, aapt2) | ubuntu-24.04 | 4.14.7, 5.0.4, 5.1.0, 5.2.0 | pass; the merged release manifests list INTERNET and the Bluetooth, location and Wi-Fi permissions |
+| `ios-sim` (iPhone 17 Pro, iOS 26.5) | macos-26 arm64 | 5.2.0 | pass on the third run (below): minimal app, `v50/store_test.dart`, `v50/observers_test.dart` |
 | `ios-build` (`--simulator --no-codesign`) | macos-26 arm64 | 4.14.7, 5.2.0 | pass |
+| `macos` | macos-26 arm64 | 5.0.4, 5.1.0, 5.2.0 | pass: `init_once`, minimal app, every probe directory at or below the line |
+| `v4` | macos-26 arm64 | 4.14.7 | pass |
+| `from-skill` (analyze, `build apk --debug`, `build ios --simulator --debug`) | ubuntu-24.04, macos-26 arm64 | 5.2.0 | pass |
 | `migration`, macOS then iPhone 17 Pro (iOS 26.5) | macos-26 arm64 | 5.1.0 → 5.2.0 | pass |
 | `macos-release` | macos-26 arm64 | 5.2.0 | pass |
 | `web` (`flutter drive` targets, `web-probe.py --skip-manual`) | ubuntu-24.04, the image's Chrome and ChromeDriver | 5.1.0, 5.2.0 | pass |
@@ -529,7 +533,8 @@ debug builds unless stated:
   reader failed unexpectedly` (exit 124) and the next two targets passed in under a
   minute each. `scripts/boot-simulator.sh` now launches a stock app and reads the log
   once after boot, and the iOS legs set `FIXTURE_RETRIES=1`: a target stopped by the
-  timeout (never one that fails) runs once more.
+  timeout (never one that fails) runs once more. On the third run every iOS target
+  passed on its first attempt, so the retry has not been exercised in CI.
 
 ## Findings that changed a research lead
 
