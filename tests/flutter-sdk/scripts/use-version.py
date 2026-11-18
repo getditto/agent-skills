@@ -17,7 +17,8 @@ Builds of the copy embed the license passed as a define, so the per-user directo
 created mode 0700, and an existing one that is a symlink, is not owned by the current
 user, or is readable by others is refused. Never cache or upload it.
 
-minimal_app compiles against 5.0+ only; the 4.14 line uses tests/flutter-sdk/v4_app.
+minimal_app compiles against 5.0+ only; the 4.14 line uses tests/flutter-sdk/v4_app,
+which runs on 4.14 only.
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ IGNORE = shutil.ignore_patterns("build", ".dart_tool", "Pods", "ephemeral", "*.l
                                 ".flutter-plugins-dependencies")
 DEP_RE = re.compile(r"^([ \t]+ditto_live:)[ \t]*\S+[ \t]*$", re.MULTILINE)
 V5_ONLY = {"minimal_app"}
+V4_ONLY = {"v4_app"}
 
 
 def private_root(base: Path | None = None) -> Path:
@@ -84,6 +86,9 @@ def main(argv: list[str]) -> int:
         return 2
     if fixture in V5_ONLY and line == "4.14":
         print(f"{fixture} does not compile against 4.14; use tests/flutter-sdk/v4_app", file=sys.stderr)
+        return 2
+    if fixture in V4_ONLY and line != "4.14":
+        print(f"{fixture} uses the 4.14 API and runs on the 4.14 line only", file=sys.stderr)
         return 2
     source = HARNESS / fixture
     if not (source / "pubspec.yaml").is_file():

@@ -19,8 +19,8 @@
 #
 # Reads DITTO_OFFLINE_LICENSE from the environment, else from the gitignored repo-root
 # .env. The defines (DITTO_LICENSE, DITTO_VERSION = the pin, DITTO_PLATFORM = the
-# expected Ditto.currentPlatform.name, and PROBE_DEFAULT_LOGGING when that variable is
-# set) go to Flutter through --dart-define-from-file: a mode-600 temporary file that
+# expected Ditto.currentPlatform.name, and PROBE_DEFAULT_LOGGING and MIGRATION_PHASE
+# when those variables are set) go to Flutter through --dart-define-from-file: a mode-600 temporary file that
 # is deleted on exit, so the license never appears in a process argument list.
 # Compiled builds embed every define, so never cache or upload the fixture copy or its
 # build/ directory.
@@ -31,7 +31,9 @@
 #
 # Environment: FLUTTER (a flutter executable; default `fvm flutter`), PYTHON (default
 # python3), CHROMEDRIVER, DITTO_PLATFORM (required for phone and simulator device IDs),
-# FIXTURE_TIMEOUT, FIXTURE_LOG_DIR (default tests/flutter-sdk), PROBE_DEFAULT_LOGGING.
+# FIXTURE_TIMEOUT, FIXTURE_LOG_DIR (default tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
+# MIGRATION_PHASE (wipe, write or read; integration_test/migration/, and added to the
+# log name).
 #
 set -euo pipefail
 
@@ -137,15 +139,34 @@ defines["DITTO_LICENSE"] = os.environ["DITTO_OFFLINE_LICENSE"]
 # (integration_test/probes/harness.dart), which otherwise turns it off.
 if os.environ.get("PROBE_DEFAULT_LOGGING"):
     defines["PROBE_DEFAULT_LOGGING"] = os.environ["PROBE_DEFAULT_LOGGING"]
+# MIGRATION_PHASE selects the phase of integration_test/migration/migrate_default_dir_test.dart.
+if os.environ.get("MIGRATION_PHASE"):
+    defines["MIGRATION_PHASE"] = os.environ["MIGRATION_PHASE"]
 with open(sys.argv[1], "w", encoding="utf-8") as output:
     json.dump(defines, output)
 EOF
-DEFINES=(--dart-define-from-file="$DEFINES_FILE")
+# Git Bash on Windows: pass a C:/... path, so neither MSYS argument conversion nor
+# the native flutter tool has to interpret a /tmp/... one.
+DEFINES_ARG="$DEFINES_FILE"
+if command -v cygpath >/dev/null 2>&1; then
+  DEFINES_ARG="$(cygpath -m "$DEFINES_FILE")"
+fi
+DEFINES=(--dart-define-from-file="$DEFINES_ARG")
 PUBLIC_DEFINES="DITTO_VERSION=$PIN DITTO_PLATFORM=$DITTO_PLATFORM PROBE_DEFAULT_LOGGING=${PROBE_DEFAULT_LOGGING:-unset}"
+PHASE_SUFFIX=""
+TEST_FLAGS=()
+if [[ -n "${MIGRATION_PHASE:-}" ]]; then
+  PUBLIC_DEFINES="$PUBLIC_DEFINES MIGRATION_PHASE=$MIGRATION_PHASE"
+  PHASE_SUFFIX="-$(printf '%s' "$MIGRATION_PHASE" | tr -c 'A-Za-z0-9._-' '_')"
+  # `flutter test` uninstalls the app from a phone or simulator after the run,
+  # which deletes its data container; the migration phases need it kept.
+  TEST_FLAGS=(--no-uninstall)
+fi
 
 FIXTURE_TIMEOUT="${FIXTURE_TIMEOUT:-1800}"
 BOUND=()
-if command -v timeout >/dev/null 2>&1; then
+# GNU timeout only: on Windows, PATH can resolve `timeout` to System32's wait command.
+if timeout --version >/dev/null 2>&1; then
   BOUND=(timeout -k 30 "$FIXTURE_TIMEOUT")
 else
   echo "warning: no \`timeout\` command; flutter runs are not time-bounded" >&2
@@ -185,7 +206,7 @@ SAFE_DEVICE="$(printf '%s' "$DEVICE" | tr -c 'A-Za-z0-9._-' '_')"
 status=0
 for target in "$@"; do
   slug="$(printf '%s' "${target#integration_test/}" | sed 's/\.dart$//' | tr -c 'A-Za-z0-9._-' '_')"
-  log="${FIXTURE_LOG_DIR:-$HARNESS}/run-$FIXTURE-$SAFE_DEVICE-$LINE-$slug.log"
+  log="${FIXTURE_LOG_DIR:-$HARNESS}/run-$FIXTURE-$SAFE_DEVICE-$LINE-$slug$PHASE_SUFFIX.log"
   target_status=0
   {
     echo "== $FIXTURE on $DEVICE, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
@@ -196,7 +217,8 @@ for target in "$@"; do
       (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" drive --driver=test_driver/integration_test.dart \
         --target="$target" -d chrome --headless "${DEFINES[@]}")
     else
-      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" "${DEFINES[@]}")
+      (cd "$WORKDIR" && ${BOUND[@]+"${BOUND[@]}"} "${FLUTTER_CMD[@]}" test "$target" -d "$DEVICE" \
+        ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} "${DEFINES[@]}")
     fi
   } 2>&1 | tee "$log" || target_status=$?
   echo "== $target: exit $target_status" | tee -a "$log"

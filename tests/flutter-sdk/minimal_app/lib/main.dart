@@ -31,6 +31,9 @@ class _TranscriptAppState extends State<TranscriptApp> {
   }
 
   void _add(String line) {
+    // Also on stdout, where a release build run from the command line can be
+    // checked (the macos-release CI leg greps it).
+    debugPrint('transcript: $line');
     if (mounted) setState(() => _lines.add(line));
   }
 

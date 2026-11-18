@@ -63,91 +63,94 @@ def main(argv: list[str]) -> int:
     pin = json.loads((HARNESS / "versions.json").read_text())["lines"][args.line]
     secret = WEB_PROBE.offline_license()
     workdir = WEB_PROBE.prepare_workdir(args.line)
-    if args.peer and args.device != "macos":
-        parser.error("--peer needs a native device (macos)")
-    suffix = "-peer" if args.peer else ""
-    log_path = HARNESS / f"hot-restart-{args.device}-{args.line}-{args.mode}{suffix}.log"
-    defines = {"DITTO_LICENSE": secret, "DITTO_VERSION": pin, "HOT_RESTART_MODE": args.mode,
-               "HOT_RESTART_PEER": "true" if args.peer else "false"}
-    started = time.monotonic()
-    lines: queue.Queue[str | None] = queue.Queue()
+    try:
+        if args.peer and args.device != "macos":
+            parser.error("--peer needs a native device (macos)")
+        suffix = "-peer" if args.peer else ""
+        log_path = HARNESS / f"hot-restart-{args.device}-{args.line}-{args.mode}{suffix}.log"
+        defines = {"DITTO_LICENSE": secret, "DITTO_VERSION": pin, "HOT_RESTART_MODE": args.mode,
+                   "HOT_RESTART_PEER": "true" if args.peer else "false"}
+        started = time.monotonic()
+        lines: queue.Queue[str | None] = queue.Queue()
 
-    with WEB_PROBE.defines_file(defines) as path, open(log_path, "w", encoding="utf-8") as log:
-        command = WEB_PROBE.flutter_command() + [
-            "run", "-d", args.device, "--debug", "-t", TARGET, f"--dart-define-from-file={path}"]
-        if args.device == "chrome":
-            command += ["--web-browser-flag=--headless=new"]
-        print(f"== ditto_live {pin}, {args.device}, mode {args.mode}{suffix}: "
-              f"flutter run -d {args.device} --debug -t {TARGET}", flush=True)
-        process = subprocess.Popen(command, cwd=workdir, stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   text=True, bufsize=1, start_new_session=True)
+        with WEB_PROBE.defines_file(defines) as path, open(log_path, "w", encoding="utf-8") as log:
+            command = WEB_PROBE.flutter_command() + [
+                "run", "-d", args.device, "--debug", "-t", TARGET, f"--dart-define-from-file={path}"]
+            if args.device == "chrome":
+                command += ["--web-browser-flag=--headless=new"]
+            print(f"== ditto_live {pin}, {args.device}, mode {args.mode}{suffix}: "
+                  f"flutter run -d {args.device} --debug -t {TARGET}", flush=True)
+            process = subprocess.Popen(command, cwd=workdir, stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       text=True, bufsize=1, start_new_session=True)
 
-        def pump() -> None:
-            assert process.stdout is not None
-            for raw in process.stdout:
-                lines.put(raw.rstrip("\n"))
-            lines.put(None)
+            def pump() -> None:
+                assert process.stdout is not None
+                for raw in process.stdout:
+                    lines.put(raw.rstrip("\n"))
+                lines.put(None)
 
-        threading.Thread(target=pump, daemon=True).start()
+            threading.Thread(target=pump, daemon=True).start()
 
-        def emit(line: str) -> None:
-            line = WEB_PROBE.redact(line, secret)
-            stamp = f"[{time.monotonic() - started:6.1f}s]"
-            log.write(f"{stamp} {line}\n")
-            if interesting(line):
-                print(f"{stamp} {line}", flush=True)
+            def emit(line: str) -> None:
+                line = WEB_PROBE.redact(line, secret)
+                stamp = f"[{time.monotonic() - started:6.1f}s]"
+                log.write(f"{stamp} {line}\n")
+                if interesting(line):
+                    print(f"{stamp} {line}", flush=True)
 
-        def read_until(predicate, timeout: float) -> bool:
-            deadline = time.monotonic() + timeout
-            while time.monotonic() < deadline:
-                try:
-                    line = lines.get(timeout=0.5)
-                except queue.Empty:
-                    continue
-                if line is None:
-                    return False
-                emit(line)
-                if predicate(line):
-                    return True
-            return False
+            def read_until(predicate, timeout: float) -> bool:
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    try:
+                        line = lines.get(timeout=0.5)
+                    except queue.Empty:
+                        continue
+                    if line is None:
+                        return False
+                    emit(line)
+                    if predicate(line):
+                        return True
+                return False
 
-        def send(keys: str) -> None:
-            if process.poll() is None and process.stdin is not None:
-                emit(f"(script) sending {keys!r}")
-                try:
-                    process.stdin.write(keys)
-                    process.stdin.flush()
-                except BrokenPipeError:
-                    emit("(script) stdin closed")
+            def send(keys: str) -> None:
+                if process.poll() is None and process.stdin is not None:
+                    emit(f"(script) sending {keys!r}")
+                    try:
+                        process.stdin.write(keys)
+                        process.stdin.flush()
+                    except BrokenPipeError:
+                        emit("(script) stdin closed")
 
-        status = "launched"
-        try:
-            if not read_until(lambda l: "HR: ready" in l or "HR: open failed" in l, 900):
-                status = "never ready"
-            else:
-                read_until(lambda l: False, 5)
-                send("R")
-                read_until(lambda l: False, args.observe)
-                send("q")
-                read_until(lambda l: False, 20)
-                status = "observed"
-        finally:
-            if process.poll() is None:
-                emit("(script) flutter run still running; killing its process group")
-                with contextlib.suppress(ProcessLookupError):
-                    os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=15)
-                except subprocess.TimeoutExpired:
+            status = "launched"
+            try:
+                if not read_until(lambda l: "HR: ready" in l or "HR: open failed" in l, 900):
+                    status = "never ready"
+                else:
+                    read_until(lambda l: False, 5)
+                    send("R")
+                    read_until(lambda l: False, args.observe)
+                    send("q")
+                    read_until(lambda l: False, 20)
+                    status = "observed"
+            finally:
+                if process.poll() is None:
+                    emit("(script) flutter run still running; killing its process group")
                     with contextlib.suppress(ProcessLookupError):
-                        os.killpg(process.pid, signal.SIGKILL)
-            if args.device == "macos":
-                subprocess.run(["pkill", "-f", f"flutter-fixture-[^/]*/{args.line}/minimal_app/build/macos"],
-                               check=False)
-            emit(f"(script) {status}; flutter run exit {process.wait()}")
-            # The debug build embeds the defines, the license included.
-            WEB_PROBE.remove_web_build_output(workdir)
+                        os.killpg(process.pid, signal.SIGTERM)
+                    try:
+                        process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        with contextlib.suppress(ProcessLookupError):
+                            os.killpg(process.pid, signal.SIGKILL)
+                if args.device == "macos":
+                    subprocess.run(["pkill", "-f", f"flutter-fixture-[^/]*/{args.line}/minimal_app/build/macos"],
+                                   check=False)
+                emit(f"(script) {status}; flutter run exit {process.wait()}")
+    finally:
+        # The debug build embeds the defines, the license included; remove it
+        # even when the run above raised.
+        WEB_PROBE.remove_web_build_output(workdir)
     print(f"== full output: {log_path}")
     return 0
 

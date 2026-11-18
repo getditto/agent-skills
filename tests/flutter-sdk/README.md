@@ -143,6 +143,46 @@ publishes. The license reaches Flutter only through a mode-600
 `scripts/test_web_probe.py` checks its secret handling, server and timing helpers.
 Results per probe ID, with versions and build modes, are in `web-results/5.2.0.md`.
 
+`v4_app/` is the 4.14 fixture (`use-version.py` runs it on the 4.14 line only): the
+`flutter-v4-open` region (`OfflinePlaygroundIdentity`, `SiteID.fromInt`,
+`setOfflineOnlyLicenseToken`, `startSync()`) and `integration_test/v4_test.dart`, which
+writes one car and expects `v4 read-back make: Toyota`. Its platform configuration is
+`minimal_app`'s (Podfiles, Info.plist keys, entitlements, Android manifest, minSdk,
+the compileSdk override and the simulator `EXCLUDED_ARCHS` fix), with its own bundle
+ID and without the snippet markers:
+
+```bash
+tests/flutter-sdk/scripts/run-fixture.sh v4_app macos 4.14 integration_test/v4_test.dart
+```
+
+`scripts/run-migration.sh <device>` runs
+`minimal_app/integration_test/migration/migrate_default_dir_test.dart` three times, one
+process each: `MIGRATION_PHASE=wipe` (5.1) deletes `{Documents}/ditto-<id>` and
+`{Application Support}/ditto-<id>`; `write` (5.1) runs the published minimal app, which
+opens the SDK default directory; `read` (5.2) opens the default directory the same way
+(`DittoConfig(persistenceDirectory: null)`) and expects the car. `run-fixture.sh`
+passes `MIGRATION_PHASE` as a define, adds it to the log name, and adds
+`--no-uninstall`, because `flutter test` otherwise uninstalls the app from a phone or
+simulator after each run, deleting its data. Nothing else may open the default
+directory on that device in between:
+
+```bash
+tests/flutter-sdk/scripts/run-migration.sh macos
+DITTO_PLATFORM=ios tests/flutter-sdk/scripts/run-migration.sh <simulator-udid>
+```
+
+`scripts/run-macos-release.sh <line>` builds `minimal_app` for macOS with
+`flutter build macos --release` (so `Release.entitlements` applies), runs the built
+app's executable without the shell's `DITTO_*` variables, and checks the transcript
+`lib/main.dart` prints on stdout (`flutter: transcript: ...`). The release build embeds
+the license; the script deletes the build output on exit.
+
+`build-from-skill.py <out-dir>` builds a project from `flutter create` plus only what
+`skills/flutter-sdk` publishes: the program and dependencies from
+`examples/minimal-app.md`, and the Podfile, Info.plist, entitlements, Gradle and
+manifest snippets from `references/setup.md`. CI's `from-skill` job analyzes it and
+builds an APK and an iOS Simulator app.
+
 `scripts/hot-restart.py --device macos|chrome --mode v1|v2|holder [--peer]` runs
 `integration_test/hot_restart/hot_restart_app.dart` with `flutter run` (debug), sends
 `R` once the app is ready, watches, sends `q` and kills what is left. The records it
@@ -322,6 +362,15 @@ harness (see Finding 1):
   steps (`--mode v1 --peer`) did not crash. One run each; not yet repeated. Details:
   [Manual records](#manual-records).
 
+- **ditto_live 4.14.7, Android: the first `flutter build apk` after `pub get` fails**
+  (Flutter 3.50.0, AGP 9.3.1, `v4_app`, release). The plugin downloads `ditto.jar` and
+  `libdittoffi.so` from `software.ditto.live` into its pub-cache directory while Gradle
+  configures, after the Jetifier transform has been set up on the missing file:
+  `Execution failed for JetifyTransform: .../ditto_live-4.14.7/android/libs/ditto.jar.
+  > Transform's input file does not exist`. The second build (files present) passes.
+  Reproduced by deleting the downloaded files. CI's `android-release` 4.14 leg retries
+  once; no other line retries.
+
 ### Native builds, 2026-11-17
 
 Flutter 3.50.0 (AGP 9.3.1, Gradle 9.5.0 from its template), Xcode 27.2, CocoaPods
@@ -395,6 +444,42 @@ macOS 27.2.1 arm64. Every probe ID's outcome, with build mode and version, is in
 - **Large results (dart2js, 5.2.0):** for 5,000 documents, `execute` took 20 ms;
   reading every `item.value` as well took 79 ms in one long task, the longest frame gap
   67 ms (an earlier run: 66 ms, 50 ms). With `LIMIT 50` it took 2 ms and no long task.
+
+### v4 fixture and default-directory migration, 2026-11-17
+
+Flutter 3.50.0, macOS 27.2.1 arm64, Xcode 27.2, an iPhone 18 Pro simulator (iOS 27.1),
+debug builds.
+
+| Line | Target | Outcome |
+|---|---|---|
+| 4.14.7 | `v4_app` `v4_test.dart`, macOS | pass: `v4 read-back make: Toyota`, `v4 SDK version: 4.14.7`, `v4 closed: true` |
+| 4.14.7 | `v4_app` `flutter build ios --simulator --no-codesign` | pass |
+| 4.14.7 | `v4_app` `flutter build apk --release` | fail on the first build after `pub get`, pass on the second (SDK defect below) |
+| 5.1.0 then 5.2.0 | `migrate_default_dir`, macOS | pass |
+| 5.1.0 then 5.2.0 | `migrate_default_dir`, iOS Simulator | pass with `--no-uninstall`; fail without it |
+| 5.2.0 | `run-macos-release.sh` (release build, `.app` run directly) | pass |
+
+- **5.2.0 reads a 5.1.0 default directory in place.** The 5.1.0 write put the store in
+  `{Documents}/ditto-00000000-0000-0000-0000-000000000000` (Application Support had
+  none). The 5.2.0 read, with no `persistenceDirectory`, reported
+  `absolutePersistenceDirectory` = that same Documents path and returned the car;
+  nothing was moved to Application Support. Same on macOS (sandbox container) and the
+  iOS Simulator. With logging on, 5.2.0 logs `Conflicting pre-existing default
+  persistence directories found. Since the v5 default contains no ditto data,
+  defaulting to legacy v4.` and names both paths.
+- **`flutter test` uninstalls the app from a simulator after each run**, deleting its
+  data container, so the first iOS Simulator migration run read `[]` (and found neither
+  directory) on 5.2.0. `flutter test --no-uninstall` keeps it; with it, the container's
+  data survives the 5.1.0 → 5.2.0 reinstall (the container path changes, its contents
+  move with it).
+- **The 5.1.0 write phase is the first run of the published program with the SDK
+  default directory** (every other fixture run passes a temporary one): pass on macOS
+  and the iOS Simulator.
+- **Ditto reads `DITTO_*` variables from the process environment.** Running the
+  release `.app` from a shell that exported `DITTO_OFFLINE_LICENSE` logged `The Ditto
+  environment variable offline_license is set, but it is not a known system parameter,
+  so it is being ignored`. `run-macos-release.sh` therefore unsets every `DITTO_*`
+  variable for the app; the license is a define.
 
 ## Findings that changed a research lead
 

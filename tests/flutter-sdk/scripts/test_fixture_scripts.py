@@ -11,6 +11,7 @@ Bash is not exercised here.
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import socket
@@ -36,6 +37,15 @@ class Pins(unittest.TestCase):
         fvmrc = json.loads((HARNESS / ".fvmrc").read_text())
         versions = json.loads((HARNESS / "versions.json").read_text())
         self.assertEqual(fvmrc["flutter"], versions["flutter"])
+
+    def test_every_fixture_pins_the_versions_json_flutter_lints(self):
+        pin = json.loads((HARNESS / "versions.json").read_text())["flutter_lints"]
+        pubspecs = sorted(HARNESS.glob("*/pubspec.yaml"))
+        self.assertGreaterEqual({p.parent.name for p in pubspecs}, {"minimal_app", "snippet_check", "v4_app"})
+        for pubspec in pubspecs:
+            with self.subTest(fixture=pubspec.parent.name):
+                pins = re.findall(r"^  flutter_lints:[ \t]*(\S+)[ \t]*$", pubspec.read_text(), re.M)
+                self.assertEqual(pins, [pin], f"{pubspec}: flutter_lints must be exactly {pin} (versions.json)")
 
 
 class UseVersion(unittest.TestCase):
@@ -180,6 +190,24 @@ class RunFixture(unittest.TestCase):
         log = logs[0].read_text()
         self.assertIn("DITTO_VERSION=5.2.0 DITTO_PLATFORM=macos PROBE_DEFAULT_LOGGING=true DITTO_LICENSE=<redacted>", log)
         self.assertNotIn(FAKE_LICENSE, log + result.stdout + result.stderr)
+
+    def test_migration_phase_is_a_define_keeps_the_app_and_names_the_log(self):
+        result = self.run_fixture("minimal_app", "macos", "5.1", "integration_test/migration/migrate_default_dir_test.dart",
+                                  environment={**self.environment, "MIGRATION_PHASE": "write"})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        record = self.record.read_text()
+        defines = json.loads(next(line for line in record.splitlines() if line.startswith("defines: "))[9:])
+        self.assertEqual(defines["MIGRATION_PHASE"], "write")
+        self.assertTrue(any("--no-uninstall" in line for line in record.splitlines() if line.startswith("argv:")),
+                        record)
+        logs = list((self.temp / "logs").glob("run-minimal_app-macos-5.1-migration_migrate_default_dir_test-write.log"))
+        self.assertEqual(len(logs), 1, list((self.temp / "logs").iterdir()))
+        self.assertIn("MIGRATION_PHASE=write", logs[0].read_text())
+
+    def test_v4_app_runs_on_the_4_14_line_only(self):
+        result = self.run_fixture("v4_app", "macos", "5.2", "integration_test/v4_test.dart")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("4.14 line only", result.stdout + result.stderr)
 
     def test_unsupported_web_devices_are_rejected(self):
         for device in ("edge", "web-server"):

@@ -5,6 +5,7 @@ These run the real Flutter toolchain (pinned in tests/flutter-sdk/versions.json)
 they need network access for `pub get`.
 """
 
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
@@ -97,6 +98,18 @@ class AnalyzeSkillSnippets(unittest.TestCase):
         result = self.run_script(f"{BLOCK_OPEN}\n{broken}{BLOCK_CLOSE}\n")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+
+class Helpers(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("analyze_skill_snippets", SCRIPT)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+
+    def test_windows_candidates_include_bat(self):
+        flutter = Path("sdk") / "bin" / "flutter"
+        names = [Path(c).name for c in self.module.executable_candidates(flutter, windows=True)]
+        self.assertEqual(names, ["flutter.bat", "flutter.exe", "flutter"])
+        self.assertEqual(self.module.executable_candidates(flutter, windows=False), [str(flutter)])
 
 if __name__ == "__main__":
     unittest.main()

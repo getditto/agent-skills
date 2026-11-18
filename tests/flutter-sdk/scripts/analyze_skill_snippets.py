@@ -20,6 +20,12 @@ modified), checked with `dart format --output=none --set-exit-if-changed` and
 `flutter analyze --fatal-infos`. Fences are batched into one run per pin. Each
 failure is reported as `file.md:line`, the line inside the fence.
 
+A re-pinned copy keeps the committed pubspec.lock, so pub changes only what the new
+ditto_live pin needs, and the resulting lock then goes through the same pub.dev age
+and checksum check as committed locks (scripts/check-dependency-age.py `pub_check`):
+packages pub resolved fresh are never analyzed unchecked. That check needs network
+access to pub.dev; `--no-age-check` skips it for offline runs.
+
 Prelude fences are indented two spaces inside the wrapper, so they are format-checked
 at --line-length 82, which is an 80-column limit for the published code.
 
@@ -45,10 +51,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
+import importlib.util
 from dataclasses import dataclass, field
 from pathlib import Path
 
 HARNESS = Path(__file__).resolve().parents[1]
+REPO_ROOT = HARNESS.parents[1]
 PACKAGE = HARNESS / "snippet_check"
 DEFAULT_LINE = "5.2"
 FRAGMENT_REASONS = {"pseudo-diff", "v4-rename-table", "partial-class-member"}
@@ -171,6 +180,39 @@ def run(cmd: list[str], cwd: Path, env: dict[str, str] | None = None) -> subproc
     return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
 
 
+def executable_candidates(path: Path, windows: bool | None = None) -> list[str]:
+    """path, plus path.bat and path.exe first on Windows (the Flutter SDK ships
+    bin/flutter.bat and bin/dart.bat there)."""
+    if not (os.name == "nt" if windows is None else windows):
+        return [str(path)]
+    return [str(path) + suffix for suffix in (".bat", ".exe", "")]
+
+
+def sibling_tool(flutter: str, name: str) -> str:
+    """The `name` executable next to `flutter` (dart.bat on Windows)."""
+    for candidate in executable_candidates(Path(flutter).with_name(name)):
+        if os.access(candidate, os.X_OK) or (os.name == "nt" and Path(candidate).is_file()):
+            return candidate
+    return str(Path(flutter).with_name(name))
+
+
+def age_check(lockfile: Path) -> None:
+    """Run scripts/check-dependency-age.py's pub check on a generated lock."""
+    scripts = REPO_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        spec = importlib.util.spec_from_file_location("check_dependency_age", scripts / "check-dependency-age.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(scripts))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=3)
+    try:
+        module.pub_check(lockfile, cutoff)
+    except ValueError as error:
+        raise Failure(f"dependency age check failed for {lockfile.name} of a re-pinned copy:\n{error}") from error
+
+
 def flutter_version(executable: str) -> str | None:
     result = run([executable, "--version", "--machine"], HARNESS)
     try:
@@ -184,7 +226,7 @@ def find_flutter(pin: str) -> str:
     if os.environ.get("FLUTTER"):
         candidates.append(os.environ["FLUTTER"])
     else:
-        candidates.append(str(HARNESS / ".fvm/flutter_sdk/bin/flutter"))
+        candidates += executable_candidates(HARNESS / ".fvm/flutter_sdk/bin/flutter")
         fvmrc = HARNESS / ".fvmrc"
         if fvmrc.is_file():
             version = json.loads(fvmrc.read_text())["flutter"]
@@ -192,7 +234,7 @@ def find_flutter(pin: str) -> str:
                 str(Path(os.environ["FVM_HOME"]) / "versions") if os.environ.get("FVM_HOME")
                 else str(Path.home() / "fvm/versions")
             )
-            candidates.append(str(Path(cache) / version / "bin/flutter"))
+            candidates += executable_candidates(Path(cache) / version / "bin/flutter")
         found = shutil.which("flutter")
         if found:
             candidates.append(found)
@@ -210,8 +252,10 @@ def find_flutter(pin: str) -> str:
     )
 
 
-def prepare_project(work: Path, line: str, pins: dict, flutter: str) -> Path:
-    """Copy snippet_check into work/line-<line>, re-pin ditto_live, and run pub get."""
+def prepare_project(work: Path, line: str, pins: dict, flutter: str, check_age: bool = True) -> Path:
+    """Copy snippet_check into work/line-<line>, re-pin ditto_live, and run pub get.
+
+    A re-pinned copy's lock is age-checked unless check_age is False."""
     project = work / f"line-{line}"
     shutil.copytree(PACKAGE, project, ignore=shutil.ignore_patterns(".dart_tool", "build", "lib"))
     (project / "lib").mkdir()
@@ -226,12 +270,14 @@ def prepare_project(work: Path, line: str, pins: dict, flutter: str) -> Path:
                 f"but versions.json pins the {line} line at {pin}"
             )
     else:
-        (project / "pubspec.lock").unlink(missing_ok=True)
+        # Keep the committed lock: pub changes only what the new pin needs.
         text = re.sub(r"^(  ditto_live: )\S+$", rf"\g<1>{pin}", text, flags=re.M)
         pubspec.write_text(text)
     result = run([flutter, "pub", "get"], project)
     if result.returncode != 0:
         raise Failure(f"flutter pub get failed for the {line} line (ditto_live {pin}):\n{result.stdout}{result.stderr}")
+    if line != DEFAULT_LINE and check_age:
+        age_check(project / "pubspec.lock")
     return project
 
 
@@ -249,7 +295,7 @@ def write_fence(project: Path, index: int, fence: Fence) -> tuple[str, int, bool
 
 
 def check_group(project: Path, fences: list[Fence], flutter: str, errors: list[str]) -> None:
-    dart = str(Path(flutter).with_name("dart"))
+    dart = sibling_tool(flutter, "dart")
     files: dict[str, tuple[Fence, int, bool]] = {}
     for index, fence in enumerate(fences):
         name, first, wrapped = write_fence(project, index, fence)
@@ -291,6 +337,8 @@ def check_group(project: Path, fences: list[Fence], flutter: str, errors: list[s
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--skill", default="skills/flutter-sdk", help="skill directory to check")
+    parser.add_argument("--no-age-check", action="store_true",
+                        help="skip the pub.dev age check of re-pinned locks (offline runs)")
     args = parser.parse_args()
     skill = Path(args.skill)
     if not skill.is_dir():
@@ -313,7 +361,7 @@ def main() -> int:
             flutter = find_flutter(pins["flutter"])
             with tempfile.TemporaryDirectory(prefix="flutter-fences-") as temp:
                 for line, fences in sorted(groups.items()):
-                    project = prepare_project(Path(temp), line, pins, flutter)
+                    project = prepare_project(Path(temp), line, pins, flutter, not args.no_age_check)
                     check_group(project, fences, flutter, errors)
     except Failure as error:
         print(f"ERROR: {error}", file=sys.stderr)
