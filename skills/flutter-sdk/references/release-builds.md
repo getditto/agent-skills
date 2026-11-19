@@ -38,7 +38,7 @@ says what this skill observed.
 | Android: opens and writes, never finds a peer | Runtime permissions not granted: Ditto never asks | `await DittoSyncPermissions().missingPermissions()` is empty (5.1.0+); then `sync.stop()` and `sync.start()` | Source and dartdoc; the request was not run on a device |
 | Android: a permission is missing from the release APK only | It was declared in `src/debug` or `src/profile`, like Flutter's template `INTERNET` | `aapt2 dump permissions app-release.apk` | Executed: the plugin's own manifest puts Ditto's permissions in every release APK |
 | Android release only, debug works | R8 ([below](#android-r8)) | Rebuild without minification | Not executed |
-| iOS: no permission prompt, no LAN or Bluetooth peers | The Info.plist keys are missing from the built app | `plutil -p Runner.app/Info.plist` shows the three keys | The keys are in the simulator build (executed); no radio sync was run |
+| iOS: no permission prompt, no LAN or Bluetooth peers | The Info.plist keys are missing from the built app | `plutil -p Runner.app/Info.plist` shows the three keys | The fixture's simulator app builds with the keys (executed); the built plist was not inspected, and no prompt or radio sync was run |
 | A transport stays off (5.1.0+) | A condition Ditto can report: a missing permission, a radio off | Log `observeTransportConditions` events that are not `ok` ([transports.md](transports.md#cap-06-customizing-transports)) | No event with every transport off (executed); a failing condition was not produced |
 
 ## Android: R8

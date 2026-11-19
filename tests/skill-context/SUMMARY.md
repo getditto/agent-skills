@@ -267,7 +267,7 @@ canonical skills, or only `flutter-sdk` and `native-app-config` for the plugin-o
 or nothing else for the baselines.
 
 The skill changed twice after runs, and each time every skill case was rerun on both
-hosts. The results below come from the final tree (digest `388fc349…`; plugin-only
+hosts. The results below come from the last tree of 2026-11-18 (digest `388fc349…`; plugin-only
 install `62db713e…`) and were scored literally: a criterion passes only when the answer
 covers every clause, including clauses for other SDK lines or platforms than the prompt's.
 Criteria passed out of the total, with partials or fails in brackets:
@@ -378,3 +378,85 @@ Three cases ran with no skills installed. Summaries are in
 There was one run per host, case and tree, plus the one recorded retry. Claude reported
 USD 2.21 (initial), 2.24 (intermediate), 2.20 (final) and 0.20 (baselines). Codex does not
 report cost. Raw traces stay private.
+
+## Flutter SDK skill rerun — 2026-11-19
+
+The `flutter-sdk` skill changed after a three-reviewer pass: `dart:io` on web (it
+compiles and throws at run time), a new `release-builds.md` with a diagnosis table for a
+release build that cannot sync and an R8 note, an executed sync-scopes sample, 5.x
+opening a 4.14.7 default directory in place, `main.dart` and run steps in the minimal
+app, `best-practices.md` in the template's nine sections, and evidence notes plus a
+documentation-mismatch table in its README.
+
+The Flutter criteria changed too, so these scores are not comparable criterion by
+criterion with the tables above:
+
+- Clauses about SDK lines or platforms the prompt does not ask about were removed (the
+  5.1.0 hang and the web dev-server restart in the hot-restart case, the 5.0.x/5.1.x
+  throw site in the P2P case, and similar).
+- `flutter_v4_migration` criterion 7 and `flutter_web_p2p_config` criterion 4 were
+  rewritten to match the corrected skill.
+- Two cases were added: `flutter_release_no_sync` (a macOS release build that does not
+  connect) and `flutter_negative_plain_flutter` (Riverpod and Drift, no Ditto).
+
+All fourteen `flutter_*` cases ran once per host: Claude Code 2.1.328
+(`claude-opus-5-5`, reported the same) and Codex 0.169.1 (`gpt-6.1-sol`), isolated as
+the README describes, catalogs checked first. Records: `"run":
+"flutter-rerun-2026-11-19"` in [results.json](results.json). Criteria passed out of the
+total, with partials or fails in brackets:
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| `flutter_init_first_query` | 6/6 | 6/6 |
+| `flutter_statefulwidget_observer` | 7/7 | 7/7 |
+| `flutter_dispose_cleanup` | 5/7 (2 partial) | 5/7 (2 partial) |
+| `flutter_presence_peers` | 6/6 | 6/6 (retry; first run excluded) |
+| `flutter_v4_migration` | 6/7 (1 partial) | 6/7 (1 partial) |
+| `flutter_web_p2p_config` | 5/6 (1 partial) | 5/6 (1 partial) |
+| `flutter_web_attachments` | 7/7 | 6/7 (1 partial) |
+| `flutter_web_base_href` | 7/7 | 6/7 (1 partial) |
+| `flutter_android_permissions` | 5/5 | 3/5 (1 partial, 1 fail) |
+| `flutter_hot_restart_observer` | 7/7 | 7/7 |
+| `flutter_release_no_sync` | 5/5 | 5/5 |
+| `flutter_negative_kotlin` | Pass; `kotlin-sdk` only | Pass; `kotlin-sdk` only |
+| `flutter_negative_plain_flutter` | Pass; no skill | Pass; no skill |
+| `flutter_only_plugin` | 5/5 | 4/5 (1 fail) |
+
+- Routing was correct on every run. `flutter-sdk` was used for every Flutter-with-Ditto
+  case, never for the Kotlin control, and no skill was invoked or read for the plain
+  Flutter control on either host. There were no timeouts and no policy rejections.
+  Codex's nonzero exits were `rg`/`cat` probes for files the workspace does not have.
+- The new content was used. Both `flutter_release_no_sync` answers read
+  `release-builds.md`, named `Release.entitlements` and the two network keys, gave the
+  `codesign -d --entitlements -` check, quoted the `Operation not permitted (os error 1)`
+  log lines, and said that nothing throws in Dart. Both migration answers kept the v4
+  app ID as `databaseID` and said 5.x opens the v4 store in place.
+- The partials and fails are omissions, not wrong guidance. No answer contradicted the
+  skill.
+  - Dispose (both hosts): neither named `DittoClosedException`. Claude did not say that
+    `registerSubscription` throws at the call. Codex did not say that dropped handles
+    keep running.
+  - v4 migration (both): neither named the directory change itself (`{Documents}/ditto`
+    against `ditto-{databaseID}`). Codex also gave no "test on a copy" advice.
+  - P2P config (both): the code enabled Bluetooth LE and LAN alike on every native
+    platform, with no AWDL or Wi-Fi Aware branch.
+  - Codex web attachments: the fetcher was a local that was not kept.
+  - Codex base href: it did not say that `Ditto.init()` fails with the default URL.
+  - Codex permissions: it named only the Bluetooth permissions the plugin declares and
+    gave no merged-manifest check. Its fail is again the restart-sync-after-a-late-grant
+    rule, which `setup.md` states and Codex read: the same miss as on 2026-11-18.
+  - Codex plugin-only: it did not say that iOS prompts come from the Info.plist strings
+    and that Ditto requests nothing itself.
+- Isolation: one Codex run (`flutter_presence_peers`) read `presence_graph.dart` of
+  ditto_live 5.2.0 from the pub cache outside its workspace. It is kept as
+  `flutter-rerun-2026-11-19-excluded` and the case was retried once. The retry listed a
+  temp directory outside the workspace for that file name, found nothing, and read only
+  the skill; it is the final record. No other run touched a path outside its workspace.
+- Tree digests: the full-install runs carry `39ee8ece…`, the final tree, except four
+  (`flutter_init_first_query` and `flutter_statefulwidget_observer` on both hosts), which
+  started before a one-cell wording change in `release-builds.md` and carry `d38f2aee…`.
+  None of the four read that file. The plugin-only install is `e14cee84…`.
+- Limits of this rerun: the answers were scored literally by two model reviewers, one
+  per host, given the criteria, answers and traces, and then spot-checked by hand; the
+  earlier Flutter runs were scored by hand. The Dart in these answers was not analyzed.
+  One run per host and case, plus the one recorded retry. Claude reported USD 2.38.

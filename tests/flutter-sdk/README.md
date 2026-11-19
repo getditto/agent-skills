@@ -694,7 +694,8 @@ debug builds unless stated:
 Added on 2026-11-19, after the runs in this table: a 5.0 leg of `web` (`flutter drive`
 targets only), the minimal app as the first `web` target, the two-peer build in
 `macos-release`, a debug macOS build in `from-skill`, and `flutter analyze` on both
-fixtures plus the host tests in `skill-snippets`.
+fixtures plus the host tests in `skill-snippets`. All of them passed on their first CI
+run that day, with every other job in the table.
 
 - **iOS Simulator: the first `flutter test` after a fresh boot can hang.** On the first
   CI run the leg picked the first iPhone in `simctl list` and hung after `Xcode build
