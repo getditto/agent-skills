@@ -98,6 +98,10 @@ compile error text is the analyzer's (Flutter 3.50.0 against 5.0.4: `undefined_m
 
 ## CAP-19 v4 to v5 migration
 
+Asked to do the migration? Follow [migration-v4-to-v5.md](migration-v4-to-v5.md), the
+agent prompt Ditto publishes, with this skill's corrections; this section is the
+reference behind it.
+
 The authoritative guide is
 <https://docs.ditto.live/sdk/latest/migration-guides/flutter-v4>, with the query side in
 <https://docs.ditto.live/sdk/latest/migration-guides/flutter-dql>. Three of its statements

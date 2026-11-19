@@ -179,7 +179,9 @@ teach the non-obvious traps.
 - [release-builds.md](references/release-builds.md): a release build that cannot sync:
   symptom, cause, check; R8 on Android is unverified.
 - [errors.md](references/errors.md): catch both `DittoException` and `DittoError`.
-- [versions.md](references/versions.md): per-line APIs and migration.
+- [migration-v4-to-v5.md](references/migration-v4-to-v5.md): asked to upgrade a 4.x app
+  to 5.x? Follow it: Ditto's migration prompt plus this skill's corrections.
+- [versions.md](references/versions.md): per-line APIs and migration tables.
 - [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; sync scopes
   (`ALTER SYSTEM`, not persisted); status.
 - [store.md](references/store.md): `execute`, transactions, indexes, `EVICT`.

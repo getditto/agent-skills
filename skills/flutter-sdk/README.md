@@ -98,7 +98,8 @@ Rows that are not `Support: yes`
 - **CAP-15 `partial`**: logging (`DittoLogger`, `customLogCallback`, `exportLogs`) is
   complete and executed. Missing: a disk-usage API. The `fs_*` keys of the DQL
   collection `system:system_info` stand in for it (executed in CI on macOS, Linux and
-  Windows; empty for the first second or two after `Ditto.open`).
+  Windows; empty for the first second or two after `Ditto.open`). On the iOS Simulator
+  only the `fs_usage_*` keys arrive; `fs_device_available` and `fs_device_total` do not.
 - **CAP-20 `partial`**: the preview APIs are `registerObserverV2` and
   `registerObserverWithSignalNext` (5.1.0+, executed on macOS and, signal-next, Chrome; marked
   `@experimental` from `package:meta`, so each use needs
@@ -209,8 +210,8 @@ GitHub-hosted runners (ubuntu-24.04, windows-latest, macos-26 arm64). Per target
 - **Web:** headless Chrome: `flutter drive` debug (DDC) on 5.0.4, 5.1.0 and 5.2.0;
   release dart2js and `--wasm` bundles on 5.1.0 and 5.2.0.
 - **Two peers:** two instances in one process over TCP loopback on macOS, 5.0.4 to 5.2.0.
-- **By hand, not in CI:** the 4.14.7 → 5.x on-disk upgrade (macOS,
-  `run-v4-upgrade.sh`), hot restart (`flutter run`, macOS and Chrome), the
+- **By hand, not in CI:** the 4.14.7 → 5.x on-disk upgrade (macOS; its test files are
+  not committed), hot restart (`flutter run`, macOS and Chrome), the
   `system:data_sync_info` sync-status probe and a standalone app that reproduced its hang
   on 4.14.7, 5.0.4, 5.1.0 and 5.2.0, and the host `flutter test` attempt.
 

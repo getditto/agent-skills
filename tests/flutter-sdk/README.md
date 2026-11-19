@@ -204,18 +204,6 @@ sandboxed, so that needs `com.apple.security.network.server` and
 app run without the shell's `DITTO_*` variables. The release builds embed the license;
 the script deletes the whole fixture copy on exit.
 
-`scripts/run-v4-upgrade.sh [<5.x line>]` (default 5.2, macOS only) opens a store
-written by 4.14.7 with a 5.x line. Each of its two rounds first runs
-`v4_app/integration_test/upgrade/v4_write_test.dart` on 4.14 (delete
-`{Documents}/ditto` and both v5 default directories, then write one car to the v4
-default, `{Documents}/ditto`), then
-`minimal_app/integration_test/migration/upgrade_from_v4_test.dart` on the 5.x line
-with `MIGRATION_PHASE=read-default` (`DittoConfig(databaseID: <the v4 app ID>)`, no
-`persistenceDirectory`) or `read-explicit` (the v4 path passed). A sandboxed app's
-Documents directory belongs to its bundle ID, so the script builds the `v4_app` copy
-under `minimal_app`'s bundle ID (`FIXTURE_MACOS_BUNDLE_ID`, which `run-fixture.sh`
-writes into the copy's `AppInfo.xcconfig`). Not in CI.
-
 `build-from-skill.py <out-dir>` builds a project from `flutter create` plus only what
 `skills/flutter-sdk` publishes: both Dart files (`lib/minimal_app.dart`,
 `lib/main.dart`) and the dependencies from `examples/minimal-app.md`, and the Podfile,
@@ -597,7 +585,7 @@ run locally; debug builds unless stated.
 |---|---|---|
 | 5.0.4, 5.1.0, 5.2.0 | `v50/sync_test.dart` on macOS, with the two sync-scope tests (8 tests) | pass |
 | 5.2.0 | `run-macos-release.sh 5.2`: `lib/main.dart`, then `two_peer_app.dart` (release) | pass: the five minimal-app lines, then `two-peer sync: car-from-listener`, `closed: true` |
-| 4.14.7 → 5.0.4, 5.1.0, 5.2.0 | `run-v4-upgrade.sh <line>` on macOS, both rounds | pass on each line |
+| 4.14.7 → 5.0.4, 5.1.0, 5.2.0 | a v4 default directory opened by each 5.x line on macOS, by hand (below) | the car was read on each line |
 | 5.0.4 | Chrome: `minimal_app_test.dart`, `web_all_test.dart` (13), `web_license_test.dart` | pass |
 | 5.1.0, 5.2.0 | Chrome: `web_all_test.dart` (13) | pass |
 | 5.1.0, 5.2.0 | `web-probe.py --skip-manual` (release) | pass |
@@ -609,7 +597,14 @@ run locally; debug builds unless stated.
   `sync.start()`. A second instance opened on the same directory after `close()`
   returns `{}` again: the setting is not persisted. One offline instance; that a scope
   keeps a collection off another peer was not run.
-- **5.x opens a 4.14.7 store in place.** The 4.14.7 write created
+- **5.x opens a 4.14.7 store in place.** Run by hand; **the script and its two test
+  files are not committed**, because the skill gives agents the migration steps
+  (`references/migration-v4-to-v5.md`) rather than a harness for them. What ran, per
+  line: `v4_app` on 4.14.7, built under `minimal_app`'s macOS bundle ID so both apps
+  share one sandbox container, deleted `{Documents}/ditto` and both v5 default
+  directories and wrote one car with `persistenceDirectory: 'ditto'`; then `minimal_app`
+  on the 5.x line opened Ditto in a new process and read the car, once with no
+  `persistenceDirectory` and once with the v4 path. The 4.14.7 write created
   `{Documents}/ditto` in the sandbox container. On 5.0.4, 5.1.0 and 5.2.0, with
   `DittoConfig(databaseID: 'REPLACE_ME_WITH_YOUR_APP_ID')` (the v4 fixture's app ID) and
   no `persistenceDirectory`, `absolutePersistenceDirectory` was that same
@@ -649,6 +644,31 @@ run locally; debug builds unless stated.
   both from this date.
 
 The `v50` directory has 45 tests from this date (43 before).
+
+### Every probe on the iOS Simulator, 2026-11-19
+
+Until this date the iOS Simulator and the Android emulator ran three targets (the
+minimal app, `v50/store_test.dart`, `v50/observers_test.dart`). Run locally: iPhone 18
+Pro simulator (iOS 27.0), ditto_live 5.2.0, debug, `DITTO_PLATFORM=ios run-fixture.sh
+minimal_app <udid> 5.2` with `init_once`, the minimal app, `v50`, `v51` and `v52`.
+
+| Target | Outcome |
+|---|---|
+| `init_once` (1), minimal app, `v51` (7), `v52` (4) | pass |
+| `v50` (45) | 44 pass; `system_info_test.dart` failed |
+| `v50/system_info_test.dart`, corrected, alone | pass |
+| `v4_app` `v4_test.dart` on 4.14.7, same simulator | pass |
+
+- **The iOS Simulator never reports `fs_device_available` or `fs_device_total`.** The
+  probe waited 90 s for the seven documented `fs_*` keys and got eight keys, all
+  `fs_usage_*`. The corrected probe asserts the five `fs_usage_*` keys on every
+  platform, the two device keys on macOS, Linux and Windows, and their absence after
+  20 s on iOS; on Android it records what it finds. A physical iOS device was not run.
+- The two-peer TCP loopback probes, presence, the connection-request handler, the
+  widget and lifecycle probes and attachments all passed on the simulator.
+
+CI now runs every probe directory on the iOS Simulator and the Android emulator (5.2),
+the v4 test on both (4.14), and Linux and Windows on 5.0, 5.1 and 5.2.
 
 ### Windows desktop, 2026-11-17
 

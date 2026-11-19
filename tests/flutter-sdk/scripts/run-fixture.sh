@@ -39,8 +39,8 @@
 # FIXTURE_TIMEOUT, FIXTURE_RETRIES (default 0: re-runs of a target the timeout stopped
 # (exit 124) with the known iOS Simulator debug-connection failure; nothing else), FIXTURE_LOG_DIR (default
 # tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
-# MIGRATION_PHASE (a phase name for integration_test/migration/; added to the log name),
-# FIXTURE_MACOS_BUNDLE_ID (macOS: build the copy under this bundle ID).
+# MIGRATION_PHASE (wipe, write or read; integration_test/migration/, and added to the
+# log name).
 #
 set -euo pipefail
 
@@ -115,15 +115,6 @@ else
 fi
 
 WORKDIR="$("$PYTHON" "$HARNESS/scripts/use-version.py" "$FIXTURE" "$LINE" | tail -1 | tr -d '\r')"
-
-# FIXTURE_MACOS_BUNDLE_ID builds the copy's macOS app under another bundle ID, so two
-# fixtures can share one sandbox container (run-v4-upgrade.sh).
-if [[ -n "${FIXTURE_MACOS_BUNDLE_ID:-}" ]]; then
-  [[ "$FIXTURE_MACOS_BUNDLE_ID" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "bad FIXTURE_MACOS_BUNDLE_ID" >&2; exit 2; }
-  appinfo="$WORKDIR/macos/Runner/Configs/AppInfo.xcconfig"
-  sed "s/^PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = $FIXTURE_MACOS_BUNDLE_ID/" \
-    "$appinfo" >"$appinfo.new" && mv "$appinfo.new" "$appinfo"
-fi
 
 CHROMEDRIVER_PID=""
 DEFINES_FILE=""

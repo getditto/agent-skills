@@ -119,9 +119,6 @@ log="$FAKE_RECORD"
 printf 'argv:' >> "$log"; printf ' [%s]' "$@" >> "$log"; printf '\n' >> "$log"
 printf 'pwd: [%s]\n' "$PWD" >> "$log"
 printf 'env-ditto: [%s]\n' "$(env | grep -o '^DITTO_[A-Za-z0-9_]*' | sort | tr '\n' ' ')" >> "$log"
-if [[ "${1:-}" == "test" && -f macos/Runner/Configs/AppInfo.xcconfig ]]; then
-  printf 'bundle: [%s]\n' "$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER = //p' macos/Runner/Configs/AppInfo.xcconfig)" >> "$log"
-fi
 for arg in "$@"; do
   case "$arg" in
     --dart-define-from-file=*)
@@ -306,21 +303,6 @@ class RunFixture(unittest.TestCase):
 
     def record_lines(self, prefix):
         return [line for line in self.record.read_text().splitlines() if line.startswith(prefix)]
-
-    def test_macos_bundle_id_override_applies_to_the_copy_only(self):
-        committed = (HARNESS / "v4_app/macos/Runner/Configs/AppInfo.xcconfig").read_text()
-        environment = {**self.environment, "FIXTURE_MACOS_BUNDLE_ID": "live.ditto.skills.minimalApp"}
-        result = self.run_fixture("v4_app", "macos", "4.14", "integration_test/upgrade/v4_write_test.dart",
-                                  environment=environment)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.record_lines("bundle: "), ["bundle: [live.ditto.skills.minimalApp]"])
-        self.assertEqual((HARNESS / "v4_app/macos/Runner/Configs/AppInfo.xcconfig").read_text(), committed)
-        self.record.unlink()
-        result = self.run_fixture("v4_app", "macos", "4.14", "integration_test/v4_test.dart")
-        self.assertEqual(self.record_lines("bundle: "), ["bundle: [live.ditto.skills.v4App]"])
-        bad = self.run_fixture("v4_app", "macos", "4.14", "integration_test/v4_test.dart",
-                               environment={**self.environment, "FIXTURE_MACOS_BUNDLE_ID": "a b; rm"})
-        self.assertEqual(bad.returncode, 2, bad.stdout + bad.stderr)
 
     def test_v4_app_runs_on_the_4_14_line_only(self):
         result = self.run_fixture("v4_app", "macos", "5.2", "integration_test/v4_test.dart")

@@ -167,9 +167,9 @@ jobs:
             --predicate 'process == "Runner"' | tail -300
 
   ios-sim:
-    name: iOS Simulator against ditto_live 5.2
+    name: iOS Simulator against ditto_live 5.2 and 4.14
     runs-on: macos-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read the pins
@@ -194,20 +194,29 @@ jobs:
         id: sim
         run: echo "udid=$(tests/flutter-sdk/scripts/boot-simulator.sh)" >> "$GITHUB_OUTPUT"
       # A simulator UDID carries no platform, so DITTO_PLATFORM is set.
-      - name: Run the minimal app and the store and observer probes
+      # init_once first, alone: nothing may call Ditto.init() before it.
+      - name: Run the minimal app and every probe directory
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
           # A first run on a fresh simulator can fail to get its debug connection;
           # run-fixture.sh re-runs a timed-out target once for that error only,
           # with a ::warning::.
-          FIXTURE_TIMEOUT: '600'
+          FIXTURE_TIMEOUT: '900'
           FIXTURE_RETRIES: '1'
         run: |
           tests/flutter-sdk/scripts/run-fixture.sh minimal_app "${{ steps.sim.outputs.udid }}" 5.2 \
-            integration_test/minimal_app_test.dart \
-            integration_test/probes/v50/store_test.dart \
-            integration_test/probes/v50/observers_test.dart
+            integration_test/probes/init_once integration_test/minimal_app_test.dart \
+            integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+      - name: Run the v4 open, write and read-back test (ditto_live 4.14)
+        env:
+          DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+          DITTO_PLATFORM: ios
+          FIXTURE_TIMEOUT: '900'
+          FIXTURE_RETRIES: '1'
+        run: |
+          tests/flutter-sdk/scripts/run-fixture.sh v4_app "${{ steps.sim.outputs.udid }}" 4.14 \
+            integration_test/v4_test.dart
       - name: Show the simulator's Runner log
         if: failure()
         run: |
@@ -215,9 +224,9 @@ jobs:
             --predicate 'process == "Runner"' | tail -300
 
   android-emulator:
-    name: Android emulator against ditto_live 5.2
+    name: Android emulator against ditto_live 5.2 and 4.14
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read the pins
@@ -245,7 +254,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       # emulator-5554 maps to DITTO_PLATFORM=android in run-fixture.sh.
-      - name: Run the minimal app and the store and observer probes
+      # init_once first, alone: nothing may call Ditto.init() before it. Then the v4
+      # fixture on the 4.14 line. Each script line is its own shell.
+      - name: Run the minimal app, every probe directory, and the v4 test
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
@@ -254,7 +265,9 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash tests/flutter-sdk/scripts/run-fixture.sh minimal_app emulator-5554 5.2 integration_test/minimal_app_test.dart integration_test/probes/v50/store_test.dart integration_test/probes/v50/observers_test.dart
+          script: |
+            bash tests/flutter-sdk/scripts/run-fixture.sh minimal_app emulator-5554 5.2 integration_test/probes/init_once integration_test/minimal_app_test.dart integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+            bash tests/flutter-sdk/scripts/run-fixture.sh v4_app emulator-5554 4.14 integration_test/v4_test.dart
 
   android-release:
     name: Android release APK, ditto_live ${{ matrix.line }} (${{ matrix.fixture }})
@@ -357,9 +370,13 @@ jobs:
           flutter build ios --simulator --no-codesign
 
   linux:
-    name: Linux desktop against ditto_live 5.2
+    name: Linux desktop against ditto_live ${{ matrix.line }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        line: ['5.0', '5.1', '5.2']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read the pins
@@ -384,15 +401,25 @@ jobs:
       - name: Run the minimal app and the probes
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+          LINE: ${{ matrix.line }}
         run: |
-          xvfb-run -a tests/flutter-sdk/scripts/run-fixture.sh minimal_app linux 5.2 \
-            integration_test/probes/init_once integration_test/minimal_app_test.dart \
-            integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+          case "$LINE" in
+            5.0) dirs=(v50) ;;
+            5.1) dirs=(v50 v51) ;;
+            5.2) dirs=(v50 v51 v52) ;;
+          esac
+          targets=(integration_test/probes/init_once integration_test/minimal_app_test.dart)
+          for dir in "${dirs[@]}"; do targets+=("integration_test/probes/$dir"); done
+          xvfb-run -a tests/flutter-sdk/scripts/run-fixture.sh minimal_app linux "$LINE" "${targets[@]}"
 
   windows:
-    name: Windows desktop against ditto_live 5.2
+    name: Windows desktop against ditto_live ${{ matrix.line }}
     runs-on: windows-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        line: ['5.0', '5.1', '5.2']
     defaults:
       run:
         shell: bash
@@ -419,16 +446,24 @@ jobs:
       - name: Run the minimal app and the probes
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
+          LINE: ${{ matrix.line }}
         run: |
-          tests/flutter-sdk/scripts/run-fixture.sh minimal_app windows 5.2 \
-            integration_test/probes/init_once integration_test/minimal_app_test.dart \
-            integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+          case "$LINE" in
+            5.0) dirs=(v50) ;;
+            5.1) dirs=(v50 v51) ;;
+            5.2) dirs=(v50 v51 v52) ;;
+          esac
+          targets=(integration_test/probes/init_once integration_test/minimal_app_test.dart)
+          for dir in "${dirs[@]}"; do targets+=("integration_test/probes/$dir"); done
+          tests/flutter-sdk/scripts/run-fixture.sh minimal_app windows "$LINE" "${targets[@]}"
       # On Windows the harness leaves a persistence directory that is still locked
       # after close() and prints a `cleanup:` line (README, Windows desktop).
       - name: Report persistence directories still locked after close
         if: always()
+        env:
+          LINE: ${{ matrix.line }}
         run: |
-          grep -h 'cleanup: still locked after close' tests/flutter-sdk/run-minimal_app-windows-5.2-*.log \
+          grep -h 'cleanup: still locked after close' tests/flutter-sdk/run-minimal_app-windows-"$LINE"-*.log \
             | sed 's/^/::warning::/' || echo 'no locked directories reported'
 
   web:
