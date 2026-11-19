@@ -112,8 +112,9 @@ returned nothing; polled once a second, it returned `fs_device_available`,
 `fs_usage_total`, in bytes, within 1 to 2 s on every line, and not all at once (one
 5.1.0 run had only the `fs_usage_*` keys after 1 s). Treat a missing key as "not
 measured yet". **On the iOS Simulator the two `fs_device_*` keys never arrived** (5.2.0,
-90 s and 20 s of polling); the `fs_usage_*` keys did, within 1 s. So read device free
-space from the platform, not from Ditto, and do not wait for those two keys on iOS. The docs say an observer on `system:system_info` fires every 500 ms
+90 s and 20 s of polling); the `fs_usage_*` keys did, within 1 s. macOS, Linux, Windows
+and the Android emulator reported all of them; a physical iOS device was not run. So do
+not wait for the two device keys on iOS: read device free space from the platform. The docs say an observer on `system:system_info` fires every 500 ms
 whether or not anything changed, so poll it instead, e.g. once a minute.
 
 ### Small peer info / telemetry

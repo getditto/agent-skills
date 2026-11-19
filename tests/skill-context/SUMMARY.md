@@ -460,3 +460,16 @@ total, with partials or fails in brackets:
   per host, given the criteria, answers and traces, and then spot-checked by hand; the
   earlier Flutter runs were scored by hand. The Dart in these answers was not analyzed.
   One run per host and case, plus the one recorded retry. Claude reported USD 2.38.
+
+### Migration prompt added — 2026-11-19
+
+The skill then gained `references/migration-v4-to-v5.md`: the AI agent prompt from the
+Flutter v4 migration guide, with a table of the points where the released SDK differs.
+`flutter_v4_migration` was rerun once per host on that tree (`9fc164fa…`; records
+`"run": "flutter-migration-prompt-2026-11-19"`, scored by hand). Both hosts read the new
+file and scored 6/7 with one partial, as before: both said to keep the v4 app ID and
+pass no `persistenceDirectory`, and neither named the v5 default directory. New in both
+answers, from the prompt: the server URL copied from the portal as a `String`, and
+strict mode set through `systemParameters`. Claude's observer had no `onChange`, as the
+correction table says. The other thirteen `flutter_*` cases were not rerun on this tree.
+

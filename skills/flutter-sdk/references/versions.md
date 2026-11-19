@@ -27,9 +27,9 @@ tags elsewhere in this skill agree with this file.
 | Ditto SDK | Package version | Verified on | Status |
 |---|---|---|---|
 | 5.2.0 | `ditto_live: 5.2.0` | 5.2.0: macOS, Chrome, Linux, Windows, Android emulator, iOS Simulator | Latest known baseline; resolve the latest stable for new apps (`flutter pub add ditto_live`) |
-| 5.1.x | `ditto_live: 5.1.0` | 5.1.0: macOS, Chrome | Earlier 5.x line |
-| 5.0.x | `ditto_live: 5.0.4` | 5.0.4: macOS, Chrome (debug) | Earlier 5.x line; 5.0.4 has no `sdk-release-5.0.4` tag, so source citations use the pub.dev archive |
-| 4.14.x | `ditto_live: 4.14.7` | 4.14.7: macOS (write and read back), iOS Simulator and Android release builds | LTS; the v4 API below |
+| 5.1.x | `ditto_live: 5.1.0` | 5.1.0: macOS, Linux, Windows, Chrome | Earlier 5.x line |
+| 5.0.x | `ditto_live: 5.0.4` | 5.0.4: macOS, Linux, Windows, Chrome (debug) | Earlier 5.x line; 5.0.4 has no `sdk-release-5.0.4` tag, so source citations use the pub.dev archive |
+| 4.14.x | `ditto_live: 4.14.7` | 4.14.7: macOS, iOS Simulator, Android emulator (write and read back); Android release build | LTS; the v4 API below |
 
 All runs used Flutter 3.50.0 (Dart 3.14.0); debug builds unless the file says otherwise.
 

@@ -30,9 +30,10 @@
     "62db713ea62d1b3b6a3edd09a38b718f14abda652254e1dfcdcf65d3b2512203",
     "39ee8ece52ecea3c9c5e8e3e1b90417e55b4af6a121ad8827de734e0c9495208",
     "d38f2aeef9c6c8ffd1dd3292629d30361824b0b68351a7f6d4ee553346c1abb4",
-    "e14cee84edd9a7067a83b6de70dde01c688f94c7751510f27006f02cc0fb2eb1"
+    "e14cee84edd9a7067a83b6de70dde01c688f94c7751510f27006f02cc0fb2eb1",
+    "9fc164fa01ef5accacdcbe72edd5d5f6e8b6d08c13952e39d52470ae37fce0a3"
   ],
-  "latest_evaluated_digest": "39ee8ece52ecea3c9c5e8e3e1b90417e55b4af6a121ad8827de734e0c9495208",
+  "latest_evaluated_digest": "9fc164fa01ef5accacdcbe72edd5d5f6e8b6d08c13952e39d52470ae37fce0a3",
   "post_evaluation_changes": [
     "Conditional movies/reviews schema lead-wording clarification after final copies was not behaviorally rerun.",
     "Final traces identified conflicting data-modeling reference examples for unscoped child joins and unchanged blob transmission, for static correction after the bounded evaluation iteration. No subsequent model result is claimed.",
@@ -43,7 +44,8 @@
     "2026-10-28: the data-streams concept skill and the Kotlin/Swift data-streams references were added; kotlin_data_streams and swift_data_streams were run on Claude Code and Codex and passed on both. After the run, wording-only edits followed (description trimmed under 500 characters; the Swift use-after-close error type and Swift-specific observations added to the references); no routing or guidance claim changed.",
     "2026-11-18: twelve flutter_* cases were added and run once per host (Claude Code 2.1.327, Codex 0.169.1), plus three no-skill baselines. After the initial run the flutter-sdk skill gained: a setup.md paragraph listing the Android permissions the ditto_live plugin manifest already declares (with their API limits) and saying the app's work is the runtime request; a SKILL.md pointer to it; `unawaited` for the listener cancel in State.dispose() in the SKILL.md anti-pattern; and a web.md row saying setOfflineOnlyLicenseToken is not a no-op on web despite its log line. All twelve cases were rerun on both hosts against that tree (flutter-intermediate records). Each record's review keeps setup/discovery, reference use, task correctness, timeout and generated-Dart validity separate; Dart blocks were analyzed with the skill's analyzer setup (Flutter 3.50.0, ditto_live 5.2.0, flutter_lints 6.0.0), not executed.",
     "2026-11-18, fix round 1: the flutter-sdk SKILL.md body was trimmed to 8,977 characters (the task budget is 9,000), and web.md gained a note that a main() calling WidgetsFlutterBinding.ensureInitialized() and runApp needs package:flutter/widgets.dart. Two review criteria were corrected to match the skill after the first scoring: flutter_web_attachments criterion 5 now also accepts awaiting fetcher.attachment, and flutter_hot_restart_observer criterion 6 states the presence-observer crash as an inference. Hot-restart criteria 2, 4 and 6 and Codex's Android-permissions criterion 2 were rescored literally (partial) in the initial and intermediate records. All 24 skill runs were repeated on the final tree (flutter-final records, digest 388fc349, plugin-only 62db713e) and scored literally against every clause. One final Codex run (flutter_presence_peers) read ditto_live source from a temp directory outside its workspace; it is kept as flutter-final-excluded and the case was retried once.",
-    "2026-11-19: after a three-reviewer pass the flutter-sdk skill changed again (dart:io on web compiles and throws at run time; a release-builds reference with a release-build diagnosis table and an R8 note; an executed sync-scopes sample; 5.x opening a 4.14.7 default directory in place, executed on macOS; main.dart and run steps in the minimal app; best-practices.md in the template's nine sections; evidence notes and a documentation-mismatch table in the README). The Flutter review criteria were narrowed to clauses the prompt asks about (clauses about other SDK lines or platforms were removed), flutter_v4_migration criterion 7 and flutter_web_p2p_config criterion 4 were rewritten to match the corrected skill, and two cases were added: flutter_release_no_sync and flutter_negative_plain_flutter. All fourteen flutter_* cases were run once per host (Claude Code 2.1.328, Codex 0.169.1) as flutter-rerun-2026-11-19. Earlier flutter-* records keep their scores against the earlier criteria; the two sets are not comparable criterion by criterion."
+    "2026-11-19: after a three-reviewer pass the flutter-sdk skill changed again (dart:io on web compiles and throws at run time; a release-builds reference with a release-build diagnosis table and an R8 note; an executed sync-scopes sample; 5.x opening a 4.14.7 default directory in place, executed on macOS; main.dart and run steps in the minimal app; best-practices.md in the template's nine sections; evidence notes and a documentation-mismatch table in the README). The Flutter review criteria were narrowed to clauses the prompt asks about (clauses about other SDK lines or platforms were removed), flutter_v4_migration criterion 7 and flutter_web_p2p_config criterion 4 were rewritten to match the corrected skill, and two cases were added: flutter_release_no_sync and flutter_negative_plain_flutter. All fourteen flutter_* cases were run once per host (Claude Code 2.1.328, Codex 0.169.1) as flutter-rerun-2026-11-19. Earlier flutter-* records keep their scores against the earlier criteria; the two sets are not comparable criterion by criterion.",
+    "2026-11-19, later: the skill gained references/migration-v4-to-v5.md (the AI agent prompt from the Flutter v4 migration guide plus a table of corrections), links to it from SKILL.md and versions.md, and a note that the iOS Simulator reports no fs_device_* keys. Only flutter_v4_migration was rerun on that tree, once per host (flutter-migration-prompt-2026-11-19, scored by hand); the other thirteen flutter_* cases were last run on 39ee8ece."
   ],
   "limitations": [
     "No before/after model experiment.",
@@ -12761,6 +12763,114 @@
         "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for files the workspace does not have; no approval or policy rejection."
       },
       "run": "flutter-rerun-2026-11-19"
+    },
+    {
+      "host": "claude",
+      "case": "flutter_v4_migration",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 21.7,
+      "tree_sha256": "9fc164fa01ef5accacdcbe72edd5d5f6e8b6d08c13952e39d52470ae37fce0a3",
+      "install": "all canonical skills",
+      "requested_model": "claude-opus-5-5",
+      "reported_model": "claude-opus-5-5",
+      "cost_usd": 0.169488,
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        "plugin/skills/flutter-sdk/references/migration-v4-to-v5.md"
+      ],
+      "commands": [],
+      "tool_errors": [],
+      "final_answer": "## What changes, line by line\n\n| v4.14.7 | 5.2.0 | Why |\n|---|---|---|\n| `Ditto.open(identity: OnlinePlaygroundIdentity(appID:, token:))` | `Ditto.open(DittoConfig(databaseID: appId, connect: DittoConfigConnectServer(url: '\u2026')))` | The identity classes are gone. The server URL is a plain `String`. Copy it from the Portal (Connect via SDK \u2192 URL); don't build it from the ID. |\n| The playground `token` on the identity | `await ditto.auth.setExpirationHandler(...)`, which calls `ditto.auth.login(token:, provider: Authenticator.developmentProvider)` | Set it before `sync.start()`. The handler gets `(Ditto, Duration)`. A failed login shows up in `response.exception`, not as a thrown error. |\n| `ditto.startSync()` | `ditto.sync.start()` | Renamed. |\n| `registerSubscription('\u2026 ORDER BY createdAt LIMIT 50')` | `registerSubscription('SELECT * FROM orders')` | v5 rejects `LIMIT` and `ORDER BY` in subscriptions (`Unsupported feature: Limit or Order by`). Move the sort and limit into an observer or `execute` query. |\n| `remotePeers.any((p) => p.isConnectedToDittoCloud)` | `remotePeers.any((p) => p.isConnectedToDittoServer)` | Renamed. `remotePeers` is now a `Set<Peer>`, which still works with `.any`. |\n| `await Ditto.init();` | Keep it | It's optional from 5.1.0, but it's harmless and memoized. |\n\n## 5.2.0 version\n\n```dart\nawait Ditto.init();\nfinal ditto = await Ditto.open(DittoConfig(\n  databaseID: appId, // keep the v4 appID so the existing store opens in place\n  connect: DittoConfigConnectServer(url: serverUrl), // String, from the Portal\n  // Only if the app relied on v4's strict-mode default:\n  // systemParameters: {'DQL_STRICT_MODE': true},\n));\n\nawait ditto.auth.setExpirationHandler((ditto, timeUntilExpiration) async {\n  final response = await ditto.auth.login(\n    token: playgroundToken,\n    provider: Authenticator.developmentProvider,\n  );\n  if (response.exception != null) throw response.exception!;\n});\n\nditto.sync.start();\n\nfinal subscription = ditto.sync.registerSubscription('SELECT * FROM orders');\n\n// Sort and limit where the data is read, not in the subscription:\nfinal observer = ditto.store.registerObserver(\n  'SELECT * FROM orders ORDER BY createdAt LIMIT 50',\n);\n// Attach one `changes` listener right away and copy result.items into a list.\n// Don't also pass onChange.\n\nfinal online =\n    ditto.presence.graph.remotePeers.any((p) => p.isConnectedToDittoServer);\n```\n\n## Other things to check during the upgrade\n- **Strict mode:** v4 defaulted `DQL_STRICT_MODE` to true and v5 defaults to false. If your queries depend on strict behaviour, set it through `systemParameters` in `DittoConfig` as shown.\n- **Existing data:** don't pass `persistenceDirectory`, and keep `databaseID` equal to the old `appID`. 5.x then opens the v4 `{Documents}/ditto` store in place. Test this on a copy of a real store first.\n- **Platform minimums:**\n  - iOS: `platform :ios, '15.0'`.\n  - macOS: `platform :osx, '12.0'`. Delete `Podfile.lock` and run `pod install` again.\n  - Android: `minSdk` 24 and Kotlin Gradle plugin 2.0.0 or later. Under AGP 9 you also need the compileSdk override.\n- **Renames elsewhere in the code:**\n  - `ditto.persistenceDirectory` \u2192 `absolutePersistenceDirectory`\n  - `peerKeyString` \u2192 `peerKey`\n  - `ditto.stopSync()` \u2192 `ditto.sync.stop()`\n  - `ditto.isSyncActive` \u2192 `ditto.sync.isActive`\n  - Drop any WebSocket URL you add in `updateTransportConfig`; v5 takes it from the config.\n\nI based this on the installed `flutter-sdk` skill's migration guide. I didn't read your `pubspec.lock` or check these signatures against an installed 5.2.0 package, and I ran nothing. After bumping the pin, check with `flutter analyze`.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: migration-v4-to-v5.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "partial"
+          ],
+          "pass": 6,
+          "partial": 1,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "result": "not analyzed in this rerun"
+        },
+        "notes": "Read migration-v4-to-v5.md only. Applies the prompt and its corrections: portal URL as a String, the expiration handler before sync.start(), no onChange on the observer, strict mode through systemParameters, platform minimums. Names the v4 directory but not the v5 default name."
+      },
+      "run": "flutter-migration-prompt-2026-11-19"
+    },
+    {
+      "host": "codex",
+      "case": "flutter_v4_migration",
+      "state": "completed",
+      "exit_code": 0,
+      "seconds": 25.0,
+      "tree_sha256": "9fc164fa01ef5accacdcbe72edd5d5f6e8b6d08c13952e39d52470ae37fce0a3",
+      "install": "all canonical skills",
+      "requested_model": "gpt-6.1-sol",
+      "reported_model": null,
+      "usage": {
+        "input_tokens": 58518,
+        "cached_input_tokens": 30080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 707,
+        "reasoning_output_tokens": 32
+      },
+      "skills_invoked": [
+        "flutter-sdk"
+      ],
+      "reads": [
+        ".agents/skills/flutter-sdk/SKILL.md",
+        ".agents/skills/flutter-sdk/references/migration-v4-to-v5.md",
+        ".agents/skills/flutter-sdk/references/connect.md",
+        ".agents/skills/flutter-sdk/references/presence.md",
+        ".agents/skills/flutter-sdk/references/versions.md"
+      ],
+      "commands": [
+        "/bin/zsh -lc 'cat .agents/skills/flutter-sdk/SKILL.md'",
+        "/bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/migration-v4-to-v5.md .agents/skills/flutter-sdk/references/connect.md .agents/skills/flutter-sdk/references/presence.md .agents/skills/flutter-sdk/references/versions.md; rg --files -g pubspec.lock -g package_config.json -g '*config*.dart' -g AGENTS.md\""
+      ],
+      "tool_errors": [
+        "exit 1: /bin/zsh -lc \"cat .agents/skills/flutter-sdk/references/migration-v4-to-v5.md .agents/skills/flutter-sdk/references/connect.md .agents/skills/flutter-sdk/references/presence.md .agents/skills/flutter-sdk/references/versions.md; rg --files -g pubspec.lock -g package_config.json -g '*config*.d"
+      ],
+      "final_answer": "For `ditto_live: 5.2.0`, replace the identity with `DittoConfig`, configure authentication before starting sync, and remove sorting/limits from the sync subscription.\n\n```dart\nimport 'package:ditto_live/ditto_live.dart';\n\nawait Ditto.init(); // Optional for open() in 5.2.0; safe to keep.\n\nfinal ditto = await Ditto.open(DittoConfig(\n  databaseID: appId, // Keep your v4 appID.\n  connect: DittoConfigConnectServer(\n    url: serverUrl, // Portal \u2192 Connect via SDK \u2192 URL, copied verbatim.\n  ),\n  // Preserve v4's default strict-mode behavior.\n  systemParameters: {'DQL_STRICT_MODE': true},\n));\n\nawait ditto.auth.setExpirationHandler((ditto, timeUntilExpiration) async {\n  if (ditto.isClosed) return;\n\n  try {\n    final response = await ditto.auth.login(\n      token: playgroundToken,\n      provider: Authenticator.developmentProvider,\n    );\n    if (response.exception != null) {\n      print('Ditto login failed: ${response.exception}');\n    }\n  } catch (error) {\n    print('Ditto login failed: $error');\n  }\n});\n\nditto.sync.start();\n\nfinal subscription =\n    ditto.sync.registerSubscription('SELECT * FROM orders');\n\n// Apply ordering and limits to local queries, not subscriptions.\nfinal orders = await ditto.store.execute(\n  'SELECT * FROM orders ORDER BY createdAt LIMIT 50',\n);\n\nfinal online = ditto.presence.graph.remotePeers\n    .any((p) => p.isConnectedToDittoServer);\n```\n\nKey details from the installed Flutter guidance:\n\n- `serverUrl` is a **String** from the Portal; don\u2019t derive it from `appId`.\n- `ORDER BY` and `LIMIT` in a v5 subscription throw. This replacement subscribes to **all orders**.\n- `remotePeers` is now a `Set`; `.any()` still works. `online` remains a snapshot.\n- Strict mode defaults to `false` in v5. Keep the shown setting to preserve v4\u2019s default, or omit it deliberately.\n- Keep the old app ID and omit `persistenceDirectory` for default-store migration; validate against a copy of an existing store.\n- Retain the subscription and cancel it before closing Ditto.\n\nNo files changed or tests run; this answer uses local guidance.",
+      "review": {
+        "setup_discovery": "pass",
+        "reference_use": "references read: connect.md, migration-v4-to-v5.md, presence.md, versions.md",
+        "task_correctness": {
+          "criteria": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "partial"
+          ],
+          "pass": 6,
+          "partial": 1,
+          "fail": 0,
+          "of": 7
+        },
+        "timeout": false,
+        "dart_validity": {
+          "result": "not analyzed in this rerun"
+        },
+        "notes": "Read migration-v4-to-v5.md, connect.md, presence.md and versions.md. Same shape; guards the handler with isClosed. Says to keep the app ID and omit persistenceDirectory, without naming either directory.",
+        "tool_error_note": "Nonzero exits are `rg --files`/`cat` probes for files the workspace does not have; no approval or policy rejection."
+      },
+      "run": "flutter-migration-prompt-2026-11-19"
     }
   ],
   "rerun_date": "2026-10-27",

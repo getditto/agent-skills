@@ -194,26 +194,31 @@ jobs:
         id: sim
         run: echo "udid=$(tests/flutter-sdk/scripts/boot-simulator.sh)" >> "$GITHUB_OUTPUT"
       # A simulator UDID carries no platform, so DITTO_PLATFORM is set.
-      # init_once first, alone: nothing may call Ditto.init() before it.
-      - name: Run the minimal app and every probe directory
+      # init_once first, alone: nothing may call Ditto.init() before it. One target
+      # per test file, not per directory: on this runner an app launch sometimes never
+      # gets its debug connection ("The log reader failed unexpectedly"), and a
+      # directory target then loses up to its whole timeout. run-fixture.sh re-runs a
+      # timed-out target for that error only, with a ::warning::.
+      - name: Run the minimal app and every probe file
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          # A first run on a fresh simulator can fail to get its debug connection;
-          # run-fixture.sh re-runs a timed-out target once for that error only,
-          # with a ::warning::.
-          FIXTURE_TIMEOUT: '900'
-          FIXTURE_RETRIES: '1'
+          FIXTURE_TIMEOUT: '420'
+          FIXTURE_RETRIES: '2'
         run: |
-          tests/flutter-sdk/scripts/run-fixture.sh minimal_app "${{ steps.sim.outputs.udid }}" 5.2 \
-            integration_test/probes/init_once integration_test/minimal_app_test.dart \
-            integration_test/probes/v50 integration_test/probes/v51 integration_test/probes/v52
+          targets=(integration_test/probes/init_once/logger_before_init_test.dart integration_test/minimal_app_test.dart)
+          for dir in v50 v51 v52; do
+            for file in tests/flutter-sdk/minimal_app/integration_test/probes/"$dir"/*_test.dart; do
+              targets+=("integration_test/probes/$dir/$(basename "$file")")
+            done
+          done
+          tests/flutter-sdk/scripts/run-fixture.sh minimal_app "${{ steps.sim.outputs.udid }}" 5.2 "${targets[@]}"
       - name: Run the v4 open, write and read-back test (ditto_live 4.14)
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           DITTO_PLATFORM: ios
-          FIXTURE_TIMEOUT: '900'
-          FIXTURE_RETRIES: '1'
+          FIXTURE_TIMEOUT: '420'
+          FIXTURE_RETRIES: '2'
         run: |
           tests/flutter-sdk/scripts/run-fixture.sh v4_app "${{ steps.sim.outputs.udid }}" 4.14 \
             integration_test/v4_test.dart

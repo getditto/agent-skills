@@ -43,14 +43,15 @@ void main() {
         'fs_usage_store',
         'fs_usage_total',
       ];
-      // The device keys arrive on desktop. On the iOS Simulator they never
-      // did (README, 2026-11-19).
+      // The device keys arrive on desktop and on the Android emulator. On the
+      // iOS Simulator they never did (README, 2026-11-19).
       const deviceKeys = ['fs_device_available', 'fs_device_total'];
       final platform = Ditto.currentPlatform;
       final reportsDevice = switch (platform) {
         SupportedPlatform.macos ||
         SupportedPlatform.linux ||
-        SupportedPlatform.windows => true,
+        SupportedPlatform.windows ||
+        SupportedPlatform.android => true,
         _ => false,
       };
       Future<Map<String, Object?>> poll(
@@ -78,8 +79,8 @@ void main() {
         isA<int>().having((v) => v, 'bytes', greaterThan(0)),
       );
 
-      // Desktop: wait for the device keys. Elsewhere: give them 20 s, then
-      // record what is there.
+      // Where they arrive, wait for the device keys. Elsewhere give them
+      // 20 s, then record what is there.
       usage = await poll(
         deviceKeys,
         Duration(seconds: reportsDevice ? 90 : 20),

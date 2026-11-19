@@ -43,9 +43,9 @@ publishes `flutter: ">=3.19.0"`; use Flutter 3.24.5 or later. Everything below r
 | Line | Pin | macOS | iOS | Android | Windows | Linux | Web (Chrome) |
 |---|---|---|---|---|---|---|---|
 | 5.2.x | 5.2.0 | run (debug and release) | run (Simulator) | run (emulator, API 34); release APK built | run (CI) | run (CI) | run (DDC debug; dart2js release) |
-| 5.1.x | 5.1.0 | run | run (Simulator, migration write phase) | APK built | not run | not run | run (DDC debug; dart2js release) |
-| 5.0.x | 5.0.4 | run | Simulator build | APK built | not run | not run | run (DDC debug) |
-| 4.14.x (LTS) | 4.14.7 | run (v4 fixture) | Simulator build | release APK built | not run | not run | not run |
+| 5.1.x | 5.1.0 | run | run (Simulator, migration write phase) | APK built | run (CI) | run (CI) | run (DDC debug; dart2js release) |
+| 5.0.x | 5.0.4 | run | Simulator build | APK built | run (CI) | run (CI) | run (DDC debug) |
+| 4.14.x (LTS) | 4.14.7 | run (v4 fixture) | run (Simulator, v4 fixture) | run (emulator, v4 fixture); release APK built | not run | not run | not run |
 
 "run" means the minimal app or probes executed and passed on that target (which ones:
 [Verification](#verification)); "built" means `flutter build` only. No physical device was used for a passing run: iOS and
@@ -98,8 +98,9 @@ Rows that are not `Support: yes`
 - **CAP-15 `partial`**: logging (`DittoLogger`, `customLogCallback`, `exportLogs`) is
   complete and executed. Missing: a disk-usage API. The `fs_*` keys of the DQL
   collection `system:system_info` stand in for it (executed in CI on macOS, Linux and
-  Windows; empty for the first second or two after `Ditto.open`). On the iOS Simulator
-  only the `fs_usage_*` keys arrive; `fs_device_available` and `fs_device_total` do not.
+  Windows and the Android emulator; empty for the first second or two after
+  `Ditto.open`). On the iOS Simulator only the `fs_usage_*` keys arrive;
+  `fs_device_available` and `fs_device_total` do not.
 - **CAP-20 `partial`**: the preview APIs are `registerObserverV2` and
   `registerObserverWithSignalNext` (5.1.0+, executed on macOS and, signal-next, Chrome; marked
   `@experimental` from `package:meta`, so each use needs
@@ -127,9 +128,8 @@ Web degradations, which do not change Support ([web.md](references/web.md)):
 
 Evidence notes. `executed` means the capability's core ran and passed on at least macOS
 desktop (5.0.4, 5.1.0 and 5.2.0); where else it ran is in [Verification](#verification).
-In brief: Linux and Windows (CI, 5.2.0) ran every native probe directory; the Android
-emulator and the iOS Simulator (5.2.0) ran the minimal app and the store and observer
-probes; Chrome ran the minimal app (CAP-03, CAP-05, CAP-07, CAP-08, CAP-11) and the web
+In brief: Linux and Windows (CI, 5.0.4 to 5.2.0), the Android emulator and the iOS
+Simulator (5.2.0) ran the minimal app and every native probe directory; Chrome ran the minimal app (CAP-03, CAP-05, CAP-07, CAP-08, CAP-11) and the web
 probes (CAP-02, CAP-06, CAP-11, CAP-12, CAP-15, CAP-16, CAP-20). Where a row's web leg
 did not run, the note says so and gives the source that shows the API exists on web
 (`sdks/flutter/ditto_live/lib/src/bridge/wasm/`, the web bridge):
@@ -164,15 +164,17 @@ did not run, the note says so and gives the source that shows the API exists on 
   web runs executed (`dittoffiTryExecStatement`, `bridge/wasm/store.dart:13` @
   `sdk-release-5.2.0`).
 - **CAP-11 `executed`** covers V1 observers on every target in the table,
-  `registerObserverV2` and `registerObserverWithSignalNext` on macOS (5.1.0, 5.2.0),
-  Linux and Windows (5.2.0), and signal-next on Chrome. `Differ` is from source, not
-  executed, and V2 observers were not run on iOS or Android.
+  `registerObserverV2` and `registerObserverWithSignalNext` on macOS, Linux and Windows
+  (5.1.0, 5.2.0), the Android emulator and the iOS Simulator (5.2.0), and signal-next on
+  Chrome. `Differ` is from source, not executed.
 - **CAP-13 `executed`** covers two instances in one process over TCP loopback: presence,
-  sync, and a connection-request handler that denies or throws (macOS on 5.0.4 to 5.2.0;
-  Linux and Windows on 5.2.0). Not run on web, iOS or Android; the web bridge has the
+  sync, and a connection-request handler that denies or throws (macOS, Linux and Windows
+  on 5.0.4 to 5.2.0; the Android emulator and the iOS Simulator on 5.2.0). Not run on
+  web; the web bridge has the
   presence graph, observer and connection-request handler (`bridge/wasm/presence.dart:25-135`
   @ `sdk-release-5.2.0`).
-- **CAP-14 `executed`**: `commitID` on macOS (5.0.4 to 5.2.0), Linux and Windows (5.2.0);
+- **CAP-14 `executed`**: `commitID` on macOS, Linux and Windows (5.0.4 to 5.2.0), the
+  Android emulator and the iOS Simulator (5.2.0);
   `system:data_sync_info` in manual runs on macOS only. Not run on web; the web bridge
   reads the commit ID (`dittoffiQueryResultCommitId`, `bridge/wasm/store.dart:80-84` @
   `sdk-release-5.2.0`), and the collection is a DQL query through the same `execute`.
@@ -202,14 +204,18 @@ GitHub-hosted runners (ubuntu-24.04, windows-latest, macos-26 arm64). Per target
   (`integration_test`, debug), locally and in CI; a 5.2.0 release `.app` run directly
   (the minimal app, then two instances syncing over loopback);
   the 4.14.7 v4 fixture; the 5.1.0 → 5.2.0 default-directory migration.
-- **iOS:** the iPhone 17 Pro Simulator (iOS 26.5) in CI on 5.2.0 and the migration's
-  5.1.0 write phase; an iOS 27.1 Simulator locally; simulator builds on 4.14.7 and 5.0.4.
-- **Android:** an API 34 x86_64 emulator in CI on 5.2.0; APK builds on every line,
-  release manifests inspected with aapt2.
-- **Windows and Linux:** CI only, 5.2.0 (Linux under `xvfb-run`).
+- **iOS:** the iPhone 17 Pro Simulator (iOS 26.5) in CI and an iOS 27 Simulator locally:
+  the minimal app and every probe directory on 5.2.0, the v4 fixture on 4.14.7, and the
+  migration's 5.1.0 write phase; a simulator build on 5.0.4.
+- **Android:** an API 34 x86_64 emulator in CI: the minimal app and every probe
+  directory on 5.2.0, and the v4 fixture on 4.14.7; APK builds on every line, release
+  manifests inspected with aapt2.
+- **Windows and Linux:** CI only, the minimal app and every probe directory on 5.0.4,
+  5.1.0 and 5.2.0 (Linux under `xvfb-run`).
 - **Web:** headless Chrome: `flutter drive` debug (DDC) on 5.0.4, 5.1.0 and 5.2.0;
   release dart2js and `--wasm` bundles on 5.1.0 and 5.2.0.
-- **Two peers:** two instances in one process over TCP loopback on macOS, 5.0.4 to 5.2.0.
+- **Two peers:** two instances in one process over TCP loopback on macOS, Linux and
+  Windows (5.0.4 to 5.2.0), the Android emulator and the iOS Simulator (5.2.0).
 - **By hand, not in CI:** the 4.14.7 → 5.x on-disk upgrade (macOS; its test files are
   not committed), hot restart (`flutter run`, macOS and Chrome), the
   `system:data_sync_info` sync-status probe and a standalone app that reproduced its hang

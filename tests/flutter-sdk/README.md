@@ -662,8 +662,9 @@ minimal_app <udid> 5.2` with `init_once`, the minimal app, `v50`, `v51` and `v52
 - **The iOS Simulator never reports `fs_device_available` or `fs_device_total`.** The
   probe waited 90 s for the seven documented `fs_*` keys and got eight keys, all
   `fs_usage_*`. The corrected probe asserts the five `fs_usage_*` keys on every
-  platform, the two device keys on macOS, Linux and Windows, and their absence after
-  20 s on iOS; on Android it records what it finds. A physical iOS device was not run.
+  platform, the two device keys on macOS, Linux, Windows and Android (the CI emulator
+  reported both), and their absence after 20 s on iOS. A physical iOS device was not
+  run.
 - The two-peer TCP loopback probes, presence, the connection-request handler, the
   widget and lifecycle probes and attachments all passed on the simulator.
 

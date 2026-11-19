@@ -267,7 +267,7 @@ Flutter 3.50.0 (Dart 3.14.0). "Run" means the transcript above was asserted line
 |---|---|---|
 | macOS desktop (arm64) | 5.0.4, 5.1.0, 5.2.0 | Run: `integration_test`, debug. 5.2.0 also as a release `.app` started directly |
 | Chrome (headless) | 5.0.4, 5.1.0, 5.2.0 | Run: `flutter drive`, debug |
-| Linux and Windows desktop | 5.2.0 | Run: `integration_test`, debug |
+| Linux and Windows desktop | 5.0.4, 5.1.0, 5.2.0 | Run: `integration_test`, debug |
 | Android emulator (API 34), iOS Simulator | 5.2.0 | Run: `integration_test`, debug |
 | A project assembled from this page and [setup.md](../references/setup.md) alone | 5.2.0 | `flutter analyze --fatal-infos`, a web bundle, a debug APK and an iOS Simulator app build; not run |
 
