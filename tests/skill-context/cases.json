@@ -267,7 +267,7 @@
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
         "Installs with `flutter pub add ditto_live` (the latest stable) rather than hard-coding an old pin; 5.2.0 appears at most as the newest line the guidance knows",
-        "Calls `WidgetsFlutterBinding.ensureInitialized()`, `await Ditto.init()` (required on 5.0.x, memoized) and `await Ditto.open(DittoConfig(...))` with the config positional, once before `runApp`, not in a widget's `initState`",
+        "Calls `WidgetsFlutterBinding.ensureInitialized()`, `await Ditto.init()` and `await Ditto.open(DittoConfig(...))` with the config positional, once before `runApp`, not in a widget's `initState`",
         "Small peers only: the default or `DittoConfigConnectSmallPeersOnly` config, `setOfflineOnlyLicenseToken` after open, then `ditto.sync.start()`; no v4 shapes (`Ditto.open(identity:)`, `OfflinePlaygroundIdentity`, `startSync()`)",
         "Insert and query use `store.execute` with named `arguments:` bound to `:placeholders`, never string interpolation; titles come from `result.items.map((item) => item.value['title'])...toList()`, treating `items` as an `Iterable`",
         "Names at least one platform build requirement from the skill: Android `minSdk = 24` and the compileSdk 36 override for ditto_live 5.1.0+ under AGP 9, or the iOS Podfile `platform :ios, '15.0'`"
@@ -291,10 +291,10 @@
       "prompt": "Flutter app on ditto_live 5.2.0. Memory keeps growing while this screen is open, and after leaving it every other screen throws. What is wrong, and what is the fixed code?\n\n```dart\nclass _InventoryState extends State<InventoryScreen> {\n  List<QueryResultItem> _items = [];\n\n  @override\n  void initState() {\n    super.initState();\n    widget.ditto.sync.registerSubscription(\n        'SELECT * FROM items ORDER BY name LIMIT 100');\n    widget.ditto.store.registerObserver('SELECT * FROM items',\n        onChange: (result) {\n      setState(() => _items = result.items);\n    });\n  }\n\n  @override\n  void dispose() {\n    widget.ditto.close();\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) => Text('${_items.length} items');\n}\n```",
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
-        "`ditto.close()` in `State.dispose()` closes the app's one instance: later calls on every screen fail with `DittoClosedException`; close only on app exit, after cancelling observers, and do not re-open in the same process",
+        "`ditto.close()` in `State.dispose()` closes the app's one instance, so later calls on every screen fail with `DittoClosedException`; close only on app exit, not in `dispose`",
         "The dropped observer and subscription handles keep running: dropping a handle never cancels it; retain both and cancel them in `dispose` while Ditto is open, the `changes` listener before `observer.cancel()`",
         "`onChange` on a long-lived observer is the memory growth: each result is also buffered in the unlistened `changes` stream; the fix registers without `onChange` and holds one `changes` listener",
-        "`setState(() => _items = result.items)` assigns an `Iterable<QueryResultItem>` to a `List` (does not compile); map to plain values with `.toList()` and do not keep `QueryResultItem`s in state",
+        "State holds a list of plain values, `result.items.map((item) => item.value).toList()`, not the `Iterable` or `QueryResultItem`s",
         "The subscription's `LIMIT`/`ORDER BY` is rejected: `registerSubscription` throws at the call; subscribe without them and sort/limit in the local query",
         "Does not claim observers require `ORDER BY`"
       ]
@@ -304,10 +304,10 @@
       "prompt": "Flutter app on ditto_live 5.2.0. I want a screen that lists nearby peers with each peer's device name and how it is connected (Bluetooth, LAN and so on), updates as peers come and go, and stops watching when the screen closes. Write it.",
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
-        "Uses `ditto.presence.observe((graph) { ... })`, keeps the returned `PresenceObserver` and calls `stop()` (not `cancel()`) in `dispose`; notes that dropping it does not stop it",
+        "Uses `ditto.presence.observe((graph) { ... })`, keeps the returned `PresenceObserver` and calls `stop()` (not `cancel()`) in `dispose`",
         "Treats `graph.remotePeers` as a `Set` (no index access) and reads `peer.deviceName` and `peer.connections` with each `connection.connectionType`",
-        "Any switch over `ConnectionType` covers five values on 5.1.0+, including `multicast` (four on 5.0.x); no four-case exhaustive switch for 5.2.0",
-        "Copies the graph data into widget state with a `mounted` guard; the callback runs immediately with the current graph and then on changes",
+        "Any switch over `ConnectionType` covers five values, including `multicast`; no four-case exhaustive switch for 5.2.0",
+        "Copies the graph data into widget state with a `mounted` guard",
         "Uses only v5 names: `peerKey` (a `String`), `isConnectedToDittoServer`; no `peerKeyString`, `isConnectedToDittoCloud` or `approximateDistanceInMeters`"
       ]
     },
@@ -316,12 +316,12 @@
       "prompt": "We are upgrading a Flutter app from ditto_live 4.14.7 to 5.2.0. This is our current code. What must change, and what is the 5.2.0 version?\n\n```dart\nawait Ditto.init();\nfinal ditto = await Ditto.open(\n  identity: OnlinePlaygroundIdentity(appID: appId, token: playgroundToken),\n);\nditto.startSync();\nditto.sync.registerSubscription('SELECT * FROM orders ORDER BY createdAt LIMIT 50');\nfinal online = ditto.presence.graph.remotePeers.any((p) => p.isConnectedToDittoCloud);\n```",
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
-        "Opens with `Ditto.open(DittoConfig(databaseID: ..., connect: DittoConfigConnectServer(url: ...)))`, config positional, `databaseID` with capital ID and the portal URL; keeps `await Ditto.init()` (required on 5.0.x, memoized)",
-        "Replaces the playground token with an expiration handler, `await ditto.auth.setExpirationHandler(...)` calling `ditto.auth.login(token:, provider:)` (`Authenticator.developmentProvider` for a playground/development token), set before `ditto.sync.start()`, which otherwise throws",
+        "Opens with `Ditto.open(DittoConfig(databaseID: ..., connect: DittoConfigConnectServer(url: ...)))`, config positional, `databaseID` with capital ID and the portal URL; keeps `await Ditto.init()`",
+        "Replaces the playground token with an expiration handler, `await ditto.auth.setExpirationHandler(...)` calling `ditto.auth.login(token:, provider:)` (`Authenticator.developmentProvider` for a playground/development token), set before `ditto.sync.start()`",
         "`startSync()` becomes `ditto.sync.start()`",
         "Removes `ORDER BY`/`LIMIT` from the subscription (v5 rejects them at the call) and keeps any order or limit in the local query",
         "Renames `isConnectedToDittoCloud` to `isConnectedToDittoServer`",
-        "Flags the default persistence directory change (v4 `{Documents}/ditto`, v5 `ditto-{databaseID}`) and says to pass the v4 path explicitly or verify the upgrade on a copy of a real store, rather than asserting it migrates automatically"
+        "Flags the default persistence directory change (v4 `{Documents}/ditto`, v5 `ditto-{databaseID}`): with no `persistenceDirectory` and the v4 app ID as `databaseID`, 5.x opens the existing v4 directory in place (or the v4 path is passed explicitly), and the upgrade is tested on a copy of a real store; does not say the data is lost or must be re-synced"
       ]
     },
     {
@@ -329,9 +329,9 @@
       "prompt": "Our Flutter app on ditto_live 5.2.0 runs on iOS, Android and the web. We enable Bluetooth and LAN in `updateTransportConfig` when `defaultTargetPlatform` is iOS, Android or macOS. On the web build, `sync.start()` throws `Expected valid TransportConfig`. Fix the transport setup so it works on all three targets.",
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
-        "Explains that the web has no peer-to-peer transports and enabling one throws (from `sync.start()` on 5.2.0, from `updateTransportConfig` on 5.0.x/5.1.x); web syncs with a server over WebSocket",
+        "Explains that the web has no peer-to-peer transports and that enabling one makes `sync.start()` throw on 5.2.0",
         "Identifies `defaultTargetPlatform` as the cause: on web it reports the browser's host OS, so the gate turns P2P on in the browser",
-        "Gates with `kIsWeb` first, then `Ditto.currentPlatform` (`SupportedPlatform`); does not use `dart:io` `Platform`, which breaks the web compile",
+        "Gates with `kIsWeb` first, then `Ditto.currentPlatform` (`SupportedPlatform`); does not use `dart:io` `Platform`",
         "Calls `ditto.updateTransportConfig((config) { ... })` without `await` (it returns `void`)",
         "Per-platform transports match the skill: AWDL on iOS/macOS, Wi-Fi Aware on Android, Bluetooth LE and LAN on mobile"
       ]
@@ -378,12 +378,23 @@
       "prompt": "During development of my Flutter macOS and iOS app on ditto_live 5.2.0, after pressing R (hot restart) `Ditto.open` fails with `File already locked`, and sometimes the app crashes with EXC_BAD_ACCESS right after another device syncs a change. I'm planning a static holder that keeps the Ditto instance across hot restarts. What should I do?",
       "review_criteria": [
         "Routing: flutter-sdk is invoked or its guidance is read",
-        "Explains that hot restart orphans the native instance: it is never closed, keeps running and syncing, and keeps its directory locked, so the next `Ditto.open` fails with `File already locked` (on 5.1.0 it hangs instead)",
+        "Explains that hot restart orphans the native instance: it is never closed, keeps running and syncing, and keeps its directory locked, so the next `Ditto.open` fails with `File already locked`",
         "Rejects the static holder or reuse-across-restart pattern: hot restart resets every Dart static, and retrying `Ditto.open` does not recover",
-        "Recommends the install guide's fix: a per-launch persistence directory in debug builds only (e.g. `kDebugMode ? 'ditto-debug-${DateTime.now().microsecondsSinceEpoch}' : null`), or a full restart when persistence across restarts matters; on web, restart the dev server",
+        "Recommends the install guide's fix: a per-launch persistence directory in debug builds only (e.g. `kDebugMode ? 'ditto-debug-${DateTime.now().microsecondsSinceEpoch}' : null`), or a full restart when persistence across restarts matters",
         "Production keeps the SDK default directory: passes no `persistenceDirectory` in release builds (not `'ditto'`)",
-        "Attributes the crash to orphaned observers receiving a remote change: V2 observers crash on 5.1.0 and 5.2.0 and V1 on 5.1.0; presence observers use the same mechanism, so they may crash too (an inference, not run); use V1 observers in sessions you hot-restart; a per-launch directory does not prevent the crash",
+        "Attributes the crash to an orphaned observer receiving a remote change: V2 observers crash on 5.2.0 and V1 observers do not, so use V1 observers in sessions you hot-restart; a per-launch directory does not prevent the crash",
         "Does not recommend a reuse-holder or static instance surviving hot restart"
+      ]
+    },
+    {
+      "id": "flutter_release_no_sync",
+      "prompt": "My Flutter macOS app on ditto_live 5.2.0 syncs with my other Mac when I use `flutter run`, but the app I build with `flutter build macos --release` never connects to it. Nothing else changed. What is wrong and how do I check?",
+      "review_criteria": [
+        "Routing: flutter-sdk is invoked or its guidance is read",
+        "Names the cause: Flutter keeps two entitlements files and a release build reads only `macos/Runner/Release.entitlements`, so `com.apple.security.network.client` and `com.apple.security.network.server` (and `com.apple.security.device.bluetooth` for Bluetooth) must be in both it and `DebugProfile.entitlements`",
+        "Gives a check on the built app, such as `codesign -d --entitlements -` on the release `.app`",
+        "Mentions that a release build needs the same build-time configuration as the debug run (for example the license passed with `--dart-define-from-file`), or another row of the skill's release checklist",
+        "Does not invent an API or a Ditto setting that turns sync on in release builds"
       ]
     },
     {
@@ -392,6 +403,14 @@
       "review_criteria": [
         "Trigger scope: flutter-sdk is not invoked and no flutter-sdk file is read; record which skill was used, if any",
         "Answer is Kotlin/Compose only (no Dart or Flutter APIs) and ties the observer's cancel/close to leaving composition or to the owning ViewModel's lifecycle"
+      ]
+    },
+    {
+      "id": "flutter_negative_plain_flutter",
+      "prompt": "Flutter app with Riverpod and Drift (SQLite), no Ditto. A `StreamProvider` over a Drift `watch()` query rebuilds my whole list screen on every row change and scrolling stutters. How do I cut the rebuilds?",
+      "review_criteria": [
+        "Trigger scope: no Ditto skill is invoked and no Ditto guidance is read for a Flutter task that does not use Ditto",
+        "Answer covers Riverpod and Drift techniques (`select`, splitting providers, narrower queries, item-level widgets, keys) without Ditto APIs or advice"
       ]
     },
     {

@@ -158,9 +158,15 @@ the `write-dql` skill if installed, otherwise <https://docs.ditto.live/dql/dql>.
 
 ## Code that compiles on web
 
-- **No `dart:io` in code a web build reaches**; even importing it fails the web compile.
-  Split platform code with a conditional export, as the fixture does (compiled and run
-  on Chrome and macOS):
+- **No `dart:io` call in code that runs on web.** The import compiles; the call fails at
+  run time. Executed on Chrome (DDC debug on 5.0.4 to 5.2.0, dart2js release on 5.1.0
+  and 5.2.0): a file that imports `dart:io` built, and reading
+  `Platform.operatingSystem` threw `UnsupportedError` (debug text:
+  `Unsupported operation: Platform._operatingSystem`). So a web build
+  that succeeds proves nothing about `dart:io` use: the failure appears only when the
+  line runs. The `Ditto.currentPlatform` dartdoc says the import itself fails to compile
+  (`lib/src/ditto.dart:49-53` @ `sdk-release-5.2.0`); it does not. Split platform code
+  with a conditional export, as the fixture does (compiled and run on Chrome and macOS):
   `export 'temp_dir_web.dart' if (dart.library.io) 'temp_dir_io.dart';`
 - **`package:web` and `dart:js_interop` for browser APIs, never `dart:html`** (the web
   probe app uses `dart:js_interop`).

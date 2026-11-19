@@ -10,7 +10,8 @@
 # the fixture into a private (mode 0700) per-user directory under the system temp
 # directory and pins ditto_live there; the committed fixture is never modified.
 #
-# Native devices run `flutter test <target> -d <device>`. `chrome` runs
+# Native devices run `flutter test <target> -d <device>`, a debug build: neither
+# `flutter test` nor a non-web `flutter drive` runs in release mode. `chrome` runs
 # `flutter drive --driver=test_driver/integration_test.dart --target=<target> -d chrome
 # --headless`, which needs a chromedriver matching the local Chrome listening on
 # port 4444. If nothing listens there, this script starts $CHROMEDRIVER (default:
@@ -21,7 +22,10 @@
 # .env. The defines (DITTO_LICENSE, DITTO_VERSION = the pin, DITTO_PLATFORM = the
 # expected Ditto.currentPlatform.name, and PROBE_DEFAULT_LOGGING and MIGRATION_PHASE
 # when those variables are set) go to Flutter through --dart-define-from-file: a mode-600 temporary file that
-# is deleted on exit, so the license never appears in a process argument list.
+# is deleted on exit, so the license is not an argument of the flutter command run here.
+# The flutter tool forwards every define to its own build steps as arguments (-D to the
+# Dart compiler, base64 to Gradle and Xcode), so run this on a machine you trust. Only
+# this script's header redacts the license; flutter's output is not filtered.
 # Compiled builds embed every define, so never cache or upload the fixture copy or its
 # build/ directory. The whole copy is deleted when this script exits (success, failure or
 # interrupt), so every run rebuilds from scratch.
@@ -35,8 +39,8 @@
 # FIXTURE_TIMEOUT, FIXTURE_RETRIES (default 0: re-runs of a target the timeout stopped
 # (exit 124) with the known iOS Simulator debug-connection failure; nothing else), FIXTURE_LOG_DIR (default
 # tests/flutter-sdk), PROBE_DEFAULT_LOGGING,
-# MIGRATION_PHASE (wipe, write or read; integration_test/migration/, and added to the
-# log name).
+# MIGRATION_PHASE (a phase name for integration_test/migration/; added to the log name),
+# FIXTURE_MACOS_BUNDLE_ID (macOS: build the copy under this bundle ID).
 #
 set -euo pipefail
 
@@ -112,6 +116,15 @@ fi
 
 WORKDIR="$("$PYTHON" "$HARNESS/scripts/use-version.py" "$FIXTURE" "$LINE" | tail -1 | tr -d '\r')"
 
+# FIXTURE_MACOS_BUNDLE_ID builds the copy's macOS app under another bundle ID, so two
+# fixtures can share one sandbox container (run-v4-upgrade.sh).
+if [[ -n "${FIXTURE_MACOS_BUNDLE_ID:-}" ]]; then
+  [[ "$FIXTURE_MACOS_BUNDLE_ID" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "bad FIXTURE_MACOS_BUNDLE_ID" >&2; exit 2; }
+  appinfo="$WORKDIR/macos/Runner/Configs/AppInfo.xcconfig"
+  sed "s/^PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = $FIXTURE_MACOS_BUNDLE_ID/" \
+    "$appinfo" >"$appinfo.new" && mv "$appinfo.new" "$appinfo"
+fi
+
 CHROMEDRIVER_PID=""
 DEFINES_FILE=""
 # Every build of the fixture copy embeds the defines, the license included: build/,
@@ -172,7 +185,7 @@ trap 'on_signal 143' TERM
 trap 'on_signal 129' HUP
 
 # The defines file: created mode 600 (umask 077) and written by Python from the
-# environment, so the license is never a command-line argument.
+# environment, so the license is not an argument of this script or of flutter.
 DEFINES_FILE="$(umask 077 && mktemp "${TMPDIR:-/tmp}/ditto-defines.XXXXXX")"
 "$PYTHON" - "$DEFINES_FILE" <<'EOF'
 import json, os, sys

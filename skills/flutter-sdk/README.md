@@ -6,6 +6,7 @@
 - [Supported versions](#supported-versions)
 - [Capability map](#capability-map)
 - [Verification](#verification)
+- [Documentation mismatches](#documentation-mismatches)
 - [Installation](#installation)
 - [Maintenance](#maintenance)
 
@@ -132,13 +133,27 @@ probes (CAP-02, CAP-06, CAP-11, CAP-12, CAP-15, CAP-16, CAP-20). Where a row's w
 did not run, the note says so and gives the source that shows the API exists on web
 (`sdks/flutter/ditto_live/lib/src/bridge/wasm/`, the web bridge):
 
+- **CAP-02 `executed`** covers the published platform files built into apps: the
+  Podfile lines, Info.plist keys, entitlements, `minSdk`, the compileSdk override and
+  the manifest entry (iOS Simulator, Android and macOS builds, 5.2.0; APKs on every
+  line), the merged release manifests' permissions (aapt2), and the macOS release
+  entitlements (a sandboxed release app syncing two instances over loopback).
+  `DittoSyncPermissions` ran on Chrome only (`[]`). Not run: the Android runtime
+  permission request on a device, any permission prompt, the macOS local-network keys,
+  and an Android or iOS release build on a device (R8 included).
 - **CAP-04 `executed`** covers the offline license (native and web), the
   missing-handler failure and a login refused by an unreachable server (macOS); a login
   round-trip against a Ditto server was not run. Web auth: not run;
   `bridge/wasm/auth.dart:38-57` @ `sdk-release-5.2.0` (login, logout).
+- **CAP-06 `executed`** covers turning each peer-to-peer transport off (every run),
+  TCP listen and connect on loopback (macOS on 5.0.4 to 5.2.0; Linux and Windows on
+  5.2.0), the `kIsWeb` gate on macOS and Chrome, and the web rejection of a peer-to-peer
+  transport. Not run: Bluetooth LE, LAN, AWDL, Wi-Fi Aware or multicast carrying data, a
+  WebSocket connection to a server, and a transport condition other than "no event".
 - **CAP-07 `executed`** covers subscriptions (the minimal app on every target in the
-  table, the subscription probes on macOS, Linux and Windows); sync scopes (`ALTER
-  SYSTEM` through `execute`) were not run.
+  table, the subscription probes on macOS, Linux and Windows) and sync scopes set and
+  read back through `execute` on one offline instance (the same probes). Not run: that
+  a scope keeps a collection off another peer or a server.
 - **CAP-09 `executed`** on macOS, Linux, Windows, the Android emulator and the iOS
   Simulator (store probes). Not run on web; the web bridge implements it with
   `dittoffiStoreBeginTransactionAsyncThrows` and `dittoffiTransactionExecute`
@@ -147,6 +162,10 @@ did not run, the note says so and gives the source that shows the API exists on 
   CAP-09. Not run on web; it is a DQL statement sent through the same `execute` call the
   web runs executed (`dittoffiTryExecStatement`, `bridge/wasm/store.dart:13` @
   `sdk-release-5.2.0`).
+- **CAP-11 `executed`** covers V1 observers on every target in the table,
+  `registerObserverV2` and `registerObserverWithSignalNext` on macOS (5.1.0, 5.2.0),
+  Linux and Windows (5.2.0), and signal-next on Chrome. `Differ` is from source, not
+  executed, and V2 observers were not run on iOS or Android.
 - **CAP-13 `executed`** covers two instances in one process over TCP loopback: presence,
   sync, and a connection-request handler that denies or throws (macOS on 5.0.4 to 5.2.0;
   Linux and Windows on 5.2.0). Not run on web, iOS or Android; the web bridge has the
@@ -164,9 +183,10 @@ did not run, the note says so and gives the source that shows the API exists on 
 - **CAP-18 `executed`** covers widget tests with fakes on the host and
   `integration_test` on macOS, Linux, Windows, the Android emulator, the iOS Simulator
   and Chrome (`flutter drive`); Ditto itself does not load under a host `flutter test`.
-- **CAP-19 `executed`** covers the 4.14.7 API in the v4 fixture on macOS and the 5.1.0 →
-  5.2.0 default-directory upgrade on macOS and the iOS Simulator. An on-disk 4.14 → 5.x
-  upgrade was not run, and 4.14.7 was not run on web. Its `pubspec.yaml` lists `web`
+- **CAP-19 `executed`** covers the 4.14.7 API in the v4 fixture on macOS, the 5.1.0 →
+  5.2.0 default-directory upgrade on macOS and the iOS Simulator, and an on-disk 4.14.7
+  → 5.0.4, 5.1.0 and 5.2.0 upgrade of the v4 default directory on macOS (by hand, not in
+  CI; one small unsynced store). 4.14.7 was not run on web. Its `pubspec.yaml` lists `web`
   among its platforms (`flutter/ditto_live/pubspec.yaml:74-80` @ `sdk-release-4.14.7`)
   and it ships a web bridge (`flutter/ditto_live/lib/src/core/wasm/` @
   `sdk-release-4.14.7`).
@@ -178,7 +198,8 @@ did not run, the note says so and gives the source that shows the API exists on 
 GitHub-hosted runners (ubuntu-24.04, windows-latest, macos-26 arm64). Per target:
 
 - **macOS desktop:** the minimal app and every probe directory at or below each 5.x line
-  (`integration_test`, debug), locally and in CI; a 5.2.0 release `.app` run directly;
+  (`integration_test`, debug), locally and in CI; a 5.2.0 release `.app` run directly
+  (the minimal app, then two instances syncing over loopback);
   the 4.14.7 v4 fixture; the 5.1.0 → 5.2.0 default-directory migration.
 - **iOS:** the iPhone 17 Pro Simulator (iOS 26.5) in CI on 5.2.0 and the migration's
   5.1.0 write phase; an iOS 27.1 Simulator locally; simulator builds on 4.14.7 and 5.0.4.
@@ -188,7 +209,8 @@ GitHub-hosted runners (ubuntu-24.04, windows-latest, macos-26 arm64). Per target
 - **Web:** headless Chrome: `flutter drive` debug (DDC) on 5.0.4, 5.1.0 and 5.2.0;
   release dart2js and `--wasm` bundles on 5.1.0 and 5.2.0.
 - **Two peers:** two instances in one process over TCP loopback on macOS, 5.0.4 to 5.2.0.
-- **By hand, not in CI:** hot restart (`flutter run`, macOS and Chrome), the
+- **By hand, not in CI:** the 4.14.7 → 5.x on-disk upgrade (macOS,
+  `run-v4-upgrade.sh`), hot restart (`flutter run`, macOS and Chrome), the
   `system:data_sync_info` sync-status probe and a standalone app that reproduced its hang
   on 4.14.7, 5.0.4, 5.1.0 and 5.2.0, and the host `flutter test` attempt.
 
@@ -205,10 +227,30 @@ the references: isolates per call, retention, error mapping, the v4 identity API
 or multicast between devices (radios are not exercised; all two-peer runs use TCP
 loopback with peer-to-peer off); sync with a Ditto server, including a login round-trip
 and web sync; Android runtime permission requests; Linux AArch64; Firefox, Safari and
-Edge; an on-disk 4.14 → 5.x upgrade; app lifecycle callbacks on a device (driven through
-the test binding only); hot restart beyond the manual macOS and Chrome runs.
+Edge; an on-disk 4.14 → 5.x upgrade anywhere but macOS, or of a store that has synced;
+a release build on an Android or iOS device, so Android R8 shrinking; sync-scope
+enforcement between peers; app lifecycle callbacks on a device (driven through the test
+binding only); hot restart beyond the manual macOS and Chrome runs.
 
-**Last verified:** 2026-11-18.
+**Last verified:** 2026-11-19.
+
+## Documentation mismatches
+
+Places where the public docs or the SDK's own dartdoc disagree with the released
+package. The references state what was observed; report these upstream when re-verifying.
+
+| Source | It says | Observed | Where |
+|---|---|---|---|
+| Migration guide (`migration-guides/flutter-v4`) | `Ditto.init()` is mandatory | Optional from 5.1.0 (source) | [versions.md](references/versions.md#dittoinit-per-line) |
+| Migration guide | Flutter has no `signalNext` | `registerObserverWithSignalNext` from 5.1.0 (executed) | [observers.md](references/observers.md) |
+| Migration guide | `HttpListenConfig.websocketSync` was `true` in v4 | `false` in 4.14.7 (source) | [versions.md](references/versions.md#sync) |
+| Migration guide | "v5 does not migrate existing databases" | 5.0.4, 5.1.0 and 5.2.0 open a 4.14.7 default directory in place (executed, macOS) | [versions.md](references/versions.md#on-disk-store-migration) |
+| 5.2.0 release notes | The default root moves to Application Support "on desktop platforms" | The source uses it on every native platform; a fresh open was executed on macOS only | [connect.md](references/connect.md#persistence-directory) |
+| `Ditto.currentPlatform` dartdoc | Importing `dart:io` fails to compile on web | It compiles; reading `Platform` throws `UnsupportedError` at run time (executed, Chrome) | [web.md](references/web.md#code-that-compiles-on-web) |
+| `DittoConfig` dartdoc | The default directory name uses the lowercase database ID | The ID is used as given (source) | [versions.md](references/versions.md#on-disk-store-migration) |
+| Install guide, web assets | `wasmShimUrl` is a directory | It is the URL of `ditto.wasm.js` itself (source; a relative URL executed) | [web.md](references/web.md#asset-loading) |
+| SDK log on web | `setOfflineOnlyLicenseToken is a no-op on the web platform.` | It still verifies the token (source) | [web.md](references/web.md#web-differences) |
+| pub.dev, release tags, compatibility page, install guide | Four different minimum Flutter versions | Only 3.50.0 was executed | [setup.md](references/setup.md#cap-01-prerequisites-and-install) |
 
 ## Installation
 

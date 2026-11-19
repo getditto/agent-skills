@@ -1,4 +1,6 @@
 // Web probes: platform detection and peer-to-peer transports.
+import 'dart:io' show Platform;
+
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +51,19 @@ void platformProbes() {
     record('currentPlatform', Ditto.currentPlatform.name);
     expect(kIsWeb, isTrue);
     expect(Ditto.currentPlatform, SupportedPlatform.web);
+  });
+
+  testWidgets('dart:io compiles on web, Platform throws when read', (t) async {
+    // This file imports dart:io and the web build compiles. Reading
+    // Platform is what fails, at run time.
+    Object? error;
+    try {
+      record('dart:io Platform.operatingSystem', Platform.operatingSystem);
+    } catch (thrown) {
+      error = thrown;
+    }
+    record('dart:io Platform.operatingSystem throws', '$error');
+    expect(error, isA<UnsupportedError>());
   });
 
   testWidgets('defaultTargetPlatform is not web on web', (t) async {

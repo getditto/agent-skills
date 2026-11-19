@@ -34,7 +34,7 @@
         "websiteURL": "https://ditto.com",
         "defaultPrompt": [
           "Add Ditto to this Flutter app with an observer feeding a widget.",
-          "Generate a runnable Flutter project that syncs a collection with Ditto.",
+          "Configure this Flutter app's iOS, Android and macOS projects for Ditto sync.",
           "Diagnose why my Flutter release build cannot sync."
         ]
       }

@@ -59,8 +59,8 @@ Future<void> withDitto(
   );
   // Required on 5.0.x, automatic from 5.1.0; memoized.
   await Ditto.init();
-  // Workaround, not a recommendation (README, Findings that changed a
-  // research lead, entry 1): when one process closes Ditto and opens it
+  // Workaround, not a recommendation (README, Unexpected findings,
+  // Finding 1): when one process closes Ditto and opens it
   // again, a native handle (an internal Transaction, a SyncSubscription)
   // finalized by the GC after close() logs from inside the GC finalizer and
   // aborts (5.0.4) or deadlocks (5.1.0, 5.2.0) the process on macOS debug.

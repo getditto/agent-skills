@@ -29,11 +29,14 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # License hygiene, for every job below:
-# - The license reaches Flutter only through run-fixture.sh's (or web-probe.py's, or
-#   run-macos-release.sh's) mode-600 --dart-define-from-file file, never an argument.
+# - The license reaches the flutter command only through run-fixture.sh's (or
+#   web-probe.py's, or run-macos-release.sh's) mode-600 --dart-define-from-file file.
+#   The flutter tool forwards defines to its build steps as arguments (-D to the Dart
+#   compiler, base64 to Gradle and Xcode); the runners are single-use.
 # - Compiled builds embed every define, so nothing here caches or uploads build/,
 #   the fixture copies under the temp directory, or .dart_tool, and no job uploads
-#   artifacts. Logs stay in the job output, where the scripts redact the license.
+#   artifacts. Logs stay in the job output, where GitHub masks the secret; the scripts
+#   print it as <redacted> in their own headers.
 # - Dependabot-triggered runs read Dependabot secrets, not Actions secrets.
 
 env:
@@ -105,9 +108,11 @@ jobs:
             echo '::error::Set DITTO_OFFLINE_LICENSE in Actions secrets and Dependabot secrets before running the Flutter fixtures.'
             exit 1
           fi
-      # Release.entitlements, not DebugProfile.entitlements. The .app embeds the
-      # license; the script deletes the build output and nothing uploads it.
-      - name: Build in release mode, run the .app and check its transcript
+      # Release.entitlements, not DebugProfile.entitlements: the second build syncs two
+      # instances over TCP loopback, which the sandbox allows only with the network
+      # entitlements. The .app embeds the license; the script deletes the build output
+      # and nothing uploads it.
+      - name: Build in release mode, run the .app and the two-peer app, check transcripts
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
         run: tests/flutter-sdk/scripts/run-macos-release.sh 5.2
@@ -433,7 +438,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        line: ['5.1', '5.2']
+        line: ['5.0', '5.1', '5.2']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read the pins
@@ -453,7 +458,7 @@ jobs:
           fi
       # The runner image's ChromeDriver matches its Chrome. run-fixture.sh starts it
       # on :4444 and checks /status; web-probe.py starts its own on a free port.
-      - name: Drive the web probes (debug, flutter drive)
+      - name: Drive the minimal app and the web probes (debug, flutter drive)
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           LINE: ${{ matrix.line }}
@@ -461,10 +466,14 @@ jobs:
           export CHROMEDRIVER="$CHROMEWEBDRIVER/chromedriver"
           google-chrome --version
           "$CHROMEDRIVER" --version
-          tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome "$LINE" \
-            integration_test/web/web_all_test.dart integration_test/web/web_51_test.dart \
-            integration_test/web/web_license_test.dart
+          targets=(integration_test/minimal_app_test.dart integration_test/web/web_all_test.dart)
+          # web_51_test.dart uses 5.1.0+ API and does not compile on 5.0.
+          if [[ "$LINE" != "5.0" ]]; then targets+=(integration_test/web/web_51_test.dart); fi
+          targets+=(integration_test/web/web_license_test.dart)
+          tests/flutter-sdk/scripts/run-fixture.sh minimal_app chrome "$LINE" "${targets[@]}"
+      # web-probe.py's release probes were recorded on 5.1.0 and 5.2.0 only.
       - name: Run the release build-mode and hosting probes
+        if: matrix.line != '5.0'
         env:
           DITTO_OFFLINE_LICENSE: ${{ secrets.DITTO_OFFLINE_LICENSE }}
           LINE: ${{ matrix.line }}
@@ -502,10 +511,11 @@ jobs:
         run: tests/flutter-sdk/scripts/run-fixture.sh v4_app macos 4.14 integration_test/v4_test.dart
 
   # Every hand-written ```dart fence in the skill (SKILL.md's minimum viable app included)
-  # must format and analyze against the pinned ditto_live lines, and every generated copy
-  # must match its fixture region byte for byte. Needs no license.
+  # must format and analyze against the pinned ditto_live lines, every generated copy
+  # must match its fixture region byte for byte, both fixtures must analyze with
+  # --fatal-infos, and the fixture's host tests must pass. Needs no license.
   skill-snippets:
-    name: Analyze the skill's Dart fences and check snippet sync
+    name: Analyze the skill's Dart fences and the fixtures, check snippet sync, run host tests
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -521,10 +531,24 @@ jobs:
         run: FLUTTER="$(command -v flutter)" python3 tests/flutter-sdk/scripts/analyze_skill_snippets.py
       - name: Check generated snippets match the fixtures
         run: python3 scripts/sync-snippets.py --check
+      # minimal_app/test/ is the source of the fake-backed widget test the skill
+      # publishes (testing.md, flutter-testing-1). It imports no Ditto, so it runs on
+      # the host with no device and no license.
+      - name: Analyze the minimal_app fixture and run its host tests
+        run: |
+          cd "$(python3 tests/flutter-sdk/scripts/use-version.py minimal_app 5.2 | tail -1)"
+          flutter analyze --fatal-infos
+          flutter test test/
+      # v4_app compiles against the 4.14 line only.
+      - name: Analyze the v4_app fixture
+        run: |
+          cd "$(python3 tests/flutter-sdk/scripts/use-version.py v4_app 4.14 | tail -1)"
+          flutter analyze --fatal-infos
 
   # The skill ships generated copies of marked regions of the fixtures. Rebuild the
-  # minimal app from the skill's Markdown alone, so a copy that matches its source
-  # but does not build on its own fails. Builds only, no license define.
+  # minimal app from the skill's Markdown alone (both Dart files, the dependencies and
+  # the platform configuration), so a copy that matches its source but does not build
+  # on its own fails. Builds only, no license define.
   from-skill:
     name: Build the minimal app from the skill's Markdown (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -578,4 +602,6 @@ jobs:
             flutter build apk --debug
           else
             flutter build ios --simulator --debug --no-codesign
+            # The macOS Info.plist key and both entitlements files come from the skill.
+            flutter build macos --debug
           fi

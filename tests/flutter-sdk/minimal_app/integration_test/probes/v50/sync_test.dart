@@ -27,6 +27,26 @@ Future<int?> insertCarCommit(Ditto ditto, Map<String, dynamic> car) async {
 }
 // snippet:end flutter-sync-2
 
+// snippet:start flutter-sync-4
+/// Sets how each listed collection syncs, by collection name: `AllPeers`
+/// (the default), `BigPeerOnly`, `SmallPeersOnly` or `LocalPeerOnly`. Call
+/// it after every `Ditto.open` and before `sync.start()`: the setting is
+/// not persisted.
+Future<void> setSyncScopes(Ditto ditto, Map<String, String> scopes) async {
+  await ditto.store.execute(
+    'ALTER SYSTEM SET USER_COLLECTION_SYNC_SCOPES = :syncScopes',
+    arguments: {'syncScopes': scopes},
+  );
+}
+
+/// The sync scopes set on this instance; empty when none was set.
+Future<Map<String, dynamic>> syncScopes(Ditto ditto) async {
+  final result = await ditto.store.execute('SHOW USER_COLLECTION_SYNC_SCOPES');
+  final value = result.items.first.value['user_collection_sync_scopes'];
+  return Map<String, dynamic>.from(value as Map);
+}
+// snippet:end flutter-sync-4
+
 Object? _thrownBy(void Function() call) {
   try {
     call();
@@ -87,6 +107,41 @@ void main() {
       });
     });
   }
+
+  testWidgets('sync scopes: ALTER SYSTEM sets, SHOW reads back', (t) async {
+    await withDitto(t, (ditto) async {
+      expect(await syncScopes(ditto), isEmpty);
+      await setSyncScopes(ditto, {'local_cars': 'LocalPeerOnly'});
+      expect(await syncScopes(ditto), {'local_cars': 'LocalPeerOnly'});
+      ditto.sync.start();
+      expect(await syncScopes(ditto), {'local_cars': 'LocalPeerOnly'});
+    });
+  });
+
+  // The setting lives in the instance, not in the store: a new instance on
+  // the same directory starts without it.
+  testWidgets('sync scopes are not persisted across open', (t) async {
+    await withProbeDirectory((path) async {
+      Future<Ditto> open() async {
+        final ditto = await Ditto.open(DittoConfig(persistenceDirectory: path));
+        ditto.setOfflineOnlyLicenseToken(license);
+        return ditto;
+      }
+
+      final first = await open();
+      try {
+        await setSyncScopes(first, {'local_cars': 'LocalPeerOnly'});
+      } finally {
+        await first.close();
+      }
+      final second = await open();
+      try {
+        expect(await syncScopes(second), isEmpty);
+      } finally {
+        await second.close();
+      }
+    });
+  });
 
   testWidgets('commitID on a write, null on a read', (t) async {
     await withDitto(t, (ditto) async {

@@ -14,6 +14,7 @@
 // fixture; the compiled bundle embeds it, so web-probe.py deletes the build.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
@@ -125,6 +126,13 @@ class _ProbeAppState extends State<_ProbeApp> {
     _add('read-back make: ${blue.firstOrNull?.value['make']}');
     final version = RegExp(r'\d+\.\d+\.\d+').firstMatch(Ditto.version);
     _add('SDK version: ${version?.group(0)}');
+    // dart:io is imported above and the web build compiles; reading Platform
+    // throws at run time.
+    try {
+      _add('dart:io Platform: ${Platform.operatingSystem}');
+    } on UnsupportedError catch (error) {
+      _add('dart:io Platform: UnsupportedError: ${error.message}');
+    }
   }
 
   Future<void> _reloadWrite(Ditto ditto) async {

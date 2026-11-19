@@ -119,6 +119,9 @@ log="$FAKE_RECORD"
 printf 'argv:' >> "$log"; printf ' [%s]' "$@" >> "$log"; printf '\n' >> "$log"
 printf 'pwd: [%s]\n' "$PWD" >> "$log"
 printf 'env-ditto: [%s]\n' "$(env | grep -o '^DITTO_[A-Za-z0-9_]*' | sort | tr '\n' ' ')" >> "$log"
+if [[ "${1:-}" == "test" && -f macos/Runner/Configs/AppInfo.xcconfig ]]; then
+  printf 'bundle: [%s]\n' "$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER = //p' macos/Runner/Configs/AppInfo.xcconfig)" >> "$log"
+fi
 for arg in "$@"; do
   case "$arg" in
     --dart-define-from-file=*)
@@ -301,6 +304,24 @@ class RunFixture(unittest.TestCase):
                                   if line.startswith("defines: "))[9:])
         self.assertEqual(defines["DITTO_LICENSE"], FAKE_LICENSE)
 
+    def record_lines(self, prefix):
+        return [line for line in self.record.read_text().splitlines() if line.startswith(prefix)]
+
+    def test_macos_bundle_id_override_applies_to_the_copy_only(self):
+        committed = (HARNESS / "v4_app/macos/Runner/Configs/AppInfo.xcconfig").read_text()
+        environment = {**self.environment, "FIXTURE_MACOS_BUNDLE_ID": "live.ditto.skills.minimalApp"}
+        result = self.run_fixture("v4_app", "macos", "4.14", "integration_test/upgrade/v4_write_test.dart",
+                                  environment=environment)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.record_lines("bundle: "), ["bundle: [live.ditto.skills.minimalApp]"])
+        self.assertEqual((HARNESS / "v4_app/macos/Runner/Configs/AppInfo.xcconfig").read_text(), committed)
+        self.record.unlink()
+        result = self.run_fixture("v4_app", "macos", "4.14", "integration_test/v4_test.dart")
+        self.assertEqual(self.record_lines("bundle: "), ["bundle: [live.ditto.skills.v4App]"])
+        bad = self.run_fixture("v4_app", "macos", "4.14", "integration_test/v4_test.dart",
+                               environment={**self.environment, "FIXTURE_MACOS_BUNDLE_ID": "a b; rm"})
+        self.assertEqual(bad.returncode, 2, bad.stdout + bad.stderr)
+
     def test_v4_app_runs_on_the_4_14_line_only(self):
         result = self.run_fixture("v4_app", "macos", "5.2", "integration_test/v4_test.dart")
         self.assertNotEqual(result.returncode, 0)
@@ -399,10 +420,17 @@ FAKE_RELEASE_FLUTTER = r"""#!/bin/bash
 printf 'pwd: [%s]\n' "$PWD" >> "$FAKE_RECORD"
 [[ "${1:-}" == "--version" ]] && { echo "Flutter 0.0.0-fake"; exit 0; }
 [[ "${1:-}" == "build" ]] || exit 0
+env | sed -n 's/^\(DITTO_[A-Za-z0-9_]*\)=.*/build-env: \1/p' >> "$FAKE_RECORD"
 defines=""
+target="lib/main.dart"
+previous=""
 for arg in "$@"; do
   case "$arg" in --dart-define-from-file=*) defines="$(cat "${arg#--dart-define-from-file=}")" ;; esac
+  [[ "$previous" == "-t" ]] && target="$arg"
+  previous="$arg"
 done
+printf 'target: [%s]\n' "$target" >> "$FAKE_RECORD"
+[[ "${FAKE_NO_PEER_SYNC:-}" == "1" && "$target" != "lib/main.dart" ]] && target="no-sync"
 [[ "${FAKE_LEAK:-}" == "build" ]] && echo "$defines"
 app="build/macos/Build/Products/Release/minimal_app.app/Contents"
 mkdir -p "$app/MacOS"
@@ -416,7 +444,12 @@ leak=""
 {
   echo '#!/bin/bash'
   printf 'echo %q\n' "$leak"
-  for line in 'observer: 1 car(s)' 'read-back make: Toyota' "SDK version: 5.2.0" 'platform: macos' 'closed: true'; do
+  case "$target" in
+    lib/main.dart) lines=('observer: 1 car(s)' 'read-back make: Toyota' "SDK version: 5.2.0" 'platform: macos' 'closed: true') ;;
+    no-sync) lines=('error: TimeoutException after 0:00:30.000000: Future not completed' 'closed: true') ;;
+    *) lines=('two-peer sync: car-from-listener' 'closed: true') ;;
+  esac
+  for line in "${lines[@]}"; do
     printf 'echo %q\n' "flutter: transcript: $line"
   done
 } > "$app/MacOS/minimal_app"
@@ -463,10 +496,10 @@ class RunMacosRelease(unittest.TestCase):
             "DITTO_OFFLINE_LICENSE": FAKE_LICENSE, "RELEASE_APP_TIMEOUT": "20",
         }
 
-    def run_release(self, leak=""):
+    def run_release(self, leak="", **extra):
         return subprocess.run(["bash", str(HARNESS / "scripts/run-macos-release.sh"), "5.2"],
-                              env={**self.environment, "FAKE_LEAK": leak}, capture_output=True, text=True,
-                              timeout=300)
+                              env={**self.environment, "FAKE_LEAK": leak, **extra}, capture_output=True,
+                              text=True, timeout=300)
 
     def workdir(self):
         return Path(next(line for line in self.record.read_text().splitlines()
@@ -479,12 +512,25 @@ class RunMacosRelease(unittest.TestCase):
         result = self.run_release()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("transcript: closed: true", result.stdout)
+        self.assertIn("transcript: two-peer sync: car-from-listener", result.stdout)
+        record = self.record.read_text().splitlines()
+        self.assertEqual([line for line in record if line.startswith("target: ")],
+                         ["target: [lib/main.dart]", "target: [integration_test/release/two_peer_app.dart]"])
+        self.assertFalse([line for line in record if line.startswith("build-env: ")],
+                         "flutter build saw a DITTO_* variable")
         argv = self.grep_argv_lines()
-        self.assertEqual(sum("[-qF] [-f]" in line for line in argv), 2, argv)
+        # One license check after each build and one after each app run.
+        self.assertEqual(sum("[-qF] [-f]" in line for line in argv), 4, argv)
         self.assertFalse(any(FAKE_LICENSE in line for line in argv), "license in grep's argument list")
         log = (self.logs / "run-minimal_app-macos-release-5.2.log").read_text()
         self.assertIn("DITTO_LICENSE=<redacted>", log)
         self.assertNotIn(FAKE_LICENSE, log + result.stdout + result.stderr)
+        self.assertFalse(self.workdir().exists(), "the release build was left behind")
+
+    def test_a_release_app_whose_peers_do_not_sync_fails(self):
+        result = self.run_release(FAKE_NO_PEER_SYNC="1")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("missing: transcript: two-peer sync: car-from-listener", result.stderr)
         self.assertFalse(self.workdir().exists(), "the release build was left behind")
 
     def test_a_license_in_the_output_is_never_printed_and_the_log_is_deleted(self):

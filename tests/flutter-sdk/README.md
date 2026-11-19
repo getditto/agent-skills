@@ -13,7 +13,7 @@ every fixture, script and CI job reads them from there.
 - [Local toolchain](#local-toolchain)
 - [Running fixtures](#running-fixtures)
 - [Findings](#findings)
-- [Findings that changed a research lead](#findings-that-changed-a-research-lead)
+- [Unexpected findings](#unexpected-findings)
 - [Manual records](#manual-records)
 
 ## Pins and rationale
@@ -78,9 +78,19 @@ temporary directory, pins `ditto_live` to that line from `versions.json`, and ru
 target. The license comes from `DITTO_OFFLINE_LICENSE` (environment, else the
 repo-root `.env`). It reaches Flutter as `DITTO_LICENSE` through
 `--dart-define-from-file`, a mode-600 temporary file deleted when the script exits, so
-it is never a command-line argument. Each target's output goes to
+it is not an argument of the `flutter` command the script runs. The flutter tool then
+forwards every define to its own build steps as arguments: plain `-D<name>=<value>`
+to the Dart compiler on every target, base64 in `-Pdart-defines=` to Gradle and in
+`--DartDefines=` to Xcode's build step (`flutter_tools` 3.50.0: `lib/src/compile.dart`,
+`lib/src/build_info.dart:448`, `bin/xcode_backend.dart:712`). A process listing on the
+build machine during a build therefore shows the license; run the fixtures on a machine
+you trust. Each target's output goes to
 `run-<fixture>-<device>-<line>-<target>.log` here (gitignored); its header lists the
-non-secret defines (`DITTO_VERSION`, `DITTO_PLATFORM`, `PROBE_DEFAULT_LOGGING`). The
+non-secret defines (`DITTO_VERSION`, `DITTO_PLATFORM`, `PROBE_DEFAULT_LOGGING`) and
+prints the license as `<redacted>`. `run-fixture.sh` does not filter flutter's own
+output; `run-macos-release.sh` refuses to print a log that contains the license, and
+`web-probe.py` and `hot-restart.py` replace it in what they print. In CI, GitHub masks
+the secret in job logs. The
 committed `minimal_app/pubspec.yaml` stays at the 5.2 pin; `use-version.py` refuses
 `4.14` for `minimal_app`.
 
@@ -182,21 +192,41 @@ DITTO_PLATFORM=ios tests/flutter-sdk/scripts/run-migration.sh <simulator-udid>
 ```
 
 `scripts/run-macos-release.sh <line>` builds `minimal_app` for macOS with
-`flutter build macos --release` (so `Release.entitlements` applies), runs the built
-app's executable without the shell's `DITTO_*` variables, and checks the transcript
-`lib/main.dart` prints on stdout (`flutter: transcript: ...`). The release build embeds
-the license; the script deletes the whole fixture copy on exit.
+`flutter build macos --release` (so `Release.entitlements` applies), twice, and runs
+each built executable, checking the transcript it prints on stdout
+(`flutter: transcript: ...`). The first build is `lib/main.dart`, the published program
+with the SDK default directory. The second is
+`integration_test/release/two_peer_app.dart`: two instances in the one process, one
+listening on TCP `127.0.0.1:<port>` and one connecting, every peer-to-peer transport
+off; it must print `transcript: two-peer sync: car-from-listener`. The app is
+sandboxed, so that needs `com.apple.security.network.server` and
+`com.apple.security.network.client` in the signed release app. Both `flutter` and the
+app run without the shell's `DITTO_*` variables. The release builds embed the license;
+the script deletes the whole fixture copy on exit.
+
+`scripts/run-v4-upgrade.sh [<5.x line>]` (default 5.2, macOS only) opens a store
+written by 4.14.7 with a 5.x line. Each of its two rounds first runs
+`v4_app/integration_test/upgrade/v4_write_test.dart` on 4.14 (delete
+`{Documents}/ditto` and both v5 default directories, then write one car to the v4
+default, `{Documents}/ditto`), then
+`minimal_app/integration_test/migration/upgrade_from_v4_test.dart` on the 5.x line
+with `MIGRATION_PHASE=read-default` (`DittoConfig(databaseID: <the v4 app ID>)`, no
+`persistenceDirectory`) or `read-explicit` (the v4 path passed). A sandboxed app's
+Documents directory belongs to its bundle ID, so the script builds the `v4_app` copy
+under `minimal_app`'s bundle ID (`FIXTURE_MACOS_BUNDLE_ID`, which `run-fixture.sh`
+writes into the copy's `AppInfo.xcconfig`). Not in CI.
 
 `build-from-skill.py <out-dir>` builds a project from `flutter create` plus only what
-`skills/flutter-sdk` publishes: the program and dependencies from
-`examples/minimal-app.md`, and the Podfile, Info.plist, entitlements, Gradle and
-manifest snippets from `references/setup.md`. CI's `from-skill` job analyzes it with
-`flutter analyze --fatal-infos` and builds a web bundle, a debug APK and an iOS
-Simulator app. Two inputs come from this harness, not the skill: `lib/main.dart` (the
-widget that runs the program) and `minimal_app/pubspec.lock`, which seeds the
-resolution so `pub get` starts from the age-checked fixture lock instead of resolving
-fresh; the job then age-checks the resulting lock. The seeded lock means the job does
-not show what a fresh `flutter pub add ditto_live` would resolve.
+`skills/flutter-sdk` publishes: both Dart files (`lib/minimal_app.dart`,
+`lib/main.dart`) and the dependencies from `examples/minimal-app.md`, and the Podfile,
+Info.plist, entitlements, `minSdk`, compileSdk override and manifest snippets from
+`references/setup.md`. CI's `from-skill` job analyzes it with
+`flutter analyze --fatal-infos` and builds a web bundle, a debug APK, an iOS Simulator
+app and a debug macOS app. One input comes from this harness, not the skill:
+`minimal_app/pubspec.lock`, which seeds the resolution so `pub get` starts from the
+age-checked fixture lock instead of resolving fresh; the job then age-checks the
+resulting lock. The seeded lock means the job does not show what a fresh
+`flutter pub add ditto_live` would resolve. The job builds and does not run the app.
 
 `scripts/hot-restart.py --device macos|chrome --mode v1|v2|holder [--peer]` runs
 `integration_test/hot_restart/hot_restart_app.dart` with `flutter run` (debug), sends
@@ -220,7 +250,7 @@ license, each peer-to-peer transport turned off one by one, `close()` in `finall
 the directory deleted (retried for a few seconds, and also when `Ditto.open` throws). The harness also turns
 Ditto logging off unless `PROBE_DEFAULT_LOGGING=true` is set in the environment
 (passed as `--dart-define=PROBE_DEFAULT_LOGGING=true`); see Finding 1 in
-[Findings that changed a research lead](#findings-that-changed-a-research-lead).
+[Unexpected findings](#unexpected-findings).
 
 ## Findings
 
@@ -236,17 +266,18 @@ runs are debug builds.
 | 5.1.0 | macOS (`flutter test -d macos`) | pass, with the earlier `onChange` version of the program |
 | 5.2.0 | macOS (`flutter test -d macos`) | pass, current program |
 | 5.2.0 | Chrome headless (`flutter drive`) | pass, current program |
-| 5.0.4, 5.1.0 | Chrome | not run |
-| all | iOS, Android, Windows, Linux | not run |
+| 5.1.0 | Chrome headless (`flutter drive`) | pass, current program (2026-11-18) |
+| 5.0.4 | Chrome headless (`flutter drive`) | pass, current program (2026-11-19) |
 
-- **Desktop `integration_test` against pub.dev `ditto_live` works on macOS.** The
-  feasibility spike (`run-fixture.sh minimal_app macos 5.2` with a throwaway
-  `Ditto.open` test) passed on the first run with no entitlement or Podfile
-  changes: `SPIKE version=iOSF5.2.0_f6bdf023fa platform=macos`, `All tests passed!`.
-  `Ditto.version` is the core string, not the pub version, as the spec says.
-- **Bundled web assets work under `flutter drive -d chrome --headless`.** The same
-  spike passed on Chrome 5.2.0 without serving `lib/assets` separately, so
-  `serve-web-assets.sh` and the `DITTO_WASM_BASE` define were not needed.
+The CI `macos` job runs the current program on all three lines, and the `web` job
+drives it on Chrome on all three. Linux, Windows, the Android emulator and the iOS
+Simulator: [CI runners](#ci-runners-2026-11-17).
+
+- **Desktop `integration_test` against pub.dev `ditto_live` works on macOS** with no
+  entitlement or Podfile change beyond the platform line. `Ditto.version` is the core
+  string (`iOSF5.2.0_f6bdf023fa`), not the pub version.
+- **Bundled web assets work under `flutter drive -d chrome --headless`** without
+  serving `lib/assets` separately.
 - **Flutter 3.50.0 raises the Apple deployment targets on every build.** With
   `platform :osx, '11.0'` and `MACOSX_DEPLOYMENT_TARGET = 11.0` in the fixture, the
   build printed `Updating minimum macOS deployment target to 12.0.`,
@@ -285,7 +316,11 @@ default logging.
 | 5.0.4 | `init_once` (1 test), `v50` (43) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
 | 5.1.0 | `init_once` (1), `v50` (43), `v51` (7) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
 | 5.2.0 | `init_once` (1), `v50` (43), `v51` (7), `v52` (4) | `v50` 42 of 43 in the full `run-probes.sh` run: the first version of `system_info_test.dart` failed; its corrected version passed alone (2026-11-18) and in CI; everything else passed. Ditto logging disabled in the harness (see Finding 1) |
-| all | iOS, Android, Chrome, Windows, Linux | not run |
+
+Other targets: Linux and Windows run the same directories in CI on 5.2.0; the Android
+emulator and the iOS Simulator run `v50/store_test.dart` and `v50/observers_test.dart`
+only ([CI runners](#ci-runners-2026-11-17)); Chrome has its own probes
+([Flutter Web probes](#flutter-web-probes-2026-11-17)).
 
 The counts are from the 2026-11-18 `run-probes.sh` run on each line, in which 42 of the
 43 `v50` tests passed: the first version of `system_info_test.dart` failed on every
@@ -553,6 +588,68 @@ debug builds.
   `run-macos-release.sh`, `use-version.py`, `web-probe.py` and `hot-restart.py`. The
   license is a define only.
 
+### Sync scopes, release entitlements, v4 upgrade and dart:io on web, 2026-11-19
+
+Flutter 3.50.0 (FVM), macOS 27.2.1 arm64, Xcode 27.2, Chrome 157.0.8103.79 headless,
+run locally; debug builds unless stated.
+
+| Line | Target | Outcome |
+|---|---|---|
+| 5.0.4, 5.1.0, 5.2.0 | `v50/sync_test.dart` on macOS, with the two sync-scope tests (8 tests) | pass |
+| 5.2.0 | `run-macos-release.sh 5.2`: `lib/main.dart`, then `two_peer_app.dart` (release) | pass: the five minimal-app lines, then `two-peer sync: car-from-listener`, `closed: true` |
+| 4.14.7 → 5.0.4, 5.1.0, 5.2.0 | `run-v4-upgrade.sh <line>` on macOS, both rounds | pass on each line |
+| 5.0.4 | Chrome: `minimal_app_test.dart`, `web_all_test.dart` (13), `web_license_test.dart` | pass |
+| 5.1.0, 5.2.0 | Chrome: `web_all_test.dart` (13) | pass |
+| 5.1.0, 5.2.0 | `web-probe.py --skip-manual` (release) | pass |
+
+- **Sync scopes** (region `flutter-sync-4`). `SHOW USER_COLLECTION_SYNC_SCOPES` returns
+  one item, `{user_collection_sync_scopes: {}}`, on a new instance. After
+  `ALTER SYSTEM SET USER_COLLECTION_SYNC_SCOPES = :syncScopes` with
+  `{'local_cars': 'LocalPeerOnly'}` it returns that map, before and after
+  `sync.start()`. A second instance opened on the same directory after `close()`
+  returns `{}` again: the setting is not persisted. One offline instance; that a scope
+  keeps a collection off another peer was not run.
+- **5.x opens a 4.14.7 store in place.** The 4.14.7 write created
+  `{Documents}/ditto` in the sandbox container. On 5.0.4, 5.1.0 and 5.2.0, with
+  `DittoConfig(databaseID: 'REPLACE_ME_WITH_YOUR_APP_ID')` (the v4 fixture's app ID) and
+  no `persistenceDirectory`, `absolutePersistenceDirectory` was that same
+  `{Documents}/ditto`, the car was returned, and neither
+  `{Documents}/ditto-<id>` nor `{Application Support}/ditto-<id>` existed afterwards.
+  Passing `{Documents}/ditto` as `persistenceDirectory` gave the same three results.
+  The migration guide says v5 does not migrate existing databases. Not run: a
+  `databaseID` different from the v4 app ID, a store that had synced, any other
+  platform, and opening the store with 4.14.7 again afterwards.
+- **The release app's network entitlements work, and their absence is silent in Dart**:
+  two instances in the sandboxed release `.app` synced one document over TCP loopback.
+  Negative control, by hand, once (a `use-version.py` copy with
+  `com.apple.security.network.client` and `.server` deleted from
+  `Release.entitlements`, `flutter build macos --release -t
+  integration_test/release/two_peer_app.dart`, the binary run directly; `codesign -d
+  --entitlements -` listed only `app-sandbox`, `device.bluetooth` and `get-task-allow`):
+  no `two-peer sync` line within 60 s, and Ditto logged, once a second,
+  `ERROR dittoffi: Failed to start TCP server error=bind() failed: Operation not
+  permitted (os error 1)`, `WARN ditto_mesh_topology: failed to connect to peer
+  error=Connect failed because of an IO Error: Operation not permitted (os error 1)`
+  and `WARN transport_watchdog: ditto_peer: Unable to restart TCP server in ideal state`.
+  `sync.start()` did not throw.
+- **A release build without the license define** (`flutter build macos --release` with
+  no `--dart-define-from-file`, by hand, once): `lib/main.dart` printed one line,
+  `transcript: error: DittoException(<activation> The license failed verification.
+  Obtain a valid license token at https://portal.ditto.live.)`.
+- **`dart:io` compiles on web; reading `Platform` throws.**
+  `web/groups/platform_probes.dart` and `web/probe_app.dart` import `dart:io` and build
+  with DDC (debug, all three lines) and dart2js (release, 5.1.0 and 5.2.0);
+  `Platform.operatingSystem` throws `UnsupportedError` (debug text:
+  `Unsupported operation: Platform._operatingSystem`; the release probe asserts the
+  type only). The
+  `Ditto.currentPlatform` dartdoc says the import fails to compile
+  (`lib/src/ditto.dart:49-53` @ `sdk-release-5.2.0`).
+- **Both fixtures analyze clean**: `flutter analyze --fatal-infos` on `minimal_app`
+  (5.2 pin) and `v4_app` (4.14 pin) reports no issues; CI's `skill-snippets` job runs
+  both from this date.
+
+The `v50` directory has 45 tests from this date (43 before).
+
 ### Windows desktop, 2026-11-17
 
 CI `windows` job, windows-latest, Flutter 3.50.0, ditto_live 5.2.0, debug,
@@ -594,6 +691,11 @@ debug builds unless stated:
 | `macos-release` | macos-26 arm64 | 5.2.0 | pass |
 | `web` (`flutter drive` targets, `web-probe.py --skip-manual`) | ubuntu-24.04, the image's Chrome and ChromeDriver | 5.1.0, 5.2.0 | pass |
 
+Added on 2026-11-19, after the runs in this table: a 5.0 leg of `web` (`flutter drive`
+targets only), the minimal app as the first `web` target, the two-peer build in
+`macos-release`, a debug macOS build in `from-skill`, and `flutter analyze` on both
+fixtures plus the host tests in `skill-snippets`.
+
 - **iOS Simulator: the first `flutter test` after a fresh boot can hang.** On the first
   CI run the leg picked the first iPhone in `simctl list` and hung after `Xcode build
   done` until cancelled (no GNU `timeout` on the runner then). On the second, with the
@@ -618,12 +720,13 @@ debug builds unless stated:
   license (`from-skill`, `skill-snippets`, the builds) still run; a maintainer reruns the
   rest from a branch in this repository.
 
-## Findings that changed a research lead
+## Unexpected findings
+
+Results that contradict the docs, the SDK's dartdoc, or what the code suggests.
 
 - **Finding 1: re-opening Ditto in one process can abort or hang it when the GC
-  finalizes a native handle from the earlier instance.** A new hazard that awaiting
-  `close()` does not prevent; it does not refute the Known-hazards lead about awaiting
-  `close()`. Observed on macOS, debug builds only, when one process closes Ditto and
+  finalizes a native handle from the earlier instance.** Awaiting `close()` does not
+  prevent it. Observed on macOS, debug builds only, when one process closes Ditto and
   then opens it again (`v50/store_test.dart` opens a fresh instance per test). The
   crash report and `sample` frames show the native log callback being invoked from
   inside a GC finalizer: a GC (`ScavengerVisitor` or `MarkingVisitor`) →
@@ -653,9 +756,8 @@ debug builds unless stated:
   (5.0.4, `v50/auth_test.dart`, first run). The handler set with
   `setExpirationHandler` was delivered after the test closed Ditto; `ditto.auth.login`
   inside it threw `DittoClosedException` (from `PrivateDittoPtrExtension.ptr`) as an
-  uncaught async error that failed the test. Overturns the CAP-04 lead "`login` never
-  throws": it reports login failures in `AuthResponse.exception`, but a closed
-  instance throws. The published handler now returns early when `ditto.isClosed`.
+  uncaught async error that failed the test. `login` reports login failures in
+  `AuthResponse.exception`, but a closed instance throws. The published handler now returns early when `ditto.isClosed`.
   Seen on 5.0.4 only; 5.1.0 and 5.2.0 ran only the guarded version.
 - **Web, `setOfflineOnlyLicenseToken` with an invalid token does not throw** (5.0.4,
   5.1.0, 5.2.0; Chrome, debug; `bad offline license on web`, run alone in
@@ -665,15 +767,14 @@ debug builds unless stated:
   (`sdks/flutter/ditto_live/lib/src/ditto.dart:252-260` @ `sdk-release-5.2.0`) logs that
   warning when `kIsWeb` and then still calls
   `core.dittoFfiTryVerifyLicense(ptr, licenseToken).extract()`, which would throw on an
-  error result; for `'not-a-license'` the web core returned none. So the Correction is
-  right that the call still verifies; that it throws for an invalid token was not
-  observed (one invalid token tried, on all three lines).
+  error result; for `'not-a-license'` the web core returned none. So the call still
+  verifies; that it throws for an invalid token was not observed (one invalid token
+  tried, on all three lines).
 - **Web, the in-memory store outlives `close()` within a page** (5.0.4, 5.1.0, 5.2.0;
-  debug; `close then reopen in the same page keeps data`, named `... loses data` in the
-  task brief). A document written before
+  debug; `close then reopen in the same page keeps data`). A document written before
   `close()` is there after a new `Ditto.open(DittoConfig())` in the same page; only a
   page load clears it (`web_reload_persistence`: 1 document before, 0 after, release).
-  Refines the lead "in-memory, lost on reload": lost on reload, not on close.
+  The store is lost on reload, not on close.
 - **Web, `Attachment.copyToPath` fails with a `DittoException`, not an
   `UnsupportedError`**, through its Future: `DittoException(Retrieving a filesystem path
   for attachments is not supported on the Web.)`. `newAttachment(path)` likewise fails
@@ -682,10 +783,9 @@ debug builds unless stated:
   supported on the web platform` **synchronously** at the call, so `await`ing it in a
   `try` catches it but `.catchError` on its Future does not (5.0.4, 5.1.0, 5.2.0).
 - **Web, enabling a P2P transport throws in `updateTransportConfig` on 5.0.4 and 5.1.0**,
-  not only in `sync.start()` as the lead says (5.2.0). See
+  and in `sync.start()` on 5.2.0. See
   [Flutter Web probes](#flutter-web-probes-2026-11-17).
-- **Web, `--wasm` is not usable with 5.1.0 or 5.2.0** (wrong query results). The lead
-  only called the docs ambiguous; see
+- **Web, `--wasm` is not usable with 5.1.0 or 5.2.0** (wrong query results); see
   [SDK defects](#sdk-defects-the-fixture-records-2026-11-17).
 - **Hot restart does not "work" on native, and re-opening fails on web too.** After `R`,
   `Ditto.open` on the same directory fails with `DittoException(File already locked,
@@ -695,8 +795,8 @@ debug builds unless stated:
   holder (statics are reset by the restart) nor a retry for 20 s recovers; only a full
   restart does. Details: [Manual records](#manual-records).
 
-- **`experimental.passphrase` is rejected only on 5.2.0.** The lead said every line
-  rejects it; 5.0.4 and 5.1.0 open with it (`experimental passphrase, per line` in
+- **`experimental.passphrase` is rejected only on 5.2.0.** 5.0.4 and 5.1.0 open with
+  it (`experimental passphrase, per line` in
   [Native behavior probes](#native-behavior-probes-2026-11-17)). The skill still says
   the Flutter SDK has no supported encryption at rest: the 5.0/5.1 dartdoc calls the
   passphrase undocumented and internal-only.
@@ -931,8 +1031,8 @@ run on the host with `fvm flutter test test/host_open_test.dart`:
 
 The committed `minimal_app/test/fake_cars_test.dart` (region `flutter-testing-1`) has no
 Ditto import and passes on the host: `fvm flutter test test/fake_cars_test.dart` from
-`minimal_app/`, `+1: All tests passed!`. CI does not run `minimal_app/test/`; it is
-analyzed with the rest of the fixture.
+`minimal_app/`, `+1: All tests passed!`. CI runs `minimal_app/test/` on the host in the
+`skill-snippets` job (`flutter test test/` against the 5.2 pin).
 
 ### system:data_sync_info while peers connect, 2026-11-18
 

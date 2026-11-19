@@ -7,11 +7,15 @@
 #   tests/flutter-sdk/scripts/run-macos-release.sh 5.2
 #
 # Release builds use macos/Runner/Release.entitlements, which debug runs never
-# exercise. The app (lib/main.dart) runs the published program with the SDK default
-# persistence directory and prints each transcript line as `transcript: <line>`.
+# exercise. Two builds: lib/main.dart runs the published program with the SDK default
+# persistence directory, and integration_test/release/two_peer_app.dart syncs two
+# instances over TCP on 127.0.0.1, which a sandboxed app can do only with the
+# network.server and network.client entitlements. Each prints `transcript: <line>`.
 #
-# The license reaches Flutter only through a mode-600 --dart-define-from-file file,
-# deleted on exit, and the release build embeds it: the whole fixture copy (build
+# The license is given to `flutter build` only through a mode-600
+# --dart-define-from-file file, deleted on exit; flutter and the app run without this
+# shell's DITTO_* variables. The flutter tool forwards the defines to its own build
+# steps (README, Running fixtures), and the release build embeds them: the whole fixture copy (build
 # output, .dart_tool and generated config) is deleted on exit too. Never upload or cache the .app. The log
 # (tests/flutter-sdk/run-minimal_app-macos-release-<line>.log, gitignored) is checked
 # for the license before any of it is printed. The check reads the license from the
@@ -96,53 +100,84 @@ refuse_license_in_log() {
   fi
 }
 
-# Written to the log only; printed after the license check.
-build_status=0
-{
-  echo "== minimal_app macOS release, ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-  echo "== $(cd "$WORKDIR" && "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p)"
-  echo "== defines: DITTO_VERSION=$PIN DITTO_PLATFORM=macos DITTO_LICENSE=<redacted>"
-  (cd "$WORKDIR" && "${FLUTTER_CMD[@]}" build macos --release --dart-define-from-file="$DEFINES_FILE")
-} >"$LOG" 2>&1 || build_status=$?
-refuse_license_in_log build
-cat "$LOG"
-if (( build_status != 0 )); then
-  echo "== build failed (exit $build_status)" >&2
-  exit "$build_status"
-fi
-
-APP="$(find "$WORKDIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' | head -1)"
-BINARY="$APP/Contents/MacOS/$(defaults read "$APP/Contents/Info" CFBundleExecutable)"
-echo "== running $BINARY" | tee -a "$LOG"
-APP_OUT="$(mktemp "${TMPDIR:-/tmp}/release-app.XXXXXX")"
-# Without the DITTO_* variables of this shell: Ditto reads DITTO_* from the process
-# environment as system parameters, and the app gets the license from its defines.
+# flutter and the app run without this shell's DITTO_* variables: Ditto reads DITTO_*
+# from the process environment as system parameters, and the build and the app get the
+# license from the defines file only.
 UNSET=()
 while read -r name; do UNSET+=(-u "$name"); done < <(env | sed -n 's/^\(DITTO_[A-Za-z0-9_]*\)=.*/\1/p')
-env ${UNSET[@]+"${UNSET[@]}"} "$BINARY" >"$APP_OUT" 2>&1 &
-APP_PID=$!
-deadline=$((SECONDS + ${RELEASE_APP_TIMEOUT:-120}))
-while (( SECONDS < deadline )) && kill -0 "$APP_PID" 2>/dev/null; do
-  grep -q -e 'transcript: closed:' -e 'transcript: error:' "$APP_OUT" && break
-  sleep 1
-done
-kill "$APP_PID" 2>/dev/null || true
-wait "$APP_PID" 2>/dev/null || true
-APP_PID=""
-cat "$APP_OUT" >>"$LOG"
-rm -f "$APP_OUT"
+CLEAN_ENV=(env ${UNSET[@]+"${UNSET[@]}"})
 
-refuse_license_in_log app
-# The engine prefixes Dart's print output with "flutter: ".
-TRANSCRIPT="$(sed -n 's/^\(flutter: \)\{0,1\}transcript: /transcript: /p' "$LOG")"
-printf '%s\n' "$TRANSCRIPT" | sed 's/^/  /'
-status=0
-for expected in 'transcript: observer: 1 car(s)' 'transcript: read-back make: Toyota' \
-  "transcript: SDK version: $PIN" 'transcript: platform: macos' 'transcript: closed: true'; do
-  if ! printf '%s\n' "$TRANSCRIPT" | grep -qxF -- "$expected"; then
-    echo "missing: $expected" | tee -a "$LOG" >&2
-    status=1
+# build_and_run <label> <flutter build arguments>...: builds the release app, runs
+# its executable until it prints `transcript: closed:` or `transcript: error:`, and
+# leaves this run's transcript lines in $TRANSCRIPT. Build output goes to the log
+# only; it is printed after the license check.
+build_and_run() {
+  local label="$1"
+  shift
+  local build_status=0 section
+  section="$(mktemp "${TMPDIR:-/tmp}/release-build.XXXXXX")"
+  {
+    echo "== minimal_app macOS release ($label), ditto_live $PIN ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+    echo "== $(cd "$WORKDIR" && "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" --version 2>&1 | sed -n 1p)"
+    echo "== defines: DITTO_VERSION=$PIN DITTO_PLATFORM=macos DITTO_LICENSE=<redacted>"
+    (cd "$WORKDIR" && "${CLEAN_ENV[@]}" "${FLUTTER_CMD[@]}" build macos --release \
+      --dart-define-from-file="$DEFINES_FILE" "$@")
+  } >"$section" 2>&1 || build_status=$?
+  cat "$section" >>"$LOG"
+  refuse_license_in_log build
+  cat "$section"
+  rm -f "$section"
+  if (( build_status != 0 )); then
+    echo "== build failed (exit $build_status)" >&2
+    exit "$build_status"
   fi
-done
+
+  local app binary app_out deadline
+  app="$(find "$WORKDIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' | head -1)"
+  binary="$app/Contents/MacOS/$(defaults read "$app/Contents/Info" CFBundleExecutable)"
+  echo "== running $binary ($label)" | tee -a "$LOG"
+  app_out="$(mktemp "${TMPDIR:-/tmp}/release-app.XXXXXX")"
+  "${CLEAN_ENV[@]}" "$binary" >"$app_out" 2>&1 &
+  APP_PID=$!
+  deadline=$((SECONDS + ${RELEASE_APP_TIMEOUT:-120}))
+  while (( SECONDS < deadline )) && kill -0 "$APP_PID" 2>/dev/null; do
+    grep -q -e 'transcript: closed:' -e 'transcript: error:' "$app_out" && break
+    sleep 1
+  done
+  # The app may be exiting on its own; give it a moment before killing it.
+  sleep 1
+  kill "$APP_PID" 2>/dev/null || true
+  wait "$APP_PID" 2>/dev/null || true
+  APP_PID=""
+  cat "$app_out" >>"$LOG"
+  # The engine prefixes Dart's print output with "flutter: ".
+  TRANSCRIPT="$(sed -n 's/^\(flutter: \)\{0,1\}transcript: /transcript: /p' "$app_out")"
+  rm -f "$app_out"
+  refuse_license_in_log app
+  printf '%s\n' "$TRANSCRIPT" | sed 's/^/  /'
+}
+
+status=0
+expect_lines() {
+  local expected
+  for expected in "$@"; do
+    if ! printf '%s\n' "$TRANSCRIPT" | grep -qxF -- "$expected"; then
+      echo "missing: $expected" | tee -a "$LOG" >&2
+      status=1
+    fi
+  done
+}
+
+: >"$LOG"
+# 1. The published program (lib/main.dart), with the SDK default directory.
+build_and_run "lib/main.dart"
+expect_lines 'transcript: observer: 1 car(s)' 'transcript: read-back make: Toyota' \
+  "transcript: SDK version: $PIN" 'transcript: platform: macos' 'transcript: closed: true'
+
+# 2. Two instances in the app syncing over TCP loopback: the sandboxed release app can
+# listen and connect only with the network entitlements of Release.entitlements.
+build_and_run "two peers over loopback" -t integration_test/release/two_peer_app.dart
+expect_lines 'transcript: two-peer sync: car-from-listener' 'transcript: closed: true'
+
 echo "== exit $status" | tee -a "$LOG"
 exit "$status"

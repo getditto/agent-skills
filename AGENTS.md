@@ -148,7 +148,11 @@ rubric finding IDs in `skills/data-modeling/references/workflow.md` (see
 `tests/data-modeling/README.md`). For the SDK skills: `tests/swift-sdk` and
 `tests/kotlin-sdk` compile and run each skill's `examples/minimal-app.md` program
 against the supported SDK versions; the published program is generated from the
-fixture by `scripts/sync-snippets.py`, and `--check` fails when it drifts. The `data-streams` concept skill has no
+fixture by `scripts/sync-snippets.py`, and `--check` fails when it drifts.
+`tests/flutter-sdk` does the same for `flutter-sdk` with Flutter fixtures pinned in
+`versions.json` (`minimal_app` for 5.0.4, 5.1.0 and 5.2.0, `v4_app` for 4.14.7), and also
+formats and analyzes every hand-written Dart fence in the skill (see
+`tests/flutter-sdk/README.md`). The `data-streams` concept skill has no
 harness of its own: its executed claims come from the two-peer Data Streams tests in
 both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows:
 
@@ -162,15 +166,20 @@ both SDK fixtures (`DataStreamsTest.kt`, `DataStreamsTests.swift`). CI workflows
 - `.github/workflows/kotlin-skill-tests.yml` — Ubuntu run of the Kotlin JVM fixture
   against 5.0.3, 5.1.0 and 5.2.0, including the two-peer Data Streams tests; the
   Android (4.14.x) leg is manual.
+- `.github/workflows/flutter-skill-tests.yml` — runs the Flutter fixtures on macOS
+  (5.0.4, 5.1.0, 5.2.0 and the 4.14.7 `v4_app`), Linux, Windows, the iOS Simulator, an
+  Android emulator and Chrome, plus release builds, the 5.1.0 → 5.2.0 store migration,
+  the Dart fence analysis and a rebuild of the minimal app from the skill's Markdown.
 
 Local harness config lives in the repo-root `.env` (gitignored; copy
 `.env-sample`). Both runners auto-load it via `tests/lib/load-env.mjs`;
 environment variables (and CI secrets) always take precedence. Keys:
-`DITTO_OFFLINE_LICENSE` (tests/dql, tests/swift-sdk and tests/kotlin-sdk, required),
+`DITTO_OFFLINE_LICENSE` (tests/dql, tests/swift-sdk, tests/kotlin-sdk and
+tests/flutter-sdk, required),
 `DITTO_DATABASE_ID` (optional), `DITTO_URL` + `DITTO_TOKEN` (tests/swift-sdk,
 optional — enables the server-authentication leg), `DM_MODEL_CMD`
-(tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` read the same
-`.env` with their own shell parser.
+(tests/data-modeling, required). `tests/swift-sdk/scripts/*.sh` and
+`tests/flutter-sdk/scripts/*` read the same `.env` with their own parsers.
 Overview for contributors: `testing-readme.md`.
 
 ## Releases
@@ -265,8 +274,8 @@ at the same remote endpoints with their own MCP config.
   ships JOINs, composite (multi-column) indexes, `RETURNING` on INSERT/UPDATE,
   and `ADVISE`; the harness also runs `@dittolive/ditto@5.2.0`, including its
   mutation/index fixes and diagnostics.
-- For new Swift/Kotlin/JavaScript apps, resolve the latest stable release through
-  SwiftPM/Maven Central/npm unless the user names a version. 5.2.0 is the skills’
+- For new Swift/Kotlin/JavaScript/Flutter apps, resolve the latest stable release through
+  SwiftPM/Maven Central/npm/pub.dev unless the user names a version. 5.2.0 is the skills’
   knowledge baseline, not a fixed recommendation; keep exact pins in test fixtures for
   reproducibility.
 

@@ -169,9 +169,14 @@ store and their own write.
   the helper leaves it there.
 - **The license** is read with `String.fromEnvironment('DITTO_LICENSE')` and passed as
   `--dart-define-from-file=<file>`, a JSON file with mode 600 that you delete after the
-  run. Not `--dart-define=DITTO_LICENSE=…`: a command-line argument shows up in process
-  listings and CI logs. Never commit a license, and never upload a build directory:
-  compiled builds embed every define.
+  run. That keeps it out of the command you type, shell history and the command line a
+  CI log echoes, which `--dart-define=DITTO_LICENSE=…` does not. It is not hidden from
+  the build machine: the flutter tool hands every define to the Dart compiler as
+  `-D<name>=<value>`, and to Gradle (`-Pdart-defines=`) and Xcode's build step
+  (`--DartDefines=`) base64-encoded, so a process listing during the build shows it
+  (`flutter_tools` 3.50.0: `compile.dart`, `build_info.dart`, `bin/xcode_backend.dart`).
+  Build on a machine you trust, with a license you can replace. Never commit a license,
+  and never upload a build directory: compiled builds embed every define.
 - **Keep `DITTO_*` out of the environment** of `flutter test`: Ditto reads `DITTO_*`
   process variables as system parameters, and logged
   `The Ditto environment variable offline_license is set, but it is not a known system parameter, so it is being ignored`
@@ -206,7 +211,7 @@ ChromeDriver 157, debug, 5.0.4 to 5.2.0). What the fixture learned:
 
 - The target's directory is its app root: a web target cannot import files above it,
   so web tests need their own helpers beside them.
-- No `dart:io` and no temporary directory: pass no `persistenceDirectory`; the store is
+- No `dart:io` calls and no temporary directory: pass no `persistenceDirectory`; the store is
   in memory ([web.md](web.md#in-memory-store-and-reload)).
 - The compiled test embeds the defines, the license included; delete the build output.
 

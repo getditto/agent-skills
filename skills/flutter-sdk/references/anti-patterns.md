@@ -230,7 +230,7 @@ Statements found in circulation that are wrong for `ditto_live`:
 |---|---|
 | "Observers require `ORDER BY`" | A plain `SELECT … WHERE` observer delivers its match (executed, all three lines) |
 | "Attachments need a `CREATE TABLE` first" | No schema step: insert the `Attachment` in the document with `(photo ATTACHMENT)` in the collection definition ([attachments.md](attachments.md#create-and-store)) |
-| "Set `DQL_RESTRICT_SUBSCRIPTION` to allow `LIMIT`" | The parameter is `dql_restrict_subscriptions` (default `true`, `crates/dittoffi/src/store/dql/ffi_access.rs` @ `sdk-release-5.2.0`). Leave it on: limit and sort in the local query ([sync.md](sync.md#limit-and-order-by-are-rejected)) |
+| "Set `DQL_RESTRICT_SUBSCRIPTION` to allow `LIMIT`" | No documented setting lifts this: a subscription with `LIMIT` or `ORDER BY` throws on 5.0.4, 5.1.0 and 5.2.0 (executed). Limit and sort in the local query ([sync.md](sync.md#limit-and-order-by-are-rejected)) |
 | "Bonjour type `_ditto._tcp`" | The install guide's `NSBonjourServices` entry is `_http-alt._tcp.`, trailing dot included (<https://docs.ditto.live/sdk/latest/install-guides/flutter>); the iOS keys are in [setup.md](setup.md#declarations) |
 | "No `signalNext` in Flutter" | `registerObserverWithSignalNext` exists from 5.1.0 and works on web ([observers.md](observers.md#back-pressure-registerobserverwithsignalnext-510)) |
 | "`ConnectionType` has four values" | Four on 5.0.x, five from 5.1.0 ([presence.md](presence.md#connection-types)) |

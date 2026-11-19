@@ -86,7 +86,7 @@ compile error text is the analyzer's (Flutter 3.50.0 against 5.0.4: `undefined_m
 | `setAllPeerToPeerEnabled(false)` | leaves AWDL / Wi-Fi Aware on | correct | correct | source |
 | `execute` on native | new isolate per call | per-`Ditto` worker isolate | worker isolate | source |
 | `logout()` | logs out | also stops sync | also stops sync; `cleanup` | source |
-| Default persistence root | Documents | Documents | Application Support (reads an existing Documents store in place) | executed (5.1.0 → 5.2.0) |
+| Default persistence root | Documents | Documents | Application Support (reads an existing Documents store in place) | executed (5.1.0 → 5.2.0; a fresh 5.2.0 open on macOS only) |
 | Web: enabling a P2P transport throws from | `updateTransportConfig` | `updateTransportConfig` | `sync.start()` | executed |
 | `experimental.passphrase` | accepted | accepted | rejected with `DittoException` | executed |
 | Hot restart, re-open of the same directory | `File already locked` | `Ditto.open` hangs | `File already locked` | executed (macOS) |
@@ -102,8 +102,9 @@ The authoritative guide is
 <https://docs.ditto.live/sdk/latest/migration-guides/flutter-v4>, with the query side in
 <https://docs.ditto.live/sdk/latest/migration-guides/flutter-dql>. Three of its statements
 do not match the released source: that `Ditto.init()` is mandatory (optional from
-5.1.0), that Flutter has no `signalNext` (it does from 5.1.0), and that
-`HttpListenConfig.websocketSync` defaulted to `true` in v4 (`false` in 4.14.7).
+5.1.0), that Flutter has no `signalNext` (it does from 5.1.0), that
+`HttpListenConfig.websocketSync` defaulted to `true` in v4 (`false` in 4.14.7), and that
+v5 does not open a v4 store ([it does](#on-disk-store-migration)).
 
 ### Package and namespace
 
@@ -214,14 +215,16 @@ otherwise <https://docs.ditto.live/dql/strict-mode>.
 ### On-disk store migration
 
 - **v4 → v5, the default directory.** v4's default was `{Documents}/ditto`; v5's is
-  `ditto-{databaseID}`. When the app passes no `persistenceDirectory`, 5.0.4, 5.1.0 and
-  5.2.0 pass `{Documents}/ditto` to the core as a legacy location, which the core opens
-  in place when the v5 default has no database (`lib/src/ditto.dart`, comment and
-  `legacy_persistence_directory`, in ditto_live 5.0.4 and @ `sdk-release-5.1.0`,
-  `sdk-release-5.2.0`). **Not executed for 4.14 → 5.x.** The migration guide says the
-  opposite ("v5 does not migrate existing databases") and shows passing the old path
-  explicitly; until you have run your own upgrade on a copy of a real store, pass the
-  v4 path explicitly as `persistenceDirectory`, or verify the documents after upgrading.
+  `ditto-{databaseID}`. **5.x opens an existing v4 store in place.** Executed on macOS
+  (debug; written by 4.14.7, opened by 5.0.4, 5.1.0 and 5.2.0): with
+  `DittoConfig(databaseID: <the v4 appID>)` and no `persistenceDirectory`, the 5.x app
+  reported `absolutePersistenceDirectory` = `{Documents}/ditto`, returned the v4
+  document and created no `ditto-{databaseID}` directory. Passing the v4 path as
+  `persistenceDirectory`, as the migration guide shows, gave the same result. The
+  guide's "v5 does not migrate existing databases" does not match this, or the source
+  (`legacy_persistence_directory` in `lib/src/ditto.dart`, 5.0.4, `sdk-release-5.1.0`,
+  `sdk-release-5.2.0`). Not run: iOS, Android, Windows, Linux; a `databaseID` other than
+  the v4 `appID`; a store that has synced. Test on a copy of a real store.
 - **5.1 → 5.2, the default root.** 5.2.0 moved the default root from Documents to
   Application Support, and **reads an existing 5.1.0 store in place**. Executed on
   macOS and on the iOS Simulator: a 5.1.0 app wrote a document with the default
@@ -234,14 +237,13 @@ otherwise <https://docs.ditto.live/dql/strict-mode>.
   (`resolveLegacyPersistenceDirectory`, `lib/src/persistence_directory.dart:40-57`,
   called at `lib/src/ditto.dart:392-401`, @ `sdk-release-5.2.0`). With a null ID, pass
   the old path as `persistenceDirectory` or test the upgrade first. The ID's case is
-  kept: the `DittoConfig` dartdoc says the default name uses the lowercase ID, but core
-  names the directory from the ID as given, replacing each character that is not
-  alphanumeric, `_` or `-` (`crates/ditto-core/src/lib.rs`, `DatabaseId(String)` and the
-  `ditto-{}` path, @ `sdk-release-5.1.0` and `sdk-release-5.2.0`). For an ASCII ID the
-  5.2.0 lookup builds the same name (`_sanitizeDatabaseId`,
-  `persistence_directory.dart:64-70`, which keeps only `[A-Za-z0-9_-]`; core's Rust
-  `is_alphanumeric` also keeps non-ASCII letters). The executed runs used the default
-  all-zero ID; a mixed-case or non-ASCII ID was not run.
+  kept: the `DittoConfig` dartdoc says the default name uses the lowercase ID, but the
+  directory is named from the ID as given, with each character that is not
+  alphanumeric, `_` or `-` replaced by `-`. The 5.2.0 lookup builds that name without
+  lowercasing (`_sanitizeDatabaseId` and its doc comment,
+  `lib/src/persistence_directory.dart:59-70` @ `sdk-release-5.2.0`; it keeps only
+  `[A-Za-z0-9_-]`, where the comment says core also keeps non-ASCII letters). The
+  executed runs used the default all-zero ID; a mixed-case or non-ASCII ID was not run.
 - **Not verified:** whether a store opened by 5.x can be opened again by 4.14.x
   (treat the upgrade as one-way), how long a large store takes to open the first time,
   and what an interrupted first open leaves behind. The wipe-and-resync path is to
@@ -299,6 +301,6 @@ above.
 - [ ] Apply the renames above (`peerKey`, `isConnectedToDittoServer`, `absolutePersistenceDirectory`, `remotePeers` as a `Set`).
 - [ ] `result.mutatedDocumentIDs` (`DocumentID`s) → `result.mutatedDocumentIDs()` (raw `_id` values; no `.value`).
 - [ ] Re-check DQL that writes nested objects against strict mode off.
-- [ ] Decide the persistence directory for upgraded installs; test the upgrade on a copy of a real v4 store.
+- [ ] Upgraded installs: pass no `persistenceDirectory` and keep the v4 `appID` as `databaseID`; test the upgrade on a copy of a real v4 store.
 - [ ] Android: `minSdk` 24 and, for 5.1.0+, the compileSdk override; iOS/macOS: the Podfile platform lines ([setup.md](setup.md#cap-01-prerequisites-and-install)).
 - [ ] Run your tests on a device or desktop target ([testing.md](testing.md#cap-18-testing)).

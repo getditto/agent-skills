@@ -43,7 +43,7 @@ should reuse one of the two.
 
 | Key | Used by | Required | What it is |
 |---|---|---|---|
-| `DITTO_OFFLINE_LICENSE` | `tests/dql`, `tests/swift-sdk` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
+| `DITTO_OFFLINE_LICENSE` | `tests/dql`, `tests/swift-sdk`, `tests/kotlin-sdk`, `tests/flutter-sdk` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
 | `DITTO_DATABASE_ID` | `tests/dql`, `tests/swift-sdk` | No | Your Ditto database ID from the portal. Defaults to the offline-playground zero UUID (`00000000-1111-2222-3333-444444444444`) — fine for local-only harness runs. |
 | `DITTO_URL` | `tests/swift-sdk` | No | The portal's **Connect via SDK** URL. Set together with `DITTO_TOKEN` to additionally exercise the server-authentication path; without them those tests skip themselves and the minimal app runs offline. CI leaves both unset. |
 | `DITTO_TOKEN` | `tests/swift-sdk` | No | Development-provider token, paired with `DITTO_URL`. |
@@ -68,7 +68,7 @@ Full contract and tips: [tests/data-modeling/README.md](tests/data-modeling/READ
 
 ## CI
 
-GitHub Actions does not use `.env` — the two matrix workflows inject the
+GitHub Actions does not use `.env` — the skill-test workflows inject the
 `DITTO_OFFLINE_LICENSE` repo secret directly into the environment, which takes
 precedence per the rule above:
 
@@ -78,6 +78,10 @@ precedence per the rule above:
   or `tests/swift-sdk/**` changes, and runs three jobs: the fixture per version
   line, the four-platform compile matrix, and the cross-version persistence
   matrix.
+- `.github/workflows/flutter-skill-tests.yml` — triggers on `skills/flutter-sdk/**`,
+  `skills/native-app-config/**` or `tests/flutter-sdk/**` changes, and runs the Flutter
+  fixtures on macOS, Linux, Windows, the iOS Simulator, an Android emulator and Chrome,
+  plus the build-only, snippet-analysis and from-skill jobs that need no license.
 
 The data-modeling harness is run manually (it spends live-model tokens).
 

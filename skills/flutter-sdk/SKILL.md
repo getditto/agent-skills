@@ -141,8 +141,8 @@ Both forms and diagnosis: [anti-patterns.md](references/anti-patterns.md).
 - **`onChange` on a long-lived observer.** Memory grows per change: results also buffer
   in the unlistened `changes` (5.0.x–5.2.0).
 - **macOS keys only in `DebugProfile.entitlements`.** Release builds read
-  `Release.entitlements`, so the keys are missing (the install guide reports `Operation
-  not permitted (os error 1)`). Add them to both.
+  `Release.entitlements`, so the keys are missing: nothing throws, Ditto logs `Operation
+  not permitted (os error 1)` and never syncs. Add them to both.
 - **A holder or retry to survive hot restart.** `Ditto.open` fails `File already locked`
   (5.1.0 hangs). Debug only: a per-launch directory; release passes none.
 - **P2P gated on `defaultTargetPlatform`.** It is the host OS on web, so LAN turns on and
@@ -176,14 +176,18 @@ teach the non-obvious traps.
   before `sync.start()`; a rejected login is `response.exception`.
 - [setup.md](references/setup.md): compileSdk override (5.1.0+), simulator Podfile fix;
   the plugin declares Android permissions, the app requests them at runtime.
+- [release-builds.md](references/release-builds.md): a release build that cannot sync:
+  symptom, cause, check; R8 on Android is unverified.
 - [errors.md](references/errors.md): catch both `DittoException` and `DittoError`.
 - [versions.md](references/versions.md): per-line APIs and migration.
-- [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; status.
+- [sync.md](references/sync.md): no `LIMIT`/`ORDER BY` in subscriptions; sync scopes
+  (`ALTER SYSTEM`, not persisted); status.
 - [store.md](references/store.md): `execute`, transactions, indexes, `EVICT`.
 - [transports.md](references/transports.md): `updateTransportConfig` returns `void`.
 - [testing.md](references/testing.md): no Ditto under host `flutter test` (use fakes);
   `integration_test` for the real store.
 - [attachments.md](references/attachments.md), [presence.md](references/presence.md),
   [observability.md](references/observability.md), [preview.md](references/preview.md).
-- [best-practices.md](best-practices.md): placement, observers, state, checks.
-- [examples/minimal-app.md](examples/minimal-app.md): the complete program.
+- [best-practices.md](best-practices.md): ownership, async, writes, sync, checks.
+- [examples/minimal-app.md](examples/minimal-app.md): the complete program, its
+  `main.dart`, and the steps from `flutter create` to a running app.

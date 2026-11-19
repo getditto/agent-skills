@@ -11,17 +11,18 @@ configuration an agent gets from skills/flutter-sdk, so CI can analyze it and bu
 
 From the skill:
   lib/minimal_app.dart            examples/minimal-app.md  flutter-minimal-app
+  lib/main.dart                   examples/minimal-app.md  flutter-minimal-main
   pubspec.yaml dependencies       examples/minimal-app.md  flutter-minimal-pubspec
   ios/Podfile platform            references/setup.md      flutter-podfile-ios
   ios/Podfile post_install        references/setup.md      flutter-podfile-ios-simulator-arch
   ios/Runner/Info.plist keys      references/setup.md      flutter-ios-info-plist
-  android/app/build.gradle.kts    references/setup.md      flutter-android-gradle (defaultConfig)
+  android/app/build.gradle.kts    references/setup.md      flutter-android-gradle (minSdk)
   android/build.gradle.kts        references/setup.md      flutter-android-compilesdk-override
   android/.../AndroidManifest.xml references/setup.md      flutter-android-manifest
   macos/Runner/*.entitlements     references/setup.md      flutter-macos-entitlements (missing keys)
+  macos/Runner/Info.plist key     references/setup.md      flutter-macos-info-plist
 
-From this harness, not the skill: lib/main.dart (the widget that runs the program, like
-the Kotlin script's activity), minimal_app/pubspec.lock (so pub starts from the
+From this harness, not the skill: minimal_app/pubspec.lock (so pub starts from the
 age-checked fixture resolution), and Flutter's own CocoaPods Podfile template, since
 `flutter create` on 3.50 writes no Podfile.
 
@@ -131,7 +132,7 @@ def main() -> None:
     setup = SKILL / "references/setup.md"
 
     (out / "lib/minimal_app.dart").write_text(snippet(example, "flutter-minimal-app"), encoding="utf-8")
-    shutil.copy2(FIXTURE / "lib/main.dart", out / "lib/main.dart")
+    (out / "lib/main.dart").write_text(snippet(example, "flutter-minimal-main"), encoding="utf-8")
     shutil.rmtree(out / "test", ignore_errors=True)  # the template's widget test targets its counter app
 
     # The whole top-level dependencies: section, up to the next top-level key.
@@ -148,8 +149,10 @@ def main() -> None:
     for name in ("Release.entitlements", "DebugProfile.entitlements"):
         add_plist_keys(out / "macos/Runner" / name, snippet(setup, "flutter-macos-entitlements"))
 
-    replace_once(out / "android/app/build.gradle.kts", r"^    defaultConfig \{\n.*?^    \}\n",
-                 indent(snippet(setup, "flutter-android-gradle"), "    "))
+    add_plist_keys(out / "macos/Runner/Info.plist", snippet(setup, "flutter-macos-info-plist"))
+
+    replace_once(out / "android/app/build.gradle.kts", r"^        minSdk = flutter\.minSdkVersion\n",
+                 indent(snippet(setup, "flutter-android-gradle"), "        "), flags=re.M)
     replace_once(out / "android/build.gradle.kts", r"^(?=subprojects \{\n    project\.evaluationDependsOn)",
                  snippet(setup, "flutter-android-compilesdk-override"))
     replace_once(out / "android/app/src/main/AndroidManifest.xml", r"(?<=<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">\n)",

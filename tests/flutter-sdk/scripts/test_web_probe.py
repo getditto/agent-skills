@@ -151,7 +151,8 @@ class Server(unittest.TestCase):
 class Transcript(unittest.TestCase):
     transcript = {"status": "done", "lines": [
         "compiler: dart2js", "release: true", "crossOriginIsolated: false",
-        "read-back make: Toyota", "select all: items=5000 ms=24 window=100.5-124.5"]}
+        "read-back make: Toyota", "dart:io Platform: UnsupportedError: Platform._operatingSystem",
+        "select all: items=5000 ms=24 window=100.5-124.5"]}
 
     def test_transcript_value(self):
         self.assertEqual(WEB_PROBE.transcript_value(self.transcript, "compiler"), "dart2js")
@@ -167,6 +168,11 @@ class Transcript(unittest.TestCase):
             WEB_PROBE.expect_smoke(self.transcript, "dart2wasm", isolated=False)
         with self.assertRaises(WEB_PROBE.ProbeFailure):
             WEB_PROBE.expect_smoke({**self.transcript, "status": "timeout"}, "dart2js", isolated=False)
+        # dart:io must have compiled and thrown: a transcript without that line fails.
+        no_io = {**self.transcript, "lines": [line for line in self.transcript["lines"]
+                                              if not line.startswith("dart:io")]}
+        with self.assertRaises(WEB_PROBE.ProbeFailure):
+            WEB_PROBE.expect_smoke(no_io, "dart2js", isolated=False)
 
 
 class Timing(unittest.TestCase):

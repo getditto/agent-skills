@@ -14,16 +14,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // snippet:start flutter-android-gradle
     defaultConfig {
         applicationId = "live.ditto.skills.minimal_app"
+        // snippet:start flutter-android-gradle
         // Ditto recommends minSdk 24 (Android 7.0) for apps.
         minSdk = 24
+        // snippet:end flutter-android-gradle
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-    // snippet:end flutter-android-gradle
 
     buildTypes {
         release {

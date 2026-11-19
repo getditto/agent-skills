@@ -26,8 +26,8 @@ hand (web-results/), not an assertion that holds on every runner.
 
 The license comes from DITTO_OFFLINE_LICENSE (environment, else the gitignored repo-root
 .env, parsed like run-fixture.sh). It reaches Flutter only through
---dart-define-from-file: a mode-600 temporary file deleted on exit, never a command-line
-argument. The compiled bundles embed it, so the whole fixture copy (every build/
+--dart-define-from-file: a mode-600 temporary file deleted on exit, not an argument of
+the flutter command. The compiled bundles embed it, so the whole fixture copy (every build/
 directory, .dart_tool) is deleted before it exits, and printed browser logs have the
 license redacted.
 
@@ -439,6 +439,9 @@ def expect_smoke(transcript: dict, compiler: str, isolated: bool) -> None:
     expect(transcript_value(transcript, "crossOriginIsolated") == str(isolated).lower(),
            f"crossOriginIsolated: {transcript}")
     expect(transcript_value(transcript, "read-back make") == "Toyota", f"read-back: {transcript}")
+    # The probe app imports dart:io and still compiled; reading Platform throws.
+    expect((transcript_value(transcript, "dart:io Platform") or "").startswith("UnsupportedError"),
+           f"dart:io Platform: {transcript}")
 
 
 def expect_wasm_defect(transcript: dict, isolated: bool) -> None:

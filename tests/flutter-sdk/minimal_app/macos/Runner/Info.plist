@@ -28,7 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<!-- snippet:start flutter-macos-info-plist -->
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Uses Bluetooth to sync with nearby devices.</string>
+	<!-- snippet:end flutter-macos-info-plist -->
 </dict>
 </plist>

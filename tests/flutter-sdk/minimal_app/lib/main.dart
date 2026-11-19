@@ -1,3 +1,4 @@
+// snippet:start flutter-minimal-main
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -31,8 +32,7 @@ class _TranscriptAppState extends State<TranscriptApp> {
   }
 
   void _add(String line) {
-    // Also on stdout, where a release build run from the command line can be
-    // checked (the macos-release CI leg greps it).
+    // Also on stdout, so a build run from the command line shows it.
     debugPrint('transcript: $line');
     if (mounted) setState(() => _lines.add(line));
   }
@@ -52,3 +52,4 @@ class _TranscriptAppState extends State<TranscriptApp> {
     ),
   );
 }
+// snippet:end flutter-minimal-main
