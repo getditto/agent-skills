@@ -521,4 +521,7 @@ isolation as above (Claude Code 2.1.328, Codex 0.169.1). Records: `"run":
   given the criteria, answers and traces; `flutter_v4_migration` was scored by hand. The
   Dart in these answers was not analyzed. One run per host and case. Claude reported
   USD 2.32.
+- One sentence was added to the skill's human-facing `README.md` after these runs (the
+  mobile targets run 5.2.0 and 4.14.7 only), so the committed tree differs from
+  `57d2339f…` by that sentence. No run read that file, and no agent-facing file changed.
 

@@ -66,7 +66,8 @@
     "Initial and intermediate Flutter records were scored before fix round 1; only the criteria the review named were rescored there. Final records were scored literally against every clause.",
     "flutter-rerun-2026-11-19: scored literally by two model reviewers (one per host) given the criteria, answers and traces, then spot-checked by hand; the earlier Flutter runs were scored by hand. Dart blocks in these answers were not analyzed.",
     "flutter-rerun-2026-11-19: four runs (flutter_init_first_query and flutter_statefulwidget_observer on both hosts) started before a one-cell wording change to the evidence column of release-builds.md and carry digest d38f2aee; the other full-install runs carry 39ee8ece, the final tree. None of the four read that file.",
-    "flutter-rerun-2026-11-19: one Codex run (flutter_presence_peers) read ditto_live source from the pub cache outside its workspace and is kept as flutter-rerun-2026-11-19-excluded; the case was retried once. The retry listed a temp directory outside the workspace for one file name, found nothing, and read only the skill."
+    "flutter-rerun-2026-11-19: one Codex run (flutter_presence_peers) read ditto_live source from the pub cache outside its workspace and is kept as flutter-rerun-2026-11-19-excluded; the case was retried once. The retry listed a temp directory outside the workspace for one file name, found nothing, and read only the skill.",
+    "flutter-final-2026-11-19: after these runs one sentence was added to the skill's human-facing README.md (the mobile targets run 5.2.0 and 4.14.7 only), so the committed tree's digest differs from 57d2339f by that sentence. No run read that file, and no agent-facing file (SKILL.md, references, examples, best-practices.md) changed."
   ],
   "pilot_provenance": {
     "claude": "Filesystem-only restricted pilot omitted canonical catalog skills; retry registered a local plugin. Both traces retained privately.",
