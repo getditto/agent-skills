@@ -668,8 +668,18 @@ minimal_app <udid> 5.2` with `init_once`, the minimal app, `v50`, `v51` and `v52
 - The two-peer TCP loopback probes, presence, the connection-request handler, the
   widget and lifecycle probes and attachments all passed on the simulator.
 
-CI now runs every probe directory on the iOS Simulator and the Android emulator (5.2),
-the v4 test on both (4.14), and Linux and Windows on 5.0, 5.1 and 5.2.
+CI now runs every probe on the iOS Simulator and the Android emulator (5.2), the v4
+test on both (4.14), and Linux and Windows on 5.0, 5.1 and 5.2. The mobile targets run
+5.2.0 and 4.14.7 only, by decision: 5.0.4 and 5.1.0 are covered on the three desktops
+and Chrome.
+
+- **iOS Simulator in CI: one target per test file.** With directory targets, the first
+  full run stalled in `v51` twice in a row: after five tests passed, the next app launch
+  never got its debug connection and the target hit its timeout with `Error waiting for
+  a debug connection: The log reader failed unexpectedly`; `v52` and `init_once` did the
+  same once each and passed on the retry. No test failed. The job now passes each probe
+  file as its own target (`FIXTURE_TIMEOUT=420`, `FIXTURE_RETRIES=2`), so a stalled
+  launch costs minutes; on the next run all 22 targets passed with one retry.
 
 ### Windows desktop, 2026-11-17
 

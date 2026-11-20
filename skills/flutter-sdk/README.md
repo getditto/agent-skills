@@ -48,7 +48,9 @@ publishes `flutter: ">=3.19.0"`; use Flutter 3.24.5 or later. Everything below r
 | 4.14.x (LTS) | 4.14.7 | run (v4 fixture) | run (Simulator, v4 fixture) | run (emulator, v4 fixture); release APK built | not run | not run | not run |
 
 "run" means the minimal app or probes executed and passed on that target (which ones:
-[Verification](#verification)); "built" means `flutter build` only. No physical device was used for a passing run: iOS and
+[Verification](#verification)); "built" means `flutter build` only. The iOS Simulator
+and the Android emulator run 5.2.0 and 4.14.7 only, by choice; 5.0.4 and 5.1.0 run on
+the desktops and Chrome. No physical device was used for a passing run: iOS and
 Android ran in the Simulator and the emulator only.
 
 ## Capability map
