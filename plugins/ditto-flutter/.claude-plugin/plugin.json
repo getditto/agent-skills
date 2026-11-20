@@ -1,0 +1,20 @@
+{
+  "name": "ditto-flutter",
+  "version": "1.0.0",
+  "description": "Ditto Flutter/Dart SDK (ditto_live) assistance — iOS, Android, macOS, Windows, Linux and Flutter Web apps: pubspec and platform setup, connecting, authentication, transports, subscriptions, DQL execution, observers in a widget tree, attachments, presence, web differences, testing and v4 to v5 migration. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0",
+  "author": {
+    "name": "Ditto",
+    "email": "support@ditto.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "database",
+    "dart",
+    "ditto",
+    "dql",
+    "flutter",
+    "multi-version",
+    "offline-first",
+    "sync"
+  ]
+}

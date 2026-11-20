@@ -18,6 +18,7 @@ customer use.**
 | [sync-subscriptions](skills/sync-subscriptions) (`sync-subscriptions`) | `ditto-subscriptions` | How Ditto sync subscriptions work: query rules and limitations, mesh propagation, multi-hop flooding, and troubleshooting missing documents. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
 | [data-streams](skills/data-streams) (`data-streams`) | `ditto-data-streams` | Ditto Data Streams (preview): low-latency, bidirectional raw-byte channels between two peers over named topics — lifecycle, candidate ownership, reliable vs unreliable, NGN setup, troubleshooting. Kotlin 5.1.0+ and Swift 5.2.0+ (SPI); code in the SDK skills. |
 | [data-modeling](skills/data-modeling) (`data-modeling`) | `ditto-data-modeling` | CRDT-aware data modeling: REGISTER/MAP/COUNTER/ATTACHMENT semantics, embed-vs-split decisions, document size budgets, and raw-JSON review. Covers Ditto SDK 4.14.x (LTS) and 5.0.x/5.1.x/5.2.0. |
+| [flutter-sdk](skills/flutter-sdk) (`flutter-sdk`) | `ditto-flutter` | Ditto Flutter SDK (`ditto_live`) for iOS, Android, macOS, Windows, Linux and web: pubspec and platform setup, connecting, authentication, transports, subscriptions, DQL execution, observers with streams and widgets, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
 | [kotlin-sdk](skills/kotlin-sdk) (`kotlin-sdk`) | `ditto-kotlin` | Ditto Kotlin SDK for Android and JVM: Gradle setup, connecting, authentication, transports, subscriptions, DQL execution, observers with coroutines/Flow, attachments, presence, and testing. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
 | [swift-sdk](skills/swift-sdk) (`swift-sdk`) | `ditto-swift` | Ditto Swift SDK for iOS, iPadOS, macOS (AppKit) and Mac Catalyst: `DittoConfig`/`Ditto.open`, sync and subscriptions, DQL execution, store observers and `DittoDiffer`, attachments, presence, Swift 6 concurrency and object lifetimes. Covers Ditto SDK 4.14.x (LTS), 5.0.x, 5.1.x and 5.2.0. |
 
@@ -93,10 +94,19 @@ guide. Its JVM fixture runs in CI against 5.0.3, 5.1.0 and 5.2.0.
 **[Install Ditto Kotlin in your agent](docs/install-kotlin.md)** — the same hosts as
 Swift; standalone packages are generated with `--plugin ditto-kotlin`.
 
+## Flutter getting started
+
+The Flutter skill covers `ditto_live` 4.14.x and 5.x on iOS, Android, macOS, Windows,
+Linux and web: pubspec and platform permission setup (shared with the
+`native-app-config` skill), observers in widgets, lifetimes and web degradations.
+
+**[Install Ditto Flutter in your agent](docs/install-flutter.md)** — the same hosts as
+Swift; standalone packages are generated with `--plugin ditto-flutter`.
+
 ## Installation by tool
 
 For the SDK skills, use the host-specific guides ([Swift](docs/install-swift.md),
-[Kotlin](docs/install-kotlin.md)) for local/PR packages, activation, updates and
+[Kotlin](docs/install-kotlin.md), [Flutter](docs/install-flutter.md)) for local/PR packages, activation, updates and
 removal. Existing concept skills retain the routes below.
 
 ### Claude Code
@@ -113,6 +123,7 @@ you want:
 /plugin install ditto-subscriptions  # sync-subscriptions skill
 /plugin install ditto-data-modeling  # data-modeling skill
 /plugin install ditto-data-streams   # data-streams skill
+/plugin install ditto-flutter        # flutter-sdk skill (+ native-app-config)
 /plugin install ditto-kotlin         # kotlin-sdk skill
 /plugin install ditto-swift          # swift-sdk skill
 ```

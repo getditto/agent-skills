@@ -98,6 +98,122 @@ class DependencyAgeTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "wrapper JAR differs"):
                         AGE.gradle_check(properties, self.cutoff)
 
+    LOCK = """packages:
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      sha256: "abc123"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.5"
+  ditto_live:
+    dependency: "direct main"
+    description:
+      name: ditto_live
+      sha256: "def456"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
+  flutter:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
+"""
+
+    def pub_stub(self, published="2026-10-01T00:00:00Z", sha="abc123"):
+        url = "https://pub.dev/api/packages/provider/versions/6.1.5"
+        ditto = "https://pub.dev/api/packages/ditto_live/versions/5.2.0"
+
+        def respond(requested):
+            if requested == url:
+                return {"published": published, "archive_sha256": sha}
+            if requested == ditto:
+                return {"published": "2026-10-01T00:00:00Z", "archive_sha256": "def456"}
+            return self.fail(requested)
+        return respond
+
+    def write_lock(self, directory, text=None):
+        path = Path(directory) / "pubspec.lock"
+        path.write_text(self.LOCK if text is None else text)
+        return path
+
+    def test_pub_ok_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub()):
+                AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_too_new_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub(published="2026-11-03T00:00:00Z")):
+                with self.assertRaisesRegex(ValueError, "pub provider@6.1.5.*after"):
+                    AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_sha_mismatch_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub(sha="other")):
+                with self.assertRaisesRegex(ValueError, "sha256 differs"):
+                    AGE.pub_check(self.write_lock(directory), self.cutoff)
+
+    def test_pub_unexpected_registry_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, self.LOCK.replace("https://pub.dev", "https://pub.example.com"))
+            with patch.object(AGE, "fetch_json", side_effect=AssertionError("no network for bad source")):
+                with self.assertRaisesRegex(ValueError, "unsupported source"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_pub_lock_without_hosted_packages_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, "packages:\n  flutter:\n    dependency: \"direct main\"\n"
+                                              "    description: flutter\n    source: sdk\n    version: \"0.0.0\"\n")
+            with patch.object(AGE, "fetch_json", side_effect=AssertionError("nothing to fetch")):
+                with self.assertRaisesRegex(ValueError, "no hosted pub packages"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_pub_lock_without_ditto_live_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            text = self.LOCK.split("  ditto_live:")[0] + "  flutter:" + self.LOCK.split("  flutter:")[1]
+            lock = self.write_lock(directory, text)
+            with patch.object(AGE, "fetch_json", side_effect=self.pub_stub()):
+                with self.assertRaisesRegex(ValueError, "ditto_live is missing"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_pub_missing_sha256_flagged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = self.write_lock(directory, self.LOCK.replace('      sha256: "abc123"\n', ""))
+            with patch.object(AGE, "fetch_json", return_value={"published": "2026-10-01T00:00:00Z"}):
+                with self.assertRaisesRegex(ValueError, "missing sha256"):
+                    AGE.pub_check(lock, self.cutoff)
+
+    def test_untracked_pub_lockfile_is_ignored(self):
+        listed = b"tests/flutter-sdk/app/pubspec.lock\0tests/flutter-sdk/app/pubspec.yaml\0other/pubspec.lock\0"
+        with patch.object(AGE.subprocess, "check_output", return_value=listed):
+            found = AGE.pub_lockfiles(Path("/repo"))
+        self.assertEqual(found, [Path("/repo/tests/flutter-sdk/app/pubspec.lock")])
+
+    def test_flutter_pin_too_new_flagged(self):
+        releases = {"releases": [
+            {"version": "3.50.0", "channel": "beta", "release_date": "2026-10-01T00:00:00Z"},
+            {"version": "3.50.0", "channel": "stable", "release_date": "2026-11-03T00:00:00Z"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            pin = Path(directory) / "versions.json"
+            pin.write_text('{"flutter": "3.50.0"}')
+            with patch.object(AGE, "fetch_json", return_value=releases):
+                with self.assertRaisesRegex(ValueError, "Flutter 3.50.0.*after"):
+                    AGE.flutter_check(pin, self.cutoff)
+                pin.write_text('{"flutter": "9.9.9"}')
+                with self.assertRaisesRegex(ValueError, "no stable release"):
+                    AGE.flutter_check(pin, self.cutoff)
+
+    def test_flutter_pin_old_stable_passes(self):
+        releases = {"releases": [{"version": "3.50.0", "channel": "stable", "release_date": "2026-10-01T00:00:00Z"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            pin = Path(directory) / "versions.json"
+            pin.write_text('{"flutter": "3.50.0"}')
+            with patch.object(AGE, "fetch_json", return_value=releases):
+                AGE.flutter_check(pin, self.cutoff)
+
 
 if __name__ == "__main__":
     unittest.main()

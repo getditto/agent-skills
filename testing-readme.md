@@ -12,6 +12,7 @@ local environment (`.env`), and what each config key means.
 | [`data-modeling`](skills/data-modeling) | [`tests/data-modeling/`](tests/data-modeling/) | Live-model evals: feeds raw-JSON cases plus the skill to a real AI model and deterministically scores its recommendations against the rubric finding IDs | [tests/data-modeling/README.md](tests/data-modeling/README.md) |
 | [`swift-sdk`](skills/swift-sdk) | [`tests/swift-sdk/`](tests/swift-sdk/) | A SwiftPM fixture whose Ditto version pin is an environment variable: one source tree compiled and run against 4.14.6, 5.0.3, 5.1.0 and 5.2.0, built for macOS / iOS Simulator / iOS device / Mac Catalyst, plus an executed cross-version on-disk upgrade and rollback. Requires macOS and Xcode. | [tests/swift-sdk/README.md](tests/swift-sdk/README.md) |
 | [`kotlin-sdk`](skills/kotlin-sdk) | [`tests/kotlin-sdk/`](tests/kotlin-sdk/) | Gradle fixtures: the JVM minimal app and JUnit tests against 5.0.3, 5.1.0 and 5.2.0 (CI), and an Android app for both version lines run on a device. | [tests/kotlin-sdk/README.md](tests/kotlin-sdk/README.md) |
+| [`flutter-sdk`](skills/flutter-sdk) | [`tests/flutter-sdk/`](tests/flutter-sdk/) | Flutter fixtures pinned in `versions.json` (Flutter, `flutter_lints` and the four `ditto_live` lines 4.14.7, 5.0.4, 5.1.0, 5.2.0). `minimal_app` runs the published minimal app and the behavior probes for 5.0.4, 5.1.0 and 5.2.0 through `scripts/run-fixture.sh` and `scripts/run-probes.sh`; `v4_app` covers 4.14.7. `flutter-skill-tests.yml` runs them in CI on macOS, Linux, Windows, the iOS Simulator, an Android emulator and Chrome, plus release builds and a 5.1.0 → 5.2.0 store migration. | [tests/flutter-sdk/README.md](tests/flutter-sdk/README.md) |
 | [`data-streams`](skills/data-streams) | both SDK fixtures | Two Ditto peers in one process over a TCP loopback listener with NGN on: `DataStreamsTest.kt` (JVM, 5.0.3/5.1.0/5.2.0) and `DataStreamsTests.swift` (macOS, 5.2.0) prove the lifecycle, reliability and ownership claims. | [skills/data-streams/README.md](skills/data-streams/README.md) |
 
 The Node runners share one config mechanism: the repo-root `.env`, loaded at
@@ -42,7 +43,7 @@ should reuse one of the two.
 
 | Key | Used by | Required | What it is |
 |---|---|---|---|
-| `DITTO_OFFLINE_LICENSE` | `tests/dql`, `tests/swift-sdk` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
+| `DITTO_OFFLINE_LICENSE` | `tests/dql`, `tests/swift-sdk`, `tests/kotlin-sdk`, `tests/flutter-sdk` | **Yes** | Offline license token from [portal.ditto.live](https://portal.ditto.live). The DQL harness spins up real Ditto Small Peers; without a license, DQL mutations are blocked. (Legacy alias also accepted: `DITTO_PLAYGROUND_TOKEN`.) |
 | `DITTO_DATABASE_ID` | `tests/dql`, `tests/swift-sdk` | No | Your Ditto database ID from the portal. Defaults to the offline-playground zero UUID (`00000000-1111-2222-3333-444444444444`) — fine for local-only harness runs. |
 | `DITTO_URL` | `tests/swift-sdk` | No | The portal's **Connect via SDK** URL. Set together with `DITTO_TOKEN` to additionally exercise the server-authentication path; without them those tests skip themselves and the minimal app runs offline. CI leaves both unset. |
 | `DITTO_TOKEN` | `tests/swift-sdk` | No | Development-provider token, paired with `DITTO_URL`. |
@@ -67,7 +68,7 @@ Full contract and tips: [tests/data-modeling/README.md](tests/data-modeling/READ
 
 ## CI
 
-GitHub Actions does not use `.env` — the two matrix workflows inject the
+GitHub Actions does not use `.env` — the skill-test workflows inject the
 `DITTO_OFFLINE_LICENSE` repo secret directly into the environment, which takes
 precedence per the rule above:
 
@@ -77,6 +78,10 @@ precedence per the rule above:
   or `tests/swift-sdk/**` changes, and runs three jobs: the fixture per version
   line, the four-platform compile matrix, and the cross-version persistence
   matrix.
+- `.github/workflows/flutter-skill-tests.yml` — triggers on `skills/flutter-sdk/**`,
+  `skills/native-app-config/**` or `tests/flutter-sdk/**` changes, and runs the Flutter
+  fixtures on macOS, Linux, Windows, the iOS Simulator, an Android emulator and Chrome,
+  plus the build-only, snippet-analysis and from-skill jobs that need no license.
 
 The data-modeling harness is run manually (it spends live-model tokens).
 

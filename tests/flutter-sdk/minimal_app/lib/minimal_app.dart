@@ -1,0 +1,94 @@
+// snippet:start flutter-minimal-app
+import 'dart:async';
+
+import 'package:ditto_live/ditto_live.dart';
+import 'package:flutter/foundation.dart';
+
+/// Opens Ditto, observes a query, writes and reads back one document, then
+/// closes everything. Returns the transcript; [onLine] sees each line as it
+/// is produced.
+///
+/// With no [persistenceDirectory], Ditto uses the SDK's default persistence
+/// directory, which is not deleted between launches (web: an in-memory
+/// store).
+Future<List<String>> runMinimalApp({
+  required String license,
+  String? persistenceDirectory,
+  void Function(String line)? onLine,
+}) async {
+  final lines = <String>[];
+  void emit(String line) {
+    lines.add(line);
+    onLine?.call(line);
+  }
+
+  // Required on 5.0.x, automatic from 5.1.0; memoized, so always safe.
+  await Ditto.init();
+  final ditto = await Ditto.open(
+    DittoConfig(persistenceDirectory: persistenceDirectory),
+  );
+  SyncSubscription? subscription;
+  StoreObserver? observer;
+  StreamSubscription<QueryResult>? changes;
+  try {
+    ditto.setOfflineOnlyLicenseToken(license);
+
+    // Offline demo: no peer-to-peer radios. Set each transport; on 5.0.x,
+    // setAllPeerToPeerEnabled(false) leaves AWDL and Wi-Fi Aware on. Web has
+    // none to turn off.
+    if (!kIsWeb) {
+      ditto.updateTransportConfig((config) {
+        config.peerToPeer.bluetoothLE.isEnabled = false;
+        config.peerToPeer.lan.isEnabled = false;
+        config.peerToPeer.awdl.isEnabled = false;
+        config.peerToPeer.wifiAware.isEnabled = false;
+      });
+    }
+    ditto.sync.start();
+
+    subscription = ditto.sync.registerSubscription('SELECT * FROM cars');
+    final firstMatch = Completer<int>();
+    // No onChange: listen to `changes` once, right away. An observer that
+    // also has onChange keeps every result buffered in its unlistened
+    // `changes` stream (5.0.0 through 5.2.0).
+    observer = ditto.store.registerObserver(
+      'SELECT * FROM cars WHERE color = :color',
+      arguments: {'color': 'blue'},
+    );
+    changes = observer.changes.listen((result) {
+      final count = result.items.length;
+      if (count > 0 && !firstMatch.isCompleted) firstMatch.complete(count);
+    });
+
+    // A fixed _id with ON ID CONFLICT DO UPDATE keeps one car per launch.
+    await ditto.store.execute(
+      'INSERT INTO cars DOCUMENTS (:car) ON ID CONFLICT DO UPDATE',
+      arguments: {
+        'car': {'_id': 'blue-toyota', 'make': 'Toyota', 'color': 'blue'},
+      },
+    );
+    final count = await firstMatch.future.timeout(const Duration(seconds: 10));
+    emit('observer: $count car(s)');
+
+    final result = await ditto.store.execute(
+      'SELECT * FROM cars WHERE color = :color',
+      arguments: {'color': 'blue'},
+    );
+    final cars = result.items.toList();
+    emit('read-back make: ${cars.first.value['make']}');
+
+    final version = RegExp(r'\d+\.\d+\.\d+').firstMatch(Ditto.version);
+    emit('SDK version: ${version?.group(0)}');
+    emit('platform: ${Ditto.currentPlatform.name}');
+  } finally {
+    // Cancel while Ditto is open: the stream listener, then the observer and
+    // the subscription.
+    await changes?.cancel();
+    observer?.cancel();
+    subscription?.cancel();
+    await ditto.close();
+  }
+  emit('closed: ${ditto.isClosed}');
+  return lines;
+}
+// snippet:end flutter-minimal-app

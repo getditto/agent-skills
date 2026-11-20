@@ -948,7 +948,7 @@ def check_examples_are_generated(name: str) -> None:
 def check_whole_file_snippet(example: str, harness: str, snippet: str) -> None:
     sources = []
     for root, dirs, files in os.walk(harness):
-        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in {"build", "node_modules"}]
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in {"build", "node_modules", ".dart_tool", "Pods", "ephemeral"}]
         for filename in files:
             source = os.path.join(root, filename)
             try:

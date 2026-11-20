@@ -34,6 +34,12 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Check portable installation archives
         run: python -m unittest discover -s tests/swift-sdk -p test_packaging.py -v
+      - name: Check Flutter installation archives
+        run: python tests/flutter-sdk/scripts/test_packaging.py -v
+      - name: Check Flutter fixture scripts
+        run: python tests/flutter-sdk/scripts/test_fixture_scripts.py -v
+      - name: Check the Flutter Web probe script
+        run: python tests/flutter-sdk/scripts/test_web_probe.py -v
 
   validate:
     name: Validate plugins
@@ -83,6 +89,28 @@ jobs:
       - name: Check the snippet generator
         run: python3 tests/skill-context/test_snippets.py
 
+      - name: Check Dart and platform-config snippet sync
+        run: python3 tests/flutter-sdk/scripts/test_sync_dart.py
+
+      - name: Read the pinned Flutter version
+        id: flutter-pin
+        run: echo "version=$(python3 -c "import json; print(json.load(open('tests/flutter-sdk/versions.json'))['flutter'])")" >> "$GITHUB_OUTPUT"
+
+      - name: Set up the pinned Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ steps.flutter-pin.outputs.version }}
+
+      - name: Check the Dart fence analyzer
+        run: python3 tests/flutter-sdk/scripts/test_analyze_skill_snippets.py
+
+      - name: Check Flutter packaging, fixture and web probe scripts
+        run: |
+          python3 tests/flutter-sdk/scripts/test_packaging.py
+          python3 tests/flutter-sdk/scripts/test_fixture_scripts.py
+          python3 tests/flutter-sdk/scripts/test_web_probe.py
+
       - name: Check Swift runner regressions
         run: python3 tests/swift-sdk/test_runner.py
 
@@ -117,6 +145,19 @@ jobs:
           path: |
             ${{ runner.temp }}/ditto-kotlin-packages/*.zip
             ${{ runner.temp }}/ditto-kotlin-packages/SHA256SUMS
+
+      - name: Check Flutter host metadata and build standalone packages
+        run: |
+          python3 scripts/package-sdk-plugin.py --plugin ditto-flutter --check
+          python3 scripts/package-sdk-plugin.py --plugin ditto-flutter --output "$RUNNER_TEMP/ditto-flutter-packages"
+
+      - name: Upload Flutter installation packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ditto-flutter-installation-packages
+          path: |
+            ${{ runner.temp }}/ditto-flutter-packages/*.zip
+            ${{ runner.temp }}/ditto-flutter-packages/SHA256SUMS
 
       - name: Check plugin references in marketplace
         run: |
@@ -257,6 +298,17 @@ jobs:
 
           print("All plugin wrappers are correctly scoped")
           EOF
+
+      # `flutter create` copies the local signing team into the Xcode projects; a
+      # committed Apple Developer Team ID identifies a real account.
+      - name: No Apple Developer Team IDs in Flutter fixtures
+        run: |
+          # DEVELOPMENT_TEAM / DevelopmentTeam, any case, quoted or not, with or
+          # without an [sdk=...] qualifier.
+          if git grep -niE '(development_team|developmentteam)(\[[^]]*\])?"?[[:space:]]*=[[:space:]]*"?[a-z0-9]{10}([^a-z0-9]|$)' -- tests/flutter-sdk/; then
+            echo "ERROR: remove the DEVELOPMENT_TEAM lines above" >&2
+            exit 1
+          fi
 
       - name: Validate SDK skill structure
         run: python3 scripts/validate-sdk-skills.py

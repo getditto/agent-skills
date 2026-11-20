@@ -49,6 +49,10 @@ The 2026-10-27 rerun isolated Codex by running it with a fresh empty `HOME` (no
 `~/.agents/skills`, no shell profile) and a fresh `CODEX_HOME` containing only a
 symlink to the existing `auth.json` (no config, rules, memories or global guidance).
 Confirm the catalog shows only vendor builtins plus the canonical skills before a run.
+`--sandbox read-only` limits writes, not reads: the model can still read any file the
+user can, outside the workspace too (for example a temp directory another session left).
+The fresh `HOME` only hides the usual locations, so check each trace for reads outside
+the workspace and exclude a run that made one.
 
 **Claude Code:** copy skills into a temporary local plugin's real `skills/` directory
 and create `.claude-plugin/plugin.json` with a synthetic name, version and description.

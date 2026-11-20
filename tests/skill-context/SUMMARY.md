@@ -253,3 +253,275 @@ five negative controls invoked no skill, no tool errors. Codex's `dql_destructiv
 answer this time named the local/mesh-wide difference but did not ask for confirmation
 (it did in the previous run); one run per host, so treat that as variance to watch.
 Claude reported USD 3.12.
+
+## Flutter SDK skill addition — 2026-11-18
+
+Twelve `flutter_*` cases were added for the new `flutter-sdk` skill: first app, a
+`StatefulWidget` observer, a planted-bug `dispose` review, presence, v4 → v5 migration,
+three web cases (P2P gate, attachments, an app below `/app/`), Android permissions, hot
+restart, a plain Kotlin negative control, and a run with only the `ditto-flutter` plugin
+installed. Hosts: Claude Code 2.1.327 (`claude-opus-5-5`, reported the same) and Codex
+0.169.1 (`gpt-6.1-sol`; Codex does not report the model it used), isolated as the README
+describes. Catalogs were checked first. Codex showed its four vendor builtins plus the
+canonical skills, or only `flutter-sdk` and `native-app-config` for the plugin-only case,
+or nothing else for the baselines.
+
+The skill changed twice after runs, and each time every skill case was rerun on both
+hosts. The results below come from the last tree of 2026-11-18 (digest `388fc349…`; plugin-only
+install `62db713e…`) and were scored literally: a criterion passes only when the answer
+covers every clause, including clauses for other SDK lines or platforms than the prompt's.
+Criteria passed out of the total, with partials or fails in brackets:
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| `flutter_init_first_query` | 6/6 | 6/6 |
+| `flutter_statefulwidget_observer` | 7/7 | 7/7 |
+| `flutter_dispose_cleanup` | 5/7 (2 partial) | 5/7 (2 partial) |
+| `flutter_presence_peers` | 6/6 | 4/6 (2 partial) |
+| `flutter_v4_migration` | 7/7 | 6/7 (1 partial) |
+| `flutter_web_p2p_config` | 5/6 (1 partial) | 4/6 (2 partial) |
+| `flutter_web_attachments` | 7/7 | 7/7 |
+| `flutter_web_base_href` | 7/7 | 7/7 |
+| `flutter_android_permissions` | 5/5 | 2/5 (2 partial, 1 fail) |
+| `flutter_hot_restart_observer` | 4/7 (3 partial) | 4/7 (3 partial) |
+| `flutter_negative_kotlin` | Pass; `kotlin-sdk` only | Pass; `kotlin-sdk` only |
+| `flutter_only_plugin` | 5/5 | 5/5 |
+
+- Routing was correct on every run. `flutter-sdk` was used for every Flutter case and
+  never for the Kotlin control. In the plugin-only install both hosts read
+  `native-app-config/references/apple.md` without error, and every relative link in the
+  installed `flutter-sdk` resolves there (checked). There were no timeouts and no policy
+  rejections. Codex's nonzero exits were `rg`/`cat` probes for a `pubspec.lock` that the
+  workspace does not have.
+- Every observer answer registered without `onChange`, held one `changes` listener, and
+  cancelled it and then the observer while Ditto was open. None used a `StreamBuilder`
+  over `changes`. Both hot-restart answers rejected the static holder, used a debug-only
+  per-launch directory with the SDK default in release, and named V2 observers as the
+  crash on 5.2.0.
+- The partials are omissions, not wrong guidance:
+  - Hot restart: neither host gave the 5.1.0 `Ditto.open` hang, the V1 crash on 5.1.0 or
+    the web dev-server restart. The prompt was about 5.2.0 on macOS and iOS.
+  - Dispose: neither said that assigning `result.items` to a `List` does not compile,
+    and neither gave the whole `close()` rule.
+  - P2P config: neither said that 5.0.x/5.1.x throw from `updateTransportConfig`. Codex
+    also did not say that enabling a transport throws, and gave no AWDL/Wi-Fi Aware note.
+  - Codex presence: it did not say that dropping a `PresenceObserver` leaves it running,
+    or that the callback fires at once with the current graph.
+  - Codex v4 migration: it did not say that `sync.start()` throws without the handler.
+  - Codex permissions: it gave no merged-manifest check and no "Ditto never requests"
+    statement, and its fail is the missing restart-sync-after-a-late-grant rule, which
+    `setup.md` states and Codex read.
+- Generated Dart: each Dart block from an answer was checked with the skill's analyzer
+  setup (Flutter 3.50.0, ditto_live 5.2.0, `flutter analyze`; format not checked), after
+  the normalization recorded in each result. On the final tree every block passed. Lints
+  were info-level only: `package:flutter/material.dart` is deprecated in Flutter 3.50,
+  plus Codex's `avoid_print`.
+- Isolation: one final Codex run (`flutter_presence_peers`) read `ditto_live` source from a
+  temp directory outside its workspace, left by an earlier local session. Nothing in the
+  workspace referenced that directory, and the trace does not show how the model found the
+  path. The run is kept as `flutter-final-excluded`, with the path redacted. The case was
+  retried once; the retry read only the skill and is the final record. No other Codex run
+  read outside its workspace, apart from baseline runs listing their own fresh
+  `CODEX_HOME` skills.
+  The cause is a limit of the method: Codex's `--sandbox read-only` blocks writes, not
+  reads, so a model can read any file the user can, inside the workspace or not. A fresh
+  `HOME` and `CODEX_HOME` hide the usual locations but not other paths on disk, such as
+  temp directories. Each Codex trace was checked for reads outside its workspace.
+- Claude Code ran with `--setting-sources project` and only the Read, Grep, Glob and Skill
+  tools. That this excluded user-level guidance files (`CLAUDE.md` and its includes) is
+  not proven. No Claude trace shows any sign of them: none mentions or follows the user's
+  shell-command convention.
+
+### Changes after the runs
+
+**Initial tree (`7c251f2e…`).** Three problems showed up:
+- Codex's Android answer added manifest entries, capping `ACCESS_FINE_LOCATION` at API 30
+  where the plugin declares it through API 32. It requested permissions without
+  `DittoSyncPermissions`.
+- Claude's `dispose` called `_changes.cancel()` without `unawaited`.
+- Claude's web answer called `setOfflineOnlyLicenseToken` a no-op.
+
+The skill now lists the permissions that the plugin manifest declares, with their limits,
+and says the app's work is the runtime request. It shows `unawaited` for the listener
+cancel in `State.dispose()`, and says that the web license call still verifies the token.
+All cases were rerun on that tree (`ab7a26e9…`, the `flutter-intermediate` records). On
+it, Claude's base-href `main()` imported only `foundation.dart` and called
+`WidgetsFlutterBinding`, as it had on the initial tree.
+
+**Fix round 1.** The `SKILL.md` body was trimmed to 8,977 characters to fit the task
+budget of 9,000. `web.md` now notes that a `main()` calling `WidgetsFlutterBinding` and
+`runApp` needs `package:flutter/widgets.dart`. Every skill case was then run again on the
+final tree.
+
+**Criteria corrected.** Two criteria were corrected to match the skill after the first
+scoring:
+- `flutter_web_attachments` criterion 5 now also accepts awaiting `fetcher.attachment`,
+  which `attachments.md` documents.
+- `flutter_hot_restart_observer` criterion 6 now calls the presence-observer crash an
+  inference, as the skill does.
+
+The initial and intermediate records were rescored against the corrected criteria. In
+them, hot-restart criteria 2, 4 and 6 and Codex's permissions criterion 2 were also
+rescored literally, as partial. Other criteria in those records were scored before that
+literal rule and were not re-reviewed.
+
+### No-skill baselines
+
+Three cases ran with no skills installed. Summaries are in
+[flutter-baseline.md](flutter-baseline.md).
+- Both hosts registered the observer with `onChange`.
+- Neither knew the `wasmShimUrl` fix for an app below `/app/`. Claude used the v4 identity
+  API, and Codex said COOP/COEP headers are required.
+- Hot restart came closest: both rejected the static holder. Neither separated V1 from V2
+  observers, and neither kept production on the SDK default directory.
+
+There was one run per host, case and tree, plus the one recorded retry. Claude reported
+USD 2.21 (initial), 2.24 (intermediate), 2.20 (final) and 0.20 (baselines). Codex does not
+report cost. Raw traces stay private.
+
+## Flutter SDK skill rerun — 2026-11-19
+
+Superseded the same day by [the final run](#flutter-sdk-skill-final-run--2026-11-19),
+which used the same criteria on the final tree. Kept as the record of that tree.
+
+The `flutter-sdk` skill changed after a three-reviewer pass: `dart:io` on web (it
+compiles and throws at run time), a new `release-builds.md` with a diagnosis table for a
+release build that cannot sync and an R8 note, an executed sync-scopes sample, 5.x
+opening a 4.14.7 default directory in place, `main.dart` and run steps in the minimal
+app, `best-practices.md` in the template's nine sections, and evidence notes plus a
+documentation-mismatch table in its README.
+
+The Flutter criteria changed too, so these scores are not comparable criterion by
+criterion with the tables above:
+
+- Clauses about SDK lines or platforms the prompt does not ask about were removed (the
+  5.1.0 hang and the web dev-server restart in the hot-restart case, the 5.0.x/5.1.x
+  throw site in the P2P case, and similar).
+- `flutter_v4_migration` criterion 7 and `flutter_web_p2p_config` criterion 4 were
+  rewritten to match the corrected skill.
+- Two cases were added: `flutter_release_no_sync` (a macOS release build that does not
+  connect) and `flutter_negative_plain_flutter` (Riverpod and Drift, no Ditto).
+
+All fourteen `flutter_*` cases ran once per host: Claude Code 2.1.328
+(`claude-opus-5-5`, reported the same) and Codex 0.169.1 (`gpt-6.1-sol`), isolated as
+the README describes, catalogs checked first. Records: `"run":
+"flutter-rerun-2026-11-19"` in [results.json](results.json). Criteria passed out of the
+total, with partials or fails in brackets:
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| `flutter_init_first_query` | 6/6 | 6/6 |
+| `flutter_statefulwidget_observer` | 7/7 | 7/7 |
+| `flutter_dispose_cleanup` | 5/7 (2 partial) | 5/7 (2 partial) |
+| `flutter_presence_peers` | 6/6 | 6/6 (retry; first run excluded) |
+| `flutter_v4_migration` | 6/7 (1 partial) | 6/7 (1 partial) |
+| `flutter_web_p2p_config` | 5/6 (1 partial) | 5/6 (1 partial) |
+| `flutter_web_attachments` | 7/7 | 6/7 (1 partial) |
+| `flutter_web_base_href` | 7/7 | 6/7 (1 partial) |
+| `flutter_android_permissions` | 5/5 | 3/5 (1 partial, 1 fail) |
+| `flutter_hot_restart_observer` | 7/7 | 7/7 |
+| `flutter_release_no_sync` | 5/5 | 5/5 |
+| `flutter_negative_kotlin` | Pass; `kotlin-sdk` only | Pass; `kotlin-sdk` only |
+| `flutter_negative_plain_flutter` | Pass; no skill | Pass; no skill |
+| `flutter_only_plugin` | 5/5 | 4/5 (1 fail) |
+
+- Routing was correct on every run. `flutter-sdk` was used for every Flutter-with-Ditto
+  case, never for the Kotlin control, and no skill was invoked or read for the plain
+  Flutter control on either host. There were no timeouts and no policy rejections.
+  Codex's nonzero exits were `rg`/`cat` probes for files the workspace does not have.
+- The new content was used. Both `flutter_release_no_sync` answers read
+  `release-builds.md`, named `Release.entitlements` and the two network keys, gave the
+  `codesign -d --entitlements -` check, quoted the `Operation not permitted (os error 1)`
+  log lines, and said that nothing throws in Dart. Both migration answers kept the v4
+  app ID as `databaseID` and said 5.x opens the v4 store in place.
+- The partials and fails are omissions, not wrong guidance. No answer contradicted the
+  skill.
+  - Dispose (both hosts): neither named `DittoClosedException`. Claude did not say that
+    `registerSubscription` throws at the call. Codex did not say that dropped handles
+    keep running.
+  - v4 migration (both): neither named the directory change itself (`{Documents}/ditto`
+    against `ditto-{databaseID}`). Codex also gave no "test on a copy" advice.
+  - P2P config (both): the code enabled Bluetooth LE and LAN alike on every native
+    platform, with no AWDL or Wi-Fi Aware branch.
+  - Codex web attachments: the fetcher was a local that was not kept.
+  - Codex base href: it did not say that `Ditto.init()` fails with the default URL.
+  - Codex permissions: it named only the Bluetooth permissions the plugin declares and
+    gave no merged-manifest check. Its fail is again the restart-sync-after-a-late-grant
+    rule, which `setup.md` states and Codex read: the same miss as on 2026-11-18.
+  - Codex plugin-only: it did not say that iOS prompts come from the Info.plist strings
+    and that Ditto requests nothing itself.
+- Isolation: one Codex run (`flutter_presence_peers`) read `presence_graph.dart` of
+  ditto_live 5.2.0 from the pub cache outside its workspace. It is kept as
+  `flutter-rerun-2026-11-19-excluded` and the case was retried once. The retry listed a
+  temp directory outside the workspace for that file name, found nothing, and read only
+  the skill; it is the final record. No other run touched a path outside its workspace.
+- Tree digests: the full-install runs carry `39ee8ece…`, the final tree, except four
+  (`flutter_init_first_query` and `flutter_statefulwidget_observer` on both hosts), which
+  started before a one-cell wording change in `release-builds.md` and carry `d38f2aee…`.
+  None of the four read that file. The plugin-only install is `e14cee84…`.
+- Limits of this rerun: the answers were scored literally by two model reviewers, one
+  per host, given the criteria, answers and traces, and then spot-checked by hand; the
+  earlier Flutter runs were scored by hand. The Dart in these answers was not analyzed.
+  One run per host and case, plus the one recorded retry. Claude reported USD 2.38.
+
+### Migration prompt added — 2026-11-19
+
+The skill then gained `references/migration-v4-to-v5.md`: the AI agent prompt from the
+Flutter v4 migration guide, with a table of the points where the released SDK differs.
+`flutter_v4_migration` was rerun once per host on that tree (`9fc164fa…`; records
+`"run": "flutter-migration-prompt-2026-11-19"`, scored by hand). Both hosts read the new
+file and scored 6/7 with one partial, as before: both said to keep the v4 app ID and
+pass no `persistenceDirectory`, and neither named the v5 default directory. New in both
+answers, from the prompt: the server URL copied from the portal as a `String`, and
+strict mode set through `systemParameters`. Claude's observer had no `onChange`, as the
+correction table says. The other thirteen `flutter_*` cases were not rerun on this tree.
+
+## Flutter SDK skill final run — 2026-11-19
+
+The current Flutter result. After the migration prompt, the iOS Simulator disk-key note
+and the platform tables were added, all fourteen `flutter_*` cases were run again, once
+per host, on one tree: digest `57d2339f…` (plugin-only install `4f0c8b6e…`). Hosts and
+isolation as above (Claude Code 2.1.328, Codex 0.169.1). Records: `"run":
+"flutter-final-2026-11-19"`. Criteria passed out of the total:
+
+| Case | Claude Code | Codex |
+|---|---|---|
+| `flutter_init_first_query` | 6/6 | 6/6 |
+| `flutter_statefulwidget_observer` | 7/7 | 7/7 |
+| `flutter_dispose_cleanup` | 5/7 (2 partial) | 6/7 (1 partial) |
+| `flutter_presence_peers` | 6/6 | 6/6 |
+| `flutter_v4_migration` | 6/7 (1 partial) | 6/7 (1 partial) |
+| `flutter_web_p2p_config` | 5/6 (1 partial) | 5/6 (1 partial) |
+| `flutter_web_attachments` | 7/7 | 7/7 |
+| `flutter_web_base_href` | 7/7 | 7/7 |
+| `flutter_android_permissions` | 5/5 | 3/5 (1 partial, 1 fail) |
+| `flutter_hot_restart_observer` | 7/7 | 7/7 |
+| `flutter_release_no_sync` | 5/5 | 5/5 |
+| `flutter_negative_kotlin` | Pass; `kotlin-sdk` only | Pass; `kotlin-sdk` only |
+| `flutter_negative_plain_flutter` | Pass; no skill | Pass; no skill |
+| `flutter_only_plugin` | 5/5 | 4/5 (1 partial) |
+
+- Routing was correct on all 28 runs, with no timeouts and no policy rejections. No run
+  read a path outside its workspace, so nothing was excluded or retried. Codex's nonzero
+  exits were probes for files the workspace does not have; one Codex run logged two
+  "model is at capacity" reconnects and completed.
+- No answer contradicted the skill. The partials and the one fail are omissions:
+  - Dispose: Claude did not name `DittoClosedException` or say that
+    `registerSubscription` throws at the call. Codex did not say that dropped handles
+    keep running.
+  - v4 migration (both): neither named the v5 default directory. Both read
+    `migration-v4-to-v5.md`, kept the v4 app ID as `databaseID` and passed no
+    `persistenceDirectory`.
+  - P2P config (both): Bluetooth LE and LAN only, with no AWDL or Wi-Fi Aware branch.
+  - Codex permissions: only the Bluetooth permissions were listed, with no
+    merged-manifest check, and the restart-sync-after-a-late-grant rule was missing for
+    the third run in a row, although `setup.md` states it and Codex read that file.
+  - Codex plugin-only: it did not say that Ditto requests nothing itself on iOS.
+- Limits: thirteen cases were scored literally by two model reviewers, one per host,
+  given the criteria, answers and traces; `flutter_v4_migration` was scored by hand. The
+  Dart in these answers was not analyzed. One run per host and case. Claude reported
+  USD 2.32.
+- One sentence was added to the skill's human-facing `README.md` after these runs (the
+  mobile targets run 5.2.0 and 4.14.7 only), so the committed tree differs from
+  `57d2339f…` by that sentence. No run read that file, and no agent-facing file changed.
+

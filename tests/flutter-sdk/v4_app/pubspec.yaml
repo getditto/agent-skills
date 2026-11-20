@@ -1,0 +1,19 @@
+name: v4_app
+description: Ditto Flutter 4.14 fixture; the v4 open published in skills/flutter-sdk/references/versions.md.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ditto_live: 4.14.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
